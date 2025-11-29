@@ -1,89 +1,60 @@
+import type { CannabisType, SeedType, StockStatus } from "@prisma/client"
 import { ProductCard } from "./product-card"
 
-const products = [
-  {
-    badge: "FEMINIZED",
-    badgeColor: "feminized" as const,
-    productName: "Blue Dream",
-    price: "$4.99/seed",
-    company: "GoodSeed Co",
-    strain: "Sativa",
-    thc: "THC 18%",
-    cbd: "CBD 1%",
-  },
-  {
-    badge: "FEMINIZED",
-    badgeColor: "feminized" as const,
-    productName: "Girl Scout Cookies",
-    price: "$6.99/seed",
-    company: "Royal Queen Seeds",
-    strain: "Hybrid",
-    thc: "THC 26%",
-    cbd: "CBD 1%",
-  },
-  {
-    badge: "FEMINIZED",
-    badgeColor: "feminized" as const,
-    productName: "Gorilla Glue #4",
-    price: "$7.99/seed",
-    company: "Barney Seeds",
-    strain: "Hybrid",
-    thc: "THC 28%",
-    cbd: "CBD 0.8%",
-  },
-  {
-    badge: "AUTOFLOWER",
-    badgeColor: "autoflower" as const,
-    productName: "Northern Lights",
-    price: "$5.99/seed",
-    company: "Sensitech",
-    strain: "Indica",
-    thc: "THC 20%",
-    cbd: "CBD 3%",
-  },
-  {
-    badge: "AUTOFLOWER",
-    badgeColor: "autoflower" as const,
-    productName: "White Widow",
-    price: "$5.49/seed",
-    company: "MSNL",
-    strain: "Hybrid",
-    thc: "THC 16%",
-    cbd: "CBD 5%",
-  },
-  {
-    badge: "AUTOFLOWER",
-    badgeColor: "autoflower" as const,
-    productName: "Amnesia Haze",
-    price: "$6.49/seed",
-    company: "SeedSmart",
-    strain: "Sativa",
-    thc: "THC 21%",
-    cbd: "CBD 1.5%",
-  },
-  {
-    badge: "REGULAR",
-    badgeColor: "regular" as const,
-    productName: "Sour Diesel",
-    price: "$3.99/seed",
-    company: "I.GM",
-    strain: "Sativa",
-    thc: "THC 22%",
-    cbd: "CBD 0.5%",
-  },
-  {
-    badge: "REGULAR",
-    badgeColor: "regular" as const,
-    productName: "AK-47",
-    price: "$4.49/seed",
-    company: "Nature Seeds",
-    strain: "Hybrid",
-    thc: "THC 19%",
-    cbd: "CBD 1%",
-  },
-]
+type ProductData = {
+  id: string
+  name: string
+  url: string
+  slug: string
+  basePrice: number
+  packSize: number
+  pricePerSeed: number
+  stockStatus: StockStatus
+  cannabisType: CannabisType | null
+  seedType: SeedType | null
+  variety: string | null
+  thcMin: number | null
+  thcMax: number | null
+  thcText: string | null
+  cbdMin: number | null
+  cbdMax: number | null
+  cbdText: string | null
+  category: {
+    name: string
+  }
+  productImages: Array<{
+    image: {
+      url: string
+      alt: string | null
+    }
+  }>
+}
 
-export function ProductListing() {
+interface ProductListingProps {
+  products: ProductData[]
+}
+
+function getBadgeColor(seedType: SeedType | null): "feminized" | "autoflower" | "regular" {
+  if (seedType === "FEMINIZED") return "feminized"
+  if (seedType === "AUTOFLOWER") return "autoflower"
+  return "regular"
+}
+
+function formatTHC(thcText: string | null, thcMin: number | null, thcMax: number | null): string {
+  if (thcText) return thcText
+  if (thcMin !== null && thcMax !== null) return `THC ${thcMin}-${thcMax}%`
+  if (thcMin !== null) return `THC ${thcMin}%+`
+  return "THC N/A"
+}
+
+function formatCBD(cbdText: string | null, cbdMin: number | null, cbdMax: number | null): string {
+  if (cbdText) return cbdText
+  if (cbdMin !== null && cbdMax !== null) return `CBD ${cbdMin}-${cbdMax}%`
+  if (cbdMin !== null) return `CBD ${cbdMin}%+`
+  return "CBD N/A"
+}
+
+export function ProductListing({ products }: ProductListingProps) {
   return (
     <section className="py-12 px-4 border-t-2 border-foreground">
       <div className="container mx-auto max-w-7xl">
@@ -97,8 +68,20 @@ export function ProductListing() {
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {products.map((product, index) => (
-            <ProductCard key={index} {...product} />
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              badge={product.seedType || "N/A"}
+              badgeColor={getBadgeColor(product.seedType)}
+              productName={product.name}
+              price={`$${product.pricePerSeed.toFixed(2)}/seed`}
+              company="Seed Supreme"
+              strain={product.variety || product.cannabisType || "N/A"}
+              thc={formatTHC(product.thcText, product.thcMin, product.thcMax)}
+              cbd={formatCBD(product.cbdText, product.cbdMin, product.cbdMax)}
+              imageUrl={product.productImages[0]?.image.url}
+              productUrl={product.url}
+            />
           ))}
         </div>
 

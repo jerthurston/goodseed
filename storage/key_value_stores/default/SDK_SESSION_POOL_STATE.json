@@ -1,9 +1,9 @@
 {
-  "usableSessionsCount": 28,
+  "usableSessionsCount": 3,
   "retiredSessionsCount": 0,
   "sessions": [
     {
-      "id": "session_Nf2AJtlZb1",
+      "id": "session_xJoG8CWfs0",
       "cookieJar": {
         "version": "tough-cookie@6.0.0",
         "storeType": "MemoryCookieStore",
@@ -14,16 +14,16 @@
         "cookies": [
           {
             "key": "PHPSESSID",
-            "value": "kkg6a2kglibtv83da41v6iligf",
-            "expires": "2026-01-28T05:04:40.000Z",
+            "value": "htp0ies2n8rd7p5o53qeuu11vb",
+            "expires": "2026-01-28T23:40:28.000Z",
             "maxAge": 5184000,
             "domain": "seedsupreme.com",
             "path": "/",
             "secure": true,
             "httpOnly": true,
             "hostOnly": false,
-            "creation": "2025-11-29T05:04:40.647Z",
-            "lastAccessed": "2025-11-29T05:04:40.647Z",
+            "creation": "2025-11-29T23:40:28.419Z",
+            "lastAccessed": "2025-11-29T23:40:28.419Z",
             "sameSite": "lax"
           }
         ]
@@ -31,14 +31,14 @@
       "userData": {},
       "maxErrorScore": 3,
       "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:39.643Z",
-      "createdAt": "2025-11-29T05:04:39.643Z",
+      "expiresAt": "2025-11-30T00:30:27.457Z",
+      "createdAt": "2025-11-29T23:40:27.457Z",
       "usageCount": 1,
       "maxUsageCount": 50,
       "errorScore": 0
     },
     {
-      "id": "session_PZpa04twc0",
+      "id": "session_POv2LroLTN",
       "cookieJar": {
         "version": "tough-cookie@6.0.0",
         "storeType": "MemoryCookieStore",
@@ -49,16 +49,16 @@
         "cookies": [
           {
             "key": "PHPSESSID",
-            "value": "vn8kg8drl9crkp5m73vs572fem",
-            "expires": "2026-01-28T05:04:42.000Z",
+            "value": "ujmh7jjc9u3857dqa2irff0khd",
+            "expires": "2026-01-28T23:40:42.000Z",
             "maxAge": 5184000,
             "domain": "seedsupreme.com",
             "path": "/",
             "secure": true,
             "httpOnly": true,
             "hostOnly": false,
-            "creation": "2025-11-29T05:04:41.603Z",
-            "lastAccessed": "2025-11-29T05:04:41.603Z",
+            "creation": "2025-11-29T23:40:42.156Z",
+            "lastAccessed": "2025-11-29T23:40:42.459Z",
             "sameSite": "lax"
           }
         ]
@@ -66,14 +66,14 @@
       "userData": {},
       "maxErrorScore": 3,
       "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:41.277Z",
-      "createdAt": "2025-11-29T05:04:41.277Z",
+      "expiresAt": "2025-11-30T00:30:41.997Z",
+      "createdAt": "2025-11-29T23:40:41.997Z",
       "usageCount": 1,
       "maxUsageCount": 50,
       "errorScore": 0
     },
     {
-      "id": "session_urwg7eHFkD",
+      "id": "session_sYCqFO6PWa",
       "cookieJar": {
         "version": "tough-cookie@6.0.0",
         "storeType": "MemoryCookieStore",
@@ -84,16 +84,16 @@
         "cookies": [
           {
             "key": "PHPSESSID",
-            "value": "bujjsk65f6o3lsmivh3e0l7vpt",
-            "expires": "2026-01-28T05:04:42.000Z",
+            "value": "ilh7faakkiocvl7c8t165cqs6l",
+            "expires": "2026-01-28T23:40:53.000Z",
             "maxAge": 5184000,
             "domain": "seedsupreme.com",
             "path": "/",
             "secure": true,
             "httpOnly": true,
             "hostOnly": false,
-            "creation": "2025-11-29T05:04:41.663Z",
-            "lastAccessed": "2025-11-29T05:04:41.663Z",
+            "creation": "2025-11-29T23:40:53.445Z",
+            "lastAccessed": "2025-11-29T23:40:53.445Z",
             "sameSite": "lax"
           }
         ]
@@ -101,883 +101,8 @@
       "userData": {},
       "maxErrorScore": 3,
       "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:41.280Z",
-      "createdAt": "2025-11-29T05:04:41.280Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_vit69CHnIn",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "sok0546j78703ps4vpav88q04d",
-            "expires": "2026-01-28T05:04:42.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:41.864Z",
-            "lastAccessed": "2025-11-29T05:04:41.864Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:41.615Z",
-      "createdAt": "2025-11-29T05:04:41.615Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_bbsCpx9VaC",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "ghc2k21vpopksu8bmk4d6jvv8k",
-            "expires": "2026-01-28T05:04:42.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:41.909Z",
-            "lastAccessed": "2025-11-29T05:04:41.909Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:41.677Z",
-      "createdAt": "2025-11-29T05:04:41.677Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_WFSKIf79Cv",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "ui0ggfo22fgbr6c3lu95q5qq9b",
-            "expires": "2026-01-28T05:04:42.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:42.120Z",
-            "lastAccessed": "2025-11-29T05:04:42.120Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:41.881Z",
-      "createdAt": "2025-11-29T05:04:41.881Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_3XW7w7fwKT",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "pm0lc40aempouu1evpu0i3d1qu",
-            "expires": "2026-01-28T05:04:42.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:42.157Z",
-            "lastAccessed": "2025-11-29T05:04:42.157Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:41.925Z",
-      "createdAt": "2025-11-29T05:04:41.925Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_9YsCYg2hZG",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "oi3n3d54426dbkpps0a3b8aukv",
-            "expires": "2026-01-28T05:04:42.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:42.380Z",
-            "lastAccessed": "2025-11-29T05:04:42.380Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:42.134Z",
-      "createdAt": "2025-11-29T05:04:42.134Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_VPJbWpianZ",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "lcivf3fdfbdbs3fts77a02jga4",
-            "expires": "2026-01-28T05:04:42.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:42.421Z",
-            "lastAccessed": "2025-11-29T05:04:42.421Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:42.173Z",
-      "createdAt": "2025-11-29T05:04:42.173Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_CDyoRydi2o",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "kr9a2bqatem0vj5h2vle4ib7c0",
-            "expires": "2026-01-28T05:04:43.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:42.721Z",
-            "lastAccessed": "2025-11-29T05:04:42.721Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:42.399Z",
-      "createdAt": "2025-11-29T05:04:42.399Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_c3RipF4kKh",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "hrtfb2ljt9fsf2vc71k1132thd",
-            "expires": "2026-01-28T05:04:43.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:42.744Z",
-            "lastAccessed": "2025-11-29T05:04:42.744Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:42.445Z",
-      "createdAt": "2025-11-29T05:04:42.445Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_ha8ycgWPps",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "4i45k4boil6n3m64m4klkmhd61",
-            "expires": "2026-01-28T05:04:46.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:45.776Z",
-            "lastAccessed": "2025-11-29T05:04:46.012Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:45.617Z",
-      "createdAt": "2025-11-29T05:04:45.617Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_bf7Etkle8y",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "97t9ch44eupfbjgsm8g98crk6h",
-            "expires": "2026-01-28T05:04:47.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:46.911Z",
-            "lastAccessed": "2025-11-29T05:04:46.911Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:46.641Z",
-      "createdAt": "2025-11-29T05:04:46.641Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_7osuLkbezA",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "3b054e54sa8go0cr6dc01184lj",
-            "expires": "2026-01-28T05:04:47.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:46.883Z",
-            "lastAccessed": "2025-11-29T05:04:46.883Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:46.643Z",
-      "createdAt": "2025-11-29T05:04:46.643Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_FXvZZt9EKC",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "kt47nbqdvcdtdu0er6juihf0u4",
-            "expires": "2026-01-28T05:04:47.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:47.118Z",
-            "lastAccessed": "2025-11-29T05:04:47.118Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:46.898Z",
-      "createdAt": "2025-11-29T05:04:46.898Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_VtUcar0KbY",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "2qsnj2shv4e0tv4tf7j7578r5f",
-            "expires": "2026-01-28T05:04:47.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:47.160Z",
-            "lastAccessed": "2025-11-29T05:04:47.160Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:46.923Z",
-      "createdAt": "2025-11-29T05:04:46.923Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_QI4QBqAccH",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "6veoplutt6k9315mrn0u7sofp7",
-            "expires": "2026-01-28T05:04:47.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:47.392Z",
-            "lastAccessed": "2025-11-29T05:04:47.392Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:47.132Z",
-      "createdAt": "2025-11-29T05:04:47.132Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_FKatO30bEQ",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "g4b2e5r8evuboigs565rb89gv0",
-            "expires": "2026-01-28T05:04:47.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:47.426Z",
-            "lastAccessed": "2025-11-29T05:04:47.426Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:47.179Z",
-      "createdAt": "2025-11-29T05:04:47.179Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_EfxC1elO5s",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "9qpkbk80ojjsctqqq6n4s5v9jk",
-            "expires": "2026-01-28T05:04:48.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:47.636Z",
-            "lastAccessed": "2025-11-29T05:04:47.636Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:47.411Z",
-      "createdAt": "2025-11-29T05:04:47.411Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_OtQb9d7TYL",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "5fe3i7vguu68umjiebhbjc21qs",
-            "expires": "2026-01-28T05:04:48.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:47.675Z",
-            "lastAccessed": "2025-11-29T05:04:47.675Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:47.444Z",
-      "createdAt": "2025-11-29T05:04:47.444Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_bOiH2Uy7eg",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "8ha3dv84c7oum5qjfqm1n3i46t",
-            "expires": "2026-01-28T05:04:48.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:47.885Z",
-            "lastAccessed": "2025-11-29T05:04:47.885Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:47.651Z",
-      "createdAt": "2025-11-29T05:04:47.651Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_YTOZsVmYzM",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "c2rclug2bv2es74l9j8l1e4iuo",
-            "expires": "2026-01-28T05:04:48.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:47.913Z",
-            "lastAccessed": "2025-11-29T05:04:47.913Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:47.696Z",
-      "createdAt": "2025-11-29T05:04:47.696Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_OIDaXIeMWe",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "34duhcp4stmm74rcrvfftr7m9f",
-            "expires": "2026-01-28T05:04:51.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:51.018Z",
-            "lastAccessed": "2025-11-29T05:04:51.018Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:50.792Z",
-      "createdAt": "2025-11-29T05:04:50.792Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_nFiplPhb9Y",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "13e3g736gsslf48amdulj1744v",
-            "expires": "2026-01-28T05:04:52.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:51.865Z",
-            "lastAccessed": "2025-11-29T05:04:51.865Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:51.637Z",
-      "createdAt": "2025-11-29T05:04:51.637Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_O0mqbBaSfK",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "p06km46bs4338r8ntfr8g2agua",
-            "expires": "2026-01-28T05:04:52.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:51.882Z",
-            "lastAccessed": "2025-11-29T05:04:51.882Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:51.641Z",
-      "createdAt": "2025-11-29T05:04:51.641Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_1vcS8GKPMh",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "nlqsku17nvhjism8e4st57kl7u",
-            "expires": "2026-01-28T05:04:52.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:52.114Z",
-            "lastAccessed": "2025-11-29T05:04:52.114Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:51.895Z",
-      "createdAt": "2025-11-29T05:04:51.895Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_TB6beY8zvG",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "2dn2e3194c733i6a4r96v09o6n",
-            "expires": "2026-01-28T05:04:52.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:52.133Z",
-            "lastAccessed": "2025-11-29T05:04:52.133Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:51.897Z",
-      "createdAt": "2025-11-29T05:04:51.897Z",
-      "usageCount": 1,
-      "maxUsageCount": 50,
-      "errorScore": 0
-    },
-    {
-      "id": "session_dr7u0BUPQB",
-      "cookieJar": {
-        "version": "tough-cookie@6.0.0",
-        "storeType": "MemoryCookieStore",
-        "rejectPublicSuffixes": true,
-        "enableLooseMode": false,
-        "allowSpecialUseDomain": true,
-        "prefixSecurity": "silent",
-        "cookies": [
-          {
-            "key": "PHPSESSID",
-            "value": "t1e13a8qti64msb5fa3h1fu417",
-            "expires": "2026-01-28T05:04:52.000Z",
-            "maxAge": 5184000,
-            "domain": "seedsupreme.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": false,
-            "creation": "2025-11-29T05:04:52.394Z",
-            "lastAccessed": "2025-11-29T05:04:52.394Z",
-            "sameSite": "lax"
-          }
-        ]
-      },
-      "userData": {},
-      "maxErrorScore": 3,
-      "errorScoreDecrement": 0.5,
-      "expiresAt": "2025-11-29T05:54:52.169Z",
-      "createdAt": "2025-11-29T05:04:52.169Z",
+      "expiresAt": "2025-11-30T00:30:53.124Z",
+      "createdAt": "2025-11-29T23:40:53.124Z",
       "usageCount": 1,
       "maxUsageCount": 50,
       "errorScore": 0

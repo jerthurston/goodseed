@@ -1,0 +1,607 @@
+{
+	"products": [
+		{
+			"name": "Blue Dream Autoflower",
+			"url": "https://seedsupreme.com/blue-dream-autoflower.html",
+			"slug": "blue-dream-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/b/l/bluedream_auto.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Fruity Pebbles OG (FPOG) Feminized",
+			"url": "https://seedsupreme.com/fruity-pebbles-feminized.html",
+			"slug": "fruity-pebbles-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/f/r/fruity_pebbles.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Godfather OG Feminized",
+			"url": "https://seedsupreme.com/godfather-og-feminized-seeds.html",
+			"slug": "godfather-og-feminized-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/g/o/godfather_og.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Acapulco Gold Feminized",
+			"url": "https://seedsupreme.com/acapulco-gold-feminized.html",
+			"slug": "acapulco-gold-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/a/c/acapulco_gold.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Green Crack Autoflower",
+			"url": "https://seedsupreme.com/green-crack-autoflower.html",
+			"slug": "green-crack-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/g/r/greencrack_auto.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Doug’s Varin Feminized",
+			"url": "https://seedsupreme.com/dougs-varin-feminized.html",
+			"slug": "dougs-varin-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/d/o/doug_s_varin.png",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Pure Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Apple Fritter Feminized",
+			"url": "https://seedsupreme.com/apple-fritter-feminized.html",
+			"slug": "apple-fritter-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/a/p/apple_fritter.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Oh My Thai Autoflower - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/oh-my-thai-autoflower-cannabis-seeds.html",
+			"slug": "oh-my-thai-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/o/h/oh-my-thai_900.jpg",
+			"basePrice": "$60.00",
+			"basePriceNum": 60,
+			"packSize": 4,
+			"pricePerSeed": 15,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Acapulco Gold Autoflowering",
+			"url": "https://seedsupreme.com/acapulco-gold-autoflower.html",
+			"slug": "acapulco-gold-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "OG Kush Feminized",
+			"url": "https://seedsupreme.com/og-kush-feminized.html",
+			"slug": "og-kush-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Khalifa Kush Autoflower",
+			"url": "https://seedsupreme.com/khalifa-kush-autoflower-seeds.html",
+			"slug": "khalifa-kush-autoflower-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Amnesia Haze Feminized",
+			"url": "https://seedsupreme.com/amnesia-haze-feminized.html",
+			"slug": "amnesia-haze-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Girl Scout Cookies Autoflower",
+			"url": "https://seedsupreme.com/girl-scout-cookies-autoflower.html",
+			"slug": "girl-scout-cookies-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "AK-47 Autoflower",
+			"url": "https://seedsupreme.com/ak-47-autoflower.html",
+			"slug": "ak-47-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "GG 4 x Zkittles Feminized",
+			"url": "https://seedsupreme.com/gg-4-x-zkittles-feminized-seeds.html",
+			"slug": "gg-4-x-zkittles-feminized-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Cristal Metal Autoflower",
+			"url": "https://seedsupreme.com/cristal-metal-autoflower.html",
+			"slug": "cristal-metal-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Pineapple Diesel Autoflower - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/pineapple-diesel-autoflower-cannabis-seeds.html",
+			"slug": "pineapple-diesel-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "London Pound Cake Feminized",
+			"url": "https://seedsupreme.com/london-pound-cake-feminized-seeds.html",
+			"slug": "london-pound-cake-feminized-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Candy Games #25 Feminized - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/candy-games-25-feminized-cannabis-seeds.html",
+			"slug": "candy-games-25-feminized-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Runtz Autoflower",
+			"url": "https://seedsupreme.com/runtz-autoflower.html",
+			"slug": "runtz-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Gary Payton Feminized",
+			"url": "https://seedsupreme.com/gary-payton-feminized.html",
+			"slug": "gary-payton-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Everglades OG Autoflower - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/everglades-autoflower-cannabis-seeds.html",
+			"slug": "everglades-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Mimosa Feminized",
+			"url": "https://seedsupreme.com/mimosa-fem-seeds.html",
+			"slug": "mimosa-fem-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Sirius Black Feminized",
+			"url": "https://seedsupreme.com/sirius-black-feminized.html",
+			"slug": "sirius-black-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Game Over Feminized - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/game-over-feminized-cannabis-seeds.html",
+			"slug": "game-over-feminized-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "High THC Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/high-thc-autoflower-seed-mix.html",
+			"slug": "high-thc-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Bacio Gelato Feminized",
+			"url": "https://seedsupreme.com/bacio-gelato-feminized.html",
+			"slug": "bacio-gelato-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Shortcut Autoflower - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/shortcut-autoflower-cannabis-seeds.html",
+			"slug": "shortcut-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Pine Autoflower",
+			"url": "https://seedsupreme.com/pine-autoflower-cannabis-seeds.html",
+			"slug": "pine-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Sativa",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Candy Games #38 Feminized - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/candy-games-38-feminized-cannabis-seeds.html",
+			"slug": "candy-games-38-feminized-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Cake Bomb Feminized",
+			"url": "https://seedsupreme.com/cake-bomb-feminized.html",
+			"slug": "cake-bomb-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Baller's Game Feminized - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/ballers-game-feminized-cannabis-seeds.html",
+			"slug": "ballers-game-feminized-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$60.00",
+			"basePriceNum": 60,
+			"packSize": 4,
+			"pricePerSeed": 15,
+			"stockStatus": "In Stock",
+			"variety": "Indica",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Black Demon OG Feminized",
+			"url": "https://seedsupreme.com/black-demon-og-feminized.html",
+			"slug": "black-demon-og-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Ghost Train Haze x Pellezino Feminized",
+			"url": "https://seedsupreme.com/ghost-train-haze-x-pellezino-fem.html",
+			"slug": "ghost-train-haze-x-pellezino-fem",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Gelato Feminized",
+			"url": "https://seedsupreme.com/gelato-feminized.html",
+			"slug": "gelato-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Pineapple Daddy Autoflower - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/pineapple-daddy-autoflower-cannabis-seeds.html",
+			"slug": "pineapple-daddy-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "High THC Feminized Seed Mix",
+			"url": "https://seedsupreme.com/high-thc-feminized-seed-mix.html",
+			"slug": "high-thc-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Another Level Feminized - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/another-level-feminized-cannabis-seeds.html",
+			"slug": "another-level-feminized-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$60.00",
+			"basePriceNum": 60,
+			"packSize": 4,
+			"pricePerSeed": 15,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Blue Cheese Autoflower",
+			"url": "https://seedsupreme.com/blue-cheese-autoflower.html",
+			"slug": "blue-cheese-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Medium (10-15%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Easy Button Autoflower - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/easy-button-autoflower-cannabis-seeds.html",
+			"slug": "easy-button-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		}
+	],
+	"pageNum": 1
+}

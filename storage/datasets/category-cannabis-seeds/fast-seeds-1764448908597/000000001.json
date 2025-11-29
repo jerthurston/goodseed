@@ -1,0 +1,206 @@
+{
+	"products": [
+		{
+			"name": "Bruce Banner Fast Version",
+			"url": "https://seedsupreme.com/bruce-banner-fast-version.html",
+			"slug": "bruce-banner-fast-version",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/b/r/bruce_banner_5.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Northern Lights Fast Version",
+			"url": "https://seedsupreme.com/northern-lights-fast-version.html",
+			"slug": "northern-lights-fast-version",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/n/o/northern_lights_5.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "OG Kush Fast Version",
+			"url": "https://seedsupreme.com/og-kush-fast-version.html",
+			"slug": "og-kush-fast-version",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/o/g/og_kush_6.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Fast Flower Feminized Seed Mix",
+			"url": "https://seedsupreme.com/fast-flower-feminized-seed-mix.html",
+			"slug": "fast-flower-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/f/a/fast_flower_feminized-1.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "AK-47 Fast Version",
+			"url": "https://seedsupreme.com/ak-47-fast-version.html",
+			"slug": "ak-47-fast-version",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/a/k/ak-47_4.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Big Bud Fast Version",
+			"url": "https://seedsupreme.com/big-bud-fast-version.html",
+			"slug": "big-bud-fast-version",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/b/i/big_bud_2.png",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "Blue Princess Fast Version Cannabis Seeds - Homegrown Cannabis Co.",
+			"url": "https://seedsupreme.com/blue-princess-fast-version-cannabis-seeds.html",
+			"slug": "blue-princess-fast-version-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/b/l/blue-princess-fast-version_1.jpg",
+			"basePrice": "$49.00",
+			"basePriceNum": 49,
+			"packSize": 4,
+			"pricePerSeed": 12.25,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "White Russian Fast Version",
+			"url": "https://seedsupreme.com/white-russian-fast-version.html",
+			"slug": "white-russian-fast-version",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/w/h/white_russian_2.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Skunk Fast Version",
+			"url": "https://seedsupreme.com/skunk-fast-version.html",
+			"slug": "skunk-fast-version",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Amnesia Lemon Fast Version",
+			"url": "https://seedsupreme.com/amnesia-lemon-fast-version.html",
+			"slug": "amnesia-lemon-fast-version",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Black Domina Fast Version Cannabis Seeds",
+			"url": "https://seedsupreme.com/black-domina-fast-version-cannabis-seeds.html",
+			"slug": "black-domina-fast-version-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Cinderella 99 Fast Version",
+			"url": "https://seedsupreme.com/cinderella-99-fast-version.html",
+			"slug": "cinderella-99-fast-version",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Amnesia Fast Version",
+			"url": "https://seedsupreme.com/amnesia-fast-version.html",
+			"slug": "amnesia-fast-version",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		}
+	],
+	"pageNum": 1
+}

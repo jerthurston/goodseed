@@ -1,0 +1,612 @@
+{
+	"products": [
+		{
+			"name": "Blue Dream Autoflower",
+			"url": "https://seedsupreme.com/blue-dream-autoflower.html",
+			"slug": "blue-dream-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/b/l/bluedream_auto.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Lemon Diesel Feminized",
+			"url": "https://seedsupreme.com/lemon-diesel-feminized.html",
+			"slug": "lemon-diesel-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/l/e/lemon_diesel_1.png",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Black Jack Autoflower",
+			"url": "https://seedsupreme.com/black-jack-autoflower.html",
+			"slug": "black-jack-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/b/l/black_jack_1.png",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Northern Lights Feminized",
+			"url": "https://seedsupreme.com/northern-lights-feminized.html",
+			"slug": "northern-lights-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/n/o/northern_lights_6.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Maui Wowie Feminized",
+			"url": "https://seedsupreme.com/maui-wowie-feminized.html",
+			"slug": "maui-wowie-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/m/a/mauiwowi.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Alaskan Thunderfuck Feminized",
+			"url": "https://seedsupreme.com/alaskan-thunderfuck-feminized.html",
+			"slug": "alaskan-thunderfuck-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/a/l/alaskan_thunderfuck.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "OG Kush Feminized",
+			"url": "https://seedsupreme.com/og-kush-feminized.html",
+			"slug": "og-kush-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/o/g/og_kush_7.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Khalifa Kush Autoflower",
+			"url": "https://seedsupreme.com/khalifa-kush-autoflower-seeds.html",
+			"slug": "khalifa-kush-autoflower-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/k/h/khalifa_kush_auto.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Banana Kush Autoflower",
+			"url": "https://seedsupreme.com/banana-kush-autoflower.html",
+			"slug": "banana-kush-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "Northern Lights x Blueberry Autoflower",
+			"url": "https://seedsupreme.com/northern-lights-x-blueberry-autoflower.html",
+			"slug": "northern-lights-x-blueberry-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "Girl Scout Cookies Feminized",
+			"url": "https://seedsupreme.com/girl-scout-cookies-feminized.html",
+			"slug": "girl-scout-cookies-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Durban Poison Feminized",
+			"url": "https://seedsupreme.com/durban-poison-feminized.html",
+			"slug": "durban-poison-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Bruce Banner Feminized",
+			"url": "https://seedsupreme.com/bruce-banner-feminized.html",
+			"slug": "bruce-banner-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Purple Kush Autoflower",
+			"url": "https://seedsupreme.com/purple-kush-autoflower.html",
+			"slug": "purple-kush-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "GG 4 x Zkittles Feminized",
+			"url": "https://seedsupreme.com/gg-4-x-zkittles-feminized-seeds.html",
+			"slug": "gg-4-x-zkittles-feminized-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Bruce Banner Autoflower",
+			"url": "https://seedsupreme.com/bruce-banner-autoflower.html",
+			"slug": "bruce-banner-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Critical Mass Autoflower",
+			"url": "https://seedsupreme.com/critical-mass-autoflower.html",
+			"slug": "critical-mass-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "Jack Herer Autoflower",
+			"url": "https://seedsupreme.com/jack-herer-autoflower.html",
+			"slug": "jack-herer-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Northern Lights #5 x Amnesia Haze Feminized",
+			"url": "https://seedsupreme.com/northern-lights-5-x-amnesia-haze-feminized.html",
+			"slug": "northern-lights-5-x-amnesia-haze-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Afghan Kush Feminized",
+			"url": "https://seedsupreme.com/afghan-kush-feminized.html",
+			"slug": "afghan-kush-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Gelato Autoflower",
+			"url": "https://seedsupreme.com/gelato-autoflower.html",
+			"slug": "gelato-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Northern Lights #10 x Amnesia Haze Feminized",
+			"url": "https://seedsupreme.com/northern-lights-10-x-amnesia-haze-feminized.html",
+			"slug": "northern-lights-10-x-amnesia-haze-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Blueberry x OG Kush Feminized",
+			"url": "https://seedsupreme.com/blueberry-x-og-kush-feminized.html",
+			"slug": "blueberry-x-og-kush-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Early Skunk Feminized",
+			"url": "https://seedsupreme.com/early-skunk-feminized.html",
+			"slug": "early-skunk-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "Gary Payton Feminized",
+			"url": "https://seedsupreme.com/gary-payton-feminized.html",
+			"slug": "gary-payton-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Pineapple Autoflower",
+			"url": "https://seedsupreme.com/pineapple-autoflower.html",
+			"slug": "pineapple-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Tangerine Autoflower",
+			"url": "https://seedsupreme.com/tangerine-autoflower.html",
+			"slug": "tangerine-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Purple Haze Feminized",
+			"url": "https://seedsupreme.com/purple-haze-feminized.html",
+			"slug": "purple-haze-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Lemon Haze Autoflower",
+			"url": "https://seedsupreme.com/lemon-haze-autoflower.html",
+			"slug": "lemon-haze-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Purple Kush x White Russian Feminized",
+			"url": "https://seedsupreme.com/purple-kush-x-white-russian-feminized.html",
+			"slug": "purple-kush-x-white-russian-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "Lowryder Autoflower",
+			"url": "https://seedsupreme.com/lowryder-autoflower.html",
+			"slug": "lowryder-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "Northern Lights x Big Bud Autoflower",
+			"url": "https://seedsupreme.com/northern-lights-x-big-bud-autoflower.html",
+			"slug": "northern-lights-x-big-bud-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "White Widow Regular",
+			"url": "https://seedsupreme.com/white-widow-regular.html",
+			"slug": "white-widow-regular",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Afghan Autoflower",
+			"url": "https://seedsupreme.com/afghan-autoflower.html",
+			"slug": "afghan-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Blueberry x Cream Cheese Autoflower",
+			"url": "https://seedsupreme.com/blueberry-x-cream-cheese-autoflower.html",
+			"slug": "blueberry-x-cream-cheese-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Sunset Sherbet Feminized",
+			"url": "https://seedsupreme.com/sunset-sherbet-feminized.html",
+			"slug": "sunset-sherbet-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "Black Widow Feminized",
+			"url": "https://seedsupreme.com/black-widow-feminized.html",
+			"slug": "black-widow-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Runtz Feminized",
+			"url": "https://seedsupreme.com/runtz-feminized.html",
+			"slug": "runtz-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "AK-47 Feminized",
+			"url": "https://seedsupreme.com/ak-47-feminized.html",
+			"slug": "ak-47-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Chemdog #4 (1:1) Feminized",
+			"url": "https://seedsupreme.com/cbd-chemdog-4-1-1-feminized.html",
+			"slug": "cbd-chemdog-4-1-1-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Low (5-10%)"
+		}
+	],
+	"pageNum": 1
+}

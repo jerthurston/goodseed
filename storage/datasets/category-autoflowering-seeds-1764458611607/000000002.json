@@ -1,0 +1,615 @@
+{
+	"products": [
+		{
+			"name": "G13 Autoflower",
+			"url": "https://seedsupreme.com/g13-autoflower.html",
+			"slug": "g13-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/g/-/g-13_2.png",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Lowryder Autoflower",
+			"url": "https://seedsupreme.com/lowryder-autoflower.html",
+			"slug": "lowryder-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/l/o/lowryder_1.png",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "Super Skunk Autoflower",
+			"url": "https://seedsupreme.com/super-skunk-autoflower.html",
+			"slug": "super-skunk-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/s/u/super_skunk_2.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Jack Cookies Autoflower",
+			"url": "https://seedsupreme.com/jack-cookies-autoflower.html",
+			"slug": "jack-cookies-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/j/a/jack-cookies-auto.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "High THC Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/high-thc-autoflower-seed-mix.html",
+			"slug": "high-thc-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/h/i/high_thc_autoflower.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Shortcut Autoflower - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/shortcut-autoflower-cannabis-seeds.html",
+			"slug": "shortcut-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/o/p/open-season_900_2.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Northern Lights x Big Bud Autoflower",
+			"url": "https://seedsupreme.com/northern-lights-x-big-bud-autoflower.html",
+			"slug": "northern-lights-x-big-bud-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/n/o/northern_lights_x_big_bud_1.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Pine Autoflower",
+			"url": "https://seedsupreme.com/pine-autoflower-cannabis-seeds.html",
+			"slug": "pine-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/p/i/pine_auto_1.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Sativa",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Afghan Autoflower",
+			"url": "https://seedsupreme.com/afghan-autoflower.html",
+			"slug": "afghan-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Blueberry x Cream Cheese Autoflower",
+			"url": "https://seedsupreme.com/blueberry-x-cream-cheese-autoflower.html",
+			"slug": "blueberry-x-cream-cheese-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Wedding Cake Autoflower",
+			"url": "https://seedsupreme.com/wedding-cake-autoflower.html",
+			"slug": "wedding-cake-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Apple Fritter Autoflower",
+			"url": "https://seedsupreme.com/apple-fritter-autoflower-seeds.html",
+			"slug": "apple-fritter-autoflower-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Blueberry Autoflower",
+			"url": "https://seedsupreme.com/blueberry-autoflower.html",
+			"slug": "blueberry-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Bubblegum Autoflower",
+			"url": "https://seedsupreme.com/bubblegum-autoflower.html",
+			"slug": "bubblegum-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Indica Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/indica-autoflower-seed-mix.html",
+			"slug": "indica-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Kush Autoflower",
+			"url": "https://seedsupreme.com/cbd-kush-autoflower.html",
+			"slug": "cbd-kush-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Low (5-10%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Pineapple Daddy Autoflower - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/pineapple-daddy-autoflower-cannabis-seeds.html",
+			"slug": "pineapple-daddy-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Quarter Pounder Autoflowering",
+			"url": "https://seedsupreme.com/quarter-pounder-autoflowering.html",
+			"slug": "quarter-pounder-autoflowering",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Zkittlez Autoflower",
+			"url": "https://seedsupreme.com/zkittlez-autoflower.html",
+			"slug": "zkittlez-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "Do-Si-Dos Autoflower",
+			"url": "https://seedsupreme.com/do-si-dos-autoflower.html",
+			"slug": "do-si-dos-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Blue Cheese Autoflower",
+			"url": "https://seedsupreme.com/blue-cheese-autoflower.html",
+			"slug": "blue-cheese-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Medium (10-15%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Easy Button Autoflower - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/easy-button-autoflower-cannabis-seeds.html",
+			"slug": "easy-button-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Yumbolt Autoflower",
+			"url": "https://seedsupreme.com/yumbolt-autoflower.html",
+			"slug": "yumbolt-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Grapefruit Autoflower",
+			"url": "https://seedsupreme.com/grapefruit-autoflower.html",
+			"slug": "grapefruit-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Zookies Autoflower Cannabis",
+			"url": "https://seedsupreme.com/zookies-autoflower.html",
+			"slug": "zookies-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Forbidden Runtz Autoflower",
+			"url": "https://seedsupreme.com/forbidden-runtz-autoflower.html",
+			"slug": "forbidden-runtz-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD White Widow Autoflower",
+			"url": "https://seedsupreme.com/cbd-white-widow-autoflower.html",
+			"slug": "cbd-white-widow-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Minimum (0-5%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Indoor Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/indoor-autoflower-seed-mix.html",
+			"slug": "indoor-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Regular Seed Mix",
+			"url": "https://seedsupreme.com/regular-seed-mix.html",
+			"slug": "regular-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Critical Autoflower",
+			"url": "https://seedsupreme.com/critical-autoflower.html",
+			"slug": "critical-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Medium (10-15%)"
+		},
+		{
+			"name": "Deelite Autoflower",
+			"url": "https://seedsupreme.com/deelite-autoflower.html",
+			"slug": "deelite-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Beginner's Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/beginners-autoflower-seed-mix.html",
+			"slug": "beginners-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Sweet Tooth Autoflower",
+			"url": "https://seedsupreme.com/sweet-tooth-autoflower.html",
+			"slug": "sweet-tooth-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Gold Leaf Autoflower Cannabis Seeds",
+			"url": "https://seedsupreme.com/gold-leaf-autoflower-cannabis-seeds.html",
+			"slug": "gold-leaf-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Blueberry x Big Bud Autoflower",
+			"url": "https://seedsupreme.com/blueberry-x-big-bud-autoflower.html",
+			"slug": "blueberry-x-big-bud-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Peanut Butter Breath Autoflower",
+			"url": "https://seedsupreme.com/peanut-butter-breath-autoflower-seeds.html",
+			"slug": "peanut-butter-breath-autoflower-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Aurora Autoflower Cannabis Seeds",
+			"url": "https://seedsupreme.com/aurora-auto-cannabis-seeds.html",
+			"slug": "aurora-auto-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Super Silver Haze Autoflower",
+			"url": "https://seedsupreme.com/super-silver-haze-autoflower.html",
+			"slug": "super-silver-haze-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "GMO Autoflower Seeds",
+			"url": "https://seedsupreme.com/gmo-autoflower-seeds.html",
+			"slug": "gmo-autoflower-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Sativa Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/sativa-autoflower-seed-mix.html",
+			"slug": "sativa-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		}
+	],
+	"pageNum": 2
+}

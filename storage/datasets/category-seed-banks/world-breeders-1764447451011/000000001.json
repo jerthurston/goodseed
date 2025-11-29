@@ -1,0 +1,122 @@
+{
+	"products": [
+		{
+			"name": "Hokuzan Feminized - World Breeders",
+			"url": "https://seedsupreme.com/hokuzan-feminized.html",
+			"slug": "hokuzan-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/h/o/hokuzan_3_1.jpg",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Tropic Gem Feminized - World Breeders",
+			"url": "https://seedsupreme.com/tropic-gem-feminized.html",
+			"slug": "tropic-gem-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/t/r/tropic-gem.jpg",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Hidden Vice Feminized - World Breeders",
+			"url": "https://seedsupreme.com/hidden-vice-feminized.html",
+			"slug": "hidden-vice-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/h/i/hidden-vice.jpg",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Pilot Feminized - World Breeders",
+			"url": "https://seedsupreme.com/pilot-feminized.html",
+			"slug": "pilot-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/p/i/pilot_1_.jpg",
+			"basePrice": "$34.98",
+			"basePriceNum": 34.98,
+			"packSize": 4,
+			"pricePerSeed": 8.745,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "Cherry Crush Feminized - World Breeders",
+			"url": "https://seedsupreme.com/cherry-crush-feminized.html",
+			"slug": "cherry-crush-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/h/cherry-crush_zoom_icon.jpg_1_.png",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Crunch Feminized - World Breeders",
+			"url": "https://seedsupreme.com/crunch-feminized.html",
+			"slug": "crunch-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/r/crunch_zoom_icon.jpg_3.png",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Pink Truffle Feminized - World Breeders",
+			"url": "https://seedsupreme.com/pink-truffle-feminized.html",
+			"slug": "pink-truffle-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/p/i/pink-truffle_zoom_icon.jpg_1_.png",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Clementine Slush Feminized - World Breeders",
+			"url": "https://seedsupreme.com/clementine-slush-feminized.html",
+			"slug": "clementine-slush-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/l/clementine-slush_zoom_icon.jpg_1_.png",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Fizzy Gum Feminized - World Breeders",
+			"url": "https://seedsupreme.com/fizzy-gum-feminized.html",
+			"slug": "fizzy-gum-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/b/u/bubbaloo_zoom_icon.jpg_1_.png",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "High (15-20%)"
+		}
+	],
+	"pageNum": 1
+}

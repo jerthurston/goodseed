@@ -1,0 +1,315 @@
+{
+	"products": [
+		{
+			"name": "Blue Dream Autoflower",
+			"url": "https://seedsupreme.com/blue-dream-autoflower.html",
+			"slug": "blue-dream-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/b/l/bluedream_auto.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Acapulco Gold Feminized",
+			"url": "https://seedsupreme.com/acapulco-gold-feminized.html",
+			"slug": "acapulco-gold-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/a/c/acapulco_gold.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Doug’s Varin Feminized",
+			"url": "https://seedsupreme.com/dougs-varin-feminized.html",
+			"slug": "dougs-varin-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/d/o/doug_s_varin.png",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Pure Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Maui Wowie Feminized",
+			"url": "https://seedsupreme.com/maui-wowie-feminized.html",
+			"slug": "maui-wowie-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/m/a/mauiwowi.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Apple Fritter Feminized",
+			"url": "https://seedsupreme.com/apple-fritter-feminized.html",
+			"slug": "apple-fritter-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/a/p/apple_fritter.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Alaskan Thunderfuck Feminized",
+			"url": "https://seedsupreme.com/alaskan-thunderfuck-feminized.html",
+			"slug": "alaskan-thunderfuck-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/a/l/alaskan_thunderfuck.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Oh My Thai Autoflower - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/oh-my-thai-autoflower-cannabis-seeds.html",
+			"slug": "oh-my-thai-autoflower-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/o/h/oh-my-thai_900.jpg",
+			"basePrice": "$60.00",
+			"basePriceNum": 60,
+			"packSize": 4,
+			"pricePerSeed": 15,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Acapulco Gold Autoflowering",
+			"url": "https://seedsupreme.com/acapulco-gold-autoflower.html",
+			"slug": "acapulco-gold-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/a/c/acapulco_gold_2.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Durban Poison Autoflower",
+			"url": "https://seedsupreme.com/durban-poison-autoflower.html",
+			"slug": "durban-poison-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Sativa",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Candy Games #25 Feminized - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/candy-games-25-feminized-cannabis-seeds.html",
+			"slug": "candy-games-25-feminized-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Gary Payton Feminized",
+			"url": "https://seedsupreme.com/gary-payton-feminized.html",
+			"slug": "gary-payton-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Game Over Feminized - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/game-over-feminized-cannabis-seeds.html",
+			"slug": "game-over-feminized-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Cake Bomb Feminized",
+			"url": "https://seedsupreme.com/cake-bomb-feminized.html",
+			"slug": "cake-bomb-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Pink Truffle Feminized - World Breeders",
+			"url": "https://seedsupreme.com/pink-truffle-feminized.html",
+			"slug": "pink-truffle-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Quarter Pounder Autoflowering",
+			"url": "https://seedsupreme.com/quarter-pounder-autoflowering.html",
+			"slug": "quarter-pounder-autoflowering",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Dosed Chocolate Chips Feminized",
+			"url": "https://seedsupreme.com/dosed-chocolate-chips-feminized.html",
+			"slug": "dosed-chocolate-chips-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Sativa Feminized Seed Mix",
+			"url": "https://seedsupreme.com/sativa-feminized-seed-mix.html",
+			"slug": "sativa-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Knockout Feminized - Happy Valley Genetics",
+			"url": "https://seedsupreme.com/knockout-feminized-cannabis-seeds.html",
+			"slug": "knockout-feminized-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$40.00",
+			"basePriceNum": 40,
+			"packSize": 4,
+			"pricePerSeed": 10,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Clementine Slush Feminized - World Breeders",
+			"url": "https://seedsupreme.com/clementine-slush-feminized.html",
+			"slug": "clementine-slush-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Sativa Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/sativa-autoflower-seed-mix.html",
+			"slug": "sativa-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Pilot Feminized - World Breeders",
+			"url": "https://seedsupreme.com/pilot-feminized.html",
+			"slug": "pilot-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$34.98",
+			"basePriceNum": 34.98,
+			"packSize": 4,
+			"pricePerSeed": 8.745,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "High (15-20%)"
+		}
+	],
+	"pageNum": 1
+}

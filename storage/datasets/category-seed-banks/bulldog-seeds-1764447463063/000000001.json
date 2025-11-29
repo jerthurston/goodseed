@@ -1,0 +1,122 @@
+{
+	"products": [
+		{
+			"name": "Grease Monkey Feminized - The Bulldog",
+			"url": "https://seedsupreme.com/grease-monkey-feminized.html",
+			"slug": "grease-monkey-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-grease-monkey.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Rainbow Chip Feminized - Seed Supreme x The Bulldog",
+			"url": "https://seedsupreme.com/rainbow-chip-feminized.html",
+			"slug": "rainbow-chip-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-rainbow_chip.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Dante's Inferno Feminized - The Bulldog",
+			"url": "https://seedsupreme.com/dante-s-inferno-feminized.html",
+			"slug": "dante-s-inferno-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-dantes_inferno.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Purple Octane Feminized - The Bulldog",
+			"url": "https://seedsupreme.com/purple-octane-feminized.html",
+			"slug": "purple-octane-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-purple_octane.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Mango Sherbet Auto - Seed Supreme x The Bulldog",
+			"url": "https://seedsupreme.com/mango-sherbet-auto.html",
+			"slug": "mango-sherbet-auto",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-mango_sherbet_auto.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Malawi Feminized - Seed Supreme x The Bulldog",
+			"url": "https://seedsupreme.com/malawi-feminized.html",
+			"slug": "malawi-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-malawi.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Freakshow Feminized - The Bulldog",
+			"url": "https://seedsupreme.com/freakshow-feminized.html",
+			"slug": "freakshow-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-freakshow.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Tropicana Cherry Feminized - The Bulldog",
+			"url": "https://seedsupreme.com/tropicana-cherry-feminized.html",
+			"slug": "tropicana-cherry-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-tropicana_cherry.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Pineapple Upside Down Cake Feminized - Seed Supreme x The Bulldog",
+			"url": "https://seedsupreme.com/pineapple-upside-down-cake-feminized.html",
+			"slug": "pineapple-upside-down-cake-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-pineapple_upside_down_cake.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)"
+		}
+	],
+	"pageNum": 1
+}

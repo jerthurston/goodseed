@@ -1,0 +1,345 @@
+{
+	"products": [
+		{
+			"name": "CBD ACDC Feminized",
+			"url": "https://seedsupreme.com/cbd-acdc-feminized.html",
+			"slug": "cbd-acdc-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/a/c/acdc_1.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Minimum (0-5%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Cream & Cheese Feminized",
+			"url": "https://seedsupreme.com/cbd-cream-cheese-feminized.html",
+			"slug": "cbd-cream-cheese-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/r/cream_cheese_1.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Kush Autoflower",
+			"url": "https://seedsupreme.com/cbd-kush-autoflower.html",
+			"slug": "cbd-kush-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/b/cbd_kush_3.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Low (5-10%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Chemdog #4 (1:1) Feminized",
+			"url": "https://seedsupreme.com/cbd-chemdog-4-1-1-feminized.html",
+			"slug": "cbd-chemdog-4-1-1-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/b/cbd_chemdog_4_1-1_.png",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Low (5-10%)"
+		},
+		{
+			"name": "CBD Blueberry Feminized",
+			"url": "https://seedsupreme.com/cbd-blueberry-feminized.html",
+			"slug": "cbd-blueberry-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/b/l/blueberry_6.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Minimum (0-5%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Ratio (1:30) Feminized",
+			"url": "https://seedsupreme.com/cbd-ratio-1-30-feminized.html",
+			"slug": "cbd-ratio-1-30-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/b/cbd_ratio_1-30_1.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Minimum (0-5%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD White Widow Autoflower",
+			"url": "https://seedsupreme.com/cbd-white-widow-autoflower.html",
+			"slug": "cbd-white-widow-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/b/cbd_white_widow_2.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Minimum (0-5%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD White Widow Feminized",
+			"url": "https://seedsupreme.com/cbd-white-widow-feminized.html",
+			"slug": "cbd-white-widow-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/b/cbd_white_widow.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Minimum (0-5%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Girl Scout Cookies Feminized",
+			"url": "https://seedsupreme.com/cbd-girl-scout-cookies-feminized.html",
+			"slug": "cbd-girl-scout-cookies-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Low (5-10%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Kush Feminized",
+			"url": "https://seedsupreme.com/cbd-kush-feminized.html",
+			"slug": "cbd-kush-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Low (5-10%)"
+		},
+		{
+			"name": "CBD Diesel Feminized",
+			"url": "https://seedsupreme.com/cbd-diesel-feminized.html",
+			"slug": "cbd-diesel-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Low (5-10%)"
+		},
+		{
+			"name": "CBD Cheese Autoflower",
+			"url": "https://seedsupreme.com/cbd-cheese-autoflower.html",
+			"slug": "cbd-cheese-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Low (5-10%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Jack Herer Feminized",
+			"url": "https://seedsupreme.com/cbd-jack-herer-feminized.html",
+			"slug": "cbd-jack-herer-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Low (5-10%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Black Domina Feminized",
+			"url": "https://seedsupreme.com/cbd-black-domina-feminized.html",
+			"slug": "cbd-black-domina-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Low (5-10%)"
+		},
+		{
+			"name": "CBD Strawberry Kush Feminized",
+			"url": "https://seedsupreme.com/cbd-strawberry-kush-feminized.html",
+			"slug": "cbd-strawberry-kush-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Minimum (0-5%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Harlequin Kimbo Kush (1:2)",
+			"url": "https://seedsupreme.com/cbd-harlequin-kimbo-kush-1-2-feminized.html",
+			"slug": "cbd-harlequin-kimbo-kush-1-2-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Low (5-10%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Sour Tangie (1:25) Feminized",
+			"url": "https://seedsupreme.com/cbd-sour-tangie-1-25-feminized.html",
+			"slug": "cbd-sour-tangie-1-25-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Minimum (0-5%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Critical Mass Autoflower",
+			"url": "https://seedsupreme.com/cbd-critical-mass-autoflower.html",
+			"slug": "cbd-critical-mass-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Minimum (0-5%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Zkittlez (1:1)",
+			"url": "https://seedsupreme.com/cbd-zkittlez-1-1.html",
+			"slug": "cbd-zkittlez-1-1",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Low (5-10%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD Critical Mass Feminized",
+			"url": "https://seedsupreme.com/cbd-critical-mass-feminized.html",
+			"slug": "cbd-critical-mass-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Minimum (0-5%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD White Widow (CBD:10% THC: <1%)",
+			"url": "https://seedsupreme.com/cbd-white-widow-cbd-10-thc-1.html",
+			"slug": "cbd-white-widow-cbd-10-thc-1",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Minimum (0-5%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "CBD OG Kush Feminized",
+			"url": "https://seedsupreme.com/cbd-og-kush-feminized.html",
+			"slug": "cbd-og-kush-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Minimum (0-5%)",
+			"badges": [
+				"20 % OFF"
+			]
+		}
+	],
+	"pageNum": 1
+}

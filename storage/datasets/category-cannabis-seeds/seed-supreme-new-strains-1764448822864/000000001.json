@@ -1,0 +1,583 @@
+{
+	"products": [
+		{
+			"name": "Hokuzan Feminized - World Breeders",
+			"url": "https://seedsupreme.com/hokuzan-feminized.html",
+			"slug": "hokuzan-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/h/o/hokuzan_3_1.jpg",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Tropic Gem Feminized - World Breeders",
+			"url": "https://seedsupreme.com/tropic-gem-feminized.html",
+			"slug": "tropic-gem-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/t/r/tropic-gem.jpg",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Hidden Vice Feminized - World Breeders",
+			"url": "https://seedsupreme.com/hidden-vice-feminized.html",
+			"slug": "hidden-vice-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/h/i/hidden-vice.jpg",
+			"basePrice": "$74.98",
+			"basePriceNum": 74.98,
+			"packSize": 4,
+			"pricePerSeed": 18.745,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Grease Monkey Feminized - The Bulldog",
+			"url": "https://seedsupreme.com/grease-monkey-feminized.html",
+			"slug": "grease-monkey-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-grease-monkey.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Rainbow Chip Feminized - Seed Supreme x The Bulldog",
+			"url": "https://seedsupreme.com/rainbow-chip-feminized.html",
+			"slug": "rainbow-chip-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-rainbow_chip.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Dante's Inferno Feminized - The Bulldog",
+			"url": "https://seedsupreme.com/dante-s-inferno-feminized.html",
+			"slug": "dante-s-inferno-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-dantes_inferno.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Purple Octane Feminized - The Bulldog",
+			"url": "https://seedsupreme.com/purple-octane-feminized.html",
+			"slug": "purple-octane-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-purple_octane.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Mango Sherbet Auto - Seed Supreme x The Bulldog",
+			"url": "https://seedsupreme.com/mango-sherbet-auto.html",
+			"slug": "mango-sherbet-auto",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/s/csup-bulldog-mango_sherbet_auto.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Malawi Feminized - Seed Supreme x The Bulldog",
+			"url": "https://seedsupreme.com/malawi-feminized.html",
+			"slug": "malawi-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Freakshow Feminized - The Bulldog",
+			"url": "https://seedsupreme.com/freakshow-feminized.html",
+			"slug": "freakshow-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Tropicana Cherry Feminized - The Bulldog",
+			"url": "https://seedsupreme.com/tropicana-cherry-feminized.html",
+			"slug": "tropicana-cherry-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Pineapple Upside Down Cake Feminized - Seed Supreme x The Bulldog",
+			"url": "https://seedsupreme.com/pineapple-upside-down-cake-feminized.html",
+			"slug": "pineapple-upside-down-cake-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "High CBD Feminized Seed Mix",
+			"url": "https://seedsupreme.com/high-cbd-feminized-seed-mix.html",
+			"slug": "high-cbd-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "High THC Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/high-thc-autoflower-seed-mix.html",
+			"slug": "high-thc-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Energizing Feminized Seed Mix",
+			"url": "https://seedsupreme.com/energizing-feminized-seed-mix.html",
+			"slug": "energizing-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Sativa Feminized Seed Mix",
+			"url": "https://seedsupreme.com/sativa-feminized-seed-mix.html",
+			"slug": "sativa-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Fast Flower Feminized Seed Mix",
+			"url": "https://seedsupreme.com/fast-flower-feminized-seed-mix.html",
+			"slug": "fast-flower-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "High Yield Feminized Seed Mix",
+			"url": "https://seedsupreme.com/high-yield-feminized-seed-mix.html",
+			"slug": "high-yield-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Hybrid Feminized Seed Mix",
+			"url": "https://seedsupreme.com/hybrid-feminized-seed-mix.html",
+			"slug": "hybrid-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Indoor Feminized Seed Mix",
+			"url": "https://seedsupreme.com/indoor-feminized-seed-mix.html",
+			"slug": "indoor-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Outdoor Feminized Seed Mix",
+			"url": "https://seedsupreme.com/outdoor-feminized-seed-mix.html",
+			"slug": "outdoor-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Best Sellers Feminized Seed Mix",
+			"url": "https://seedsupreme.com/best-sellers-feminized-seed-mix.html",
+			"slug": "best-sellers-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Hybrid Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/hybrid-autoflower-seed-mix.html",
+			"slug": "hybrid-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Regular Seed Mix",
+			"url": "https://seedsupreme.com/regular-seed-mix.html",
+			"slug": "regular-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Relaxation Feminized Seed Mix",
+			"url": "https://seedsupreme.com/relaxation-feminized-seed-mix.html",
+			"slug": "relaxation-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "High THC Feminized Seed Mix",
+			"url": "https://seedsupreme.com/high-thc-feminized-seed-mix.html",
+			"slug": "high-thc-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Indica Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/indica-autoflower-seed-mix.html",
+			"slug": "indica-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Indoor Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/indoor-autoflower-seed-mix.html",
+			"slug": "indoor-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Sativa Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/sativa-autoflower-seed-mix.html",
+			"slug": "sativa-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Creative Feminized Seed Mix",
+			"url": "https://seedsupreme.com/creative-feminized-seed-mix.html",
+			"slug": "creative-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Indica Feminized Seed Mix",
+			"url": "https://seedsupreme.com/indica-feminized-seed-mix.html",
+			"slug": "indica-feminized-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Outdoor Autoflower Seed Mix",
+			"url": "https://seedsupreme.com/outdoor-autoflower-seed-mix.html",
+			"slug": "outdoor-autoflower-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"packSize": 4,
+			"pricePerSeed": 13,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Cap Junky Feminized",
+			"url": "https://seedsupreme.com/cap-junky-feminized.html",
+			"slug": "cap-junky-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Permanent Marker Feminized",
+			"url": "https://seedsupreme.com/permanent-marker-feminized.html",
+			"slug": "permanent-marker-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Cristal Metal Autoflower",
+			"url": "https://seedsupreme.com/cristal-metal-autoflower.html",
+			"slug": "cristal-metal-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Jack Cookies Autoflower",
+			"url": "https://seedsupreme.com/jack-cookies-autoflower.html",
+			"slug": "jack-cookies-autoflower",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Bacio Gelato Feminized",
+			"url": "https://seedsupreme.com/bacio-gelato-feminized.html",
+			"slug": "bacio-gelato-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Dosed Chocolate Chips Feminized",
+			"url": "https://seedsupreme.com/dosed-chocolate-chips-feminized.html",
+			"slug": "dosed-chocolate-chips-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"packSize": 4,
+			"pricePerSeed": 11,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Sativa",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Banana Hammock Feminized",
+			"url": "https://seedsupreme.com/banana-hammock-feminized.html",
+			"slug": "banana-hammock-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)"
+		},
+		{
+			"name": "Pancakes Feminized",
+			"url": "https://seedsupreme.com/pancakes-feminized.html",
+			"slug": "pancakes-feminized",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"packSize": 4,
+			"pricePerSeed": 13.75,
+			"stockStatus": "In Stock",
+			"variety": "Mostly Indica",
+			"thcLevel": "High (15-20%)"
+		}
+	],
+	"pageNum": 1
+}
