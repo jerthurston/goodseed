@@ -1,0 +1,180 @@
+{
+	"products": [
+		{
+			"name": "White Widow Regular",
+			"url": "https://seedsupreme.com/white-widow-regular.html",
+			"slug": "white-widow-regular",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/w/h/white_widow_12.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Hindu Kush Regular",
+			"url": "https://seedsupreme.com/hindu-kush-regular.html",
+			"slug": "hindu-kush-regular",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/h/i/hindu_kush_1.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Northern Lights Regular",
+			"url": "https://seedsupreme.com/northern-lights-regular.html",
+			"slug": "northern-lights-regular",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/n/o/northern_lights_7.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "OG Kush Regular Cannabis Seeds",
+			"url": "https://seedsupreme.com/og-kush-regular-cannabis-seeds.html",
+			"slug": "og-kush-regular-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/o/g/og_kush_regular_zoom.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Tropic Thunder Regular Cannabis Seeds - Homegrown Cannabis Co.",
+			"url": "https://seedsupreme.com/tropic-thunder-regular-cannabis-seeds.html",
+			"slug": "tropic-thunder-regular-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/t/r/tropic-thunder-fem.jpg",
+			"basePrice": "$49.00",
+			"basePriceNum": 49,
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)"
+		},
+		{
+			"name": "Regular Seed Mix",
+			"url": "https://seedsupreme.com/regular-seed-mix.html",
+			"slug": "regular-seed-mix",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/r/e/regular-1.jpg",
+			"basePrice": "$52.00",
+			"basePriceNum": 52,
+			"variety": "Hybrid",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Bruce Banner Regular",
+			"url": "https://seedsupreme.com/bruce-banner-regular.html",
+			"slug": "bruce-banner-regular",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/b/r/bruce_banner_7.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Gelato Regular",
+			"url": "https://seedsupreme.com/gelato-regular.html",
+			"slug": "gelato-regular",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/g/e/gelato_5.png",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Agent Orange Regular",
+			"url": "https://seedsupreme.com/agent-orange-regular.html",
+			"slug": "agent-orange-regular",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Grandaddy Bruce Regular Cannabis Seeds",
+			"url": "https://seedsupreme.com/grandaddy-bruce-regular-cannabis-seeds.html",
+			"slug": "grandaddy-bruce-regular-cannabis-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Alien GG Regular Cannabis Seeds",
+			"url": "https://seedsupreme.com/alien-gg-regular-seeds.html",
+			"slug": "alien-gg-regular-seeds",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"variety": "Mostly Indica",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Lemon Pie Regular",
+			"url": "https://seedsupreme.com/lemon-pie-regular.html",
+			"slug": "lemon-pie-regular",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Chocolope Regular",
+			"url": "https://seedsupreme.com/chocolope-regular.html",
+			"slug": "chocolope-regular",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$44.00",
+			"basePriceNum": 44,
+			"variety": "Hybrid",
+			"thcLevel": "Very High (over 20%)",
+			"badges": [
+				"20 % OFF"
+			]
+		},
+		{
+			"name": "Orange Velvet x Cinderella 99 Regular",
+			"url": "https://seedsupreme.com/catalog/product/view/id/16311/s/orange-velvet-x-cinderella-99-regular/category/198/",
+			"slug": "",
+			"imageUrl": "https://seedsupreme.com/media/catalog/product/placeholder/default/image-coming-soon.jpg",
+			"basePrice": "$55.00",
+			"basePriceNum": 55,
+			"variety": "Hybrid",
+			"thcLevel": "High (15-20%) Out of stock"
+		}
+	],
+	"pageNum": 1
+}
