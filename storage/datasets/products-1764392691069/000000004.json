@@ -1,0 +1,49 @@
+{
+	"name": "OG Kush Regular Cannabis Seeds",
+	"url": "https://seedsupreme.com/og-kush-regular-cannabis-seeds.html",
+	"slug": "og-kush-regular-cannabis-seeds",
+	"imageUrl": "https://seedsupreme.com/media/catalog/product/cache/b88350ab5fb747a1264cdcee4ae58d08/c/r/critical_x_gg_4_autoflower_seeds.png",
+	"basePrice": "$44.00",
+	"basePriceNum": 44,
+	"packOptions": [
+		{
+			"packSize": 4,
+			"totalPrice": 44,
+			"originalPrice": 55,
+			"pricePerSeed": 11,
+			"discount": 20
+		},
+		{
+			"packSize": 8,
+			"totalPrice": 69.6,
+			"originalPrice": 87,
+			"pricePerSeed": 8.7,
+			"discount": 20
+		},
+		{
+			"packSize": 12,
+			"totalPrice": 87.2,
+			"originalPrice": 109,
+			"pricePerSeed": 7.266666666666667,
+			"discount": 20
+		},
+		{
+			"packSize": 24,
+			"totalPrice": 130.4,
+			"originalPrice": 163,
+			"pricePerSeed": 5.433333333333334,
+			"discount": 20
+		}
+	],
+	"specs": {
+		"variety": "Mostly Indica",
+		"thcContent": "Very High (over 20%)",
+		"geneticProfile": "Chemdawg & Unknown",
+		"floweringPeriod": "8-10 Weeks",
+		"floweringType": "Photoperiod",
+		"cbdContent": "Low (0-1%)"
+	},
+	"variety": "Mostly Indica",
+	"thcLevel": "Very High (over 20%)",
+	"scrapedAt": "2025-11-29T05:04:52.140Z"
+}
