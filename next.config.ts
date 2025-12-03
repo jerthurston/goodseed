@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         hostname: 'www.royalqueenseeds.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'vancouverseedbank.ca',
+        pathname: '/**',
+      },
 
 
     ],

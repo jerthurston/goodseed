@@ -21,7 +21,7 @@ type ScraperSite = {
 
 const initialSellers: Seller[] = [
     { id: 1, name: "SeedSupreme", url: "seedsupreme.com", isActive: true },
-    { id: 2, name: "ILGM", url: "ilgm.com", isActive: true },
+    { id: 2, name: "Vancover Seed bank", url: "vancouverseedbank.ca", isActive: true },
     { id: 3, name: "Crop King Seeds", url: "cropkingseeds.com", isActive: true },
     { id: 4, name: "Seedsman", url: "seedsman.com", isActive: false },
     { id: 5, name: "Herbies Seeds", url: "herbiesseeds.com", isActive: true },
@@ -41,7 +41,13 @@ const initialScraperSites: ScraperSite[] = [
         autoScrapeInterval: 6,
         isAutoEnabled: true,
     },
-    { id: 2, name: "ILGM", url: "ilgm.com", lastScraped: "1 hour ago", autoScrapeInterval: 4, isAutoEnabled: true },
+    {
+        id: 2, name: "Vancover Seed bank",
+        url: "vancouverseedbank.ca",
+        lastScraped: "1 hour ago",
+        autoScrapeInterval: 4,
+        isAutoEnabled: true
+    },
     {
         id: 3,
         name: "Crop King Seeds",
