@@ -10,6 +10,11 @@ export default async function SeedsPage() {
             category: {
                 select: {
                     name: true,
+                    seller: {
+                        select: {
+                            name: true,
+                        },
+                    },
                 },
             },
             productImages: {

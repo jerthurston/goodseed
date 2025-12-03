@@ -8,6 +8,13 @@ const nextConfig: NextConfig = {
         hostname: 'seedsupreme.com',
         pathname: '/media/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.royalqueenseeds.com',
+        pathname: '/**',
+      },
+
+
     ],
   },
 };

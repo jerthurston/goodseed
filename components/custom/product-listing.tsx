@@ -21,6 +21,9 @@ type ProductData = {
   cbdText: string | null
   category: {
     name: string
+    seller: {
+      name: string
+    }
   }
   productImages: Array<{
     image: {
@@ -75,7 +78,7 @@ export function ProductListing({ products }: ProductListingProps) {
               badgeColor={getBadgeColor(product.seedType)}
               productName={product.name}
               price={`$${product.pricePerSeed.toFixed(2)}/seed`}
-              company="Seed Supreme"
+              company={product.category.seller.name}
               strain={product.variety || product.cannabisType || "N/A"}
               thc={formatTHC(product.thcText, product.thcMin, product.thcMax)}
               cbd={formatCBD(product.cbdText, product.cbdMin, product.cbdMax)}

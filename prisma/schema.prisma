@@ -180,7 +180,7 @@ model Seller {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   
-  // seedCategories SeedProductCategory[]
+  seedCategories SeedProductCategory[]
   scrapeLogs    ScrapeLog[]
 
   @@index([isActive])
@@ -190,7 +190,7 @@ model Seller {
 // SeedProductCategory là danh mục product, có thể được gộp cùng đặc tính product để dễ quản lý
 model SeedProductCategory {
   id              String          @id @default(cuid())
-  // sellerId        String
+  sellerId        String
   
   // Category Info
   name            String          
@@ -220,6 +220,7 @@ model SeedProductCategory {
   updatedAt       DateTime        @updatedAt
   
   // Relations
+  seller          Seller          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   seedProducts    SeedProduct[]   // 1 Category → N Products
 
   @@index([id])

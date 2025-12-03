@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+#datasets of scraped data
+storage/
+
 # docs - Ignore all except specific files
 /docs/*
 !/docs/README.md
