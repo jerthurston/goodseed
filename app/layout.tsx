@@ -1,7 +1,9 @@
-import { Footer } from "@/components/custom/footer";
-import { Header } from "@/components/custom/header";
+import Footer from "@/components/custom/Footer";
+import Header from "@/components/custom/Header";
+import AgeVerificationModal from "@/components/custom/modals/AgeVerificationModal";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import "../public/styles/styles.css";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,6 +31,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <AgeVerificationModal />
         <Header />
         {children}
         <Footer />
