@@ -17,6 +17,11 @@
     "test:products": "tsx scripts/test/test-products.ts"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-brands-svg-icons": "^7.1.0",
+    "@fortawesome/free-regular-svg-icons": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.1",
     "@prisma/adapter-pg": "^7.0.1",
     "@prisma/client": "^7.0.1",
     "@radix-ui/react-select": "^2.2.6",
@@ -28,11 +33,11 @@
     "crawlee": "^3.15.3",
     "dotenv": "^17.2.3",
     "lucide-react": "^0.555.0",
-    "next": "16.0.5",
+    "next": "16.0.7",
     "node-cron": "^4.2.1",
     "pg": "^8.16.3",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "19.2.1",
+    "react-dom": "19.2.1",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.1.13"
   },

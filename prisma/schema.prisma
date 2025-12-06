@@ -124,29 +124,35 @@ model TwoFactorToken {
   @@unique([email, token])
 }
 
-
 // ==============================================================================
 // Application Models - GoodSeed MVP
 // ==============================================================================
 
-// Seed Types
+// Seed Types: Loại hạt giống có các loại chính: 
+/**
+ * Regular Seeds: Hạt giống thông thường,
+ * Feminized Seeds: Hạt giống nữ hóa,
+ * Autoflower Seeds: Hạt giống tự động ra hoa,
+ * Photoperiod Seeds:Hạt giống quang kỳ
+ */
 enum SeedType {
   REGULAR
   FEMINIZED
   AUTOFLOWER
+  PHOTOPERIOD
 }
 
-// Cannabis Types
+// Cannabis Types Loại cây cần sa, thường được gọi là "strain" (giống/chủng) :
+/**
+ * SATIVA: Cây cao, gầy, lá mỏng, thường mang lại hiệu ứng kích thích tinh thần, tăng năng lượng và sáng tạo.
+ * INDICA :Cây thường thấp, rậm rạp, lá rộng, có xu hướng cho cảm giác thư giãn toàn thân, an thần.,
+ * HYBRID: Kết hợp các đặc điểm của cả Indica và Sativa, mang lại nhiều tác dụng đa dạng. Đây là loại phổ biến nhất hiện nay.,
+ * RUDERALIS:Một loại phụ sinh trưởng ở khí hậu khắc nghiệt, đặc điểm chính là khả năng tự động ra hoa dựa trên độ tuổi chứ không phải chu kỳ ánh sáng.
+ */
 enum CannabisType {
   SATIVA
   INDICA
   HYBRID
-}
-
-// Photoperiod Types
-enum PhotoperiodType {
-  AUTOFLOWER
-  PHOTOPERIOD
 }
 
 // Stock Status
@@ -156,113 +162,151 @@ enum StockStatus {
   LIMITED
 }
 
-// Seller (Nhà bán hạt giống)
+// Seller (Cửa hàng/Website - Affiliate Partner)
+// Đại diện cho các site bán hạt giống (e.g., Seed Supreme, ILGM, Herbies)
+// GoodSeed làm affiliate marketing để chuyển hướng traffic đến website của họ
 model Seller {
-  id            String    @id @default(cuid())
-  name          String    @unique
-  url           String
-  affiliateTag  String?   // Affiliate tag để tạo commission URL
-  isActive      Boolean   @default(true) // Kill switch
-  lastScraped   DateTime?
-  status        String?   // success/error
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  seeds         Seed[]
-  scrapeLogs    ScrapeLog[]
+  id           String    @id @default(cuid())
+  name         String    @unique // "Seed Supreme", "ILGM"
+  url          String // Homepage URL
+  affiliateTag String? // Affiliate tag để tạo commission URL
+  isActive     Boolean   @default(true) // Kill switch để ẩn seller
+  lastScraped  DateTime?
+  status       String? // success/error
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  seedCategories SeedProductCategory[]
+  scrapeLogs     ScrapeLog[]
 
   @@index([isActive])
   @@index([lastScraped])
 }
 
-// Seed (Hạt giống cannabis)
-model Seed {
-  id              String          @id @default(cuid())
-  sellerId        String
-  
-  // Basic Info
-  name            String
-  url             String
-  slug            String
-  
-  // Pricing
-  totalPrice      Float           // Giá gói
-  packSize        Int             // Số lượng hạt trong gói
-  pricePerSeed    Float           // Tự động tính: totalPrice / packSize
-  
-  // Stock
-  stockStatus     StockStatus     @default(IN_STOCK)
-  
-  // Seed Classification
-  seedType        SeedType?       // Regular/Feminized/Autoflower
-  cannabisType    CannabisType?   // Sativa/Indica/Hybrid
-  photoperiodType PhotoperiodType? // Autoflower/Photoperiod
-  
-  // Cannabinoids (THC/CBD ranges)
-  thcMin          Float?
-  thcMax          Float?
-  cbdMin          Float?
-  cbdMax          Float?
-  
-  // Metadata
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  
-  // Relations
-  seller          Seller          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  seedImages      SeedImage[]
+// SeedProductCategory là danh mục product :Sativa, Indica, Hybrid. 
+//Có nhiều loại lai tạo như: sativa dominant hybrid, indica dominant hybrid, balance hybrid. Những loại này sẽ standardize name về Hybrid
+model SeedProductCategory {
+  id           String        @id @default(cuid())
+  sellerId     String
+  name         String
+  cannabisType CannabisType? // SATIVA, INDICA, HYBRID
+  slug         String
+  description  String? // Mô tả ngắn (nếu có)
 
-  @@unique([sellerId, slug])
-  @@index([pricePerSeed])
-  @@index([seedType])
-  @@index([cannabisType])
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  seller       Seller        @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  seedProducts SeedProduct[] // 1 Category → N Products
+
+  @@index([id, cannabisType])
+}
+
+// SeedProduct (Sản phẩm hạt giống cụ thể)
+// Đại diện cho product card từ category page
+// VD: "Blue Dream Feminized", "Acapulco Gold Feminized"
+model SeedProduct {
+  id         String @id @default(cuid())
+  categoryId String
+
+  // Basic Info (từ category page)
+  name        String // "Blue Dream Feminized"
+  url         String // URL trang chi tiết sản phẩm
+  slug        String // "blue-dream-feminized"
+  description String? // Mô tả ngắn (nếu có)
+
+  // Stock
+  stockStatus StockStatus @default(IN_STOCK)
+
+  // Cannabis Classification
+  // cannabisType CannabisType? // SATIVA, INDICA, HYBRID, RUDERALIS
+  seedType SeedType? // REGULAR, FEMINIZED, AUTOFLOWER, PHOTOPERIOD
+  variety  String? // "Mostly Indica", "Hybrid", etc.
+
+  // Cannabinoids
+  thcMin  Float?
+  thcMax  Float?
+  thcText String? // Raw text: "Very High (over 20%)"
+  cbdMin  Float?
+  cbdMax  Float?
+  cbdText String? // Raw text: "Low (0-1%)"
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  category      SeedProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  productImages SeedProductImage[]
+  pricings      Pricing[]
+
+  @@unique([categoryId, slug])
+  @@index([categoryId])
+  // @@index([pricePerSeed])
+  // @@index([cannabisType])
   @@index([thcMin, thcMax])
   @@index([cbdMin, cbdMax])
   @@index([stockStatus])
 }
 
+model Pricing {
+  id            String @id @default(cuid())
+  seedProductId String
+
+  totalPrice   Float
+  packSize     Int   @default(5)
+  pricePerSeed Float // Calculated: totalPrice / packSize
+
+  // Relations
+  seedProduct SeedProduct @relation(fields: [seedProductId], references: [id], onDelete: Cascade)
+
+  @@index([pricePerSeed])
+}
+
 // Image (Hình ảnh sản phẩm)
 model Image {
-  id            String         @id @default(cuid())
-  url           String         @unique
-  alt           String?
-  width         Int?
-  height        Int?
-  createdAt     DateTime       @default(now())
-  
-  seedImages    SeedImage[]
+  id        String   @id @default(cuid())
+  url       String   @unique
+  alt       String?
+  width     Int?
+  height    Int?
+  createdAt DateTime @default(now())
+
+  seedProductImages SeedProductImage[]
 
   @@index([url])
 }
 
-// SeedImage (Join table giữa Seed và Image)
-model SeedImage {
-  seedId        String
+// SeedProductImage (Join table giữa SeedProduct và Image)
+model SeedProductImage {
+  seedProductId String
   imageId       String
-  order         Int            @default(0)
-  isPrimary     Boolean        @default(false)
-  createdAt     DateTime       @default(now())
-  
-  seed          Seed           @relation(fields: [seedId], references: [id], onDelete: Cascade)
-  image         Image          @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  order         Int      @default(0)
+  isPrimary     Boolean  @default(false)
+  createdAt     DateTime @default(now())
 
-  @@id([seedId, imageId])
-  @@index([seedId])
+  seedProduct SeedProduct @relation(fields: [seedProductId], references: [id], onDelete: Cascade)
+  image       Image       @relation(fields: [imageId], references: [id], onDelete: Cascade)
+
+  @@id([seedProductId, imageId])
+  @@index([seedProductId])
   @@index([imageId])
   @@index([isPrimary])
 }
 
 // ScrapeLog (Lịch sử scraping cho admin dashboard)
 model ScrapeLog {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   sellerId      String
-  timestamp     DateTime  @default(now())
-  status        String    // success/error
-  productsFound Int       @default(0)
-  errors        Json?     // Lưu chi tiết lỗi nếu có
-  duration      Int?      // Thời gian chạy (ms)
-  
-  seller        Seller    @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  timestamp     DateTime @default(now())
+  status        String // success/error
+  productsFound Int      @default(0)
+  errors        Json? // Lưu chi tiết lỗi nếu có
+  duration      Int? // Thời gian chạy (ms)
+
+  seller Seller @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 
   @@index([sellerId])
   @@index([timestamp])
