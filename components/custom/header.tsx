@@ -1,6 +1,7 @@
 'use client';
 import AccountDropdown from "@/components/custom/AccountDropdown";
 import SignInModal from "@/components/custom/modals/SignInModal";
+import { archivoBlack, poppins } from "@/lib/fonts";
 import { faHeart } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Link from "next/link";
@@ -18,10 +19,10 @@ const Header = () => {
   return (
     <>
       <nav className="goodseed-nav">
-        <Link href="/" className="logo">goodseed</Link>
+        <Link href="/" className={`logo ${archivoBlack.variable}`}>goodseed</Link>
         <div className="goodseed-nav-links" >
-          <Link style={{ fontFamily: "'Poppins'", fontSize: "13px", fontWeight: "700", lineHeight: "20px" }} href="/#features">About</Link>
-          <Link style={{ fontFamily: "'Poppins'" }} href="/seeds">Browse</Link>
+          <Link style={{ fontFamily: poppins.style.fontFamily, fontSize: "13px", fontWeight: "700", lineHeight: "20px" }} href="/#features">About</Link>
+          <Link style={{ fontFamily: poppins.style.fontFamily }} href="/seeds">Browse</Link>
           <Link
             href="/dashboard/user/favorites"
             className="favorites-link"

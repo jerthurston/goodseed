@@ -1,8 +1,12 @@
+
+
+import CookieBanner from "@/components/custom/CookieBanner";
 import Footer from "@/components/custom/Footer";
 import Header from "@/components/custom/Header";
 import AgeVerificationModal from "@/components/custom/modals/AgeVerificationModal";
+import { archivoBlack, poppins } from "@/lib/fonts";
 import type { Metadata } from "next";
-import "../public/styles/styles.css";
+import "../styles/styles.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,9 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={` antialiased`}
+        className={`${poppins.variable} ${archivoBlack.variable} antialiased`}
       >
         <AgeVerificationModal />
+        <CookieBanner />
         <Header />
         {children}
         <Footer />
