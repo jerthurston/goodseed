@@ -1,6 +1,6 @@
 'use client'
 
-import CardGridContainer from '@/components/custom/card/CardGridContainer'
+import CardGridContainer from '@/components/custom/card/SeedCardGridContainer'
 import FilterModal, { FilterState } from '@/components/custom/modals/FilterModal'
 import CategorySelect from '@/components/custom/select/CategorySelect'
 import SeedtypeSelect from '@/components/custom/select/SeedtypeSelect'

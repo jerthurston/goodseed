@@ -8,9 +8,10 @@ import React, { useState } from 'react'
 interface SignInModalProps {
     isOpen: boolean
     onClose: () => void
+    onLoginSuccess?: () => void
 }
 
-const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose }) => {
+const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
     const [email, setEmail] = useState('')
 
     const handleEmailSubmit = (e: React.FormEvent) => {
@@ -18,16 +19,28 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose }) => {
         // TODO: Implement email login logic
         console.log('Email login:', email)
         setEmail('')
+        // Simulate successful login
+        if (onLoginSuccess) {
+            onLoginSuccess()
+        }
     }
 
     const handleGoogleLogin = () => {
         // TODO: Implement Google OAuth logic
         console.log('Google login')
+        // Simulate successful login
+        if (onLoginSuccess) {
+            onLoginSuccess()
+        }
     }
 
     const handleFacebookLogin = () => {
         // TODO: Implement Facebook OAuth logic
         console.log('Facebook login')
+        // Simulate successful login
+        if (onLoginSuccess) {
+            onLoginSuccess()
+        }
     }
 
     const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {

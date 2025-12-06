@@ -1,39 +1,38 @@
 'use client'
 
-import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons'
-import { faChevronLeft, faChevronRight, faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons'
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import Image from 'next/image'
 import { useState } from 'react'
-
-interface Pack {
-    size: number
-    totalPrice: number
-    pricePerSeed: number
-}
-
-interface Seed {
-    id: string
-    name: string
-    type: string
-    category: string
-    price: number
-    thc: number
-    cbd: number
-    popularity: number
-    date: string
-    vendorName: string
-    vendorUrl: string
-    smallestPackSize: number
-    smallestPackPrice: number
-    strainDescription: string
-    packs: Pack[]
-    imageUrl: string
-}
+import AddToListModal, { type UserList } from '../modals/AddToListModal'
+import UnfavoriteConfirmModal from '../modals/UnfavoriteConfirmModal'
+import SeedCardItem, { type Seed } from './SeedCardItem'
 
 const CardGridContainer = () => {
     const [favorites, setFavorites] = useState<Set<string>>(new Set())
     const [currentPage, setCurrentPage] = useState(1)
+    const [isUnfavoriteModalOpen, setIsUnfavoriteModalOpen] = useState(false)
+    const [unfavoriteMessage, setUnfavoriteMessage] = useState('')
+    const [pendingUnfavoriteSeedId, setPendingUnfavoriteSeedId] = useState<string | null>(null)
+    const [activeOverlaySeedId, setActiveOverlaySeedId] = useState<string | null>(null)
+
+    // Add to List Modal state
+    const [isAddToListModalOpen, setIsAddToListModalOpen] = useState(false)
+    const [activeModalSeedId, setActiveModalSeedId] = useState<string | null>(null)
+    const [activeModalSeedName, setActiveModalSeedName] = useState<string>('')
+
+    // User lists management - Mock data, replace with actual API
+    const [userLists, setUserLists] = useState<UserList[]>([
+        { id: 'favorites', name: 'Favorites' },
+        { id: 'wishlist', name: 'Wishlist' },
+        { id: 'grow-plan-2024', name: 'Grow Plan 2024' }
+    ])
+
+    // Track which products belong to which lists
+    // Structure: { productId: [listId1, listId2, ...] }
+    const [productListMemberships, setProductListMemberships] = useState<Record<string, string[]>>({
+        'P001': ['favorites'],
+        'P004': ['favorites', 'wishlist']
+    })
 
     // Mock data - replace with actual API call
     const seeds: Seed[] = [
@@ -51,7 +50,7 @@ const CardGridContainer = () => {
             vendorUrl: '#vendor-link-goodseed',
             smallestPackSize: 3,
             smallestPackPrice: 14.97,
-            strainDescription: 'A legendary sativa-dominant hybrid from California, Blue Dream balances full-body relaxation with gentle cerebral invigoration. Sweet berry aromas abound.',
+            strainDescription: 'A legendary sativa-dominant hybrid from California, Blue Dream balances full-body relaxation with gentle cerebral invigoration. Sweet berry aromas abound. A legendary sativa-dominant hybrid from California, Blue Dream balances full-body relaxation with gentle cerebral invigoration. Sweet berry aromas abound. A legendary sativa-dominant hybrid from California, Blue Dream balances full-body relaxation with gentle cerebral invigoration. Sweet berry aromas abound',
             packs: [
                 { size: 3, totalPrice: 14.97, pricePerSeed: 4.99 },
                 { size: 5, totalPrice: 22.45, pricePerSeed: 4.49 },
@@ -216,122 +215,146 @@ const CardGridContainer = () => {
     ]
 
     const toggleFavorite = (seedId: string) => {
-        setFavorites(prev => {
-            const newFavorites = new Set(prev)
-            if (newFavorites.has(seedId)) {
-                newFavorites.delete(seedId)
-            } else {
+        const isCurrentlyFavorite = favorites.has(seedId)
+
+        if (isCurrentlyFavorite) {
+            // Show confirmation modal when unfavoriting
+            // In a real app, you'd check if seed is in custom lists
+            const seed = seeds.find(s => s.id === seedId)
+            setUnfavoriteMessage(`This seed is in one or more of your custom lists. Do you want to remove "${seed?.name}" from your favorites?`)
+            setPendingUnfavoriteSeedId(seedId)
+            setIsUnfavoriteModalOpen(true)
+        } else {
+            // Add to favorites directly
+            setFavorites(prev => {
+                const newFavorites = new Set(prev)
                 newFavorites.add(seedId)
+                return newFavorites
+            })
+        }
+    }
+
+    const handleCancelUnfavorite = () => {
+        setIsUnfavoriteModalOpen(false)
+        setPendingUnfavoriteSeedId(null)
+        setUnfavoriteMessage('')
+    }
+
+    const handleConfirmUnfavorite = () => {
+        if (pendingUnfavoriteSeedId) {
+            setFavorites(prev => {
+                const newFavorites = new Set(prev)
+                newFavorites.delete(pendingUnfavoriteSeedId)
+                return newFavorites
+            })
+        }
+        setIsUnfavoriteModalOpen(false)
+        setPendingUnfavoriteSeedId(null)
+        setUnfavoriteMessage('')
+    }
+
+    const openPackDealsOverlay = (seedId: string) => {
+        setActiveOverlaySeedId(seedId)
+    }
+
+    const closePackDealsOverlay = () => {
+        setActiveOverlaySeedId(null)
+    }
+
+    const handleOpenAddToList = (seedId: string, seedName: string) => {
+        setActiveModalSeedId(seedId)
+        setActiveModalSeedName(seedName)
+        setIsAddToListModalOpen(true)
+    }
+
+    const handleCloseAddToList = () => {
+        setIsAddToListModalOpen(false)
+        setActiveModalSeedId(null)
+        setActiveModalSeedName('')
+    }
+
+    const handleListMembershipChange = (listId: string, isChecked: boolean) => {
+        if (!activeModalSeedId) return
+
+        setProductListMemberships(prev => {
+            const currentMemberships = prev[activeModalSeedId] || []
+            let updatedMemberships: string[]
+
+            if (isChecked) {
+                // Add to list if not already present
+                updatedMemberships = currentMemberships.includes(listId)
+                    ? currentMemberships
+                    : [...currentMemberships, listId]
+            } else {
+                // Remove from list
+                updatedMemberships = currentMemberships.filter(id => id !== listId)
+
+                // If removing from favorites list, update favorites state
+                if (listId === 'favorites') {
+                    setFavorites(prevFavorites => {
+                        const newFavorites = new Set(prevFavorites)
+                        newFavorites.delete(activeModalSeedId)
+                        return newFavorites
+                    })
+                }
             }
-            return newFavorites
+
+            return {
+                ...prev,
+                [activeModalSeedId]: updatedMemberships
+            }
         })
+
+        // If adding to favorites list, update favorites state
+        if (listId === 'favorites' && isChecked) {
+            setFavorites(prev => {
+                const newFavorites = new Set(prev)
+                newFavorites.add(activeModalSeedId)
+                return newFavorites
+            })
+        }
+    }
+
+    const handleCreateNewList = (listName: string) => {
+        // Generate unique ID (in real app, this would come from backend)
+        const newListId = `list-${Date.now()}`
+        const newList: UserList = {
+            id: newListId,
+            name: listName
+        }
+
+        setUserLists(prev => [...prev, newList])
+
+        // Automatically add current seed to the new list
+        if (activeModalSeedId) {
+            setProductListMemberships(prev => ({
+                ...prev,
+                [activeModalSeedId]: [...(prev[activeModalSeedId] || []), newListId]
+            }))
+        }
     }
 
     return (
         <main className="results-page-main">
             <div className="page-header">
-                <h2>Our Seed Collection</h2>
+                <h2 className=''>Our Seed Collection</h2>
                 <p>Browse our premium selection of high-quality seeds from trusted vendors</p>
             </div>
-
+            {/* --> Product Card Grid container */}
             <div className="results-grid" id="plantCardGrid">
                 {seeds.map((seed) => (
-                    <div
+                    <SeedCardItem
                         key={seed.id}
-                        className="plant-card"
-                        data-id={seed.id}
-                        data-type={seed.type}
-                        data-category={seed.category}
-                        data-price={seed.price}
-                        data-thc={seed.thc}
-                        data-cbd={seed.cbd}
-                        data-name={seed.name}
-                        data-popularity={seed.popularity}
-                        data-date={seed.date}
-                        data-vendor-name={seed.vendorName}
-                        data-vendor-url={seed.vendorUrl}
-                        data-smallest-pack-size={seed.smallestPackSize}
-                        data-smallest-pack-price={seed.smallestPackPrice}
-                        data-strain-description={seed.strainDescription}
-                        data-packs={JSON.stringify(seed.packs)}
-                    >
-                        <div className="card-img-container">
-                            <a
-                                href={seed.vendorUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label={`View ${seed.name} details on vendor site`}
-                            >
-                                <div className="card-img-aspect">
-                                    {' '}
-                                    <Image
-                                        src={seed.imageUrl}
-                                        alt={seed.name}
-                                        className="card-img"
-                                        width={300}
-                                        height={200}
-                                        unoptimized
-                                    />
-                                    {' '}
-                                </div>
-                            </a>
-                            <span className="seed-type-pill-on-image"></span>
-                            <button
-                                className={`list-icon-btn js-add-to-list-btn ${favorites.has(seed.id) ? 'is-animating' : ''}`}
-                                aria-label="Add to list"
-                                type="button"
-                            >
-                                <svg
-                                    className="list-icon-svg"
-                                    viewBox="0 0 100 150"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        className="svg-border"
-                                        d="M5,5 L50,30 L95,5 L95,145 L5,145 Z"
-                                    />
-                                    <path
-                                        className="svg-fill"
-                                        d="M5,5 L50,30 L95,5 L95,145 L5,145 Z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                            </button>
-                            <button
-                                className={`favorite-btn-new ${favorites.has(seed.id) ? 'active' : ''}`}
-                                data-strain-name={seed.name}
-                                onClick={() => toggleFavorite(seed.id)}
-                                aria-label="Toggle Favorite"
-                                type="button"
-                            >
-                                <FontAwesomeIcon
-                                    icon={favorites.has(seed.id) ? faHeartSolid : faHeartRegular}
-                                />
-                            </button>
-                        </div>
-                        <div className="plant-card-info-wrapper">
-                            <h3 className="strain-name">{seed.name}</h3>
-                            <div className="price-pack-row">
-                                <div className="price-info-group">
-                                    <p className="price-starting-at-label">Starting at</p>
-                                    <p className="price-per-seed">${seed.price.toFixed(2)}/seed</p>
-                                    <p className="smallest-pack-vendor-context"></p>
-                                </div>
-                                <button type="button" className="pack-deals-btn">
-                                    View Packs
-                                </button>
-                            </div>
-                            <div className="card-secondary-specs">
-                                <span className="spec-item strain-category-text"></span>
-                                <span className="spec-item thc-value-text"></span>
-                                <span className="spec-item cbd-value-text"></span>
-                            </div>
-                        </div>
-                        <div className="plant-card-overlay"></div>
-                    </div>
+                        seed={seed}
+                        isFavorite={favorites.has(seed.id)}
+                        isOverlayActive={activeOverlaySeedId === seed.id}
+                        onToggleFavorite={toggleFavorite}
+                        onOpenOverlay={openPackDealsOverlay}
+                        onCloseOverlay={closePackDealsOverlay}
+                        onOpenAddToList={handleOpenAddToList}
+                    />
                 ))}
-            </div>
-
+            </div>            {/* --> Pagination */}
             <div className="pagination-container">
                 <nav className="pagination-nav">
                     <button
@@ -380,6 +403,24 @@ const CardGridContainer = () => {
                     </button>
                 </nav>
             </div>
+
+            <UnfavoriteConfirmModal
+                isOpen={isUnfavoriteModalOpen}
+                message={unfavoriteMessage}
+                onCancel={handleCancelUnfavorite}
+                onConfirm={handleConfirmUnfavorite}
+            />
+
+            <AddToListModal
+                isOpen={isAddToListModalOpen}
+                strainName={activeModalSeedName}
+                productId={activeModalSeedId || ''}
+                userLists={userLists}
+                productListMemberships={activeModalSeedId ? (productListMemberships[activeModalSeedId] || []) : []}
+                onClose={handleCloseAddToList}
+                onMembershipChange={handleListMembershipChange}
+                onCreateNewList={handleCreateNewList}
+            />
         </main>
     )
 }
