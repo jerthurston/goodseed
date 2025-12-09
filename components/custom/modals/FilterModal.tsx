@@ -1,23 +1,24 @@
 'use client'
 
+import { SeedFilter } from "@/types/seed.type"
 import React, { useState } from 'react'
 
 interface FilterModalProps {
     isOpen: boolean
     onClose: () => void
-    onApplyFilters: (filters: FilterState) => void
+    onApplyFilters: (filters: SeedFilter) => void
 }
 
-export interface FilterState {
-    priceRange: { min: number; max: number }
-    seedTypes: string[]
-    cannabisTypes: string[]
-    thcRange: { min: number; max: number }
-    cbdRange: { min: number; max: number }
-}
+// export interface FilterState {
+//     priceRange: { min: number; max: number }
+//     seedTypes: string[]
+//     cannabisTypes: string[]
+//     thcRange: { min: number; max: number }
+//     cbdRange: { min: number; max: number }
+// }
 
 const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilters }) => {
-    const [filters, setFilters] = useState<FilterState>({
+    const [filters, setFilters] = useState<SeedFilter>({
         priceRange: { min: 0, max: 100 },
         seedTypes: [],
         cannabisTypes: [],

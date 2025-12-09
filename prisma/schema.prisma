@@ -186,12 +186,12 @@ model Seller {
 // SeedProductCategory là danh mục product :Sativa, Indica, Hybrid. 
 //Có nhiều loại lai tạo như: sativa dominant hybrid, indica dominant hybrid, balance hybrid. Những loại này sẽ standardize name về Hybrid
 model SeedProductCategory {
-  id           String        @id @default(cuid())
-  sellerId     String
-  name         String
-  cannabisType CannabisType? // SATIVA, INDICA, HYBRID
-  slug         String
-  description  String? // Mô tả ngắn (nếu có)
+  id          String  @id @default(cuid())
+  sellerId    String
+  name        String
+  // cannabisType CannabisType? // SATIVA, INDICA, HYBRID
+  slug        String
+  description String? // Mô tả ngắn (nếu có)
 
   // Metadata
   createdAt DateTime @default(now())
@@ -201,7 +201,7 @@ model SeedProductCategory {
   seller       Seller        @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   seedProducts SeedProduct[] // 1 Category → N Products
 
-  @@index([id, cannabisType])
+  @@index([id])
 }
 
 // SeedProduct (Sản phẩm hạt giống cụ thể)
@@ -222,8 +222,8 @@ model SeedProduct {
 
   // Cannabis Classification
   // cannabisType CannabisType? // SATIVA, INDICA, HYBRID, RUDERALIS
-  seedType SeedType? // REGULAR, FEMINIZED, AUTOFLOWER, PHOTOPERIOD
-  variety  String? // "Mostly Indica", "Hybrid", etc.
+  seedType     SeedType? // REGULAR, FEMINIZED, AUTOFLOWER, PHOTOPERIOD
+  cannabisType CannabisType? // "Mostly Indica", "Hybrid", etc.
 
   // Cannabinoids
   thcMin  Float?
@@ -244,8 +244,8 @@ model SeedProduct {
 
   @@unique([categoryId, slug])
   @@index([categoryId])
-  // @@index([pricePerSeed])
-  // @@index([cannabisType])
+  @@index([seedType])
+  @@index([cannabisType])
   @@index([thcMin, thcMax])
   @@index([cbdMin, cbdMax])
   @@index([stockStatus])

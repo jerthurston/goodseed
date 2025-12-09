@@ -1,39 +1,18 @@
 'use client'
 
+import { useState } from 'react'
+
 import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons'
 import { faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState } from 'react'
 
-interface Pack {
-    size: number
-    totalPrice: number
-    pricePerSeed: number
-}
-
-export interface Seed {
-    id: string
-    name: string
-    type: string
-    category: string
-    price: number
-    thc: number
-    cbd: number
-    popularity: number
-    date: string
-    vendorName: string
-    vendorUrl: string
-    smallestPackSize: number
-    smallestPackPrice: number
-    strainDescription: string
-    packs: Pack[]
-    imageUrl: string
-}
+import { apiLogger } from '@/lib/helpers/api-logger'
+import type { SeedUI } from '@/types/seed.type'
 
 interface SeedCardItemProps {
-    seed: Seed
+    seed: SeedUI
     isFavorite: boolean
     isOverlayActive: boolean
     onToggleFavorite: (seedId: string) => void
@@ -58,6 +37,8 @@ const SeedCardItem = ({
             onCloseOverlay()
         }
     }
+
+    apiLogger.debug('SeedCardItem.render', { seed })
 
     return (
         <div
