@@ -172,6 +172,10 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
             <div className="page-header">
                 <h2 className=''>Our Seed Collection</h2>
                 <p>Browse our premium selection of high-quality seeds from trusted vendors</p>
+                <p className='font-bold'>
+                    {(!isLoading && !isError) && `${seeds.length} seeds found`}
+                </p>
+
             </div>
 
             {/* Loading State */}

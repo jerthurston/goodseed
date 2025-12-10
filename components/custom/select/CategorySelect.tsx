@@ -2,13 +2,11 @@ import React from 'react'
 
 interface CategorySelectProps {
     filterCategory: string
-    setFilterCategory: (category: string) => void
-    handleInlineFilterChange: () => void
+    handleInlineFilterChange: (filterType: 'seedType' | 'category', value: string) => void
 }
 
 const CategorySelect: React.FC<CategorySelectProps> = ({
     filterCategory,
-    setFilterCategory,
     handleInlineFilterChange
 }) => {
     return (
@@ -20,8 +18,9 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
                     className="inline-select"
                     value={filterCategory}
                     onChange={(e) => {
-                        setFilterCategory(e.target.value)
-                        handleInlineFilterChange()
+                        const newValue = e.target.value;
+                        // Gọi handleInlineFilterChange với value mới (nó sẽ tự setState bên trong)
+                        handleInlineFilterChange('category', newValue);
                     }}
                 >
                     <option value="all">All Categories</option>

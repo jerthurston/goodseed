@@ -11,8 +11,14 @@ export async function GET(req: NextRequest) {
         //---> 2.1 Basic search param
         const search = searchParams.get('search');
         //---> 2.2 Filter params- cần test lại sau
-        const cannabisTypes = searchParams.get('cannabisTypes')?.split(',').filter(Boolean) || [];
-        const seedTypes = searchParams.get('seedTypes')?.split(',').filter(Boolean) || [];
+        const cannabisTypes = searchParams.get('cannabisTypes')
+            ?.split(',')
+            .filter(Boolean)
+            .map(t => t.toUpperCase()) || [];
+        const seedTypes = searchParams.get('seedTypes')
+            ?.split(',')
+            .filter(Boolean)
+            .map(t => t.toUpperCase()) || [];
         // Pass testing
         const minPrice = parseFloat(searchParams.get('minPrice') || '0');
         const maxPrice = parseFloat(searchParams.get('maxPrice') || '999999');
@@ -24,9 +30,8 @@ export async function GET(req: NextRequest) {
         //-->2.3 Pagination Params
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '20');
-        //2.4--> sortBy, sortOrder
+        //2.4--> sortBy
         const sortBy = searchParams.get('sortBy');
-        const sortOrder = searchParams.get('sortOrder') || 'asc';
 
         apiLogger.debug(
             '[SeedService.fetchSeeds] Received request with params:',
@@ -43,7 +48,6 @@ export async function GET(req: NextRequest) {
                 page,
                 limit,
                 sortBy,
-                sortOrder,
             }
         );
         //3. Tính skip cho pagination
@@ -91,28 +95,31 @@ export async function GET(req: NextRequest) {
         let orderBy: Prisma.SeedProductOrderByWithRelationInput = {};
 
         switch (sortBy) {
-            case 'price': {
+            case 'priceLowToHigh': {
                 orderBy = {
                     pricings: {
-                        _count: sortOrder as Prisma.SortOrder
+                        _count: 'asc' as Prisma.SortOrder
                     }
                 };
             };
                 break;
-            case 'thc': {
+            case 'priceHighToLow': {
                 orderBy = {
-                    thcMax: sortOrder as Prisma.SortOrder
+                    pricings: {
+                        _count: 'desc' as Prisma.SortOrder
+                    }
                 };
             };
                 break;
-            case 'cbd': {
+            case 'newest': {
                 orderBy = {
-                    cbdMax: sortOrder as Prisma.SortOrder
-                }
+                    createdAt: 'desc' as Prisma.SortOrder
+                };
             };
                 break;
+            case 'popularity':
             default:
-                orderBy = { createdAt: sortOrder as Prisma.SortOrder };
+                orderBy = { createdAt: 'asc' as Prisma.SortOrder };
         }
         //6. Xây dựng inClude realtions
         const inCludeClause: Prisma.SeedProductInclude = {
@@ -162,7 +169,17 @@ export async function GET(req: NextRequest) {
             maxPrice,
         });
 
-        // 8. Apply price filter in-memory (filter by minimum pricePerSeed)
+        // 8. Filter out seeds without pricing first
+        seeds = seeds.filter(seed => seed.pricings.length > 0);
+
+        const totalWithPricing = seeds.length;
+        apiLogger.debug('[API /seed] After removing seeds without pricing:', {
+            totalBeforeFilter,
+            totalWithPricing,
+            removedCount: totalBeforeFilter - totalWithPricing
+        });
+
+        // 9. Apply price filter in-memory (filter by minimum pricePerSeed)
         if (minPrice > 0 || maxPrice < 999999) {
             seeds = seeds.filter(seed => {
                 const minPricePerSeed = seed.pricings[0]?.pricePerSeed || 0;
@@ -180,7 +197,7 @@ export async function GET(req: NextRequest) {
             });
         }
 
-        // 9. Apply pagination after filtering
+        // 10. Apply pagination after filtering
         const total = seeds.length;
         const paginatedSeeds = seeds.slice(skip, skip + limit);
 
@@ -194,7 +211,7 @@ export async function GET(req: NextRequest) {
         }
         )
 
-        //10. Trả về dữ liệu dưới dạng JSON response nếu thành công
+        //11. Trả về dữ liệu dưới dạng JSON response nếu thành công
         return NextResponse.json(
             {
                 seeds: paginatedSeeds,

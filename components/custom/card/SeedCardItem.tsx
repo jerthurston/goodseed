@@ -64,9 +64,10 @@ const SeedCardItem = ({
                         {' '}
                     </div>
                 </Link>
-                <span className={`seed-type-pill-on-image ${seed.type.toLowerCase()}`}>
-                    {seed.type}
+                <span className={`seed-type-pill-on-image ${seed.seedType.toLowerCase()}`}>
+                    {seed.seedType}
                 </span>
+                {/* -->add to bookmark list */}
                 <button
                     className={`list-icon-btn js-add-to-list-btn ${isFavorite ? 'is-animating' : ''}`}
                     aria-label="Add to list"
@@ -89,6 +90,7 @@ const SeedCardItem = ({
                         />
                     </svg>
                 </button>
+                {/* -->add to wishlist */}
                 <button
                     className={`favorite-btn-new ${isFavorite ? 'active' : ''}`}
                     data-strain-name={seed.name}
@@ -103,15 +105,15 @@ const SeedCardItem = ({
             </div>
 
             <div className="plant-card-info-wrapper">
-                <h3 className="strain-name">{seed.name}</h3>
+                <h3 className="strain-name line-clamp-2">{seed.name}</h3>
                 <div className="price-pack-row">
                     <div className="price-info-group">
                         <p className="price-starting-at-label">Starting at</p>
                         <p className="price-per-seed">${seed.price.toFixed(2)}/seed</p>
                         <p className="smallest-pack-vendor-context">
-                            <a href={seed.vendorUrl} target="_blank" rel="noopener noreferrer">
-                                {seed.vendorName}
-                            </a>
+                            {/* <a href={seed.vendorUrl} target="_blank" rel="noopener noreferrer"> */}
+                            {seed.vendorName}
+                            {/* </a> */}
                         </p>
                     </div>
                     <button
@@ -126,7 +128,7 @@ const SeedCardItem = ({
                     </button>
                 </div>
                 <div className="card-secondary-specs">
-                    <span className="spec-item strain-category-text">{seed.category}</span>
+                    <span className="spec-item strain-category-text">{seed.cannabisType}</span>
                     <span className="spec-item thc-value-text">THC {seed.thc}%</span>
                     <span className="spec-item cbd-value-text">CBD {seed.cbd}%</span>
                 </div>

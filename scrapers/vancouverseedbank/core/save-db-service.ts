@@ -15,6 +15,8 @@
 
 import type { CategoryMetadataFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { CannabisType, PrismaClient, StockStatus } from '@prisma/client';
+import { parseCannabisType, parseSeedType } from '../utils/data-mappers';
+
 const SELLER_NAME = 'Vancouver Seed Bank';
 const SELLER_URL = 'https://vancouverseedbank.ca';
 
@@ -100,6 +102,12 @@ export class SaveDbService {
 
         for (const product of products) {
             try {
+                // Parse seedType from product name (e.g., "Feminized", "Autoflowering")
+                const seedType = parseSeedType(product.name);
+
+                // Parse cannabisType from strainType (e.g., "Indica Dominant Hybrid" -> INDICA)
+                const cannabisType = parseCannabisType(product.strainType);
+
                 // Kiểm tra slug của product đã tồn tại chưa, nếu chưa thì tạo mới, nếu đã có thì update bằng upsert
                 const existing = await this.prisma.seedProduct.findUnique({
                     where: {
@@ -123,7 +131,8 @@ export class SaveDbService {
                         url: product.url,
                         description: product.strainType || null,
                         stockStatus: StockStatus.IN_STOCK,
-                        variety: product.strainType || null,
+                        seedType: seedType,
+                        cannabisType: cannabisType,
                         thcMin: product.thcMin,
                         thcMax: product.thcMax,
                         thcText: product.thcLevel || null,
@@ -139,7 +148,8 @@ export class SaveDbService {
                         url: product.url,
                         description: product.strainType || null,
                         stockStatus: StockStatus.IN_STOCK,
-                        variety: product.strainType || null,
+                        seedType: seedType,
+                        cannabisType: cannabisType,
                         thcMin: product.thcMin,
                         thcMax: product.thcMax,
                         thcText: product.thcLevel || null,

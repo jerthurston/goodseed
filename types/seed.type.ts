@@ -10,8 +10,8 @@ export interface PackUI {
 export interface SeedUI {
     id: string
     name: string
-    type: string
-    category: string
+    seedType: string
+    cannabisType: string
     price: number
     thc: number
     cbd: number
@@ -56,17 +56,16 @@ export interface SeedFilter {
     inStock?: boolean;
 };
 
-type SortBy = 'price' | 'popularity';
-type sortOrder = 'asc' | 'desc';
+export type SortBy = 'popularity' | 'priceLowToHigh' | 'priceHighToLow' | 'newest';
+
 
 export interface UseSeedsInputOptions {
     // Search and filters params
     searchKeyword?: string;
     filters?: Partial<SeedFilter>
 
-    // Sorting - chuẩn dễ mở rộng
+    // Sorting - chẩn dễ mở rộng
     sortBy?: SortBy | SortBy[];
-    sortOrder?: sortOrder;
     //Pagination
     page?: number;
     limit?: number;
@@ -93,7 +92,7 @@ export interface SeedProductRaw {
     description: string | null;
     stockStatus: 'IN_STOCK' | 'OUT_OF_STOCK' | 'LOW_STOCK';
     seedType: 'REGULAR' | 'FEMINIZED' | 'AUTOFLOWER' | 'PHOTOPERIOD' | null;
-    variety: string | null;
+    cannabisType: string | null;
     thcMin: number | null;
     thcMax: number | null;
     thcText: string | null;

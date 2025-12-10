@@ -3,8 +3,6 @@ import { apiLogger } from "@/lib/helpers/api-logger";
 import { SeedApiResponseRaw, UseSeedsInputOptions } from "@/types/seed.type";
 
 export class SeedService {
-    private static CACHE_KEY_PREFIX = 'seed_service_';
-    private static CACHE_KEY_LIST = 'seed_service_list';
 
     public static async fetchSeeds(
         options: UseSeedsInputOptions
@@ -44,9 +42,6 @@ export class SeedService {
                 : options.sortBy;
             params.append('sortBy', sortByValue);
         }
-        if (options.sortOrder) {
-            params.append('sortOrder', options.sortOrder);
-        }
 
         // Pagination
         params.append('page', (options.page || 1).toString());
@@ -72,7 +67,7 @@ export class SeedService {
                 total: data.pagination?.total || 0,
                 page: data.pagination?.page || 1,
                 totalPages: data.pagination?.totalPages || 0,
-                duration: `${duration}ms`,
+                duration: duration,
                 timestamp: new Date().toISOString()
             });
 
@@ -81,7 +76,7 @@ export class SeedService {
             const duration = Date.now() - startTime;
             apiLogger.logError('SeedService.fetchSeeds', error as Error, {
                 endpoint: url,
-                duration: `${duration}ms`,
+                duration: duration,
             });
             throw error;
         }

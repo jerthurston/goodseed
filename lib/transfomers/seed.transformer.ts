@@ -39,8 +39,8 @@ export class SeedTransformer {
         const result: SeedUI = {
             id: raw.id,
             name: raw.name,
-            type: raw.seedType || 'UNKNOWN',
-            category: raw.category.cannabisType || 'UNKNOWN',
+            seedType: raw.seedType || 'UNKNOWN',
+            cannabisType: raw.cannabisType || 'UNKNOWN',
             price: bestValuePack.pricePerSeed,
             thc,
             cbd,
