@@ -166,18 +166,20 @@ enum StockStatus {
 // Đại diện cho các site bán hạt giống (e.g., Seed Supreme, ILGM, Herbies)
 // GoodSeed làm affiliate marketing để chuyển hướng traffic đến website của họ
 model Seller {
-  id           String    @id @default(cuid())
-  name         String    @unique // "Seed Supreme", "ILGM"
-  url          String // Homepage URL
-  affiliateTag String? // Affiliate tag để tạo commission URL
-  isActive     Boolean   @default(true) // Kill switch để ẩn seller
-  lastScraped  DateTime?
-  status       String? // success/error
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                 String    @id @default(cuid())
+  name               String    @unique // "Seed Supreme", "ILGM"
+  url                String // Homepage URL
+  scrapingSourceUrl  String // URL of products listing page to scrape (e.g., https://vancouverseedbank.ca/shop/jsf/epro-archive-products/)
+  affiliateTag       String? // Affiliate tag để tạo commission URL
+  isActive           Boolean   @default(true) // Kill switch để ẩn seller
+  lastScraped        DateTime?
+  status             String? // success/error
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   seedCategories SeedProductCategory[]
   scrapeLogs     ScrapeLog[]
+  scrapeJobs     ScrapeJob[]
 
   @@index([isActive])
   @@index([lastScraped])
@@ -200,6 +202,7 @@ model SeedProductCategory {
   // Relations
   seller       Seller        @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   seedProducts SeedProduct[] // 1 Category → N Products
+  scrapeJobs   ScrapeJob[]   // Jobs targeting this category
 
   @@index([id])
 }
@@ -312,3 +315,61 @@ model ScrapeLog {
   @@index([timestamp])
   @@index([status])
 }
+
+// ScrapeJobStatus - Job execution status
+enum ScrapeJobStatus {
+  PENDING     // Job created, waiting to start
+  IN_PROGRESS // Currently scraping
+  COMPLETED   // Successfully finished
+  FAILED      // Error occurred
+  CANCELLED   // Manually stopped
+}
+
+// ScrapeJob - Track scraping job progress and status
+model ScrapeJob {
+  id       String          @id @default(cuid())
+  sellerId String
+  jobId    String          @unique // External job ID for API (e.g., "scrape_1234567890")
+  status   ScrapeJobStatus @default(PENDING)
+
+  // Job Configuration
+  mode             String  // "batch", "auto", "test"
+  targetCategoryId String? // Which SeedProductCategory to save products into
+  startPage        Int?
+  endPage          Int?
+  maxPages         Int?
+
+  // Progress Tracking
+  currentPage     Int?
+  totalPages      Int?
+  productsScraped Int      @default(0)
+  productsSaved   Int      @default(0)
+  productsUpdated Int      @default(0)
+  errors          Int      @default(0)
+
+  // Timing
+  startedAt   DateTime?
+  completedAt DateTime?
+  duration    Int? // milliseconds
+
+  // Error Details
+  errorMessage String?
+  errorDetails Json?
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  seller         Seller               @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  targetCategory SeedProductCategory? @relation(fields: [targetCategoryId], references: [id], onDelete: SetNull)
+
+  @@index([sellerId])
+  @@index([status])
+  @@index([jobId])
+  @@index([createdAt])
+  @@index([targetCategoryId])
+}
+
+// Update Seller model to include scrapeJobs relation
+// (Add this line to Seller model's relations section)

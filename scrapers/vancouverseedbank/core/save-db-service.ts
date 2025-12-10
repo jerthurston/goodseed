@@ -19,6 +19,7 @@ import { parseCannabisType, parseSeedType } from '../utils/data-mappers';
 
 const SELLER_NAME = 'Vancouver Seed Bank';
 const SELLER_URL = 'https://vancouverseedbank.ca';
+const SCRAPING_SOURCE_URL = 'https://vancouverseedbank.ca/shop/jsf/epro-archive-products/';
 
 export class SaveDbService {
     constructor(private prisma: PrismaClient) { }
@@ -38,6 +39,7 @@ export class SaveDbService {
             create: {
                 name: SELLER_NAME,
                 url: SELLER_URL,
+                scrapingSourceUrl: SCRAPING_SOURCE_URL,
                 isActive: true,
                 lastScraped: new Date(),
                 status: 'success',
