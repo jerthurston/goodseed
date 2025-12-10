@@ -11,12 +11,12 @@
 
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { prisma } from '@/lib/prisma';
-import { scraperQueue, ScraperJobData } from '@/lib/queue/scraper-queue';
+import { ScraperJobData, scraperQueue } from '@/lib/queue/scraper-queue';
 import { ProductListScraper } from '@/scrapers/vancouverseedbank/core/product-list-scrapers';
 import { SaveDbService } from '@/scrapers/vancouverseedbank/core/save-db-service';
 import { Job } from 'bull';
 
-console.log('[Scraper Worker] Starting worker process...');
+apiLogger.info('[Scraper Worker] Starting worker process...');
 
 /**
  * Process a single scraping job

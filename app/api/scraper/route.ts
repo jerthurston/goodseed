@@ -1,14 +1,15 @@
 import { apiLogger } from "@/lib/helpers/api-logger";
 import { prisma } from "@/lib/prisma";
-import { ProductListScraper } from "@/scrapers/vancouverseedbank/core/product-list-scrapers";
+import { addScraperJob } from "@/lib/queue/scraper-queue";
 import { SaveDbService } from "@/scrapers/vancouverseedbank/core/save-db-service";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * POST /api/scraper
+ * POST /api/scraper (Queue Version - Phase 3)
  * 
- * Main endpoint to trigger product scraping from Vancouver Seed Bank
+ * Queues product scraping job for background processing
+ * Returns immediately with jobId for status tracking
  * 
  * Request Body:
  * {
@@ -28,17 +29,10 @@ import { NextRequest, NextResponse } from "next/server";
  * {
  *   "success": true,
  *   "data": {
- *     "scrapeId": "scrape_xyz123",
- *     "status": "completed",
- *     "totalProducts": 150,
- *     "totalPages": 10,
- *     "saved": 120,
- *     "updated": 30,
- *     "errors": 0,
- *     "duration": 45000,
- *     "timestamp": "2025-12-09T10:30:00Z"
- *   },
- *   "message": "Scraping completed successfully"
+ *     "jobId": "scrape_xyz123",
+ *     "status": "queued",
+ *     "message": "Job queued successfully. Use /api/scraper/status/{jobId} to track progress"
+ *   }
  * }
  */
 
@@ -58,23 +52,15 @@ interface ScrapeRequestBody {
     config: ScrapeConfig;
 }
 
-interface ScrapeResponseData {
-    scrapeId: string;
+interface QueuedResponseData {
     jobId: string;
-    status: 'completed' | 'failed' | 'in_progress';
-    totalProducts: number;
-    totalPages: number;
-    saved: number;
-    updated: number;
-    errors: number;
-    duration: number;
-    timestamp: string;
+    status: 'queued';
+    message: string;
 }
 
 interface ScrapeSuccessResponse {
     success: true;
-    data: ScrapeResponseData;
-    message: string;
+    data: QueuedResponseData;
 }
 
 interface ScrapeErrorResponse {
@@ -170,24 +156,20 @@ export async function POST(req: NextRequest): Promise<NextResponse<ScrapeRespons
             }
         }
 
-        // 3. Initialize services
-        apiLogger.info('[Scraper API] Initializing scraper services');
-
-        const scraper = new ProductListScraper();
+        // 3. Initialize seller
         const dbService = new SaveDbService(prisma);
-
-        // 4. Initialize seller and create ScrapeJob
         const sellerId = await dbService.initializeSeller();
         apiLogger.debug('[Scraper API] Seller initialized', { sellerId });
 
+        // 4. Create ScrapeJob record in database
         const jobId = `scrape_${randomUUID()}`;
-        const scrapeJob = await prisma.scrapeJob.create({
+        await prisma.scrapeJob.create({
             data: {
                 jobId,
                 sellerId,
                 status: 'PENDING',
                 mode: body.mode,
-                targetCategoryId: null, // Will be set after category creation
+                targetCategoryId: null,
                 currentPage: 0,
                 totalPages: 0,
                 productsScraped: 0,
@@ -199,158 +181,45 @@ export async function POST(req: NextRequest): Promise<NextResponse<ScrapeRespons
 
         apiLogger.info('[Scraper API] ScrapeJob created', { jobId, status: 'PENDING' });
 
-        // 5. Execute scraping based on mode
-        apiLogger.info('[Scraper API] Starting scraping process', { mode: body.mode });
-
-        // Update job status to IN_PROGRESS
-        await prisma.scrapeJob.update({
-            where: { id: scrapeJob.id },
-            data: {
-                status: 'IN_PROGRESS',
-                startedAt: new Date(),
-            },
-        });
-
-        apiLogger.info('[Scraper API] ScrapeJob status updated', { jobId, status: 'IN_PROGRESS' });
-
-        let result;
-
-        try {
-            if (body.mode === 'batch') {
-                result = await scraper.scrapeProductListByBatch(
-                    body.config.scrapingSourceUrl,
-                    body.config.startPage!,
-                    body.config.endPage!
-                );
-            } else if (body.mode === 'auto') {
-                const maxPages = body.config.maxPages || 0;
-                result = await scraper.scrapeProductList(
-                    body.config.scrapingSourceUrl,
-                    maxPages
-                );
-            } else if (body.mode === 'test') {
-                // Test mode: scrape only first 2 pages
-                result = await scraper.scrapeProductListByBatch(
-                    body.config.scrapingSourceUrl,
-                    1,
-                    2
-                );
-            } else {
-                // Should never reach here due to validation above
-                throw new Error('Invalid mode');
-            }
-
-            apiLogger.info('[Scraper API] Scraping completed', {
-                totalProducts: result.totalProducts,
-                totalPages: result.totalPages,
-                duration: result.duration
-            });
-        } catch (scrapeError) {
-            // Mark job as failed
-            const errorMessage = scrapeError instanceof Error ? scrapeError.message : 'Scraping failed';
-            await prisma.scrapeJob.update({
-                where: { id: scrapeJob.id },
-                data: {
-                    status: 'FAILED',
-                    completedAt: new Date(),
-                    errorMessage,
-                    errorDetails: scrapeError instanceof Error ? { stack: scrapeError.stack } : {},
-                },
-            });
-
-            apiLogger.logError('[Scraper API] Scraping failed', scrapeError instanceof Error ? scrapeError : new Error(String(scrapeError)), { jobId });
-            throw scrapeError;
-        }
-
-        // 6. Save to database
-        apiLogger.info('[Scraper API] Saving products to database');
-
-        const categoryId = await dbService.getOrCreateCategory(sellerId, {
-            name: 'All Products',
-            slug: body.config.categorySlug,
-            seedType: undefined
-        });
-        apiLogger.debug('[Scraper API] Category ready', { categoryId });
-
-        // Update job with category info
-        await prisma.scrapeJob.update({
-            where: { id: scrapeJob.id },
-            data: {
-                targetCategoryId: categoryId,
-                totalPages: result.totalPages,
-                productsScraped: result.totalProducts,
-            },
-        });
-
-        const saveResult = await dbService.saveProductsToCategory(
-            categoryId,
-            result.products
-        );
-
-        apiLogger.info('[Scraper API] Products saved to database', {
-            saved: saveResult.saved,
-            updated: saveResult.updated,
-            errors: saveResult.errors
-        });
-
-        // 7. Update job with final results and mark as COMPLETED
-        await prisma.scrapeJob.update({
-            where: { id: scrapeJob.id },
-            data: {
-                status: 'COMPLETED',
-                completedAt: new Date(),
-                productsSaved: saveResult.saved,
-                productsUpdated: saveResult.updated,
-                errors: saveResult.errors,
-                duration: result.duration,
-            },
-        });
-
-        apiLogger.info('[Scraper API] ScrapeJob completed', { jobId, status: 'COMPLETED' });
-
-        // 8. Log activity
-        await dbService.logScrapeActivity(
-            sellerId,
-            'success',
-            result.totalProducts,
-            result.duration
-        );
-
-        // 9. Return response
-        const responseData: ScrapeResponseData = {
-            scrapeId: `scrape_${Date.now()}`,
+        // 5. Add job to queue
+        await addScraperJob({
             jobId,
-            status: 'completed',
-            totalProducts: result.totalProducts,
-            totalPages: result.totalPages,
-            saved: saveResult.saved,
-            updated: saveResult.updated,
-            errors: saveResult.errors,
-            duration: result.duration,
-            timestamp: new Date().toISOString()
-        };
+            sellerId,
+            mode: body.mode,
+            config: {
+                scrapingSourceUrl: body.config.scrapingSourceUrl,
+                categorySlug: body.config.categorySlug,
+                startPage: body.config.startPage,
+                endPage: body.config.endPage,
+                maxPages: body.config.maxPages,
+            },
+        });
 
-        apiLogger.info('[Scraper API] Request completed successfully', { ...responseData });
+        apiLogger.info('[Scraper API] Job added to queue', { jobId });
+
+        // 6. Return immediately with jobId
+        const responseData: QueuedResponseData = {
+            jobId,
+            status: 'queued',
+            message: `Job queued successfully. Use /api/scraper/status/${jobId} to track progress`,
+        };
 
         return NextResponse.json({
             success: true,
             data: responseData,
-            message: 'Scraping completed successfully'
         });
 
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        const errorStack = error instanceof Error ? error.stack : undefined;
 
         apiLogger.logError('[Scraper API]', error instanceof Error ? error : new Error(String(error)), {
             message: errorMessage,
-            stack: errorStack
         });
 
         return NextResponse.json({
             success: false,
             error: {
-                code: 'SCRAPE_FAILED',
+                code: 'QUEUE_FAILED',
                 message: errorMessage,
                 details: process.env.NODE_ENV === 'development' ? error : undefined
             }

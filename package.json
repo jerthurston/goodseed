@@ -14,7 +14,8 @@
     "db:check": "tsx scripts/check-db.ts",
     "cron:start": "tsx scripts/cron-server.ts",
     "db:seed:dispensaries": "tsx scripts/seed-dispensaries.ts",
-    "test:products": "tsx scripts/test/test-products.ts"
+    "test:products": "tsx scripts/test/test-products.ts",
+    "worker:scraper": "tsx workers/scraper-worker.ts"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
