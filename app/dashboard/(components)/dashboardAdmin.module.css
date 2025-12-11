@@ -1,0 +1,391 @@
+/* ==========================================================================
+   Dashboard Admin - Unified CSS Module
+   Tổng hợp tất cả styles từ các component con
+   Thống nhất với design system styles.css
+   ========================================================================== */
+
+/* ============================================================
+   SIDEBAR COMPONENTS
+   ============================================================ */
+.sidebar {
+  background-color: var(--bg-main);
+  padding: 1.5rem;
+  border: 6px solid var(--border-color);
+  box-shadow: 6px 6px 0 var(--border-color);
+  position: sticky;
+  top: 2rem;
+}
+
+.sidebarTitle {
+  font-family: 'Archivo Black', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  text-transform: uppercase;
+  color: var(--brand-primary);
+  letter-spacing: -1px;
+  margin-bottom: 1.5rem;
+}
+
+.sidebarNav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebarItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: none;
+}
+
+.sidebarItem:hover {
+  background-color: var(--bg-section);
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+
+.sidebarItemActive {
+  background-color: var(--brand-primary);
+  color: var(--bg-main);
+  box-shadow: 4px 4px 0 var(--border-color);
+}
+
+.sidebarItemActive:hover {
+  background-color: var(--brand-primary);
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+
+.sidebarItemIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
+   CARD COMPONENTS
+   ============================================================ */
+.card {
+  background-color: var(--bg-main);
+  padding: 1.5rem;
+  border: 6px solid var(--border-color);
+  border-radius: 0;
+  box-shadow: 8px 8px 0 var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.cardHover:hover {
+  box-shadow: 12px 12px 0 var(--border-color);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 3px solid var(--border-color);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cardFooter {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 3px solid var(--border-color);
+}
+
+/* ============================================================
+   BUTTON COMPONENTS
+   ============================================================ */
+.button {
+  padding: 0.75rem 1.5rem;
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 4px 4px 0 var(--border-color);
+}
+
+.button:hover {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button:disabled:hover {
+  transform: translate(0, 0);
+  box-shadow: 4px 4px 0 var(--border-color);
+}
+
+/* Button Variants */
+.primary {
+  background-color: var(--brand-primary);
+  color: var(--bg-main);
+}
+
+.primary:hover {
+  background-color: #229954;
+}
+
+.secondary {
+  background-color: var(--accent-cta);
+  color: var(--text-primary);
+}
+
+.secondary:hover {
+  background-color: var(--brand-primary);
+  color: var(--bg-main);
+}
+
+.outline {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+}
+
+.outline:hover {
+  background-color: var(--text-primary);
+  color: var(--bg-main);
+}
+
+.danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.danger:hover {
+  background-color: var(--danger-color-hover);
+}
+
+/* Loading State */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid white;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Icon Button */
+.iconButton {
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.iconButton:hover {
+  opacity: 0.8;
+}
+
+/* ============================================================
+   BADGE COMPONENTS
+   ============================================================ */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border: 2px solid transparent;
+  border-radius: 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Badge Variants */
+.active {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  background-color: transparent;
+}
+
+.inactive {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+  background-color: transparent;
+}
+
+.inProgress {
+  border-color: var(--accent-cta);
+  color: var(--text-primary);
+  background-color: var(--accent-cta);
+}
+
+.completed {
+  border-color: var(--brand-primary);
+  color: var(--bg-main);
+  background-color: var(--brand-primary);
+}
+
+.failed {
+  border-color: var(--danger-color);
+  color: white;
+  background-color: var(--danger-color);
+}
+
+.warning {
+  border-color: #f39c12;
+  color: #f39c12;
+  background-color: transparent;
+}
+
+/* ============================================================
+   ALERT COMPONENTS
+   ============================================================ */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 3px solid transparent;
+  border-radius: 0;
+}
+
+.icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.content {
+  flex: 1;
+}
+
+.title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.message {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+}
+
+/* Alert Variants */
+.critical {
+  border-color: var(--danger-color);
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.success {
+  border-color: var(--border-color);
+  background-color: var(--brand-primary);
+  color: var(--bg-main);
+}
+
+.info {
+  border-color: var(--border-color);
+  background-color: var(--bg-section);
+  color: var(--text-primary);
+}
+
+/* Note: .warning is shared with badge, using specific selector */
+.alert.warning {
+  border-color: var(--border-color);
+  background-color: var(--accent-cta);
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   STATS CARD COMPONENTS
+   ============================================================ */
+.statsCard {
+  background-color: var(--bg-main);
+  padding: 1.5rem;
+  border: 6px solid var(--border-color);
+  border-radius: 0;
+  box-shadow: 6px 6px 0 var(--border-color);
+}
+
+.label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--text-primary-muted);
+  margin-bottom: 0.5rem;
+}
+
+.value {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.trend {
+  margin-top: 0.5rem;
+}
+
+.trendValue {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.trendPositive {
+  color: var(--brand-primary);
+}
+
+.trendNegative {
+  color: var(--danger-color);
+}
+
+.trendLabel {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: var(--text-primary-muted);
+  margin-left: 0.25rem;
+}
