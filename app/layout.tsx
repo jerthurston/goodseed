@@ -5,6 +5,7 @@ import Footer from "@/components/custom/Footer";
 import Header from "@/components/custom/Header";
 import AgeVerificationModal from "@/components/custom/modals/AgeVerificationModal";
 import { archivoBlack, poppins } from "@/lib/fonts";
+import { ReactQueryProvider } from "@/lib/providers/react-query-provider";
 import type { Metadata } from "next";
 import "../styles/styles.css";
 import "./globals.css";
@@ -24,11 +25,13 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} ${archivoBlack.variable} antialiased`}
       >
-        <AgeVerificationModal />
-        <CookieBanner />
-        <Header />
-        {children}
-        <Footer />
+        <ReactQueryProvider>
+          <AgeVerificationModal />
+          <CookieBanner />
+          <Header />
+          {children}
+          <Footer />
+        </ReactQueryProvider>
       </body>
     </html>
   );

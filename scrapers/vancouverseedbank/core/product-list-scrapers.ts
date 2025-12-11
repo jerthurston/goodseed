@@ -6,7 +6,7 @@
 
 import { extractProductsFromHTML } from '@/scrapers/vancouverseedbank/utils/extractProductsFromHTML';
 import { CategoryResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { CheerioCrawler, Dataset } from 'crawlee';
+import { CheerioCrawler, Dataset, RequestQueue } from 'crawlee';
 import { BASE_URL, PRODUCT_CARD_SELECTORS, getCategoryUrl } from './selectors';
 
 /**
@@ -63,13 +63,16 @@ export class ProductListScraper {
     async scrapeProductList(listingUrl: string, maxPages: number = 5): Promise<CategoryResultFromCrawling> {
         const startTime = Date.now();
 
-        const datasetName = `vsb-${Date.now()}`;
+        const runId = Date.now();
+        const datasetName = `vsb-${runId}`;
         const dataset = await Dataset.open(datasetName);
+        const requestQueue = await RequestQueue.open(`vsb-queue-${runId}`);
 
         let actualPages = 0;
         const emptyPages = new Set<string>();
 
         const crawler = new CheerioCrawler({
+            requestQueue,
             async requestHandler({ $, request, log }) {
                 log.info(`[Product List] Scraping: ${request.url}`);
 
@@ -188,8 +191,10 @@ export class ProductListScraper {
         const startTime = Date.now();
         const totalPages = endPage - startPage + 1;
 
-        const datasetName = `vsb-batch-${Date.now()}`;
+        const runId = Date.now();
+        const datasetName = `vsb-batch-${runId}`;
         const dataset = await Dataset.open(datasetName);
+        const requestQueue = await RequestQueue.open(`vsb-queue-batch-${runId}`);
 
         // Generate URLs for page range
         const urls: string[] = [];
@@ -201,6 +206,7 @@ export class ProductListScraper {
 
         // Crawl pages
         const crawler = new CheerioCrawler({
+            requestQueue,
             async requestHandler({ $, request, log }) {
                 const pageNum = request.url.match(/pagenum\/(\d+)/)?.[1] || '1';
                 log.info(`[Batch] Page ${pageNum}: ${request.url}`);

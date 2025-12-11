@@ -1,14 +1,12 @@
 import React from 'react'
 
 interface SeedtypeSelectProps {
-    filterType: string
-    setFilterType: (type: string) => void
-    handleInlineFilterChange: () => void
+    filterSeedType: string
+    handleInlineFilterChange: (filterType: 'seedType' | 'category', value: string) => void
 }
 
 const SeedtypeSelect: React.FC<SeedtypeSelectProps> = ({
-    filterType,
-    setFilterType,
+    filterSeedType,
     handleInlineFilterChange
 }) => {
     return (
@@ -18,10 +16,11 @@ const SeedtypeSelect: React.FC<SeedtypeSelectProps> = ({
                 <select
                     id="inlineFilterType"
                     className="inline-select"
-                    value={filterType}
+                    value={filterSeedType}
                     onChange={(e) => {
-                        setFilterType(e.target.value)
-                        handleInlineFilterChange()
+                        const newValue = e.target.value;
+                        // Gọi handleInlineFilterChange với value mới (nó sẽ tự setState bên trong)
+                        handleInlineFilterChange('seedType', newValue);
                     }}
                 >
                     <option value="all">All Types</option>

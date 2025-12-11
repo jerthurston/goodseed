@@ -1,15 +1,14 @@
+import { SortBy } from '@/types/seed.type'
 import React from 'react'
 
 interface SortSelectProps {
-    sortBy: string
-    setSortBy: (sortBy: string) => void
-    handleInlineFilterChange: () => void
+    sortBy: SortBy
+    onSortChange: (sortBy: SortBy) => void
 }
 
 const SortSelect: React.FC<SortSelectProps> = ({
     sortBy,
-    setSortBy,
-    handleInlineFilterChange
+    onSortChange
 }) => {
     return (
         <>
@@ -19,10 +18,7 @@ const SortSelect: React.FC<SortSelectProps> = ({
                     id="inlineSortBy"
                     className="inline-select"
                     value={sortBy}
-                    onChange={(e) => {
-                        setSortBy(e.target.value)
-                        handleInlineFilterChange()
-                    }}
+                    onChange={(e) => onSortChange(e.target.value as SortBy)}
                 >
                     <option value="popularity">Popularity</option>
                     <option value="priceLowToHigh">Price: Low to High</option>

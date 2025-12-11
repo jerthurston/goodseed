@@ -18,12 +18,12 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import type { ProductCardData } from '@/scrapers/royalqueenseeds/core/types';
+import { extractProductsFromHTML } from '@/scrapers/vancouverseedbank/utils/extractProductsFromHTML';
 import { CheerioCrawler, Dataset } from 'crawlee';
 import 'dotenv/config';
-import { extractProductsFromHTML } from '../core/product-list-scrapers';
-import { VancouverSeedBankDbService } from '../core/save-db-service';
+import { SaveDbService } from '../core/save-db-service';
 import { getCategoryUrl } from '../core/selectors';
-import type { ProductCardData } from '../core/types';
 
 const LISTING_URL = 'https://vancouverseedbank.ca/shop/jsf/epro-archive-products/';
 
@@ -47,7 +47,7 @@ async function main() {
     console.log(`URL: ${LISTING_URL}`);
     console.log('');
 
-    const dbService = new VancouverSeedBankDbService(prisma);
+    const dbService = new SaveDbService(prisma);
     const datasetName = `vsb-batch-${Date.now()}`;
     const dataset = await Dataset.open(datasetName);
 
