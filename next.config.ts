@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Mark Crawlee and its dependencies as external for server-side
+  serverExternalPackages: ['crawlee', 'cheerio', 'puppeteer', 'playwright'],
+
   images: {
     remotePatterns: [
       {

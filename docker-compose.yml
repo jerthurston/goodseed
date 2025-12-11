@@ -1,0 +1,80 @@
+# Docker Compose for GoodSeed Development Environment
+# Provides Redis for Bull Queue and Next.js App
+
+version: '3.8'
+
+services:
+  # Redis - For Bull Queue
+  redis:
+    image: redis:7-alpine
+    container_name: goodseed-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - goodseed-network
+
+  # Next.js App
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: goodseed-app
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:Spyder_lem1@host.docker.internal:5432/goodseed_db_pgadmin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - redis
+    command: pnpm dev
+    restart: unless-stopped
+    networks:
+      - goodseed-network
+
+  # Scraper Worker
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: goodseed-worker
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:Spyder_lem1@host.docker.internal:5432/goodseed_db_pgadmin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - redis
+    command: pnpm worker:scraper
+    restart: unless-stopped
+    networks:
+      - goodseed-network
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  goodseed-network:
+    driver: bridge

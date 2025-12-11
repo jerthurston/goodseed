@@ -15,8 +15,11 @@
 
 import type { CategoryMetadataFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { CannabisType, PrismaClient, StockStatus } from '@prisma/client';
+import { parseCannabisType, parseSeedType } from '../utils/data-mappers';
+
 const SELLER_NAME = 'Vancouver Seed Bank';
 const SELLER_URL = 'https://vancouverseedbank.ca';
+const SCRAPING_SOURCE_URL = 'https://vancouverseedbank.ca/shop/jsf/epro-archive-products/';
 
 export class SaveDbService {
     constructor(private prisma: PrismaClient) { }
@@ -36,6 +39,7 @@ export class SaveDbService {
             create: {
                 name: SELLER_NAME,
                 url: SELLER_URL,
+                scrapingSourceUrl: SCRAPING_SOURCE_URL,
                 isActive: true,
                 lastScraped: new Date(),
                 status: 'success',
@@ -100,6 +104,12 @@ export class SaveDbService {
 
         for (const product of products) {
             try {
+                // Parse seedType from product name (e.g., "Feminized", "Autoflowering")
+                const seedType = parseSeedType(product.name);
+
+                // Parse cannabisType from strainType (e.g., "Indica Dominant Hybrid" -> INDICA)
+                const cannabisType = parseCannabisType(product.strainType);
+
                 // Kiểm tra slug của product đã tồn tại chưa, nếu chưa thì tạo mới, nếu đã có thì update bằng upsert
                 const existing = await this.prisma.seedProduct.findUnique({
                     where: {
@@ -123,7 +133,8 @@ export class SaveDbService {
                         url: product.url,
                         description: product.strainType || null,
                         stockStatus: StockStatus.IN_STOCK,
-                        variety: product.strainType || null,
+                        seedType: seedType,
+                        cannabisType: cannabisType,
                         thcMin: product.thcMin,
                         thcMax: product.thcMax,
                         thcText: product.thcLevel || null,
@@ -139,7 +150,8 @@ export class SaveDbService {
                         url: product.url,
                         description: product.strainType || null,
                         stockStatus: StockStatus.IN_STOCK,
-                        variety: product.strainType || null,
+                        seedType: seedType,
+                        cannabisType: cannabisType,
                         thcMin: product.thcMin,
                         thcMax: product.thcMax,
                         thcText: product.thcLevel || null,
