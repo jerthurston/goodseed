@@ -1,0 +1,110 @@
+/* ==========================================================================
+   Dashboard Button - Thống nhất với design system styles.css
+   ========================================================================== */
+
+.button {
+  padding: 0.75rem 1.5rem;
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 4px 4px 0 var(--border-color);
+}
+
+.button:hover {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button:disabled:hover {
+  transform: translate(0, 0);
+  box-shadow: 4px 4px 0 var(--border-color);
+}
+
+/* Variants */
+.primary {
+  background-color: var(--brand-primary);
+  color: var(--bg-main);
+}
+
+.primary:hover {
+  background-color: #229954;
+}
+
+.secondary {
+  background-color: var(--accent-cta);
+  color: var(--text-primary);
+}
+
+.secondary:hover {
+  background-color: var(--brand-primary);
+  color: var(--bg-main);
+}
+
+.outline {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+}
+
+.outline:hover {
+  background-color: var(--text-primary);
+  color: var(--bg-main);
+}
+
+.danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.danger:hover {
+  background-color: var(--danger-color-hover);
+}
+
+/* Loading State */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid white;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Icon Button */
+.iconButton {
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.iconButton:hover {
+  opacity: 0.8;
+}
