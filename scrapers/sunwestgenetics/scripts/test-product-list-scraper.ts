@@ -11,14 +11,17 @@ import { ProductListScraper } from '../core/product-list-scrapers';
 import { CATEGORY_URLS } from '../core/selectors';
 
 async function main() {
+    const maxPages = parseInt(process.argv[2] || '1');
+
     console.log('🧪 Testing SunWest Genetics Product List Scraper...');
+    console.log(`📋 Max Pages: ${maxPages}`);
 
     const scraper = new ProductListScraper();
 
     try {
-        // Test with a small number of pages first
-        console.log('\n📋 Testing with shop page (max 1 page)...');
-        const result = await scraper.scrapeProductList(CATEGORY_URLS.allProducts, 1);
+        // Test with specified number of pages
+        console.log(`\n📋 Testing with shop page (max ${maxPages} page${maxPages > 1 ? 's' : ''})...`);
+        const result = await scraper.scrapeProductList(CATEGORY_URLS.allProducts, maxPages);
         
         const duration = (result.duration / 1000).toFixed(2);
         console.log('\n' + '='.repeat(70));

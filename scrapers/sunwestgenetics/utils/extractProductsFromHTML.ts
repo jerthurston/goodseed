@@ -60,6 +60,33 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
             const strainTypeElement = $card.find(PRODUCT_CARD_SELECTORS.strainType).first();
             const strainType = strainTypeElement.length ? strainTypeElement.text().trim() : undefined;
 
+            // Map SeedType from product name
+            let seedType: string | undefined;
+            if (name.toLowerCase().includes('autoflower')) {
+                seedType = 'AUTOFLOWER';
+            } else if (name.toLowerCase().includes('feminized')) {
+                seedType = 'FEMINIZED';
+            } else if (name.toLowerCase().includes('photoperiod')) {
+                seedType = 'PHOTOPERIOD';
+            } else {
+                seedType = 'REGULAR'; // Default fallback
+            }
+
+            // Map CannabisType from strainType
+            let cannabisType: string | undefined;
+            if (strainType) {
+                const strainLower = strainType.toLowerCase();
+                if (strainLower.includes('indica') && !strainLower.includes('sativa')) {
+                    cannabisType = 'INDICA';
+                } else if (strainLower.includes('sativa') && !strainLower.includes('indica')) {
+                    cannabisType = 'SATIVA';
+                } else if (strainLower.includes('hybrid') || (strainLower.includes('indica') && strainLower.includes('sativa'))) {
+                    cannabisType = 'HYBRID';
+                } else {
+                    cannabisType = 'HYBRID'; // Default fallback for ambiguous cases
+                }
+            }
+
             // Extract THC level from .elementor-icon-list-text containing "THC:"
             let thcMin: number | undefined;
             let thcMax: number | undefined;
@@ -138,6 +165,56 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
                 }
             });
 
+            // Extract rating and reviews from .star-rating
+            let rating: number | undefined;
+            let reviewCount: number | undefined;
+            
+            const $rating = $card.find('.star-rating').first();
+            if ($rating.length) {
+                const ariaLabel = $rating.attr('aria-label');
+                if (ariaLabel) {
+                    // Extract rating from "Rated 5.00 out of 5"
+                    const ratingMatch = ariaLabel.match(/Rated (\d+(?:\.\d+)?)/);
+                    if (ratingMatch) {
+                        rating = parseFloat(ratingMatch[1]);
+                    }
+                }
+                
+                // Extract review count from text like "based on 1 customer rating"
+                const ratingText = $rating.text();
+                const reviewMatch = ratingText.match(/based on (\d+)/);
+                if (reviewMatch) {
+                    reviewCount = parseInt(reviewMatch[1]);
+                }
+            }
+
+            // Extract growing level
+            let growingLevel: string | undefined;
+            $card.find('.elementor-icon-list-text').each((_, el) => {
+                const text = $(el).text();
+                if (text.includes('Growing Level:')) {
+                    growingLevel = text.replace(/.*Growing Level:\s*/, '').trim();
+                }
+            });
+
+            // Extract flowering time
+            let floweringTime: string | undefined;
+            $card.find('.elementor-icon-list-text').each((_, el) => {
+                const text = $(el).text();
+                if (text.includes('Flowering:')) {
+                    floweringTime = text.replace(/.*Flowering:\s*/, '').trim();
+                }
+            });
+
+            // Extract badges from product classes
+            let badge: string | undefined;
+            const productClasses = $card.attr('class') || '';
+            if (productClasses.includes('product_tag-new-strains')) {
+                badge = 'New Strain 2025';
+            } else if (productClasses.includes('product_tag-sale')) {
+                badge = 'Sale';
+            }
+
             // Create product object following ProductCardDataFromCrawling type
             const productData: ProductCardDataFromCrawling = {
                 name,
@@ -147,14 +224,27 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
                 // Image
                 imageUrl: finalImageUrl,
                 
-                // Strain type
+                // Strain type & classification
                 strainType,
+                seedType,
+                cannabisType,
+                
+                // Badge
+                badge,
+                
+                // Rating & Reviews
+                rating,
+                reviewCount,
                 
                 // THC/CBD levels
                 thcMin,
                 thcMax,
                 cbdMin,
                 cbdMax,
+                
+                // Growing info
+                floweringTime,
+                growingLevel,
                 
                 // Pricing
                 pricings,

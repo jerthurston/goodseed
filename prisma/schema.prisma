@@ -253,8 +253,8 @@ model Image {
   id        String   @id @default(cuid())
   url       String   @unique
   alt       String?
-  width     Int?
-  height    Int?
+  width     Int? //Có thể xóa vì không cần thiết
+  height    Int? //Có thể xóa vì không cần thiết
   createdAt DateTime @default(now())
 
   seedProductImages SeedProductImage[]

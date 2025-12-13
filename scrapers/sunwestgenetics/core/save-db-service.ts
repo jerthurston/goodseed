@@ -104,9 +104,14 @@ export class SaveDbService {
 
         for (const product of products) {
             try {
-                // Parse seed type and cannabis type
-                const seedType = parseSeedType(product.name);
-                const cannabisType = parseCannabisType(product.strainType);
+                // Use parsed seed type and cannabis type from scraper, with fallback to mapping functions
+                const seedType = product.seedType ? 
+                    (product.seedType as any) : 
+                    parseSeedType(product.name);
+                    
+                const cannabisType = product.cannabisType ? 
+                    (product.cannabisType as any) : 
+                    parseCannabisType(product.cannabisType);
 
                 // Prepare data matching Prisma SeedProduct schema exactly
                 const productData = {
@@ -299,5 +304,18 @@ export class SaveDbService {
                 ...(status === 'error' && message && { notes: message }),
             },
         });
+    }
+
+    /**
+     * Log scraping activity for analytics
+     */
+    async logScrapeActivity(sellerId: string, status: string, productsCount: number, duration: number): Promise<void> {
+        // This can be extended later to log to a separate analytics table
+        // For now, we update the seller record
+        await this.updateSellerStatus(
+            sellerId, 
+            status === 'success' ? 'success' : 'error',
+            `Scraped ${productsCount} products in ${duration}ms`
+        );
     }
 }

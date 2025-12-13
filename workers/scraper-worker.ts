@@ -12,8 +12,7 @@
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { prisma } from '@/lib/prisma';
 import { ScraperJobData, scraperQueue } from '@/lib/queue/scraper-queue';
-import { ProductListScraper } from '@/scrapers/vancouverseedbank/core/product-list-scrapers';
-import { SaveDbService } from '@/scrapers/vancouverseedbank/core/save-db-service';
+import ScraperFactory, { ScraperSource } from '@/lib/factories/scraper-factory';
 import { Job } from 'bull';
 
 apiLogger.info('[Scraper Worker] Starting worker process...');
@@ -22,9 +21,9 @@ apiLogger.info('[Scraper Worker] Starting worker process...');
  * Process a single scraping job
  */
 async function processScraperJob(job: Job<ScraperJobData>) {
-  const { jobId, sellerId, mode, config } = job.data;
+  const { jobId, sellerId, source, mode, config } = job.data;
 
-  apiLogger.info('[Scraper Worker] Processing job', { jobId, mode });
+  apiLogger.info('[Scraper Worker] Processing job', { jobId, source, mode });
 
   try {
     // 1. Update job status to IN_PROGRESS
@@ -39,11 +38,12 @@ async function processScraperJob(job: Job<ScraperJobData>) {
     // Update Bull job progress
     await job.progress(10);
 
-    // 2. Initialize scraper services
-    const scraper = new ProductListScraper();
-    const dbService = new SaveDbService(prisma);
+    // 2. Initialize scraper services using factory
+    const scraperFactory = new ScraperFactory(prisma);
+    const scraper = scraperFactory.createProductListScraper(source as ScraperSource);
+    const dbService = scraperFactory.createSaveDbService(source as ScraperSource);
 
-    apiLogger.info('[Scraper Worker] Scraper initialized', { jobId });
+    apiLogger.info('[Scraper Worker] Scraper initialized', { jobId, source });
     await job.progress(20);
 
     // 3. Execute scraping based on mode
@@ -148,8 +148,9 @@ async function processScraperJob(job: Job<ScraperJobData>) {
       },
     });
 
-    // Log failed activity
-    const dbService = new SaveDbService(prisma);
+    // Log failed activity - use factory to create appropriate service
+    const scraperFactory = new ScraperFactory(prisma);
+    const dbService = scraperFactory.createSaveDbService(source as ScraperSource);
     await dbService.logScrapeActivity(sellerId, 'error', 0, 0);
 
     throw error; // Re-throw for Bull to handle retry

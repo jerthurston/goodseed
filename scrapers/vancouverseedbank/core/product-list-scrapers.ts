@@ -90,10 +90,15 @@ export class ProductListScraper {
                 log.info(`[Product List] Has next page: ${hasNextPage}`);
 
                 await dataset.pushData({ products, url: request.url, hasNextPage });
+
+                // PROJECT REQUIREMENT: Wait 2-5 seconds between requests to same site
+                const delayMs = Math.floor(Math.random() * 3000) + 2000; // Random 2000-5000ms
+                log.info(`[Product List] Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
             },
 
-            maxRequestsPerMinute: 30,
-            maxConcurrency: 1, // Sequential to detect end properly
+            maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
+            maxConcurrency: 1, // Sequential requests within same site (project requirement)
             maxRequestRetries: 3,
         });
 
@@ -215,9 +220,14 @@ export class ProductListScraper {
                 log.info(`[Batch] Page ${pageNum}: Extracted ${products.length} products`);
 
                 await dataset.pushData({ products, page: pageNum });
+
+                // PROJECT REQUIREMENT: Wait 2-5 seconds between requests to same site
+                const delayMs = Math.floor(Math.random() * 3000) + 2000; // Random 2000-5000ms
+                log.info(`[Batch] Page ${pageNum}: Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
             },
-            maxRequestsPerMinute: 30,
-            maxConcurrency: 2,
+            maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
+            maxConcurrency: 1, // Sequential requests within same site (project requirement)
             maxRequestRetries: 3,
         });
 

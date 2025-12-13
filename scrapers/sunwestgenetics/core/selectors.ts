@@ -23,6 +23,15 @@ export const PRODUCT_CARD_SELECTORS = {
     thcLevel: '.elementor-icon-list-text:contains("THC:")',
     cbdLevel: '.elementor-icon-list-text:contains("CBD:")',
 
+    // Growing Level - .elementor-icon-list-text containing "Growing Level:"
+    growingLevel: '.elementor-icon-list-text:contains("Growing Level:")',
+    
+    // Flowering Time - .elementor-icon-list-text containing "Flowering:"
+    floweringTime: '.elementor-icon-list-text:contains("Flowering:")',
+
+    // Badges - from product classes like product_tag-new-strains, product_tag-sale
+    badge: '.product_tag-new-strains, .product_tag-sale',
+
     // Price variations - input.product_variation_radio with item-price attribute
     variationInputs: 'input.product_variation_radio',
     priceDisplay: '.product_price_dfn',

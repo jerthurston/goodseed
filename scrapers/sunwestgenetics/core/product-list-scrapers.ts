@@ -92,11 +92,23 @@ export class ProductListScraper {
                 log.info(`[SunWest Product List] Has next page: ${hasNextPage}`);
 
                 await dataset.pushData({ products, url: request.url, hasNextPage });
+
+                // PROJECT REQUIREMENT: Wait 2-5 seconds between requests to same site
+                const delayMs = Math.floor(Math.random() * 3000) + 2000; // Random 2000-5000ms
+                log.info(`[SunWest Product List] Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
             },
 
-            maxRequestsPerMinute: 30,
-            maxConcurrency: 1, // Sequential to detect end properly
-            maxRequestRetries: 3,
+            // PROJECT REQUIREMENT COMPLIANCE:
+            maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
+            maxConcurrency: 1, // Sequential requests within same site (project requirement)
+            maxRequestRetries: 2, // Keep reduced retries for faster failure handling
+            requestHandlerTimeoutSecs: 30, // Add timeout
+            
+            // Additional optimizations
+            additionalMimeTypes: ['text/html'],
+            ignoreSslErrors: false,
+            persistCookiesPerSession: false, // Disable cookies for performance
         });
 
         // Auto-crawl mode: discover pages until no more products
@@ -219,9 +231,15 @@ export class ProductListScraper {
                 log.info(`[SunWest Batch] Page ${pageNum}: Extracted ${products.length} products`);
 
                 await dataset.pushData({ products, page: pageNum });
+
+                // PROJECT REQUIREMENT: Wait 2-5 seconds between requests to same site
+                const delayMs = Math.floor(Math.random() * 3000) + 2000; // Random 2000-5000ms
+                log.info(`[SunWest Batch] Page ${pageNum}: Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
             },
-            maxRequestsPerMinute: 30,
-            maxConcurrency: 2,
+            // PROJECT REQUIREMENT COMPLIANCE:
+            maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
+            maxConcurrency: 1, // Sequential requests within same site (project requirement)
             maxRequestRetries: 3,
         });
 
