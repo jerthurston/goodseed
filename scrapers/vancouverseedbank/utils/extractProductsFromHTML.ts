@@ -7,9 +7,9 @@ import { ProductCardDataFromCrawling } from '@/types/crawl.type';
  * Nhiệm vụ:
  * - Nhận vào HTML đã load sẵn (Cheerio $ object)
  * - Parse và extract dữ liệu từ các product cards
- * - Trả về array ProductCardData[]
+ * - Trả về array ProductCardDataFromCrawling[]
  * 
- * Khác với VancouverSeedBankProductListScraper:
+ * Khác với ProductListScraper:
  * - Function này KHÔNG crawl web (không fetch HTML)
  * - KHÔNG xử lý pagination
  * - KHÔNG quản lý crawler lifecycle

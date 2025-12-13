@@ -41,6 +41,7 @@ const redisClient = new Redis({
 export interface ScraperJobData {
   jobId: string; // ScrapeJob.jobId from database
   sellerId: string;
+  source: string; // scraper source: 'vancouverseedbank' | 'sunwestgenetics'
   mode: 'batch' | 'auto' | 'test';
   config: {
     scrapingSourceUrl: string;

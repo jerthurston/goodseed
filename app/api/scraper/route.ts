@@ -2,6 +2,7 @@ import { apiLogger } from "@/lib/helpers/api-logger";
 import { prisma } from "@/lib/prisma";
 import { addScraperJob } from "@/lib/queue/scraper-queue";
 import { SaveDbService } from "@/scrapers/vancouverseedbank/core/save-db-service";
+import ScraperFactory from "@/lib/factories/scraper-factory";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -109,6 +110,19 @@ export async function POST(req: NextRequest): Promise<NextResponse<ScrapeRespons
             }, { status: 400 });
         }
 
+        // Validate source
+        if (!ScraperFactory.isValidSource(body.source)) {
+            apiLogger.warn('[Scraper API] Invalid source', { source: body.source });
+            const supportedSources = ScraperFactory.getSupportedSources();
+            return NextResponse.json({
+                success: false,
+                error: {
+                    code: 'INVALID_SOURCE',
+                    message: `Invalid source. Supported sources: ${supportedSources.join(', ')}`
+                }
+            }, { status: 400 });
+        }
+
         if (!body.mode || !['batch', 'auto', 'test'].includes(body.mode)) {
             apiLogger.warn('[Scraper API] Invalid mode', { mode: body.mode });
             return NextResponse.json({
@@ -156,10 +170,11 @@ export async function POST(req: NextRequest): Promise<NextResponse<ScrapeRespons
             }
         }
 
-        // 3. Initialize seller
-        const dbService = new SaveDbService(prisma);
+        // 3. Initialize seller using factory
+        const scraperFactory = new ScraperFactory(prisma);
+        const dbService = scraperFactory.createSaveDbService(body.source);
         const sellerId = await dbService.initializeSeller();
-        apiLogger.debug('[Scraper API] Seller initialized', { sellerId });
+        apiLogger.debug('[Scraper API] Seller initialized', { sellerId, source: body.source });
 
         // 4. Create ScrapeJob record in database
         const jobId = `scrape_${randomUUID()}`;
@@ -185,6 +200,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ScrapeRespons
         await addScraperJob({
             jobId,
             sellerId,
+            source: body.source,
             mode: body.mode,
             config: {
                 scrapingSourceUrl: body.config.scrapingSourceUrl,

@@ -11,7 +11,7 @@
  */
 
 import 'dotenv/config';
-import { VancouverSeedBankProductListScraper } from '../core/product-list-scrapers';
+import { ProductListScraper } from '../core/product-list-scrapers';
 
 async function main() {
     const maxPages = parseInt(process.argv[2] || '1');
@@ -29,7 +29,7 @@ async function main() {
     console.log(`   ${testUrl}`);
     console.log('');
 
-    const scraper = new VancouverSeedBankProductListScraper();
+    const scraper = new ProductListScraper();
     const startTime = Date.now();
 
     try {
