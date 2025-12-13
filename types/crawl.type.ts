@@ -13,7 +13,9 @@ export interface ProductCardDataFromCrawling {
     url: string;
     slug: string;
     imageUrl?: string;
-    strainType?: string;        // "Balanced Hybrid", "Indica Dominant", etc.
+    // strainType?: string;        // "Balanced Hybrid", "Indica Dominant", etc.
+    seedType?: string;          // "FEMINIZED", "AUTOFLOWER", "REGULAR", "PHOTOPERIOD"
+    cannabisType?: string;      // "INDICA", "SATIVA", "HYBRID"
     badge?: string;             // "New Strain 2025", "BOGO", etc.
     rating?: number;            // 5.00
     reviewCount?: number;       // 4
@@ -34,8 +36,9 @@ export interface CategoryMetadataFromCrawling {
     seedType?: string;          // FEMINIZED, AUTOFLOWERING, CBD, etc.
 }
 
-export interface CategoryResultFromCrawling {
-    category: string;
+// export interface CategoryResultFromCrawling {
+export interface ProductsDataResultFromCrawling {
+    // category: string;
     totalProducts: number;
     totalPages: number;
     products: ProductCardDataFromCrawling[];
