@@ -45,27 +45,6 @@ model User {
   twoFactorConfirmation TwoFactorConfirmation?
   session               Session[]
   account               Account[]
-
-  // aiTool                 AITool[]
-  // aiToolReview           AIToolReview[]
-  // account                Account[]
-  // bookmarkFolder         BookmarkFolder[]
-  // bookmarkedAiTool       BookmarkedAiTool[]
-  // campaign               Campaign[]
-  // chatConversations      ChatConversation[]
-  // comments               Comment[]
-  // commentLikes           CommentLike[]
-  // commentReports         CommentReport[]
-  // emailEvent             EmailEvent[]
-  // emailTemplate          EmailTemplate[]
-  // notification           Notification[]
-  // notificationPreference NotificationPreference?
-  // post                   Post[]
-  // postSeries             PostSeries[]
-  // reviewLikes            ReviewLike[]
-  // reviewReports          ReviewReport[]
-  // userActivity           UserActivity[]
-  // userCampaign           UserCampaign[]
 }
 
 model Account {
@@ -166,16 +145,17 @@ enum StockStatus {
 // Đại diện cho các site bán hạt giống (e.g., Seed Supreme, ILGM, Herbies)
 // GoodSeed làm affiliate marketing để chuyển hướng traffic đến website của họ
 model Seller {
-  id                 String    @id @default(cuid())
-  name               String    @unique // "Seed Supreme", "ILGM"
-  url                String // Homepage URL
-  scrapingSourceUrl  String // URL of products listing page to scrape (e.g., https://vancouverseedbank.ca/shop/jsf/epro-archive-products/)
-  affiliateTag       String? // Affiliate tag để tạo commission URL
-  isActive           Boolean   @default(true) // Kill switch để ẩn seller
-  lastScraped        DateTime?
-  status             String? // success/error
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  name                String    @unique // "Seed Supreme", "ILGM"
+  url                 String // Homepage URL
+  scrapingSourceUrl   String // URL of products listing page to scrape (e.g., https://vancouverseedbank.ca/shop/jsf/epro-archive-products/)
+  affiliateTag        String? // Affiliate tag để tạo commission URL
+  isActive            Boolean   @default(true) // Kill switch để ẩn seller
+  autoScrapeInterval  Int?      @default(6) // Auto scrape interval in hours
+  lastScraped         DateTime?
+  status              String? // success/error
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   seedCategories SeedProductCategory[]
   scrapeLogs     ScrapeLog[]

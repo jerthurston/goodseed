@@ -5,7 +5,7 @@ import FilterModal from '@/components/custom/modals/FilterModal'
 import CategorySelect from '@/components/custom/select/CategorySelect'
 import SeedtypeSelect from '@/components/custom/select/SeedtypeSelect'
 import SortSelect from '@/components/custom/select/SortSelect'
-import { useSeeds } from '@/hooks/seed/useSeeds'
+import { useFetchSeeds } from '@/hooks/seed/useSeeds'
 import { faChevronDown, faSearch, faSlidersH } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -45,7 +45,7 @@ const SeedsPageClient = () => {
         isFetching,
         isError,
         error
-    } = useSeeds({
+    } = useFetchSeeds({
         searchKeyword: activeSearchKeyword,
         filters: {
             priceRange: {
