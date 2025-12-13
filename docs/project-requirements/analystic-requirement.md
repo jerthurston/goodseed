@@ -66,7 +66,20 @@ Bắt Đầu Với Bao Nhiêu?: Với MVP, bắt đầu 3-5 file (e.g., Seed Sup
         - Ý nghĩa: Giữa mỗi request HTTP (e.g., fetch một page), chờ ngẫu nhiên 2-5 giây để mimic hành vi người dùng thật.
         - Lý do: Tránh rate limiting hoặc bị ban IP từ site (e.g., nếu request quá nhanh, site nghĩ là bot). Điều này giúp scraper "lịch sự" và bền vững.
         - Triển khai gợi ý: Sử dụng setTimeout hoặc thư viện như puppeteer-extra với delay random: await new Promise(r => setTimeout(r, Math.random() * 3000 + 2000));. Áp dụng khi loop qua pagination (các trang sản phẩm).
-
+        - Kịch bản đúng sẽ là:
+            - Scraper A (cho Site A):
+                - Gửi yêu cầu (request) đến siteA.com/products?page=1.
+                - Xử lý dữ liệu trang 1.
+                - Đợi 2-5 giây.
+                - Gửi yêu cầu tiếp theo đến siteA.com/products?page=2.
+                - Xử lý dữ liệu trang 2.
+                - Đợi 2-5 giây.
+                - Tiếp tục cho page=3, page=4... Cứ mỗi một lần chuyển trang là một request mới và bạn phải đợi trước khi thực hiện nó.
+            - Scraper B (cho Site B):Quy trình tương tự cũng được áp dụng cho Site B. Giữa các lần request đến siteB.com cũng phải có độ trễ 2-5 giây.
+            - Về việc crawl 10 - 12 trang cùng lúc:
+                - Điều quan trọng cần lưu ý là quy tắc này không áp dụng giữa các trang web khác nhau.
+                - Tình huống A: Bạn chạy 10 - 12 scraper song song (parallel) - (khuyến khích chọn phương án này -  nhanh hiệu suất cao nếu đáp ứng được hạ tầng)
+                - Tình huống B: Chạy 10 - 12 scraper lần lượt (sequential) - (thiết lập đơn giản hơn nhưng không hiệu quả)
     - ***Take lowest price if a range is shown***:
         - Ý nghĩa: Nếu giá hiển thị dưới dạng khoảng (range, e.g., $10-$15), lấy giá thấp nhất ($10) làm total price.
         - Lý do: Đảm bảo tính nhất quán và tối ưu cho người dùng (giá thấp nhất hấp dẫn hơn), đồng thời dễ normalize thành price per seed (tổng giá / pack size).

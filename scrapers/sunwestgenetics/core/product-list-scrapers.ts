@@ -1,51 +1,53 @@
 /**
- * Vancouver Seed Bank Product List Scraper (Cheerio - Standard Pagination)
+ * SunWest Genetics Product List Scraper (Cheerio - Standard Pagination)
  * 
- * Uses Cheerio for fast HTML parsing with WooCommerce standard pagination
+ * Uses Cheerio for fast HTML parsing with standard pagination
+ * Adapted from Vancouver Seed Bank scraper
  */
 
-import { extractProductsFromHTML } from '@/scrapers/vancouverseedbank/utils/extractProductsFromHTML';
+import { extractProductsFromHTML } from '@/scrapers/sunwestgenetics/utils/extractProductsFromHTML';
 import { CategoryResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { CheerioCrawler, Dataset, RequestQueue } from 'crawlee';
 import { BASE_URL, PRODUCT_CARD_SELECTORS, getCategoryUrl } from './selectors';
 
 /**
- * VancouverSeedBankProductListScraper
+ * SunWestGeneticsProductListScraper
  * 
  * Nhiệm vụ chính:
- * 1. Crawl danh sách sản phẩm từ Vancouver Seed Bank (product listing pages)
+ * 1. Crawl danh sách sản phẩm từ SunWest Genetics (product listing pages)
  * 2. Hỗ trợ 2 chế độ:
  *    - Fixed mode: Crawl số trang cố định (maxPages > 0)
  *    - Auto mode: Crawl tự động đến hết trang (maxPages = 0)
  * 
- * 3. Extract thông tin từ product cards:
+ * 3. Extract thông tin từ product sections:
  *    - Tên sản phẩm, URL, slug
- *    - Hình ảnh (xử lý lazy loading)
- *    - Strain type (Indica, Sativa, Hybrid)
- *    - Rating và review count
- *    - THC/CBD levels (min/max)
+ *    - Hình ảnh
+ *    - Strain type (Indica Dominant Hybrid, Sativa Dominant Hybrid, Balanced Hybrid, etc.)
+ *    - Rating và review count từ "Rated X.XX out of 5 based on N customer ratings"
+ *    - THC/CBD levels với parsing thông minh từ text patterns
  *    - Flowering time, growing level
+ *    - Pricing với pack sizes (5, 10, 25 seeds) từ "Pack 5 10 25 $65.00 – $240.00"
  * 
- * 4. Sử dụng CheerioCrawler (nhanh, không cần Playwright):
- *    - Phù hợp với WooCommerce standard pagination
- *    - Không có JavaScript dynamic content
+ * 4. Sử dụng CheerioCrawler:
+ *    - Parse HTML sections thay vì structured product cards
+ *    - Text-based extraction cho SunWest Genetics format
  * 
- * 5. Trả về CategoryScrapeResult:
+ * 5. Trả về CategoryResultFromCrawling:
  *    - Danh sách products[]
  *    - Metadata (totalProducts, totalPages, duration)
  * 
  * Lưu ý:
  * - Không lưu database, chỉ crawl và return data
- * - Để lưu DB, dùng VancouverSeedBankDbService
+ * - Để lưu DB, dùng SaveDbService
  * - Để crawl theo batch, dùng scrape-batch.ts script
  * 
- * VancouverSeedBankProductListScraper
+ * SunWestGeneticsProductListScraper
     │
     ├─> Fetch page 1, 2, 3... (CheerioCrawler)
     │
     └─> Mỗi page gọi extractProductsFromHTML($)
             │
-            └─> Parse HTML → return products[]
+            └─> Parse HTML sections → extract text patterns → return products[]
  */
 export class ProductListScraper {
     private baseUrl: string;
@@ -64,9 +66,9 @@ export class ProductListScraper {
         const startTime = Date.now();
 
         const runId = Date.now();
-        const datasetName = `vsb-${runId}`;
+        const datasetName = `sunwest-${runId}`;
         const dataset = await Dataset.open(datasetName);
-        const requestQueue = await RequestQueue.open(`vsb-queue-${runId}`);
+        const requestQueue = await RequestQueue.open(`sunwest-queue-${runId}`);
 
         let actualPages = 0;
         const emptyPages = new Set<string>();
@@ -74,11 +76,11 @@ export class ProductListScraper {
         const crawler = new CheerioCrawler({
             requestQueue,
             async requestHandler({ $, request, log }) {
-                log.info(`[Product List] Scraping: ${request.url}`);
+                log.info(`[SunWest Product List] Scraping: ${request.url}`);
 
                 // Extract products from current page
                 const products = extractProductsFromHTML($);
-                log.info(`[Product List] Extracted ${products.length} products`);
+                log.info(`[SunWest Product List] Extracted ${products.length} products`);
 
                 // Track empty pages
                 if (products.length === 0) {
@@ -87,19 +89,26 @@ export class ProductListScraper {
 
                 // Check if there's a next page
                 const hasNextPage = $(PRODUCT_CARD_SELECTORS.nextPage).length > 0;
-                log.info(`[Product List] Has next page: ${hasNextPage}`);
+                log.info(`[SunWest Product List] Has next page: ${hasNextPage}`);
 
                 await dataset.pushData({ products, url: request.url, hasNextPage });
 
                 // PROJECT REQUIREMENT: Wait 2-5 seconds between requests to same site
                 const delayMs = Math.floor(Math.random() * 3000) + 2000; // Random 2000-5000ms
-                log.info(`[Product List] Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
+                log.info(`[SunWest Product List] Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
                 await new Promise(resolve => setTimeout(resolve, delayMs));
             },
 
+            // PROJECT REQUIREMENT COMPLIANCE:
             maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
             maxConcurrency: 1, // Sequential requests within same site (project requirement)
-            maxRequestRetries: 3,
+            maxRequestRetries: 2, // Keep reduced retries for faster failure handling
+            requestHandlerTimeoutSecs: 30, // Add timeout
+            
+            // Additional optimizations
+            additionalMimeTypes: ['text/html'],
+            ignoreSslErrors: false,
+            persistCookiesPerSession: false, // Disable cookies for performance
         });
 
         // Auto-crawl mode: discover pages until no more products
@@ -119,12 +128,12 @@ export class ProductListScraper {
                 const lastResult = results.items[results.items.length - 1] as { products: ProductCardDataFromCrawling[], hasNextPage: boolean };
 
                 if (lastResult.products.length === 0) {
-                    console.log(`[Product List] Page ${page} is empty. Stopping.`);
+                    console.log(`[SunWest Product List] Page ${page} is empty. Stopping.`);
                     break;
                 }
 
                 if (!lastResult.hasNextPage) {
-                    console.log(`[Product List] No next page button found. Stopping at page ${page}.`);
+                    console.log(`[SunWest Product List] No next page button found. Stopping at page ${page}.`);
                     actualPages = page;
                     break;
                 }
@@ -134,7 +143,7 @@ export class ProductListScraper {
 
                 // Safety limit
                 if (page > 200) {
-                    console.log('[Product List] Reached safety limit of 200 pages. Stopping.');
+                    console.log('[SunWest Product List] Reached safety limit of 200 pages. Stopping.');
                     break;
                 }
             }
@@ -197,9 +206,9 @@ export class ProductListScraper {
         const totalPages = endPage - startPage + 1;
 
         const runId = Date.now();
-        const datasetName = `vsb-batch-${runId}`;
+        const datasetName = `sunwest-batch-${runId}`;
         const dataset = await Dataset.open(datasetName);
-        const requestQueue = await RequestQueue.open(`vsb-queue-batch-${runId}`);
+        const requestQueue = await RequestQueue.open(`sunwest-queue-batch-${runId}`);
 
         // Generate URLs for page range
         const urls: string[] = [];
@@ -207,25 +216,28 @@ export class ProductListScraper {
             urls.push(getCategoryUrl(listingUrl, page));
         }
 
-        console.log(`[Batch] Scraping pages ${startPage}-${endPage} (${totalPages} pages)`);
+        console.log(`[SunWest Batch] Scraping pages ${startPage}-${endPage} (${totalPages} pages)`);
 
         // Crawl pages
         const crawler = new CheerioCrawler({
             requestQueue,
             async requestHandler({ $, request, log }) {
-                const pageNum = request.url.match(/pagenum\/(\d+)/)?.[1] || '1';
-                log.info(`[Batch] Page ${pageNum}: ${request.url}`);
+                // Extract page number from URL
+                const url = new URL(request.url);
+                const pageNum = url.searchParams.get('page') || '1';
+                log.info(`[SunWest Batch] Page ${pageNum}: ${request.url}`);
 
                 const products = extractProductsFromHTML($);
-                log.info(`[Batch] Page ${pageNum}: Extracted ${products.length} products`);
+                log.info(`[SunWest Batch] Page ${pageNum}: Extracted ${products.length} products`);
 
                 await dataset.pushData({ products, page: pageNum });
 
                 // PROJECT REQUIREMENT: Wait 2-5 seconds between requests to same site
                 const delayMs = Math.floor(Math.random() * 3000) + 2000; // Random 2000-5000ms
-                log.info(`[Batch] Page ${pageNum}: Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
+                log.info(`[SunWest Batch] Page ${pageNum}: Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
                 await new Promise(resolve => setTimeout(resolve, delayMs));
             },
+            // PROJECT REQUIREMENT COMPLIANCE:
             maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
             maxConcurrency: 1, // Sequential requests within same site (project requirement)
             maxRequestRetries: 3,
@@ -251,5 +263,3 @@ export class ProductListScraper {
         };
     }
 }
-
-
