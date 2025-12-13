@@ -11,27 +11,22 @@ import {
   DashboardIconButton,
   DashboardProgressBar,
 } from "./index"
+import { SellerUI } from "@/types/seller.type"
 
 interface SellerCardProps {
-  seller: {
-    id: number
-    name: string
-    url: string
-    isActive: boolean
-    lastScraped?: string
-    stats?: {
-      successRate: number
-      productsScraped?: number
-      totalRuns?: number
-    }
-  }
-  onToggleActive?: (id: number) => void
-  onManualScrape?: (id: number) => void
+  seller: SellerUI;
+  isToggling?: boolean;
+  toggleError?: Error | null;
+  onToggleActive?: (id: string) => void
+  onManualScrape?: (id: string) => void
   showActions?: boolean
 }
+import {toast} from 'sonner';
 
 export function SellerCard({
   seller,
+  isToggling,
+  toggleError,
   onToggleActive,
   onManualScrape,
   showActions = false,
@@ -100,7 +95,13 @@ export function SellerCard({
         <DashboardCardFooter className="flex justify-between">
           <DashboardButton
             variant="outline"
-            onClick={() => onToggleActive?.(seller.id)}
+            onClick={
+              () => {
+              onToggleActive?.(seller.id)
+              toggleError !== null ? toast.error(`Error: ${toggleError?.message}`) : toast.success(`Seller ${seller.isActive ? 'deactivated' : 'activated'} successfully!`)
+            }
+            }
+            disabled={isToggling}
             className="text-sm px-4 py-2"
           >
             {seller.isActive ? "Deactivate" : "Activate"}

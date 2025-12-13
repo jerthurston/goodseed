@@ -9,6 +9,7 @@ import { ReactQueryProvider } from "@/lib/providers/react-query-provider";
 import type { Metadata } from "next";
 import "../styles/styles.css";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Goodseed - Plant Seed Marketplace",
@@ -31,6 +32,7 @@ export default function RootLayout({
           <Header />
           {children}
           <Footer />
+          <Toaster />
         </ReactQueryProvider>
       </body>
     </html>

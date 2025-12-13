@@ -389,3 +389,76 @@
   color: var(--text-primary-muted);
   margin-left: 0.25rem;
 }
+
+/* ============================================================
+   TOGGLE COMPONENTS
+   ============================================================ */
+.toggleContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.toggleLabel {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.toggle {
+  position: relative;
+  width: 4rem;
+  height: 2rem;
+  border: 3px solid var(--border-color);
+  background-color: var(--bg-section);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggleActive {
+  background-color: var(--brand-primary);
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 0.15rem;
+  left: 0.125rem;
+  height: 1.25rem;
+  width: 1.25rem;
+  background-color: var(--bg-main);
+  border: 2px solid var(--border-color);
+  transition: transform 0.2s ease;
+}
+
+.toggleThumbActive {
+  transform: translateX(2rem);
+}
+
+.toggleStatus {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.toggleStatusActive {
+  color: var(--brand-primary);
+}
+
+.toggleStatusInactive {
+  color: var(--text-primary-muted);
+}
+
+.selectInterval {
+  border:2px solid var(--border-color);
+  background-color: var(--bg-main);
+  padding:0.1rem;
+  cursor: pointer;
+}
