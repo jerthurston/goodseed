@@ -13,7 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 /**
  * Custom hook useSeeds với TanStack Query
  */
-export function useSeeds(options: UseSeedsInputOptions): UseSeedsOutputResult {
+export function useFetchSeeds(options: UseSeedsInputOptions): UseSeedsOutputResult {
     apiLogger.logRequest('useSeeds', {
         options,
         enabled: options.enabled ?? true

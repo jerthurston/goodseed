@@ -40,3 +40,7 @@ export { DashboardSidebar, DashboardSidebarItem } from "./DashboardSidebar"
 // Feature Components
 export { SellerCard } from "./SellerCard"
 export { StatsOverview } from "./StatsOverview"
+
+//Defautl component export
+export { default as DashboardOverview } from "./DashboardOverview"
+
