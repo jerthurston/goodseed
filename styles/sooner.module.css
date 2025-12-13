@@ -1,0 +1,227 @@
+/* Sonner Toast Goodseed Theme Styles */
+.goodseedToaster {
+  font-family: 'Poppins', sans-serif;
+}
+
+.goodseedToast {
+  background: var(--bg-main) !important;
+  border: 3px solid var(--border-color) !important;
+  border-radius: 0 !important;
+  box-shadow: 6px 6px 0 var(--border-color) !important;
+  color: var(--text-primary) !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 500 !important;
+  padding: 1rem 1.25rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.goodseedToast:hover {
+  transform: translate(3px, 3px) !important;
+  box-shadow: 3px 3px 0 var(--border-color) !important;
+}
+
+/* Success toast */
+.successToast {
+  border-color: var(--brand-primary) !important;
+  box-shadow: 6px 6px 0 var(--brand-primary) !important;
+}
+
+.successToast:hover {
+  box-shadow: 3px 3px 0 var(--brand-primary) !important;
+}
+
+/* Error toast */
+.errorToast {
+  border-color: var(--danger-color) !important;
+  box-shadow: 6px 6px 0 var(--danger-color) !important;
+}
+
+.errorToast:hover {
+  box-shadow: 3px 3px 0 var(--danger-color) !important;
+}
+
+/* Warning toast */
+.warningToast {
+  border-color: #f39c12 !important;
+  box-shadow: 6px 6px 0 #f39c12 !important;
+}
+
+.warningToast:hover {
+  box-shadow: 3px 3px 0 #f39c12 !important;
+}
+
+/* Info toast */
+.infoToast {
+  border-color: #3498db !important;
+  box-shadow: 6px 6px 0 #3498db !important;
+}
+
+.infoToast:hover {
+  box-shadow: 3px 3px 0 #3498db !important;
+}
+
+/* Loading toast */
+.loadingToast {
+  border-color: var(--accent-cta) !important;
+  box-shadow: 6px 6px 0 var(--accent-cta) !important;
+  background: var(--bg-section) !important;
+}
+
+.loadingToast:hover {
+  box-shadow: 3px 3px 0 var(--accent-cta) !important;
+}
+
+/* Toast content styling */
+.toastTitle {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  line-height: 1.4 !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.successTitle {
+  color: var(--brand-primary) !important;
+}
+
+.errorTitle {
+  color: var(--danger-color) !important;
+}
+
+.warningTitle {
+  color: #f39c12 !important;
+}
+
+.infoTitle {
+  color: #3498db !important;
+}
+
+.toastDescription {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 400 !important;
+  font-size: 0.9rem !important;
+  color: var(--text-primary-muted) !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+}
+
+.toastIcon {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  margin-right: 0.75rem !important;
+  flex-shrink: 0 !important;
+}
+
+.successIcon {
+  color: var(--brand-primary) !important;
+}
+
+.errorIcon {
+  color: var(--danger-color) !important;
+}
+
+.warningIcon {
+  color: #f39c12 !important;
+}
+
+.infoIcon {
+  color: #3498db !important;
+}
+
+.loadingIcon {
+  color: var(--text-primary) !important;
+}
+
+.closeButton {
+  background: none !important;
+  border: 2px solid var(--border-color) !important;
+  border-radius: 0 !important;
+  color: var(--text-primary) !important;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+}
+
+.closeButton:hover {
+  background: var(--border-color) !important;
+  color: var(--bg-main) !important;
+  transform: scale(1.1) !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .goodseedToast {
+    margin: 0 1rem 0.75rem 1rem !important;
+    padding: 0.875rem 1rem !important;
+  }
+  
+  .toastTitle {
+    font-size: 0.9rem !important;
+  }
+  
+  .toastDescription {
+    font-size: 0.8rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .goodseedToast {
+    margin: 0 0.5rem 0.75rem 0.5rem !important;
+    padding: 0.75rem 0.875rem !important;
+    box-shadow: 4px 4px 0 var(--border-color) !important;
+  }
+  
+  .goodseedToast:hover {
+    transform: translate(2px, 2px) !important;
+    box-shadow: 2px 2px 0 var(--border-color) !important;
+  }
+  
+  /* Mobile specific shadows for each type */
+  .successToast {
+    box-shadow: 4px 4px 0 var(--brand-primary) !important;
+  }
+  
+  .successToast:hover {
+    box-shadow: 2px 2px 0 var(--brand-primary) !important;
+  }
+  
+  .errorToast {
+    box-shadow: 4px 4px 0 var(--danger-color) !important;
+  }
+  
+  .errorToast:hover {
+    box-shadow: 2px 2px 0 var(--danger-color) !important;
+  }
+  
+  .warningToast {
+    box-shadow: 4px 4px 0 #f39c12 !important;
+  }
+  
+  .warningToast:hover {
+    box-shadow: 2px 2px 0 #f39c12 !important;
+  }
+  
+  .infoToast {
+    box-shadow: 4px 4px 0 #3498db !important;
+  }
+  
+  .infoToast:hover {
+    box-shadow: 2px 2px 0 #3498db !important;
+  }
+  
+  .loadingToast {
+    box-shadow: 4px 4px 0 var(--accent-cta) !important;
+  }
+  
+  .loadingToast:hover {
+    box-shadow: 2px 2px 0 var(--accent-cta) !important;
+  }
+}
