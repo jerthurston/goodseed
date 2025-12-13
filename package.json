@@ -7,10 +7,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    
+    "# Modern Hybrid Scraper Scripts": "",
+    "scraper:hybrid-test": "tsx scripts/test/test-hybrid-extraction.ts",
+    "scraper:factory-demo": "tsx scripts/demo/enhanced-factory-demo.ts", 
+    "scraper:setup": "tsx scripts/setup/setup-new-site.ts",
+    
+    "# Legacy Scripts (kept for reference)": "",
     "scraper": "tsx scripts/test-scraper.ts",
     "scraper:leafly": "tsx scripts/test-scraper.ts leafly",
     "test:scraper": "tsx scripts/test-scraper-simple.ts",
     "scrape:save": "tsx scripts/scrape-and-save.ts",
+    
+    "# Database & Utilities": "",
     "db:check": "tsx scripts/check-db.ts",
     "cron:start": "tsx scripts/cron-server.ts",
     "db:seed:dispensaries": "tsx scripts/seed-dispensaries.ts",
