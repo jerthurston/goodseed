@@ -1,79 +1,160 @@
-import { log } from '@/lib/utils';
-import { runScraper } from '@/scrapers';
 import cron from 'node-cron';
 
 /**
- * Cron Jobs cho Auto Scraping
+ * Modern Cron Jobs cho Hybrid Cannabis Scraping System
  * 
  * Strategies:
- * 1. Incremental Scrape: Mỗi 12 giờ, scrape 10 pages đầu (hot strains)
- * 2. Full Scrape: Mỗi Chủ Nhật, scrape 50 pages (refresh data)
+ * 1. Daily Priority Sites: High-value sites mỗi ngày (Vancouver, SunWest, etc.)
+ * 2. Weekly Full Refresh: Tất cả sites mỗi tuần để refresh data
+ * 3. Hourly Quick Check: Check for new products trên priority sites
+ * 
+ * Integration: Sử dụng modern API endpoint /api/cron/scraper
  */
 
-// Incremental Scrape: 6:00 AM và 6:00 PM hàng ngày
-export const incrementalScrapeJob = cron.schedule(
-    '0 6,18 * * *',
+// Cannabis sites configuration
+const CANNABIS_SITES_CONFIG = {
+  priority: [
+    'vancouverseedbank',
+    'sunwestgenetics', 
+    'cropkingseeds',
+    'bcbuddepot'
+  ],
+  secondary: [
+    'beaverseed',
+    'fireandflower',
+    'maryjanesgarden',
+    'mjseedscanada',
+    'rocketseeds',
+    'royalqueenseeds',
+    'seedsupreme',
+    'sonomaseeds'
+  ]
+};
+
+/**
+ * Call modern cron API endpoint
+ */
+async function triggerScrapingJob(sites?: string[]): Promise<void> {
+  try {
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      throw new Error('CRON_SECRET not configured');
+    }
+
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/cron/scraper`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${cronSecret}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Cron API failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.console.log(`[CRON] Scraping triggered: ${result.data.jobsQueued} jobs queued for ${result.data.totalSellers} sites`);
+  } catch (error) {
+    console.error('[CRON] Failed to trigger scraping:', error);
+    throw error;
+  }
+}
+
+// Quick Check: Mỗi 4 tiếng - Priority sites only  
+export const quickCheckJob = cron.schedule(
+    '0 */4 * * *', // Every 4 hours
     async () => {
         try {
-            log('=== [CRON] Starting Incremental Scrape ===');
-            await runScraper('leafly', 1, 10); // Top 10 pages
-            log('=== [CRON] Incremental Scrape Completed ===');
+            console.log('=== [CRON] Starting Quick Check (Priority Sites) ===');
+            await triggerScrapingJob(CANNABIS_SITES_CONFIG.priority);
+            console.log('=== [CRON] Quick Check Completed ===');
         } catch (error) {
-            console.error('[CRON] Incremental scrape failed:', error);
-            // TODO: Send alert to Slack/Email
+            console.error('[CRON] Quick check failed:', error);
+            // TODO: Send alert to monitoring system
         }
     },
     {
-        timezone: 'America/Edmonton', // Adjust to your timezone
+        timezone: 'America/Edmonton'
     }
 );
 
-// Full Scrape: Mỗi Chủ Nhật 2:00 AM
-export const fullScrapeJob = cron.schedule(
-    '0 2 * * 0',
+// Daily Priority Scrape: 6:00 AM và 8:00 PM
+export const dailyPriorityScrapeJob = cron.schedule(
+    '0 6,20 * * *',
     async () => {
         try {
-            log('=== [CRON] Starting Full Scrape ===');
-
-            // Scrape in batches to avoid timeout
-            const batchSize = 50;
-            const totalPages = 488;
-
-            for (let start = 1; start <= totalPages; start += batchSize) {
-                const end = Math.min(start + batchSize - 1, totalPages);
-                log(`[CRON] Scraping batch: pages ${start}-${end}`);
-
-                await runScraper('leafly', start, end);
-
-                // Delay between batches
-                if (end < totalPages) {
-                    await new Promise(resolve => setTimeout(resolve, 60000)); // 1 min break
-                }
-            }
-
-            log('=== [CRON] Full Scrape Completed ===');
+            console.log('=== [CRON] Starting Daily Priority Scrape ===');
+            await triggerScrapingJob(CANNABIS_SITES_CONFIG.priority);
+            console.log('=== [CRON] Daily Priority Scrape Completed ===');
         } catch (error) {
-            console.error('[CRON] Full scrape failed:', error);
-            // TODO: Send alert
+            console.error('[CRON] Daily priority scrape failed:', error);
         }
     },
     {
-        timezone: 'America/Edmonton',
+        timezone: 'America/Edmonton'
+    }
+);
+
+// Weekly Full Scrape: Mỗi Chủ Nhật 3:00 AM - Tất cả sites
+export const weeklyFullScrapeJob = cron.schedule(
+    '0 3 * * 0',
+    async () => {
+        try {
+            console.log('=== [CRON] Starting Weekly Full Scrape (All Sites) ===');
+            
+            // Priority sites first
+            console.log('[CRON] Phase 1: Priority sites');
+            await triggerScrapingJob(CANNABIS_SITES_CONFIG.priority);
+            
+            // Wait 30 minutes before secondary sites
+            await new Promise(resolve => setTimeout(resolve, 30 * 60 * 1000));
+            
+            // Secondary sites
+            console.log('[CRON] Phase 2: Secondary sites'); 
+            await triggerScrapingJob(CANNABIS_SITES_CONFIG.secondary);
+            
+            console.log('=== [CRON] Weekly Full Scrape Completed ===');
+        } catch (error) {
+            console.error('[CRON] Weekly full scrape failed:', error);
+        }
+    },
+    {
+        timezone: 'America/Edmonton'
     }
 );
 
 // Start all cron jobs
 export function startCronJobs() {
-    log('Starting cron jobs...');
-    // Jobs are created with auto-start, no need to call .start()
-    log('Cron jobs started!');
-    log('- Incremental scrape: Every 12 hours (6 AM, 6 PM)');
-    log('- Full scrape: Every Sunday at 2 AM');
+    console.log('Starting modern cannabis scraping cron jobs...');
+    
+    // Start jobs manually for better control
+    quickCheckJob.start();
+    dailyPriorityScrapeJob.start(); 
+    weeklyFullScrapeJob.start();
+    
+    console.log('Modern cron jobs started!');
+    console.log('- Quick check: Every 4 hours (priority sites)');
+    console.log('- Daily priority: 6 AM & 8 PM (priority sites)'); 
+    console.log('- Weekly full: Sunday 3 AM (all 11 cannabis sites)');
 }
 
 // Stop all cron jobs
 export function stopCronJobs() {
-    incrementalScrapeJob.stop();
-    fullScrapeJob.stop();
-    log('Cron jobs stopped!');
+    quickCheckJob.stop();
+    dailyPriorityScrapeJob.stop();
+    weeklyFullScrapeJob.stop();
+    console.log('Modern cron jobs stopped!');
+}
+
+// Manual trigger functions for testing
+export async function triggerPrioritySites() {
+    console.log('[MANUAL] Triggering priority sites scrape...');
+    await triggerScrapingJob(CANNABIS_SITES_CONFIG.priority);
+}
+
+export async function triggerAllSites() {
+    console.log('[MANUAL] Triggering all sites scrape...');
+    await triggerScrapingJob([...CANNABIS_SITES_CONFIG.priority, ...CANNABIS_SITES_CONFIG.secondary]);
 }

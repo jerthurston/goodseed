@@ -11,6 +11,7 @@ import { CheerioCrawler } from 'crawlee';
 // Database services (retained for data persistence)
 import { SaveDbService as VancouverSaveDbService } from '@/scrapers/vancouverseedbank/core/save-db-service';
 import { SaveDbService as SunWestSaveDbService } from '@/scrapers/sunwestgenetics/core/save-db-service';
+import { SaveDbService as CropKingSaveDbService } from '@/scrapers/cropkingseeds/core/save-db-service';
 
 // Modern hybrid scrapers
 import { 
@@ -21,6 +22,10 @@ import {
   createSunWestScraper, 
   SUNWEST_SELECTORS 
 } from '@/scrapers/sunwestgenetics/hybrid/sunwest-hybrid-scraper';
+import {
+  createCropKingSeedsScraper,
+  CROPKINGSEEDS_SELECTORS
+} from '@/scrapers/cropkingseeds/hybrid/cropkingseeds-hybrid-scraper';
 
 // Hybrid system utilities
 import { ManualSelectors, ScraperProduct } from '@/lib/services/json-ld';
@@ -151,8 +156,8 @@ export class ScraperFactory {
       'cropkingseeds': {
         name: 'Crop King Seeds',
         baseUrl: 'https://www.cropkingseeds.ca',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
+        selectors: CROPKINGSEEDS_SELECTORS,
+        isImplemented: true
       },
       'canukseeds': {
         name: 'Canuk Seeds',
@@ -193,6 +198,9 @@ export class ScraperFactory {
       case 'sunwestgenetics':
         return await createSunWestScraper();
       
+      case 'cropkingseeds':
+        return await createCropKingSeedsScraper();
+      
       default:
         throw new Error(`Scraper implementation not found for: ${source}`);
     }
@@ -208,6 +216,9 @@ export class ScraperFactory {
       
       case 'sunwestgenetics':
         return new SunWestSaveDbService(this.prisma);
+      
+      case 'cropkingseeds':
+        return new CropKingSaveDbService(this.prisma);
       
       default:
         const siteConfig = this.getSiteConfig(source);
@@ -259,7 +270,7 @@ export class ScraperFactory {
    * Get only implemented sources (ready for production)
    */
   static getImplementedSources(): ScraperSource[] {
-    return ['vancouverseedbank', 'sunwestgenetics'];
+    return ['vancouverseedbank', 'sunwestgenetics', 'cropkingseeds'];
   }
 
   /**
@@ -273,7 +284,6 @@ export class ScraperFactory {
       'mjseedscanada',
       'sonomaseeds',
       'rocketseeds',
-      'cropkingseeds',
       'canukseeds',
       'truenorthseedbank'
     ];

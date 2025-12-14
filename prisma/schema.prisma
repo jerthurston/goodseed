@@ -12,10 +12,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// ==============================================================================
-// Auth Models - NextAuth.js v5 with Prisma Adapter
-// ==============================================================================
-
 enum UserRole {
   ADMIN
   USER
@@ -154,6 +150,16 @@ model Seller {
   autoScrapeInterval  Int?      @default(6) // Auto scrape interval in hours
   lastScraped         DateTime?
   status              String? // success/error
+  
+  // Scraper Configuration (Simple approach)
+  productCardHtml     String? // Raw HTML của 1 product card (admin copy/paste)
+  jsonLd              String? // Raw JSON-LD data (nếu có)
+  paginationPattern   String? // Pattern phân trang: "?pagenum={page}"
+  maxPages            Int?    @default(10)
+  
+  // Auto-computed selectors (hệ thống tự tính)
+  computedSelectors   Json?   // Selectors được hệ thống phân tích tự động
+  
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -351,5 +357,4 @@ model ScrapeJob {
   @@index([targetCategoryId])
 }
 
-// Update Seller model to include scrapeJobs relation
-// (Add this line to Seller model's relations section)
+

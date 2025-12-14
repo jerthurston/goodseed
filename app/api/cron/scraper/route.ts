@@ -151,6 +151,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<CronResponse>>
             await addScraperJob({
                 jobId,
                 sellerId: seller.id,
+                source: seller.name.toLowerCase().replace(/\s+/g, ''), // Convert seller name to source
                 mode: 'auto',
                 config: {
                     scrapingSourceUrl: seller.scrapingSourceUrl,
