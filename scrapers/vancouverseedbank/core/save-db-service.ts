@@ -108,7 +108,7 @@ export class SaveDbService {
                 const seedType = parseSeedType(product.name);
 
                 // Parse cannabisType from strainType (e.g., "Indica Dominant Hybrid" -> INDICA)
-                const cannabisType = parseCannabisType(product.strainType);
+                const cannabisType = parseCannabisType(product.cannabisType);
 
                 // Kiểm tra slug của product đã tồn tại chưa, nếu chưa thì tạo mới, nếu đã có thì update bằng upsert
                 const existing = await this.prisma.seedProduct.findUnique({
@@ -131,7 +131,7 @@ export class SaveDbService {
                     update: {
                         name: product.name,
                         url: product.url,
-                        description: product.strainType || null,
+                        description: product.cannabisType || null,
                         stockStatus: StockStatus.IN_STOCK,
                         seedType: seedType,
                         cannabisType: cannabisType,
@@ -148,7 +148,7 @@ export class SaveDbService {
                         name: product.name,
                         slug: product.slug,
                         url: product.url,
-                        description: product.strainType || null,
+                        description: product.cannabisType || null,
                         stockStatus: StockStatus.IN_STOCK,
                         seedType: seedType,
                         cannabisType: cannabisType,

@@ -11,33 +11,9 @@ import {
   validateProductData, 
   logExtractionResult 
 } from './extractor';
+import { ManualSelectors } from '@/lib/factories/scraper-factory';
 
-/**
- * Manual selector configuration for a scraper site
- */
-export interface ManualSelectors {
-  name: string;
-  price: string;
-  currency?: string;
-  image?: string;
-  description?: string;
-  availability?: string;
-  rating?: string;
-  reviewCount?: string;
-  
-  // Cannabis-specific selectors
-  strainType?: string;
-  seedType?: string;
-  thcContent?: string;
-  cbdContent?: string;
-  floweringTime?: string;
-  yieldInfo?: string;
-  genetics?: string;
-  height?: string;
-  effects?: string;
-  aroma?: string;
-  flavor?: string;
-}
+
 
 /**
  * Extract product using manual CSS selectors
@@ -106,22 +82,22 @@ export async function extractHybridProduct(
 ): Promise<ScraperProduct | null> {
   let product: ScraperProduct | null = null;
   
-  // PRIORITY 1: Try JSON-LD extraction
-  product = extractJsonLdProduct($, sourceUrl);
-  if (product && validateProductData(product)) {
-    logExtractionResult(product, 'json-ld', sourceUrl);
-    return product;
-  }
-  
-  // FALLBACK: Manual selector extraction
+  // PRIORITY 1: Try manual selector extraction
   product = extractManualSelectors($, selectors, sourceUrl);
   if (product && validateProductData(product)) {
     logExtractionResult(product, 'manual', sourceUrl);
     return product;
   }
   
+  // FALLBACK: JSON-LD extraction
+  product = extractJsonLdProduct($, sourceUrl);
+  if (product && validateProductData(product)) {
+    logExtractionResult(product, 'json-ld', sourceUrl);
+    return product;
+  }
+  
   // No successful extraction
-  logExtractionResult(null, 'json-ld', sourceUrl);
+  logExtractionResult(null, 'manual', sourceUrl);
   return null;
 }
 

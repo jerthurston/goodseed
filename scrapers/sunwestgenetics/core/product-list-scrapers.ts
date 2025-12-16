@@ -6,7 +6,7 @@
  */
 
 import { extractProductsFromHTML } from '@/scrapers/sunwestgenetics/utils/extractProductsFromHTML';
-import { CategoryResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
+import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { CheerioCrawler, Dataset, RequestQueue } from 'crawlee';
 import { BASE_URL, PRODUCT_CARD_SELECTORS, getCategoryUrl } from './selectors';
 
@@ -62,7 +62,7 @@ export class ProductListScraper {
      * @param listingUrl - Base URL of the listing page
      * @param maxPages - Maximum pages to scrape (0 = crawl all pages until no products found)
      */
-    async scrapeProductList(listingUrl: string, maxPages: number = 5): Promise<CategoryResultFromCrawling> {
+    async scrapeProductList(listingUrl: string, maxPages: number = 5): Promise<ProductsDataResultFromCrawling> {
         const startTime = Date.now();
 
         const runId = Date.now();
@@ -74,7 +74,9 @@ export class ProductListScraper {
         const emptyPages = new Set<string>();
 
         const crawler = new CheerioCrawler({
+            // Enable request logging
             requestQueue,
+            // Handle requests
             async requestHandler({ $, request, log }) {
                 log.info(`[SunWest Product List] Scraping: ${request.url}`);
 
@@ -98,7 +100,6 @@ export class ProductListScraper {
                 log.info(`[SunWest Product List] Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
                 await new Promise(resolve => setTimeout(resolve, delayMs));
             },
-
             // PROJECT REQUIREMENT COMPLIANCE:
             maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
             maxConcurrency: 1, // Sequential requests within same site (project requirement)
@@ -166,7 +167,6 @@ export class ProductListScraper {
         });
 
         return {
-            category: listingUrl,
             totalProducts: allProducts.length,
             totalPages: actualPages,
             products: allProducts,
@@ -197,7 +197,7 @@ export class ProductListScraper {
         listingUrl: string,
         startPage: number,
         endPage: number
-    ): Promise<CategoryResultFromCrawling> {
+    ): Promise<ProductsDataResultFromCrawling> {
         if (startPage < 1 || endPage < startPage) {
             throw new Error(`Invalid page range: ${startPage}-${endPage}. Start must be >= 1 and end must be >= start.`);
         }
@@ -254,7 +254,6 @@ export class ProductListScraper {
         });
 
         return {
-            category: listingUrl,
             totalProducts: allProducts.length,
             totalPages: totalPages,
             products: allProducts,

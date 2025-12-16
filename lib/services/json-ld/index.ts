@@ -29,7 +29,6 @@ export {
 
 // Type definitions
 export type { ScraperProduct } from './extractor';
-export type { ManualSelectors } from './hybrid';
 
 // Utilities (moved from hybrid-factory)
 export { 

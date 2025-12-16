@@ -5,7 +5,7 @@
  * Updated: 2025-12-03
  */
 
-export const PRODUCT_CARD_SELECTORS = {
+export const VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS = {
     // Product Cards - WooCommerce structure
     productCard: 'li.product.type-product',
     productLink: 'h3.prod_titles a',
@@ -36,30 +36,25 @@ export const PRODUCT_CARD_SELECTORS = {
     priceAmount: '.product_price_dfn .woocommerce-Price-amount',
     variationInputs: 'input.product_variation_radio',
 
-    // Pagination - WooCommerce standard
+    // Option1: khi scrape đến khi không có trang tiếp theo nữa - Pagination - WooCommerce standard
     nextPage: '.woocommerce-pagination .next',
     pageLinks: '.woocommerce-pagination a.page-numbers',
     currentPage: '.woocommerce-pagination span.current',
+
+    //Option2: Phục vụ tìm maxPage - trang cuối của pagination - dựa vào đó scrape function sẽ biết được tổng số phân trang cần crawl dữ liệu
+    paginationContainer: '.jet-filters-pagination',
+    paginationItems: '.jet-filters-pagination__item[data-value]',
 } as const;
 
-/**
- * Helper function to build pagination URL
- * 
- * Vancouver Seed Bank uses /pagenum/N/ format for pagination
- */
-export function getCategoryUrl(baseUrl: string, page: number = 1): string {
-    if (page === 1) {
-        return baseUrl;
-    }
+// export const MAXPAGE_PAGINATION = {
+//     // Vancouver Seed Bank uses jet-smart-filters-pagination
+//     paginationContainer: '.jet-filters-pagination',
+//     paginationItems: '.jet-filters-pagination__item[data-value]',
+//     // data-value contains page numbers like "1", "2", "154" (ignore "next", "prev")
+// } as const;
 
-    // Vancouver Seed Bank pagination format: /pagenum/2/
-    // Remove trailing slash if exists
-    const cleanUrl = baseUrl.replace(/\/$/, '');
 
-    return `${cleanUrl}/pagenum/${page}/`;
-}
 
 /**
  * Base URL for Vancouver Seed Bank
  */
-export const BASE_URL = 'https://vancouverseedbank.ca';

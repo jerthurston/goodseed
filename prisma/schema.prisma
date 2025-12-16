@@ -144,21 +144,21 @@ model Seller {
   id                  String    @id @default(cuid())
   name                String    @unique // "Seed Supreme", "ILGM"
   url                 String // Homepage URL
-  scrapingSourceUrl   String // URL of products listing page to scrape (e.g., https://vancouverseedbank.ca/shop/jsf/epro-archive-products/)
+  scrapingSourceUrl   String[] // vì mỗi site có cấu trúc khác nhau, có site chỉ cần 1 url, có site cần 2,3 url mơi đủ
   affiliateTag        String? // Affiliate tag để tạo commission URL
   isActive            Boolean   @default(true) // Kill switch để ẩn seller
   autoScrapeInterval  Int?      @default(6) // Auto scrape interval in hours
   lastScraped         DateTime?
   status              String? // success/error
   
-  // Scraper Configuration (Simple approach)
-  productCardHtml     String? // Raw HTML của 1 product card (admin copy/paste)
-  jsonLd              String? // Raw JSON-LD data (nếu có)
-  paginationPattern   String? // Pattern phân trang: "?pagenum={page}"
-  maxPages            Int?    @default(10)
+  // Scraper Configuration (Simple approach) - Build tính năng Crud seller trong tương lai nếu yêu cầu
+  // productCardHtml     String? // Raw HTML của 1 product card (admin copy/paste)
+  // jsonLd              String? // Raw JSON-LD data (nếu có)
+  // paginationPattern   String? // Pattern phân trang: "?pagenum={page}"
+  // maxPages            Int?    @default(10)
   
   // Auto-computed selectors (hệ thống tự tính)
-  computedSelectors   Json?   // Selectors được hệ thống phân tích tự động
+  // computedSelectors   Json?   // Selectors được hệ thống phân tích tự động
   
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

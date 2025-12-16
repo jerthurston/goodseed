@@ -99,10 +99,9 @@ export const BASE_URL = 'https://www.cropkingseeds.com';
  * Test URLs for development and validation
  */
 export const TEST_URLS = {
-    cbDiesel: 'https://www.cropkingseeds.com/product/cb-diesel-feminized-seeds/',
-    gelato: 'https://www.cropkingseeds.com/product/gelato-feminized-seeds/',
-    whiteWidow: 'https://www.cropkingseeds.com/product/white-widow-feminized-seeds/',
-    northernLights: 'https://www.cropkingseeds.com/product/northern-lights-feminized-seeds/'
+    autoflower: 'https://www.cropkingseeds.com/autoflowering-seeds/',
+    feminized: 'https://www.cropkingseeds.com/feminized-seeds/',
+    regular: 'https://www.cropkingseeds.com/regular-marijuana-seeds/',
 };
 
 /**

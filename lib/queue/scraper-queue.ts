@@ -42,13 +42,13 @@ export interface ScraperJobData {
   jobId: string; // ScrapeJob.jobId from database
   sellerId: string;
   source: string; // scraper source: 'vancouverseedbank' | 'sunwestgenetics' | 'cropkingseeds'
-  mode: 'batch' | 'auto' | 'test';
+  mode: 'batch' | 'auto' | 'manual' | 'test';
   config: {
     scrapingSourceUrl: string;
-    categorySlug: string;
     startPage?: number;
     endPage?: number;
     maxPages?: number;
+    fullSiteCrawl?: boolean;
   };
 }
 
@@ -97,7 +97,7 @@ scraperQueue.on('active', (job) => {
 export async function addScraperJob(data: ScraperJobData): Promise<Job<ScraperJobData>> {
   const job = await scraperQueue.add(data, {
     jobId: data.jobId, // Use our jobId as Bull job ID for easy tracking
-    priority: data.mode === 'test' ? 10 : 5, // Test jobs get higher priority
+    priority: data.mode === 'manual' ? 10 : 5, // Manual jobs get higher priority
   });
 
   console.log(`[Scraper Queue] Added job ${job.id} to queue`);

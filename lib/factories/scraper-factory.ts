@@ -1,8 +1,8 @@
 /**
- * Modern Scraper Factory - Hybrid JSON-LD + Manual Extraction
+ * Scraper Factory - Manual Extraction
  * 
- * Unified factory pattern for creating hybrid scrapers with JSON-LD as primary
- * extraction method and CSS selectors as fallback. Optimized for maintainability.
+ * Unified factory pattern for creating scrapers with manual CSS selector extraction.
+ * Optimized for maintainability.
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -13,22 +13,18 @@ import { SaveDbService as VancouverSaveDbService } from '@/scrapers/vancouversee
 import { SaveDbService as SunWestSaveDbService } from '@/scrapers/sunwestgenetics/core/save-db-service';
 import { SaveDbService as CropKingSaveDbService } from '@/scrapers/cropkingseeds/core/save-db-service';
 
-// Modern hybrid scrapers
-import { 
-  createVancouverScraper, 
-  VANCOUVER_SELECTORS 
-} from '@/scrapers/vancouverseedbank/hybrid/vancouver-hybrid-scraper';
-import { 
-  createSunWestScraper, 
-  SUNWEST_SELECTORS 
-} from '@/scrapers/sunwestgenetics/hybrid/sunwest-hybrid-scraper';
+// Product List Scrapers (core implementations)
+import { ProductListScraper as VancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/product-list-scrapers';
+import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
+
+import { ProductListScraper as SunWestProductListScraper } from '@/scrapers/sunwestgenetics/core/product-list-scrapers';
+
 import {
   createCropKingSeedsScraper,
   CROPKINGSEEDS_SELECTORS
 } from '@/scrapers/cropkingseeds/hybrid/cropkingseeds-hybrid-scraper';
 
-// Hybrid system utilities
-import { ManualSelectors, ScraperProduct } from '@/lib/services/json-ld';
+
 
 /**
  * Supported scraper sources - easily extensible for new sites
@@ -46,14 +42,7 @@ export type ScraperSource =
   | 'canukseeds'
   | 'truenorthseedbank';
 
-/**
- * Modern scraper interface for hybrid extraction
- */
-export interface IHybridScraper {
-  addRequests(requests: string[]): Promise<void>;
-  run(): Promise<void>;
-  extractProducts(urls: string[]): Promise<ScraperProduct[]>;
-}
+
 
 export interface ISaveDbService {
   initializeSeller(): Promise<string>;
@@ -62,7 +51,7 @@ export interface ISaveDbService {
     slug: string;
     seedType?: string;
   }): Promise<string>;
-  saveProductsToCategory(categoryId: string, products: any[]): Promise<{
+  saveProductsToDatabase(products: any[]): Promise<{
     saved: number;
     updated: number;
     errors: number;
@@ -71,9 +60,43 @@ export interface ISaveDbService {
 }
 
 /**
- * Hybrid scraper configuration interface
+ * Manual selector configuration for a scraper site
  */
-export interface HybridScraperConfig {
+export interface ManualSelectors {
+  name: string;
+  price: string;
+  currency?: string;
+  image?: string;
+  description?: string;
+  availability?: string;
+  rating?: string;
+  reviewCount?: string;
+  
+  // Cannabis-specific selectors
+  strainType?: string;
+  seedType?: string;
+  thcContent?: string;
+  cbdContent?: string;
+  floweringTime?: string;
+  yieldInfo?: string;
+  genetics?: string;
+  height?: string;
+  effects?: string;
+  aroma?: string;
+  flavor?: string;
+  // pagination selectors
+  nextPage?: string;
+  prevPage?: string;
+  currentPage?: string;
+  paginationContainer?:string;
+  paginationItems?:string;
+  
+}
+
+/**
+ * scraper configuration interface
+ */
+export interface ScraperConfig {
   siteName: string;
   baseUrl: string;
   selectors: ManualSelectors;
@@ -108,13 +131,19 @@ export class ScraperFactory {
       'vancouverseedbank': {
         name: 'Vancouver Seed Bank',
         baseUrl: 'https://vancouverseedbank.ca',
-        selectors: VANCOUVER_SELECTORS,
+        selectors: VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS,
         isImplemented: true
       },
       'sunwestgenetics': {
         name: 'SunWest Genetics', 
         baseUrl: 'https://www.sunwestgenetics.com',
         selectors: SUNWEST_SELECTORS,
+        isImplemented: true
+      },
+      'cropkingseeds': {
+        name: 'Crop King Seeds',
+        baseUrl: 'https://www.cropkingseeds.ca',
+        selectors: CROPKINGSEEDS_SELECTORS,
         isImplemented: true
       },
       'bcbuddepot': {
@@ -153,12 +182,6 @@ export class ScraperFactory {
         selectors: {} as ManualSelectors,
         isImplemented: false
       },
-      'cropkingseeds': {
-        name: 'Crop King Seeds',
-        baseUrl: 'https://www.cropkingseeds.ca',
-        selectors: CROPKINGSEEDS_SELECTORS,
-        isImplemented: true
-      },
       'canukseeds': {
         name: 'Canuk Seeds',
         baseUrl: 'https://www.canukseeds.com',
@@ -177,34 +200,31 @@ export class ScraperFactory {
   }
 
   /**
-   * Create hybrid scraper for any supported site
+   * Job: Tạo job scrape dữ liệu trang danh sách product cho các trang source được thêm vào sẵn sàng cho việc scraper dữ liệu
+   * Mục đích của hàm createProductListScraper: Tạo một instance của product list scraper tương ứng với source.
+   * Kết quả: Trả về một instance của product list scraper
    */
-  async createScraper(
-    source: ScraperSource, 
-    config?: Partial<HybridScraperConfig>
-  ): Promise<CheerioCrawler> {
-    
+  createProductListScraper(source: ScraperSource) {
+    // Lấy cấu hình trang từ siteConfig
     const siteConfig = this.getSiteConfig(source);
-    
+    // Kiểm tra xem scraper đã được triển khai chưa. True là đã thiết lập, false là chưa thiếp lập
     if (!siteConfig.isImplemented) {
       throw new Error(`Scraper for ${siteConfig.name} is not yet implemented. Please implement selectors first.`);
     }
-
-    // Use specific scraper implementations for ready sites
+    // Tạo instance của product list scraper tương ứng với source
     switch (source) {
       case 'vancouverseedbank':
-        return await createVancouverScraper();
-      
+        return new VancouverProductListScraper();
       case 'sunwestgenetics':
-        return await createSunWestScraper();
-      
-      case 'cropkingseeds':
-        return await createCropKingSeedsScraper();
+        return new SunWestProductListScraper();
+
+      //TODO: Thêm các scraper khác ở đây sau khi thiết lập xong
       
       default:
-        throw new Error(`Scraper implementation not found for: ${source}`);
+        throw new Error(`Product list scraper implementation not found for: ${source}`);
     }
   }
+
 
   /**
    * Create database service for supported sites

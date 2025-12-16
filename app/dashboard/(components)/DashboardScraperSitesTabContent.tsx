@@ -42,36 +42,48 @@ const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentP
     triggerManualScrape,
     isTriggering,
     triggerError,
+    activeJobs,
 
     toggleAutoScrape,
     isToggling,
     toggleError,
 
     updateInterval,
-    isUpdatingInterval, 
+    isUpdatingInterval,
     updateIntervalError
 
   } = useScraperOperations(refetchScraperSites)
 
 
-  const handleManualScrape = async (id: string, siteName:string) => {
+  const handleManualScrape = async (id: string, siteName: string) => {
     try {
-     await triggerManualScrape(id)
-     toast.success(`Manual scrape triggered for ${siteName}`)
+      // Show loading state immediately
+      toast.loading(`Initiating scrape for ${siteName}...`, {
+        id: `scrape-${id}` // Use consistent ID for updates
+      });
+      
+      await triggerManualScrape(id);
+      
+      // Success toast is handled in the hook
+      toast.dismiss(`scrape-${id}`);
+      
     } catch (error) {
-      apiLogger.logError("Error triggering manual scrape:", { error})
-      toast.error(`Error triggering manual scrape for ${siteName}`)
+      // Dismiss loading toast
+      toast.dismiss(`scrape-${id}`);
+      
+      // Error is handled in the hook, but we can add fallback
+      console.error("Manual scrape failed:", error);
     }
   }
 
   const handleToggleAutoScrape = async (id: string, currentState: boolean) => {
-   try {
-    await toggleAutoScrape(id, currentState);
-    toast.success(`Auto scrape ${!currentState ? 'enabled' : 'disabled'}`);
-   } catch (error) {
-     apiLogger.logError("Error toggling auto scrape:", { error });
-     toast.error(`Error toggling auto scrape for ${id}`);
-   }
+    try {
+      await toggleAutoScrape(id, currentState);
+      toast.success(`Auto scrape ${!currentState ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      apiLogger.logError("Error toggling auto scrape:", { error });
+      toast.error(`Error toggling auto scrape for ${id}`);
+    }
   }
 
   const handleUpdateInterval = async (id: string, currentSettings: { isAutoEnabled: boolean; autoScrapeInterval: number }) => {
@@ -105,14 +117,34 @@ const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentP
                   Last scraped: {site.lastScraped}
                 </p>
               </div>
-              <DashboardButton
-                variant="secondary"
-                onClick={() => handleManualScrape(site.id, site.name)}
-                className="flex items-center gap-2"
-              >
-                <Play className="h-4 w-4" />
-                Manual Scrape
-              </DashboardButton>
+              <div className="flex flex-col gap-2">
+                <DashboardButton
+                  variant="secondary"
+                  onClick={() => handleManualScrape(site.id, site.name)}
+                  disabled={isTriggering || activeJobs.has(site.id)}
+                  className="flex items-center gap-2"
+                >
+                  {isTriggering || activeJobs.has(site.id) ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600" />
+                      {activeJobs.has(site.id) ? 'Scraping...' : 'Starting...'}
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4" />
+                      Manual Scrape
+                    </>
+                  )}
+                </DashboardButton>
+
+                {/* Show job status badge */}
+                {activeJobs.has(site.id) && (
+                  <div className="flex items-center gap-2 text-sm text-blue-600">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
+                    Job ID: {activeJobs.get(site.id)}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-6 pt-4 border-t-[3px] border-(--border-color)">
@@ -131,7 +163,7 @@ const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentP
                     value={site.autoScrapeInterval || 6}
                     onChange={(e) =>
                       updateInterval(site.id, {
-                        isAutoEnabled:site.isAutoEnabled,
+                        isAutoEnabled: site.isAutoEnabled,
                         autoScrapeInterval: Number(e.target.value)
                       })
                     }

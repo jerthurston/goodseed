@@ -1,4 +1,4 @@
-import { BASE_URL, PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
+import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
 import { ProductCardDataFromCrawling } from '@/types/crawl.type';
 
 /**
@@ -7,13 +7,14 @@ import { ProductCardDataFromCrawling } from '@/types/crawl.type';
  * Nhiệm vụ:
  * - Nhận vào HTML đã load sẵn (Cheerio $ object)
  * - Parse và extract dữ liệu từ các product cards
- * - Trả về array ProductCardDataFromCrawling[]
+ * - Extract thông tin pagination (maxPages)
+ * - Trả về object chứa products và maxPages
  * 
  * Khác với ProductListScraper:
  * - Function này KHÔNG crawl web (không fetch HTML)
- * - KHÔNG xử lý pagination
+ * - KHÔNG xử lý pagination navigation
  * - KHÔNG quản lý crawler lifecycle
- * - Chỉ parse HTML → extract data
+ * - Chỉ parse HTML → extract data + pagination info
  * 
  * Sử dụng:
  * - Được gọi bởi VancouverSeedBankProductListScraper.scrapeProductList()
@@ -21,18 +22,21 @@ import { ProductCardDataFromCrawling } from '@/types/crawl.type';
  * - Có thể dùng riêng khi đã có HTML sẵn
  * 
  * @param $ - Cheerio loaded HTML object
- * @returns Array of ProductCardData
+ * @returns Object với products array và maxPages number
  */
-export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').load>): ProductCardDataFromCrawling[] {
+export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').load>): {
+    products: ProductCardDataFromCrawling[];
+    maxPages: number | null;
+} {
     const products: ProductCardDataFromCrawling[] = [];
     const seenUrls = new Set<string>();
 
-    $(PRODUCT_CARD_SELECTORS.productCard).each((_, element) => {
+    $(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.productCard).each((_, element) => {
         try {
             const $card = $(element);
 
             // Extract product link and URL
-            const $link = $card.find(PRODUCT_CARD_SELECTORS.productLink).first();
+            const $link = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.productLink).first();
             let url = $link.attr('href');
             if (!url) return;
 
@@ -50,7 +54,7 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
             if (!name) return;
 
             // Extract image - prioritize data-src over src (lazy loading)
-            const $img = $card.find(PRODUCT_CARD_SELECTORS.productImage).first();
+            const $img = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.productImage).first();
             const imageUrl = $img.attr('data-src') ||
                 $img.attr('data-lazy-src') ||
                 $img.attr('src');
@@ -60,23 +64,23 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
                 ? (imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`)
                 : undefined;
 
-            // Extract strain type (Balanced Hybrid, Indica Dominant, etc.)
-            const strainType = $card.find(PRODUCT_CARD_SELECTORS.strainType).first().text().trim() || undefined;
+            // Extract cannabis type (Balanced Hybrid, Indica Dominant, etc.)
+            const cannabisType = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.strainType).first().text().trim() || undefined;
 
             // Extract badge (New Strain 2025, BOGO, etc.)
-            const badge = $card.find(PRODUCT_CARD_SELECTORS.badge).first().text().trim() || undefined;
+            const badge = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.badge).first().text().trim() || undefined;
 
             // Extract rating
-            const ratingText = $card.find(PRODUCT_CARD_SELECTORS.rating).first().text().trim();
+            const ratingText = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.rating).first().text().trim();
             const rating = ratingText ? parseFloat(ratingText) : undefined;
 
             // Extract review count - remove parentheses
-            const reviewCountText = $card.find(PRODUCT_CARD_SELECTORS.reviewCount).first().text().trim();
+            const reviewCountText = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.reviewCount).first().text().trim();
             const reviewCountMatch = reviewCountText.match(/\d+/);
             const reviewCount = reviewCountMatch ? parseInt(reviewCountMatch[0]) : undefined;
 
             // Extract THC level
-            const thcLevelText = $card.find(PRODUCT_CARD_SELECTORS.thcLevel).first().text().trim();
+            const thcLevelText = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.thcLevel).first().text().trim();
             let thcMin: number | undefined;
             let thcMax: number | undefined;
 
@@ -90,7 +94,7 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
             }
 
             // Extract CBD level
-            const cbdLevelText = $card.find(PRODUCT_CARD_SELECTORS.cbdLevel).first().text().trim();
+            const cbdLevelText = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.cbdLevel).first().text().trim();
             let cbdMin: number | undefined;
             let cbdMax: number | undefined;
 
@@ -104,16 +108,16 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
             }
 
             // Extract flowering time
-            const floweringTime = $card.find(PRODUCT_CARD_SELECTORS.floweringTime).first().text().trim() || undefined;
+            const floweringTime = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.floweringTime).first().text().trim() || undefined;
 
             // Extract growing level
-            const growingLevel = $card.find(PRODUCT_CARD_SELECTORS.growingLevel).first().text().trim() || undefined;
+            const growingLevel = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.growingLevel).first().text().trim() || undefined;
 
             // Extract all pricing variations
             // Vancouver Seed Bank shows multiple variations (5 seeds, 10 seeds, 25 seeds)
             const pricings: Array<{ totalPrice: number; packSize: number; pricePerSeed: number }> = [];
 
-            $card.find(PRODUCT_CARD_SELECTORS.variationInputs).each((_, input) => {
+            $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.variationInputs).each((_, input) => {
                 const $input = $(input);
                 const itemPrice = $input.attr('item-price');
                 const value = $input.attr('value'); // e.g., "5-seeds", "10-seeds", "25-seeds"
@@ -144,7 +148,7 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
                 url,
                 slug,
                 imageUrl: finalImageUrl,
-                strainType,
+                cannabisType,
                 badge,
                 rating,
                 reviewCount,
@@ -164,5 +168,43 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
         }
     });
 
-    return products;
+    // Extract maximum page number from pagination using selectors
+    let maxPages: number | null = null;
+    try {
+        let maxPageFound = 0;
+        
+        // Check if pagination container exists
+        const $paginationContainer = $(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.paginationContainer);
+        if ($paginationContainer.length > 0) {
+            // Find all pagination items with data-value attributes
+            $(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.paginationItems).each((_, element) => {
+                const $item = $(element);
+                const dataValue = $item.attr('data-value');
+                
+                // Skip non-numeric values like "next", "prev"
+                if (dataValue && /^\d+$/.test(dataValue)) {
+                    const pageNumber = parseInt(dataValue);
+                    if (pageNumber > maxPageFound) {
+                        maxPageFound = pageNumber;
+                    }
+                }
+            });
+            
+            maxPages = maxPageFound > 0 ? maxPageFound : null;
+            
+            if (maxPages) {
+                console.log(`[Extract Pagination] Detected ${maxPages} total pages from pagination`);
+            }
+        } else {
+            console.log('[Extract Pagination] No pagination container found on this page');
+        }
+    } catch (error) {
+        console.error('[Extract Max Pages] Error parsing pagination:', error);
+    }
+
+    return {
+        products,
+        maxPages
+    };
 }
+

@@ -2,6 +2,35 @@ import api from "@/lib/api";
 import { apiLogger } from "@/lib/helpers/api-logger";
 import { ScraperSiteApiResponse } from "@/types/scraperStite.type";
 
+
+interface ManualScrapeSuccessResponse {
+    success:true;
+    message:string;
+    data:{
+        jobId:string;
+        sellerName:string;
+        source:string;
+        statusUrl:string;
+        estimatedDuration:string;
+        pagesLimit:number;
+    }
+};
+
+interface ManualScrapeErrorResponse {
+    success:false;
+    error: {
+        code:string;
+        message:string;
+        details?:any;
+        availableSource?:string[];
+        existingJob?:string;
+        statusUrl?:string;
+    }
+}
+
+type ManualScrapeResponse = ManualScrapeSuccessResponse | ManualScrapeErrorResponse;
+
+
 export class ScraperOperationService {
     /**
      * Fetch scraper sites
@@ -33,7 +62,7 @@ export class ScraperOperationService {
      * Trigger manual scrape for a given scraper site ID
      */
 
-    public static async triggerManualScrape(id: string): Promise<void> {
+    public static async triggerManualScrape(id: string): Promise<ManualScrapeResponse> {
         const startTime = Date.now();
         try {
             const response = await api.post(`/admin/scraper-sites/${id}`, {});
@@ -44,13 +73,43 @@ export class ScraperOperationService {
             apiLogger.logResponse(
                 "SellerService.triggerManualScrape",
                 { duration: `${duration}ms` },
-                { message: "Scrape triggered successfully" }
+                { message: "Scrape triggered successfully" },
+                
             )
 
             return response.data;
-        } catch (error) {
-            apiLogger.logError("SellerService.triggerManualScrape", error as Error)
-            throw error
+        } catch (error: any) {
+            const duration = Date.now() - startTime;
+
+            // Handle different types of API errors
+            if (error.response?.status) {
+                const errorData = error.response.data;
+
+                apiLogger.logError("ScraperOperationService.triggerManualScrape", error, {
+                    sellerId: id,
+                    httpStatus: error.response.status,
+                    errorCode: errorData?.error?.code,
+                    duration
+                });
+
+                // Return structured error from API
+                return errorData;
+            }
+
+            // Handle network/connection errors
+            apiLogger.logError("ScraperOperationService.triggerManualScrape", error, {
+                sellerId: id,
+                errorType: 'network',
+                duration
+            });
+
+            return {
+                success:false,
+                error:{
+                    code:"NETWORK_ERROR",
+                    message: 'Failed to connect to scraper service. Please check your network connection and try again.'
+                }
+            }
         }
     };
 

@@ -5,17 +5,17 @@
  */
 
 import { extractProductsFromHTML } from '@/scrapers/vancouverseedbank/utils/extractProductsFromHTML';
-import { CategoryResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
+import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { CheerioCrawler, Dataset, RequestQueue } from 'crawlee';
-import { BASE_URL, PRODUCT_CARD_SELECTORS, getCategoryUrl } from './selectors';
+import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from './selectors';
+import { getScrapingUrl } from '../utils/getScrapingUrl';
 
 /**
- * VancouverSeedBankProductListScraper
+ * ProductListScraper
  * 
  * Nhiệm vụ chính:
  * 1. Crawl danh sách sản phẩm từ Vancouver Seed Bank (product listing pages)
- * 2. Hỗ trợ 2 chế độ:
- *    - Fixed mode: Crawl số trang cố định (maxPages > 0)
+ * 2. Hỗ trợ chế độ:
  *    - Auto mode: Crawl tự động đến hết trang (maxPages = 0)
  * 
  * 3. Extract thông tin từ product cards:
@@ -60,7 +60,7 @@ export class ProductListScraper {
      * @param listingUrl - Base URL of the listing page
      * @param maxPages - Maximum pages to scrape (0 = crawl all pages until no products found)
      */
-    async scrapeProductList(listingUrl: string, maxPages: number = 5): Promise<CategoryResultFromCrawling> {
+    async scrapeProductList(listingUrl: string, maxPages: number = 5): Promise<ProductsDataResultFromCrawling> {
         const startTime = Date.now();
 
         const runId = Date.now();
@@ -76,9 +76,15 @@ export class ProductListScraper {
             async requestHandler({ $, request, log }) {
                 log.info(`[Product List] Scraping: ${request.url}`);
 
-                // Extract products from current page
-                const products = extractProductsFromHTML($);
+                // Extract products and pagination from current page
+                const extractResult = extractProductsFromHTML($);
+                const products = extractResult.products;
+                const maxPages = extractResult.maxPages;
+                
                 log.info(`[Product List] Extracted ${products.length} products`);
+                if (maxPages) {
+                    log.info(`[Product List] Detected ${maxPages} total pages from pagination`);
+                }
 
                 // Track empty pages
                 if (products.length === 0) {
@@ -86,7 +92,7 @@ export class ProductListScraper {
                 }
 
                 // Check if there's a next page
-                const hasNextPage = $(PRODUCT_CARD_SELECTORS.nextPage).length > 0;
+                const hasNextPage = $(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.nextPage).length > 0;
                 log.info(`[Product List] Has next page: ${hasNextPage}`);
 
                 await dataset.pushData({ products, url: request.url, hasNextPage });
@@ -102,47 +108,38 @@ export class ProductListScraper {
             maxRequestRetries: 3,
         });
 
-        // Auto-crawl mode: discover pages until no more products
+        // Auto-crawl mode: discover total pages from pagination first
         if (maxPages === 0) {
-            let page = 1;
-            const urls: string[] = [];
-
-            while (true) {
-                const pageUrl = getCategoryUrl(listingUrl, page);
-                urls.push(pageUrl);
-
-                // Crawl current page
-                await crawler.run([pageUrl]);
-
-                // Check if page has products
-                const results = await dataset.getData();
-                const lastResult = results.items[results.items.length - 1] as { products: ProductCardDataFromCrawling[], hasNextPage: boolean };
-
-                if (lastResult.products.length === 0) {
-                    console.log(`[Product List] Page ${page} is empty. Stopping.`);
-                    break;
-                }
-
-                if (!lastResult.hasNextPage) {
-                    console.log(`[Product List] No next page button found. Stopping at page ${page}.`);
-                    actualPages = page;
-                    break;
-                }
-
-                actualPages = page;
-                page++;
-
-                // Safety limit
-                if (page > 200) {
-                    console.log('[Product List] Reached safety limit of 200 pages. Stopping.');
-                    break;
-                }
+            console.log('[Product List] Auto-crawl mode: Detecting total pages from pagination...');
+            
+            // First, crawl page 1 to detect maxPages from pagination
+            const firstPageUrl = getScrapingUrl(listingUrl, 1);
+            await crawler.run([firstPageUrl]);
+            
+            // Check first page result to get maxPages
+            const firstResults = await dataset.getData();
+            const firstResult = firstResults.items[0] as { products: ProductCardDataFromCrawling[], maxPages: number | null };
+            
+            let detectedMaxPages = firstResult.maxPages || 50; // fallback to 50 if not detected
+            console.log(`[Product List] Detected ${detectedMaxPages} total pages from pagination`);
+            
+            // Now crawl remaining pages (2 to maxPages)
+            const remainingUrls: string[] = [];
+            for (let page = 2; page <= detectedMaxPages; page++) {
+                remainingUrls.push(getScrapingUrl(listingUrl, page));
             }
+            
+            if (remainingUrls.length > 0) {
+                console.log(`[Product List] Crawling remaining ${remainingUrls.length} pages...`);
+                await crawler.run(remainingUrls);
+            }
+            
+            actualPages = detectedMaxPages;
         } else {
             // Fixed pages mode
             const urls: string[] = [];
             for (let page = 1; page <= maxPages; page++) {
-                urls.push(getCategoryUrl(listingUrl, page));
+                urls.push(getScrapingUrl(listingUrl, page));
             }
             await crawler.run(urls);
             actualPages = maxPages;
@@ -157,7 +154,7 @@ export class ProductListScraper {
         });
 
         return {
-            category: listingUrl,
+            // category: listingUrl,
             totalProducts: allProducts.length,
             totalPages: actualPages,
             products: allProducts,
@@ -184,72 +181,75 @@ export class ProductListScraper {
      * @param endPage - End page number (inclusive)
      * @returns CategoryScrapeResult with products from specified page range
      */
-    async scrapeProductListByBatch(
-        listingUrl: string,
-        startPage: number,
-        endPage: number
-    ): Promise<CategoryResultFromCrawling> {
-        if (startPage < 1 || endPage < startPage) {
-            throw new Error(`Invalid page range: ${startPage}-${endPage}. Start must be >= 1 and end must be >= start.`);
-        }
 
-        const startTime = Date.now();
-        const totalPages = endPage - startPage + 1;
+    // TẠM THỜI SCRAPE THEO BATCH SẼ CHƯA SỬ DỤNG, CHỈ DÙNG ĐỂ THỬ NGIỆM
+    // async scrapeProductListByBatch(
+    //     listingUrl: string,
+    //     startPage: number,
+    //     endPage: number
+    // ): Promise<ProductsDataResultFromCrawling> {
+    //     if (startPage < 1 || endPage < startPage) {
+    //         throw new Error(`Invalid page range: ${startPage}-${endPage}. Start must be >= 1 and end must be >= start.`);
+    //     }
 
-        const runId = Date.now();
-        const datasetName = `vsb-batch-${runId}`;
-        const dataset = await Dataset.open(datasetName);
-        const requestQueue = await RequestQueue.open(`vsb-queue-batch-${runId}`);
+    //     const startTime = Date.now();
+    //     const totalPages = endPage - startPage + 1;
 
-        // Generate URLs for page range
-        const urls: string[] = [];
-        for (let page = startPage; page <= endPage; page++) {
-            urls.push(getCategoryUrl(listingUrl, page));
-        }
+    //     const runId = Date.now();
+    //     const datasetName = `vsb-batch-${runId}`;
+    //     const dataset = await Dataset.open(datasetName);
+    //     const requestQueue = await RequestQueue.open(`vsb-queue-batch-${runId}`);
 
-        console.log(`[Batch] Scraping pages ${startPage}-${endPage} (${totalPages} pages)`);
+    //     // Generate URLs for page range
+    //     const urls: string[] = [];
+    //     for (let page = startPage; page <= endPage; page++) {
+    //         urls.push(getScrapingUrl(listingUrl, page));
+    //     }
 
-        // Crawl pages
-        const crawler = new CheerioCrawler({
-            requestQueue,
-            async requestHandler({ $, request, log }) {
-                const pageNum = request.url.match(/pagenum\/(\d+)/)?.[1] || '1';
-                log.info(`[Batch] Page ${pageNum}: ${request.url}`);
+    //     console.log(`[Batch] Scraping pages ${startPage}-${endPage} (${totalPages} pages)`);
 
-                const products = extractProductsFromHTML($);
-                log.info(`[Batch] Page ${pageNum}: Extracted ${products.length} products`);
+    //     // Crawl pages
+    //     const crawler = new CheerioCrawler({
+    //         requestQueue,
+    //         async requestHandler({ $, request, log }) {
+    //             const pageNum = request.url.match(/pagenum\/(\d+)/)?.[1] || '1';
+    //             log.info(`[Batch] Page ${pageNum}: ${request.url}`);
 
-                await dataset.pushData({ products, page: pageNum });
+    //             const extractResult = extractProductsFromHTML($);
+    //             const products = extractResult.products;
+    //             log.info(`[Batch] Page ${pageNum}: Extracted ${products.length} products`);
 
-                // PROJECT REQUIREMENT: Wait 2-5 seconds between requests to same site
-                const delayMs = Math.floor(Math.random() * 3000) + 2000; // Random 2000-5000ms
-                log.info(`[Batch] Page ${pageNum}: Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
-                await new Promise(resolve => setTimeout(resolve, delayMs));
-            },
-            maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
-            maxConcurrency: 1, // Sequential requests within same site (project requirement)
-            maxRequestRetries: 3,
-        });
+    //             await dataset.pushData({ products, page: pageNum });
 
-        await crawler.run(urls);
+    //             // PROJECT REQUIREMENT: Wait 2-5 seconds between requests to same site
+    //             const delayMs = Math.floor(Math.random() * 3000) + 2000; // Random 2000-5000ms
+    //             log.info(`[Batch] Page ${pageNum}: Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
+    //             await new Promise(resolve => setTimeout(resolve, delayMs));
+    //         },
+    //         maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
+    //         maxConcurrency: 1, // Sequential requests within same site (project requirement)
+    //         maxRequestRetries: 3,
+    //     });
 
-        // Collect results from dataset
-        const results = await dataset.getData();
-        const allProducts: ProductCardDataFromCrawling[] = [];
+    //     await crawler.run(urls);
 
-        results.items.forEach((item) => {
-            allProducts.push(...(item as { products: ProductCardDataFromCrawling[] }).products);
-        });
+    //     // Collect results from dataset
+    //     const results = await dataset.getData();
+    //     const allProducts: ProductCardDataFromCrawling[] = [];
 
-        return {
-            category: listingUrl,
-            totalProducts: allProducts.length,
-            totalPages: totalPages,
-            products: allProducts,
-            timestamp: new Date(),
-            duration: Date.now() - startTime,
-        };
-    }
+    //     results.items.forEach((item) => {
+    //         allProducts.push(...(item as { products: ProductCardDataFromCrawling[] }).products);
+    //     });
+
+    //     return {
+    //         // category: listingUrl,
+    //         totalProducts: allProducts.length,
+    //         totalPages: totalPages,
+    //         products: allProducts,
+    //         timestamp: new Date(),
+    //         duration: Date.now() - startTime,
+    //     };
+    // }
 }
 
 
