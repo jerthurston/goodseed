@@ -41,6 +41,8 @@ export { DashboardSidebar, DashboardSidebarItem } from "./DashboardSidebar"
 export { SellerCard } from "./SellerCard"
 export { StatsOverview } from "./StatsOverview"
 
+export { ActionSellerCardBtn } from "./ActionSellerCardBtn"
+
 //Defautl component export
 export { default as DashboardOverview } from "./DashboardOverview"
 

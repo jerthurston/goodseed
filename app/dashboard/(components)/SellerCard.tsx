@@ -1,7 +1,9 @@
 "use client"
 
-import { Clock, Play } from "lucide-react"
+import { Clock, Play, MoreVertical, Edit, Trash2 } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
 import {
+  ActionSellerCardBtn,
   DashboardBadge,
   DashboardButton,
   DashboardCard,
@@ -19,6 +21,8 @@ interface SellerCardProps {
   toggleError?: Error | null;
   onToggleActive?: (id: string) => void
   onManualScrape?: (id: string) => void
+  onUpdate?: (id: string) => void
+  onDelete?: (id: string) => void
   showActions?: boolean
 }
 import {toast} from 'sonner';
@@ -29,8 +33,12 @@ export function SellerCard({
   toggleError,
   onToggleActive,
   onManualScrape,
+  onUpdate,
+  onDelete,
   showActions = false,
 }: SellerCardProps) {
+  
+
   return (
     <DashboardCard hover>
       <DashboardCardHeader>
@@ -92,13 +100,13 @@ export function SellerCard({
       )}
 
       {showActions && (
-        <DashboardCardFooter className="flex justify-between">
+        <DashboardCardFooter className="flex justify-between items-center">
           <DashboardButton
             variant="outline"
             onClick={
               () => {
               onToggleActive?.(seller.id)
-              toggleError !== null ? toast.error(`Error: ${toggleError?.message}`) : toast.success(`Seller ${seller.isActive ? 'deactivated' : 'activated'} successfully!`)
+              toggleError !== null ? toast.error(`Error: ${toggleError?.message}`) : toast.success(`Seller ${seller.isActive ? 'tideacvated' : 'activated'} successfully!`)
             }
             }
             disabled={isToggling}
@@ -106,6 +114,14 @@ export function SellerCard({
           >
             {seller.isActive ? "Deactivate" : "Activate"}
           </DashboardButton>
+          
+          {/* Action buttons dropdown: delete or update */}
+          <ActionSellerCardBtn
+            sellerId={seller.id}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+          />
+
           {onManualScrape && (
             <DashboardIconButton
               variant="secondary"
