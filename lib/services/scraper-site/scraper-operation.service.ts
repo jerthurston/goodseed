@@ -1,6 +1,7 @@
 import api from "@/lib/api";
 import { apiLogger } from "@/lib/helpers/api-logger";
 import { ScraperSiteApiResponse } from "@/types/scraperStite.type";
+import { NextApiResponse } from "next";
 
 
 interface ManualScrapeSuccessResponse {
@@ -39,7 +40,7 @@ export class ScraperOperationService {
         const startTime = Date.now();
         try {
             apiLogger.info("ScraperOperationService.fetchScraperSites");
-            const response = await api.get<ScraperSiteApiResponse[]>('/admin/scraper-sites');
+            const response = await api.get<ScraperSiteApiResponse[]>('/admin/sellers/');
             const duration = Date.now() - startTime;
             apiLogger.logResponse(
                 "ScraperOperationService.fetchScraperSites",
@@ -64,47 +65,39 @@ export class ScraperOperationService {
      * @param options - Scrape options (maxPages, etc.)
      */
 
-    public static async triggerManualScrape(id: string): Promise<ManualScrapeResponse> {
-        const startTime = Date.now();
+    public static async triggerManualScrape(
+        sellerId: string,
+        options: {maxPages?:number} = {}
+    ): Promise<ManualScrapeResponse> {
         try {
-            // giải thích: Đây là payload gửi đi khi trigger manual scrape. Nó rỗng Bởi vì chúng ta không cần gửi bất kỳ dữ liệu nào để bắt đầu quá trình scrape, tất cả thông tin cần thiết đã được lưu trữ trên server. Không thể bỏ  vì API yêu cầu một payload rỗng để xác nhận yêu cầu.
-            const response = await api.post(`/admin/scraper-sites/${id}`, {});
+            const response = await api.post(`/admin/sellers/${sellerId}/scraper`, options);
+            
             apiLogger.logResponse("SellerService.triggerManualScrape", { response })
 
-            const duration = Date.now() - startTime;
-
-            apiLogger.logResponse(
-                "SellerService.triggerManualScrape",
-                { duration: `${duration}ms` },
-                { message: "Scrape triggered successfully" },
-                
-            )
-
-            return response.data;
+            return {
+                success: true,
+                data: response.data,
+                message: 'Manual scrape triggered successfully.'
+            }
             
         } catch (error: any) {
-            const duration = Date.now() - startTime;
 
             // Handle different types of API errors
             if (error.response?.status) {
                 const errorData = error.response.data;
-
                 apiLogger.logError("ScraperOperationService.triggerManualScrape", error, {
-                    sellerId: id,
+                    sellerId,
                     httpStatus: error.response.status,
                     errorCode: errorData?.error?.code,
-                    duration
                 });
-
                 // Return structured error from API
                 return errorData;
             }
 
             // Handle network/connection errors
             apiLogger.logError("ScraperOperationService.triggerManualScrape", error, {
-                sellerId: id,
+                sellerId,
                 errorType: 'network',
-                duration
             });
 
             return {
@@ -117,33 +110,60 @@ export class ScraperOperationService {
         }
     };
 
-    // Toggle automatic scrape settings for a given scraper site ID
-    public static async toggleAutoScrape(
-        id:string,
-        settings: { isAutoEnabled: boolean; autoScrapeInterval: number }
-    ): Promise<ScraperSiteApiResponse> {
-        const starttime = Date.now();
-        apiLogger.logRequest("ScraperOperationService.toggleAutoScrape", {
-            id,
-            settings
-        });
-        try {
-            const response = await api.patch<ScraperSiteApiResponse>(
-                `/admin/scraper-sites/${id}`,
-                settings
-            );
-            const duration = Date.now() - starttime;
-            apiLogger.logResponse("ScraperOperationService.toggleAutoScrape", { 
-                duration: `${duration}ms`,
-                response: { ...response.data }
-            });
-            return response.data;
-        } catch (error) {
-            apiLogger.logError("ScraperOperationService.toggleAutoScrape", error as Error);
-            throw error;
-        }
+    /**
+     * Get scraper status for a seller
+     */
 
+    // TODO: Cần xác định getScraperSatus để làm gì và định nghĩa lại output type
+    static async getScraperStatus(sellerId: string): Promise<any> {
+    try {
+      const response = await api.get(`/admin/sellers/${sellerId}/scraper`);
+      
+      return {
+        success: true,
+        data: response.data.data
+      };
+      
+    } catch (error: any) {
+      console.error('Get scraper status failed:', error);
+      
+      return {
+        success: false,
+        error: {
+          code: error.response?.data?.error?.code || 'UNKNOWN_ERROR',
+          message: error.response?.data?.error?.message || 'Failed to get scraper status'
+        }
+      };
     }
+  }
+
+    // Toggle automatic scrape settings for a given scraper site ID
+    // public static async toggleAutoScrape(
+    //     id:string,
+    //     settings: { isAutoEnabled: boolean; autoScrapeInterval: number }
+    // ): Promise<ScraperSiteApiResponse> {
+    //     const starttime = Date.now();
+    //     apiLogger.logRequest("ScraperOperationService.toggleAutoScrape", {
+    //         id,
+    //         settings
+    //     });
+    //     try {
+    //         const response = await api.patch<ScraperSiteApiResponse>(
+    //             `/admin/scraper-sites/${id}`,
+    //             settings
+    //         );
+    //         const duration = Date.now() - starttime;
+    //         apiLogger.logResponse("ScraperOperationService.toggleAutoScrape", { 
+    //             duration: `${duration}ms`,
+    //             response: { ...response.data }
+    //         });
+    //         return response.data;
+    //     } catch (error) {
+    //         apiLogger.logError("ScraperOperationService.toggleAutoScrape", error as Error);
+    //         throw error;
+    //     }
+
+    // }
 
     // Update scraper site settings for a given scraper site ID
     public static async updateScraperSiteSettings(

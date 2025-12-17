@@ -35,6 +35,35 @@ export class SellerService {
     }
   }
 
+  /**
+   * Fetch a specific seller by ID from API
+   * UI components should use SellerTransformer to transform this data as needed
+   */
+  public static async fetchSellerById(sellerId: string): Promise<SellerRaw> {
+    const startTime = Date.now()
+
+    try {
+      apiLogger.logRequest("SellerService.fetchSellerById", { sellerId })
+
+      const response = await api.get<SellerRaw>(`/admin/sellers/${sellerId}`)
+
+      const duration = Date.now() - startTime
+      apiLogger.logResponse(
+        "SellerService.fetchSellerById",
+        { sellerId },
+        {
+          sellerName: response.data.name,
+          duration: `${duration}ms`,
+        }
+      )
+
+      return response.data
+    } catch (error) {
+      apiLogger.logError("SellerService.fetchSellerById", error as Error, { sellerId })
+      throw error
+    }
+  }
+
   public static async updateSellerStatus(
     id: string,
     isActive: boolean

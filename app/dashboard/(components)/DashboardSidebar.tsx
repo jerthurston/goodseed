@@ -22,6 +22,7 @@ interface DashboardSidebarItemProps {
   isActive?: boolean
   onClick?: () => void
   icon?: ReactNode
+  className?: string
 }
 
 export function DashboardSidebarItem({
@@ -29,11 +30,12 @@ export function DashboardSidebarItem({
   isActive = false,
   onClick,
   icon,
+  className,
 }: DashboardSidebarItemProps) {
   return (
     <button
       onClick={onClick}
-      className={`${styles.sidebarItem} ${isActive ? styles.sidebarItemActive : ""}`}
+      className={`${styles.sidebarItem} ${isActive ? styles.sidebarItemActive : ""} ${className || ""}`}
     >
       {icon && <span className={styles.sidebarItemIcon}>{icon}</span>}
       <span>{children}</span>

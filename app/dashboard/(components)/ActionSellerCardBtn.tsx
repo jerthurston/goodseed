@@ -1,3 +1,4 @@
+'use client'
 import React, { useEffect, useRef, useState } from 'react'
 import styles from './dashboardAdmin.module.css';
 import { Edit, MoreVertical, Settings, Trash2 } from 'lucide-react';

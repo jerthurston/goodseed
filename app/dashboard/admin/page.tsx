@@ -17,17 +17,21 @@ import { type Seller } from "@/types/seller.type"
 import { SellerTransformer } from "@/lib/transfomers/seller.transformer"
 import { SellerUI } from "@/types/seller.type"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faHeart, faSearchDollar, faShieldAlt, faChartDiagram, faChartBar, faChartLine, faUser, faTools } from '@fortawesome/free-solid-svg-icons'
+import { faHeart, faSearchDollar, faShieldAlt, faChartDiagram, faChartBar, faChartLine, faUser, faTools, faChevronDown, faChevronRight, faStore, faChevronUp } from '@fortawesome/free-solid-svg-icons'
 import RecentActivity from "../(components)/DashboardOverview"
 import DashboardOverview from "../(components)/DashboardOverview"
 import DashboardSellersTabContent from "../(components)/DashboardSellersTabContent"
 import DashboardScraperSitesTabContent from "../(components)/DashboardScraperSitesTabContent"
 import { useFetchScraperSites, useFetchSellers } from "@/hooks/seller"
+import { useRouter } from "next/navigation"
+import styles from "../(components)/dashboardAdmin.module.css"
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"sellers" | "scraper" | "overview">(
     "overview"
   )
+  const [isSellersExpanded, setIsSellersExpanded] = useState(false)
+  const router = useRouter()
 
   // Fetch data using custom hooks
   const {
@@ -49,6 +53,15 @@ export default function AdminDashboard() {
 
   // consistent loading state
   const isLoading = isSellersLoading || isScraperSitesLoading
+
+  const handleSellerTabClick = () => {
+    setActiveTab("sellers")
+    setIsSellersExpanded(!isSellersExpanded)
+  }
+
+  const handleSellerItemClick = (sellerId: string) => {
+    router.push(`/dashboard/admin/sellers/${sellerId}`)
+  }
   
   return (
     <DashboardLayout
@@ -63,20 +76,49 @@ export default function AdminDashboard() {
           >
             Overview
           </DashboardSidebarItem>
-          <DashboardSidebarItem
-            icon={<FontAwesomeIcon icon={faUser} className="text-lg"/>}
-            isActive={activeTab === "sellers"}
-            onClick={() => setActiveTab("sellers")}
-          >
-            Sellers
-          </DashboardSidebarItem>
-          <DashboardSidebarItem
+          
+          {/* Sellers with dropdown */}
+          <div className="space-y-1">
+            <DashboardSidebarItem
+              icon={<FontAwesomeIcon icon={faUser} className="text-lg"/>}
+              isActive={activeTab === "sellers"}
+              onClick={handleSellerTabClick}
+              className={styles.sidebarItem}
+            >
+              <div className={styles.sidebarItemWithDropdown}>
+                <span>Sellers</span>
+                {/* <FontAwesomeIcon 
+                  icon={isSellersExpanded ? faChevronUp : faChevronRight} 
+                  className={`${styles.sidebarDropdownIcon} ${isSellersExpanded ? styles.sidebarDropdownIconExpanded : ''}`}
+                /> */}
+              </div>
+            </DashboardSidebarItem>
+            
+            {/* Sellers dropdown */}
+            {isSellersExpanded && sellers && sellers.length > 0 && (
+              <div className={styles.sidebarDropdown}>
+                {sellers.map((seller) => (
+                  <div
+                    key={seller.id}
+                    onClick={() => handleSellerItemClick(seller.id)}
+                    className={styles.sidebarDropdownItem}
+                  >
+                    <FontAwesomeIcon icon={faStore} className="text-xs" />
+                    <span className="truncate">
+                      {seller.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* <DashboardSidebarItem
             icon={<FontAwesomeIcon icon={faTools} className="text-lg"/>}
             isActive={activeTab === "scraper"}
             onClick={() => setActiveTab("scraper")}
           >
             Scrapers
-          </DashboardSidebarItem>
+          </DashboardSidebarItem> */}
         </DashboardSidebar>
       }
     >
@@ -105,12 +147,12 @@ export default function AdminDashboard() {
         )}
 
         {/* Scraper Management */}
-        {activeTab === "scraper" && (
+        {/* {activeTab === "scraper" && (
           <DashboardScraperSitesTabContent
             scraperSites={scraperSites}
             refetchScraperSites={refetchScraperSites}
           />
-        )}
+        )} */}
         </div>
       )}
     </DashboardLayout>

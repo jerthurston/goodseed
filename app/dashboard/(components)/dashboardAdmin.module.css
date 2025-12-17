@@ -34,6 +34,7 @@
 }
 
 .sidebarItem {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -76,6 +77,63 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Dropdown Sidebar Items */
+.sidebarDropdown {
+  margin-left: 0;
+  border-left: 3px solid var(--border-color);
+  padding-left: 1rem;
+  margin-top: 0.5rem;
+}
+
+.sidebarDropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-main);
+  color: var(--text-primary-muted);
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  margin-bottom: 0.25rem;
+  border-radius: 0;
+}
+
+.sidebarDropdownItem:hover {
+  background-color: var(--bg-section);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  transform: translateX(4px);
+}
+
+.sidebarDropdownItem:last-child {
+  margin-bottom: 0;
+}
+
+.sidebarItemWithDropdown {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex: 1;
+}
+
+.sidebarDropdownIcon {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+  margin-left: auto;
+  flex-shrink: 0;
+  min-width: 1rem;
+  text-align: center;
+}
+
+.sidebarDropdownIconExpanded {
+  transform: rotate(90deg);
 }
 
 /* ============================================================

@@ -53,6 +53,8 @@ export interface SellerUI {
   url: string;
   isActive: boolean;
   lastScraped: string;
+  autoScrapeInterval: number | null
+  isAutoEnabled: boolean
   stats: {
     successRate: number;
     productsScraped: number;

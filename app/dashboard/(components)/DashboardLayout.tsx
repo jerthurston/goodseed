@@ -5,7 +5,7 @@ import { ReactNode } from "react"
 interface DashboardLayoutProps {
   children: ReactNode
   sidebar: ReactNode
-  title: string
+  title?: string
   subtitle?: string
 }
 
@@ -17,9 +17,9 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
   return (
     <div className="max-w-[1440px] w-full min-h-screen bg-(--bg-main)">
-      <div className="px-4 py-8">
+      <div className="px-4 py-6">
         {/* Page Header */}
-        <div className="mb-8">
+        {/* <div className="mb-8">
           <h1 className="font-['Archivo_Black'] text-5xl uppercase text-(--brand-primary) tracking-tight mb-2">
             {title}
           </h1>
@@ -28,7 +28,7 @@ export function DashboardLayout({
               {subtitle}
             </p>
           )}
-        </div>
+        </div> */}
 
         {/* Layout Grid */}
         <div className="flex gap-6">

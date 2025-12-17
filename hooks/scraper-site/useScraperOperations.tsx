@@ -7,10 +7,16 @@ import { toast } from "sonner";
 
 export interface UseScraperOperationsResult {
     // Manual scrape operation
-    triggerManualScrape: (id: string) => Promise<void>
+    triggerManualScrape: (id: string, options?: { maxPages?: number }) => Promise<void>
     isTriggering: boolean;
     triggerError: Error | null;
     activeJobs: Map<string, string>;
+
+//     // Job management - New additions
+//   cancelJob: (sellerId: string) => Promise<void>;
+//   getJobStatus: (jobId: string) => Promise<any>;
+//   clearCompletedJobs: () => void;
+
 
     // Automatic scrape operations
     toggleAutoScrape: (id: string, currentState: boolean) => Promise<void>;
@@ -28,9 +34,9 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
     const [activeJobs, setActiveJobs] = useState<Map<string, string>>(new Map())
     // Manual scrape operation
     const triggerMutation = useMutation({
-        mutationFn: async (id: string) => {
+        mutationFn: async ({ id, options }: { id: string; options?: { maxPages?: number } }) => {
             try {
-                const data = await ScraperOperationService.triggerManualScrape(id);
+                const data = await ScraperOperationService.triggerManualScrape(id, options);
                 apiLogger.debug("useScraperOperation.triggerManualScrape", { data });
                 return {
                     sellerId: id,
@@ -42,7 +48,7 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
             }
         },
 
-        onSuccess: (response, sellerId) => {
+        onSuccess: (response, { id: sellerId }) => {
             if (response.success) {
                 const { jobId, sellerName, estimatedDuration } = response.data;
                 // track active job
@@ -122,8 +128,8 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
 
     return {
         //Manual scrape operation
-        triggerManualScrape: async (id: string) => {
-            await triggerMutation.mutateAsync(id);
+        triggerManualScrape: async (id: string, options?: { maxPages?: number }) => {
+            await triggerMutation.mutateAsync({ id, options });
         },
         isTriggering: triggerMutation.isPending,
         triggerError: triggerMutation.error,

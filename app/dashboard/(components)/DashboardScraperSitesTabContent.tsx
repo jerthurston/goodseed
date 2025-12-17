@@ -62,9 +62,12 @@ const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentP
         id: `scrape-${sellerId}` // Use consistent ID for updates
       },
     );
-      
-      await triggerManualScrape(sellerId);
-      
+
+      await triggerManualScrape(
+        sellerId,
+        { maxPages: 30 }
+      );
+
       // Success toast is handled in the hook
       toast.dismiss(`scrape-${sellerId}`);
       
