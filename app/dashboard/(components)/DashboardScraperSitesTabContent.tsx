@@ -55,21 +55,22 @@ const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentP
   } = useScraperOperations(refetchScraperSites)
 
 
-  const handleManualScrape = async (id: string, siteName: string) => {
+  const handleManualScrape = async (sellerId: string, sellerName: string) => {
     try {
       // Show loading state immediately
-      toast.loading(`Initiating scrape for ${siteName}...`, {
-        id: `scrape-${id}` // Use consistent ID for updates
-      });
+      toast.loading(`Initiating scrape for ${sellerName}...`, {
+        id: `scrape-${sellerId}` // Use consistent ID for updates
+      },
+    );
       
-      await triggerManualScrape(id);
+      await triggerManualScrape(sellerId);
       
       // Success toast is handled in the hook
-      toast.dismiss(`scrape-${id}`);
+      toast.dismiss(`scrape-${sellerId}`);
       
     } catch (error) {
       // Dismiss loading toast
-      toast.dismiss(`scrape-${id}`);
+      toast.dismiss(`scrape-${sellerId}`);
       
       // Error is handled in the hook, but we can add fallback
       console.error("Manual scrape failed:", error);
@@ -120,7 +121,7 @@ const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentP
               <div className="flex flex-col gap-2">
                 <DashboardButton
                   variant="secondary"
-                  onClick={() => handleManualScrape(site.id, site.name)}
+                  onClick={() => handleManualScrape(site.id, site.name)} // site.id === sellerId và site.name sẽ là name của seller
                   disabled={isTriggering || activeJobs.has(site.id)}
                   className="flex items-center gap-2"
                 >

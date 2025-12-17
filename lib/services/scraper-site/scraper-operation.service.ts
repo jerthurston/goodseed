@@ -59,12 +59,15 @@ export class ScraperOperationService {
     }
 
     /**
-     * Trigger manual scrape for a given scraper site ID
+     * Trigger manual scrape for a seller
+     * @param sellerId - The ID of the seller to scrape
+     * @param options - Scrape options (maxPages, etc.)
      */
 
     public static async triggerManualScrape(id: string): Promise<ManualScrapeResponse> {
         const startTime = Date.now();
         try {
+            // giải thích: Đây là payload gửi đi khi trigger manual scrape. Nó rỗng Bởi vì chúng ta không cần gửi bất kỳ dữ liệu nào để bắt đầu quá trình scrape, tất cả thông tin cần thiết đã được lưu trữ trên server. Không thể bỏ  vì API yêu cầu một payload rỗng để xác nhận yêu cầu.
             const response = await api.post(`/admin/scraper-sites/${id}`, {});
             apiLogger.logResponse("SellerService.triggerManualScrape", { response })
 
@@ -78,6 +81,7 @@ export class ScraperOperationService {
             )
 
             return response.data;
+            
         } catch (error: any) {
             const duration = Date.now() - startTime;
 

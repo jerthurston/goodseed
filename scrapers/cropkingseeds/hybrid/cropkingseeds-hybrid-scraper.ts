@@ -8,12 +8,9 @@
 
 import { CheerioCrawler, Dataset } from 'crawlee';
 import { CheerioAPI } from 'cheerio';
-import { 
-  extractHybridProduct, 
-  ManualSelectors, 
-  ScraperProduct 
-} from '@/lib/services/json-ld';
+
 import { PRODUCT_CARD_SELECTORS, BASE_URL } from '../core/selectors';
+import { ManualSelectors } from '@/lib/factories/scraper-factory';
 
 /**
  * Crop King Seeds manual selectors configuration

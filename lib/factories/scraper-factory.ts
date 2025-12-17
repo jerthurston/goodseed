@@ -63,38 +63,65 @@ export interface ISaveDbService {
  * Manual selector configuration for a scraper site
  */
 export interface ManualSelectors {
-  name: string;
-  price: string;
-  currency?: string;
-  image?: string;
-  description?: string;
-  availability?: string;
+  // Core product information (required)
+  productName: string;
+  priceDisplay: string;
+  
+  // Product structure
+  productCard?: string;
+  productLink?: string;
+  productImage?: string;
+  
+  // Cannabis-specific selectors (match VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS)
+  strainType?: string;
+  badge?: string;
+  
+  // Rating & Reviews
   rating?: string;
+  ratingAriaLabel?: string;
   reviewCount?: string;
   
-  // Cannabis-specific selectors
-  strainType?: string;
-  seedType?: string;
-  thcContent?: string;
-  cbdContent?: string;
+  // THC & CBD (match existing selectors)
+  thcLevel?: string;
+  cbdLevel?: string;
+  
+  // Additional Info
   floweringTime?: string;
+  growingLevel?: string;
+  
+  // Price related
+  priceAmount?: string;
+  variationInputs?: string;
+  
+  // Pagination selectors (match existing selectors)
+  nextPage?: string;
+  pageLinks?: string;
+  currentPage?: string;
+  paginationContainer?: string;
+  paginationItems?: string;
+  
+  // Optional fields for extensibility
+  currency?: string;
+  description?: string;
+  availability?: string;
+  seedType?: string;
   yieldInfo?: string;
   genetics?: string;
   height?: string;
   effects?: string;
   aroma?: string;
   flavor?: string;
-  // pagination selectors
-  nextPage?: string;
-  prevPage?: string;
-  currentPage?: string;
-  paginationContainer?:string;
-  paginationItems?:string;
-  
 }
-
 /**
  * scraper configuration interface
+ * giải thích các thông số ScrapeConfig:
+ * - siteName: Tên của trang web cần scrape
+ * - baseUrl: URL cơ sở cho trang web
+ * - selectors: Các selector CSS để trích xuất dữ liệu
+ * - enableCrossValidation: Bật xác thực chéo cho dữ liệu trích xuất
+ * - minQualityScore: Điểm chất lượng tối thiểu cho dữ liệu trích xuất
+ * - maxConcurrency: Số lượng đồng thời tối đa cho các yêu cầu
+ * - maxRequestsPerMinute: Số lượng yêu cầu tối đa mỗi phút
  */
 export interface ScraperConfig {
   siteName: string;

@@ -1,3 +1,9 @@
+/**
+ * API route to manage sellers
+ * Handles GET: Fetch all sellers
+ * Handles POST: Create a new seller
+ */
+
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createSellerSchema, validateSellerData } from "@/schemas/seller.schema"

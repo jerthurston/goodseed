@@ -1,3 +1,8 @@
+/**
+ * Health Check cho monitoring
+ * Handles GET: Trả về status hệ thống (DB, Redis, queue)
+ */
+
 import { prisma } from '@/lib/prisma';
 import Redis from 'ioredis';
 import { NextResponse } from 'next/server';

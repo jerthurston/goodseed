@@ -1,3 +1,9 @@
+/**
+ * Lịch sử scrape
+ * Handles GET: Lấy lịch sử scrape của seller này (status, duration, products saved, errors...)
+ */
+
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiLogger } from "@/lib/helpers/api-logger";

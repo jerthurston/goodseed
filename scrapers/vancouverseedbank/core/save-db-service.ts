@@ -14,49 +14,95 @@
  */
 
 import type { CategoryMetadataFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { CannabisType, PrismaClient, StockStatus } from '@prisma/client';
+import { CannabisType, Prisma, PrismaClient, Seller, StockStatus } from '@prisma/client';
 import { parseCannabisType, parseSeedType } from '../utils/data-mappers';
+import { SellerRaw } from '@/types/seller.type';
+import { prisma } from '@/lib/prisma';
 
+// TODO: Lấy thông tin seller từ db thay cho hardcore
 const SELLER_NAME = 'Vancouver Seed Bank';
 const SELLER_URL = 'https://vancouverseedbank.ca';
-const SCRAPING_SOURCE_URL = 'https://vancouverseedbank.ca/shop/jsf/epro-archive-products/';
+const SCRAPING_SOURCE_URL = [
+    'https://vancouverseedbank.ca/shop',
+];
 
 export class SaveDbService {
+    private seller: Seller | null = null;
+
     constructor(private prisma: PrismaClient) { }
 
     /**
-     * Initialize or get Seller record
-     * Returns seller ID for use in subsequent operations
+     * Initialize service with seller data form database
+     * @param sellerId
      */
-    async initializeSeller(): Promise<string> {
-        const seller = await this.prisma.seller.upsert({
-            where: { name: SELLER_NAME },
-            update: {
-                lastScraped: new Date(),
-                status: 'success',
-                updatedAt: new Date(),
-            },
-            create: {
-                name: SELLER_NAME,
-                url: SELLER_URL,
-                scrapingSourceUrl: SCRAPING_SOURCE_URL,
-                isActive: true,
-                lastScraped: new Date(),
-                status: 'success',
-            },
+    async initializeSeller(sellerId: string): Promise<void> {
+        // Vì prisma là singelton nên cần dùng this.prisma nếu muốn lưu status cho seller
+        const seller = await this.prisma.seller.findUnique({
+            where:{id:sellerId},
         });
+        if(!seller) {
+            throw new Error(`Seller with Id ${sellerId} not found`)
+        }
+        if(!seller.isActive) {
+            throw new Error(`Seller with Id ${sellerId} is not active`)
+        }
+        // Lưu seller vào state
+        this.seller = seller
 
-        return seller.id;
+        await this.prisma.seller.update({
+            where:{id:sellerId},
+            data:{
+                lastScraped: new Date(),
+                status: 'in_progress',
+                updatedAt: new Date(),
+            }
+        })
     }
+
+    // Get Current seller info (must call initialize with seller first)
+    // Giải thích mục đích sử dụng getSeller(): Hàm này dùng để lấy thông tin của seller hiện tại
+    getSeller():Seller {
+        if(!this.seller) {
+            throw new Error(`Service not initialized. Call initializeWithSeller() first`)
+        }
+
+        return this.seller;
+    }
+    // Get seller ID (must call initializeWithSeller first)
+    getSellerId():string{
+        return this.getSeller().id;
+    }
+
+    //Update seller status after scraping completion
+    async updateSellerStatus(
+        status: 'success' | 'error',
+        message?: string
+    ):Promise<void> {
+        if(!this.seller) {
+            throw new Error(`Service not initialized. Call initializeWithSeller() first`)
+        }
+        // update seller status
+        await this.prisma.seller.update({
+            where: { id: this.seller.id },
+            data:{
+                status,
+                updatedAt: new Date(),
+            }
+        })
+    };
 
     /**
      * Get or create SeedProductCategory from CategoryMetadata
      * Returns category ID for saving products
+     * LOGIC cho việc chọn category cho seedProduct. Trường giá trị của cannabisType của product khi lowCase() sẽ tương ứng với name của SeedProductCategory(sẽ có 3 category chính: Sativa, Indica, Hybrid).
+     * 
+     * TODO: Cần viết lại hoặc làm rõ getOrCreateCategory có cần thiết ở đây không?
      */
     async getOrCreateCategory(
-        sellerId: string,
         metadata: CategoryMetadataFromCrawling
     ): Promise<string> {
+
+        const sellerId = this.getSellerId();
         // Try to find existing category by slug
         let category = await this.prisma.seedProductCategory.findFirst({
             where: {
@@ -118,6 +164,7 @@ export class SaveDbService {
                             slug: product.slug,
                         },
                     },
+                   // Nếu kiểm tra seedProduct đó đã tồn tại chưa bằng findUnique thì chúng ta phải dùng id của seedProduct đúng không? :   
                 });
 
                 // product đã tồn tại - Upsert product
@@ -268,19 +315,19 @@ export class SaveDbService {
         });
     }
 
-    /**
-     * Map strain type to cannabis type enum
-     */
-    private mapCannabisType(strainType: string | undefined): CannabisType | null {
-        if (!strainType) return null;
+    // /**
+    //  * Map strain type to cannabis type enum
+    //  */
+    // private mapCannabisType(strainType: string | undefined): CannabisType | null {
+    //     if (!strainType) return null;
 
-        const typeLower = strainType.toLowerCase();
-        if (typeLower.includes('sativa')) return CannabisType.SATIVA;
-        if (typeLower.includes('indica')) return CannabisType.INDICA;
-        if (typeLower.includes('hybrid')) return CannabisType.HYBRID;
+    //     const typeLower = strainType.toLowerCase();
+    //     if (typeLower.includes('sativa')) return CannabisType.SATIVA;
+    //     if (typeLower.includes('indica')) return CannabisType.INDICA;
+    //     if (typeLower.includes('hybrid')) return CannabisType.HYBRID;
 
-        return null;
-    }
+    //     return null;
+    // }
 
     /**
      * Get summary statistics for a seller

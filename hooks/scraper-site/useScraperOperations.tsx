@@ -120,8 +120,6 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
         }
     })
 
-   
-
     return {
         //Manual scrape operation
         triggerManualScrape: async (id: string) => {

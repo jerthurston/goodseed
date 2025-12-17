@@ -3,7 +3,7 @@ import { addScraperJob } from "@/lib/queue/scraper-queue";
 import { randomUUID } from "crypto";
 
 
-export async function createManualScrapeJob(seller: {id:string,scrapingSourceUrl:string}, scraperSource: string) {
+export async function createManualScrapeJob(seller: {id:string,scrapingSourceUrl:string[]}, scraperSource: string) {
     // Tạo một job mới
     const jobId = `manual_${Date.now()}_${randomUUID().substring(0, 8)}`
     // Tạo job trong cơ sở dữ liệu
@@ -33,8 +33,7 @@ export async function createManualScrapeJob(seller: {id:string,scrapingSourceUrl
         source: scraperSource,
         mode: 'manual', // Manual mode for full site crawl
         config: {
-            scrapingSourceUrl: seller.scrapingSourceUrl,
-            categorySlug: 'all-products',
+            scrapingSourceUrl: seller.scrapingSourceUrl[0],
             // No page restrictions - crawl entire site
             fullSiteCrawl: true
         },

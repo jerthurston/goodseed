@@ -202,7 +202,7 @@ model SeedProduct {
 
   // Basic Info (từ category page)
   name        String // "Blue Dream Feminized"
-  url         String // URL trang chi tiết sản phẩm
+  url         String  // URL trang chi tiết sản phẩm
   slug        String // "blue-dream-feminized"
   description String? // Mô tả ngắn (nếu có)
 

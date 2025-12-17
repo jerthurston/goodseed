@@ -66,7 +66,7 @@ export async function POST(
     await checkExistingJobs(seller.id, seller.name);
 
     //6. Create manual scrape job using helper function
-    jobId = await createManualScrapeJob(seller, scraperSource);
+    jobId = await createManualScrapeJob({ id: seller.id , scrapingSourceUrl:seller.scrapingSourceUrl }, scraperSource);
 
     //7. Update seller timestamp
     await prisma.seller.update({

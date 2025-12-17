@@ -22,6 +22,7 @@
 
 import Bull, { Job, Queue } from 'bull';
 import Redis from 'ioredis';
+import { apiLogger } from '../helpers/api-logger';
 
 // Redis connection configuration
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
@@ -100,7 +101,7 @@ export async function addScraperJob(data: ScraperJobData): Promise<Job<ScraperJo
     priority: data.mode === 'manual' ? 10 : 5, // Manual jobs get higher priority
   });
 
-  console.log(`[Scraper Queue] Added job ${job.id} to queue`);
+  apiLogger.info(`[Scraper Queue] Added job ${job.id} to queue`);
   return job;
 }
 

@@ -1,3 +1,10 @@
+/**
+ * Dynamic route cho từng seller
+ * Handles GET: Fetch seller by ID
+ * Handles PATCH: Update seller active status
+ * Handles PUT: Update seller by ID (full update)
+ * Handles DELETE: Delete seller by ID
+ */
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { validateSellerData } from "@/schemas/seller.schema"

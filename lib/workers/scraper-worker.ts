@@ -9,11 +9,11 @@
  * Or with npm: `npm run worker:scraper`
  */
 
-import { apiLogger } from '@/lib/helpers/api-logger';
+import { Job } from 'bull';
 import { prisma } from '@/lib/prisma';
 import { ScraperJobData, scraperQueue } from '@/lib/queue/scraper-queue';
 import ScraperFactory, { ScraperSource } from '@/lib/factories/scraper-factory';
-import { Job } from 'bull';
+import { apiLogger } from '@/lib/helpers/api-logger';
 
 apiLogger.info('[Scraper Worker] Starting worker process...');
 
