@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 export interface UseScraperOperationsResult {
     // Manual scrape operation
-    triggerManualScrape: (id: string, options?: { maxPages?: number }) => Promise<void>
+    triggerManualScrape: (id: string, scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number }) => Promise<void>
     isTriggering: boolean;
     triggerError: Error | null;
     activeJobs: Map<string, string>;
@@ -34,16 +34,17 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
     const [activeJobs, setActiveJobs] = useState<Map<string, string>>(new Map())
     // Manual scrape operation
     const triggerMutation = useMutation({
-        mutationFn: async ({ id, options }: { id: string; options?: { maxPages?: number } }) => {
+        mutationFn: async ({ id, scrapingConfig }: { id: string; scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number } }) => {
             try {
-                const data = await ScraperOperationService.triggerManualScrape(id, options);
-                apiLogger.debug("useScraperOperation.triggerManualScrape", { data });
+                apiLogger.debug("[Params truyền vào hook triggerMutation từ việc bấm manual scrape]", { id, scrapingConfig });
+                const data = await ScraperOperationService.triggerManualScrape(id, scrapingConfig);
+                apiLogger.debug("useScraperOperation.triggerManualScrape successfully", { data });
                 return {
                     sellerId: id,
                     ...data
                 };
             } catch (error) {
-                apiLogger.logError("useScraperOperation.triggerManualScrape", error as Error);
+                apiLogger.logError("useScraperOperation.triggerManualScrape failed", error as Error);
                 throw error;
             }
         },
@@ -128,8 +129,8 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
 
     return {
         //Manual scrape operation
-        triggerManualScrape: async (id: string, options?: { maxPages?: number }) => {
-            await triggerMutation.mutateAsync({ id, options });
+        triggerManualScrape: async (id: string, scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number }) => {
+            await triggerMutation.mutateAsync({ id, scrapingConfig });
         },
         isTriggering: triggerMutation.isPending,
         triggerError: triggerMutation.error,

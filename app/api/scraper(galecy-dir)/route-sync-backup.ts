@@ -1,6 +1,6 @@
 import { apiLogger } from "@/lib/helpers/api-logger";
 import { prisma } from "@/lib/prisma";
-import { ProductListScraper } from "@/scrapers/vancouverseedbank/core/product-list-scrapers";
+import { ProductListScraper } from "@/scrapers/vancouverseedbank/core/vancouver-product-list-scraper";
 import { SaveDbService } from "@/scrapers/vancouverseedbank/core/save-db-service";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";

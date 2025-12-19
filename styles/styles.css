@@ -34,6 +34,12 @@ body {
     margin: 0; /* From Preflight Reset */
 }
 
+/* Prevent body scrolling when modal is open */
+body.modal-open {
+    overflow: hidden;
+    height: 100vh;
+}
+
 /* Font Hierarchy */
 h1, h2, .logo, .logo-text, .plant-card-overlay .overlay-strain-name-header, .filter-title, .login-modal-title {
     font-family: 'Archivo Black', sans-serif;

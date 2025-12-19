@@ -14,22 +14,23 @@ import { SaveDbService as SunWestSaveDbService } from '@/scrapers/sunwestgenetic
 import { SaveDbService as CropKingSaveDbService } from '@/scrapers/cropkingseeds/core/save-db-service';
 
 // Product List Scrapers (core implementations)
-import { ProductListScraper as VancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/product-list-scrapers';
 import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
 
-import { ProductListScraper as SunWestProductListScraper } from '@/scrapers/sunwestgenetics/core/product-list-scrapers';
+import { ProductListScraper as SunWestProductListScraper } from '@/scrapers/sunwestgenetics/core/scrape-product-list';
+import { PRODUCT_CARD_SELECTORS as SUNWEST_SELECTORS } from '@/scrapers/sunwestgenetics/core/selectors';
 
 import {
   createCropKingSeedsScraper,
   CROPKINGSEEDS_SELECTORS
 } from '@/scrapers/cropkingseeds/hybrid/cropkingseeds-hybrid-scraper';
+import { vancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/vancouver-product-list-scraper';
 
 
 
 /**
  * Supported scraper sources - easily extensible for new sites
  */
-export type ScraperSource = 
+export type SupportedScraperSourceName = 
   | 'vancouverseedbank' 
   | 'sunwestgenetics'
   | 'bcbuddepot'
@@ -45,8 +46,10 @@ export type ScraperSource =
 
 
 export interface ISaveDbService {
-  initializeSeller(): Promise<string>;
-  getOrCreateCategory(sellerId: string, categoryData: {
+  // Initialize seller in the database
+  initializeSeller(sellerId: string): Promise<void>;
+  // Get or create a category in the database
+  getOrCreateCategory(categoryData: {
     name: string;
     slug: string;
     seedType?: string;
@@ -153,8 +156,8 @@ export class ScraperFactory {
   /**
    * Get site configuration for any supported cannabis seed site
    */
-  private getSiteConfig(source: ScraperSource): SiteConfig {
-    const configs: Record<ScraperSource, SiteConfig> = {
+  private getSiteConfig(source: SupportedScraperSourceName): SiteConfig {
+    const configs: Record<SupportedScraperSourceName, SiteConfig> = {
       'vancouverseedbank': {
         name: 'Vancouver Seed Bank',
         baseUrl: 'https://vancouverseedbank.ca',
@@ -231,44 +234,47 @@ export class ScraperFactory {
    * Mục đích của hàm createProductListScraper: Tạo một instance của product list scraper tương ứng với source.
    * Kết quả: Trả về một instance của product list scraper
    */
-  createProductListScraper(source: ScraperSource) {
-    // Lấy cấu hình trang từ siteConfig
-    const siteConfig = this.getSiteConfig(source);
+  createProductListScraper(scraperSourceName: SupportedScraperSourceName) {
+    // Lấy cấu hình trang từ siteConfig,
+    const siteConfig = this.getSiteConfig(scraperSourceName);
+    // Lấy selectors từ siteConfig
+    const selectors = siteConfig.selectors;
+    const baseUrl = siteConfig.baseUrl;
     // Kiểm tra xem scraper đã được triển khai chưa. True là đã thiết lập, false là chưa thiếp lập
     if (!siteConfig.isImplemented) {
       throw new Error(`Scraper for ${siteConfig.name} is not yet implemented. Please implement selectors first.`);
     }
     // Tạo instance của product list scraper tương ứng với source
-    switch (source) {
+    switch (scraperSourceName) {
       case 'vancouverseedbank':
-        return new VancouverProductListScraper();
-      case 'sunwestgenetics':
-        return new SunWestProductListScraper();
+        return vancouverProductListScraper(siteConfig);
+      // case 'sunwestgenetics':
+      //   return new SunWestProductListScraper();
 
       //TODO: Thêm các scraper khác ở đây sau khi thiết lập xong
-      
       default:
-        throw new Error(`Product list scraper implementation not found for: ${source}`);
+        throw new Error(`Product list scraper implementation not found for: ${scraperSourceName}`);
     }
   }
 
 
   /**
    * Create database service for supported sites
+   * Giải tích chi tiết cho createSaveDbService: Hàm này dùng để tạo ra một instance của ISaveDbService tương ứng với từng nguồn dữ liệu đã được hỗ trợ. Ví dụ: với vancouverseedbank, chúng ta sẽ tạo ra một instance của VancouverSaveDbService.
    */
-  createSaveDbService(source: ScraperSource): ISaveDbService {
-    switch (source) {
+  createSaveDbService(scraperSourceName: SupportedScraperSourceName): ISaveDbService {
+    switch (scraperSourceName) {
       case 'vancouverseedbank':
         return new VancouverSaveDbService(this.prisma);
       
-      case 'sunwestgenetics':
-        return new SunWestSaveDbService(this.prisma);
+      // case 'sunwestgenetics':
+      //   return new SunWestSaveDbService(this.prisma);
       
-      case 'cropkingseeds':
-        return new CropKingSaveDbService(this.prisma);
+      // case 'cropkingseeds':
+      //   return new CropKingSaveDbService(this.prisma);
       
       default:
-        const siteConfig = this.getSiteConfig(source);
+        const siteConfig = this.getSiteConfig(scraperSourceName);
         throw new Error(`Database service for ${siteConfig.name} is not yet implemented.`);
     }
   }
@@ -276,28 +282,28 @@ export class ScraperFactory {
   /**
    * Get seller name for any supported site
    */
-  getSellerName(source: ScraperSource): string {
+  getSellerName(source: SupportedScraperSourceName): string {
     return this.getSiteConfig(source).name;
   }
 
   /**
    * Get base URL for any supported site
    */
-  getBaseUrl(source: ScraperSource): string {
+  getBaseUrl(source: SupportedScraperSourceName): string {
     return this.getSiteConfig(source).baseUrl;
   }
 
   /**
    * Check if site is implemented and ready for scraping
    */
-  isImplemented(source: ScraperSource): boolean {
+  isImplemented(source: SupportedScraperSourceName): boolean {
     return this.getSiteConfig(source).isImplemented;
   }
 
   /**
    * Get all supported sources (including planned implementations)
    */
-  static getSupportedSources(): ScraperSource[] {
+  static getSupportedSources(): SupportedScraperSourceName[] {
     return [
       'vancouverseedbank',
       'sunwestgenetics', 
@@ -316,14 +322,14 @@ export class ScraperFactory {
   /**
    * Get only implemented sources (ready for production)
    */
-  static getImplementedSources(): ScraperSource[] {
+  static getImplementedSources(): SupportedScraperSourceName[] {
     return ['vancouverseedbank', 'sunwestgenetics', 'cropkingseeds'];
   }
 
   /**
    * Get planned sources (requiring implementation)
    */
-  static getPlannedSources(): ScraperSource[] {
+  static getPlannedSources(): SupportedScraperSourceName[] {
     return [
       'bcbuddepot',
       'beaverseed', 
@@ -339,14 +345,14 @@ export class ScraperFactory {
   /**
    * Validate source parameter
    */
-  static isValidSource(source: string): source is ScraperSource {
-    return this.getSupportedSources().includes(source as ScraperSource);
+  static isValidSource(source: string): source is SupportedScraperSourceName {
+    return this.getSupportedSources().includes(source as SupportedScraperSourceName);
   }
 
   /**
    * Get site information for any supported source
    */
-  getSiteInfo(source: ScraperSource): SiteConfig {
+  getSiteInfo(source: SupportedScraperSourceName): SiteConfig {
     return this.getSiteConfig(source);
   }
 

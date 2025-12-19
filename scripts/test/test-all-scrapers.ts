@@ -11,8 +11,8 @@
  */
 
 import 'dotenv/config';
-import { ProductListScraper as VancouverScraper } from '@/scrapers/vancouverseedbank/core/product-list-scrapers';
-import { ProductListScraper as SunWestScraper } from '@/scrapers/sunwestgenetics/core/product-list-scrapers';
+import { ProductListScraper as VancouverScraper } from '@/scrapers/vancouverseedbank/core/vancouver-product-list-scraper';
+import { ProductListScraper as SunWestScraper } from '@/scrapers/sunwestgenetics/core/scrape-product-list';
 import { CATEGORY_URLS as SunWestUrls } from '@/scrapers/sunwestgenetics/core/selectors';
 import { CategoryResultFromCrawling } from '@/types/crawl.type';
 

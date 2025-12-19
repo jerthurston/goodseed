@@ -1,7 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 import { DashboardButton } from '@/app/dashboard/(components)/DashboardButton'
 import styles from '../../../app/dashboard/(components)/dashboardAdmin.module.css'
 import { validateSellerData } from '@/schemas/seller.schema'
@@ -17,7 +19,6 @@ interface CreateSellerModalProps {
 interface SellerFormData {
     name: string
     url: string
-    scrapingSourceUrl: string
     isActive: boolean
     affiliateTag?: string
 }
@@ -34,7 +35,6 @@ const CreateSellerModal: React.FC<CreateSellerModalProps> = ({
     const [formData, setFormData] = useState<SellerFormData>({
         name: '',
         url: '',
-        scrapingSourceUrl: '',
         isActive: true,
         affiliateTag: ''
     })
@@ -42,11 +42,33 @@ const CreateSellerModal: React.FC<CreateSellerModalProps> = ({
     const [error, setError] = useState<string | null>(null)
     const [fieldErrors, setFieldErrors] = useState<ValidationErrors>({})
 
+    // Prevent body scrolling when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.classList.add('modal-open')
+        } else {
+            document.body.classList.remove('modal-open')
+        }
+
+        // Cleanup function to remove class when component unmounts
+        return () => {
+            document.body.classList.remove('modal-open')
+        }
+    }, [isOpen])
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target
+        let parsedValue: any = value
+        
+        if (type === 'checkbox') {
+            parsedValue = checked
+        } else if (type === 'number') {
+            parsedValue = value ? parseInt(value, 10) : undefined
+        }
+        
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: parsedValue
         }))
         
         // Clear field error when user starts typing
@@ -91,7 +113,6 @@ const CreateSellerModal: React.FC<CreateSellerModalProps> = ({
             setFormData({
                 name: '',
                 url: '',
-                scrapingSourceUrl: '',
                 isActive: true,
                 affiliateTag: ''
             })
@@ -162,6 +183,18 @@ const CreateSellerModal: React.FC<CreateSellerModalProps> = ({
 
                 <form onSubmit={handleSubmit}>
                     <div className={styles.modalBody}>
+                        {/* Info Message */}
+                        <div className={`${styles.alert} ${styles.info}`}>
+                            <div className={styles.icon}>
+                                <FontAwesomeIcon icon={faInfoCircle} />
+                            </div>
+                            <div className={styles.content}>
+                                <div className={styles.message}>
+                                    <strong>Note:</strong> After creating the seller, you can add scraping sources in the seller detail page to configure data collection.
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Error Message */}
                         {error && (
                             <div className={`${styles.alert} ${styles.critical}`}>
@@ -217,33 +250,6 @@ const CreateSellerModal: React.FC<CreateSellerModalProps> = ({
                             {fieldErrors.url && (
                                 <p className={styles.formError}>{fieldErrors.url}</p>
                             )}
-                        </div>
-
-                        {/* Scraping Source URL */}
-                        <div className={styles.formGroup}>
-                            <label 
-                                htmlFor="scrapingSourceUrl" 
-                                className={styles.formLabel}
-                            >
-                                Scraping Source URL *
-                            </label>
-                            <input
-                                type="url"
-                                id="scrapingSourceUrl"
-                                name="scrapingSourceUrl"
-                                value={formData.scrapingSourceUrl}
-                                onChange={handleInputChange}
-                                required
-                                className={styles.formInput}
-                                placeholder="https://example.com/products"
-                                disabled={isSubmitting}
-                            />
-                            {fieldErrors.scrapingSourceUrl && (
-                                <p className={styles.formError}>{fieldErrors.scrapingSourceUrl}</p>
-                            )}
-                            <p className={styles.formError} style={{ color: 'var(--text-primary-muted)', textTransform: 'none' }}>
-                                The URL where products are listed for scraping
-                            </p>
                         </div>
 
                         {/* Affiliate Tag */}
@@ -303,7 +309,7 @@ const CreateSellerModal: React.FC<CreateSellerModalProps> = ({
                         <DashboardButton
                             type="submit"
                             variant="primary"
-                            disabled={isSubmitting || !formData.name || !formData.url || !formData.scrapingSourceUrl}
+                            disabled={isSubmitting || !formData.name || !formData.url}
                             style={{ flex: 1 }}
                         >
                             {isSubmitting ? 'Creating...' : 'Create Seller'}

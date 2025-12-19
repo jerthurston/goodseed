@@ -1,3 +1,5 @@
+import { ManualSelectors } from '@/lib/factories/scraper-factory';
+import { apiLogger } from '@/lib/helpers/api-logger';
 import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
 import { ProductCardDataFromCrawling } from '@/types/crawl.type';
 
@@ -24,19 +26,19 @@ import { ProductCardDataFromCrawling } from '@/types/crawl.type';
  * @param $ - Cheerio loaded HTML object
  * @returns Object với products array và maxPages number
  */
-export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').load>): {
+export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').load>, selectors: ManualSelectors): {
     products: ProductCardDataFromCrawling[];
     maxPages: number | null;
 } {
     const products: ProductCardDataFromCrawling[] = [];
     const seenUrls = new Set<string>();
 
-    $(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.productCard).each((_, element) => {
+    $(selectors.productCard).each((_, element) => {
         try {
             const $card = $(element);
 
             // Extract product link and URL
-            const $link = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.productLink).first();
+            const $link = $card.find(selectors.productLink).first();
             let url = $link.attr('href');
             if (!url) return;
 
@@ -54,7 +56,7 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
             if (!name) return;
 
             // Extract image - prioritize data-src over src (lazy loading)
-            const $img = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.productImage).first();
+            const $img = $card.find(selectors.productImage).first();
             const imageUrl = $img.attr('data-src') ||
                 $img.attr('data-lazy-src') ||
                 $img.attr('src');
@@ -65,22 +67,22 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
                 : undefined;
 
             // Extract cannabis type (Balanced Hybrid, Indica Dominant, etc.)
-            const cannabisType = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.strainType).first().text().trim() || undefined;
+            const cannabisType = $card.find(selectors.strainType).first().text().trim() || undefined;
 
             // Extract badge (New Strain 2025, BOGO, etc.)
-            const badge = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.badge).first().text().trim() || undefined;
+            const badge = $card.find(selectors.badge).first().text().trim() || undefined;
 
             // Extract rating
-            const ratingText = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.rating).first().text().trim();
+            const ratingText = $card.find(selectors.rating).first().text().trim();
             const rating = ratingText ? parseFloat(ratingText) : undefined;
 
             // Extract review count - remove parentheses
-            const reviewCountText = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.reviewCount).first().text().trim();
+            const reviewCountText = $card.find(selectors.reviewCount).first().text().trim();
             const reviewCountMatch = reviewCountText.match(/\d+/);
             const reviewCount = reviewCountMatch ? parseInt(reviewCountMatch[0]) : undefined;
 
             // Extract THC level
-            const thcLevelText = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.thcLevel).first().text().trim();
+            const thcLevelText = $card.find(selectors.thcLevel).first().text().trim();
             let thcMin: number | undefined;
             let thcMax: number | undefined;
 
@@ -94,7 +96,7 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
             }
 
             // Extract CBD level
-            const cbdLevelText = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.cbdLevel).first().text().trim();
+            const cbdLevelText = $card.find(selectors.cbdLevel).first().text().trim();
             let cbdMin: number | undefined;
             let cbdMax: number | undefined;
 
@@ -108,16 +110,16 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
             }
 
             // Extract flowering time
-            const floweringTime = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.floweringTime).first().text().trim() || undefined;
+            const floweringTime = $card.find(selectors.floweringTime).first().text().trim() || undefined;
 
             // Extract growing level
-            const growingLevel = $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.growingLevel).first().text().trim() || undefined;
+            const growingLevel = $card.find(selectors.growingLevel).first().text().trim() || undefined;
 
             // Extract all pricing variations
             // Vancouver Seed Bank shows multiple variations (5 seeds, 10 seeds, 25 seeds)
             const pricings: Array<{ totalPrice: number; packSize: number; pricePerSeed: number }> = [];
 
-            $card.find(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.variationInputs).each((_, input) => {
+            $card.find(selectors.variationInputs).each((_, input) => {
                 const $input = $(input);
                 const itemPrice = $input.attr('item-price');
                 const value = $input.attr('value'); // e.g., "5-seeds", "10-seeds", "25-seeds"
@@ -174,12 +176,16 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
         let maxPageFound = 0;
         
         // Check if pagination container exists
-        const $paginationContainer = $(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.paginationContainer);
+        const $paginationContainer = $(selectors.paginationContainer);
         if ($paginationContainer.length > 0) {
+            console.log('[DEBUG] Pagination container found, analyzing items...');
+            
             // Find all pagination items with data-value attributes
-            $(VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS.paginationItems).each((_, element) => {
+            const allItems: string[] = [];
+            $(selectors.paginationItems).each((_, element) => {
                 const $item = $(element);
                 const dataValue = $item.attr('data-value');
+                allItems.push(dataValue || 'undefined');
                 
                 // Skip non-numeric values like "next", "prev"
                 if (dataValue && /^\d+$/.test(dataValue)) {
@@ -190,16 +196,19 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
                 }
             });
             
+            console.log('[DEBUG] Found pagination items with data-values:', allItems);
+            console.log('[DEBUG] Max page detected:', maxPageFound);
+            
             maxPages = maxPageFound > 0 ? maxPageFound : null;
             
             if (maxPages) {
-                console.log(`[Extract Pagination] Detected ${maxPages} total pages from pagination`);
+                apiLogger.debug(`[Extract Pagination] Detected ${maxPages} total pages from pagination`);
             }
         } else {
-            console.log('[Extract Pagination] No pagination container found on this page');
+            apiLogger.warn('[Extract Pagination] No pagination container found on this page');
         }
     } catch (error) {
-        console.error('[Extract Max Pages] Error parsing pagination:', error);
+        apiLogger.logError('[Extract Max Pages] Error parsing pagination:', {error});
     }
 
     return {

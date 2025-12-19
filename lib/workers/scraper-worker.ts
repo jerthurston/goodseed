@@ -3,17 +3,41 @@
  * 
  * Processes scraping jobs from Bull queue in the background
  * Updates ScrapeJob status in database during execution
+ * Worker sẽ lắng nghe queue, lấy job ra, chạy scraping thực tế, normalize data, lưu DB.
  * 
  * @usage
  * Start worker: `tsx workers/scraper-worker.ts`
  * Or with npm: `npm run worker:scraper`
  */
 
+/** FLOW THAM KHẢO
+ * API Route (/api/admin/sellers/[id]/scraper)
+        ↓ (POST request từ admin hoặc cron)
+   scraper-queue.ts
+        ↓ (add job vào Redis queue)
+   scraper-worker.ts  ← lắng nghe queue
+        ↓ (process job)
+   scraper-factory.ts (hoặc scraper service)
+        ↓
+   Crawlee/Cheerio → Scrape HTML → Extract data
+        ↓
+   Normalize data (price per seed, min/max THC, standardize names)
+        ↓
+   Prisma → Upsert vào DB (Product, Seller, Pricing, Image...)
+        ↓
+   Update ScrapeJob status (COMPLETED / FAILED)
+        ↓
+   Alert admin nếu fail (SNS/Slack)
+ */
+
+   //NOTE: Không throw lỗi ở cấp worker, tránh crash app crawl, chỉ update scrapeJob để thông báo!
+
 import { Job } from 'bull';
 import { prisma } from '@/lib/prisma';
 import { ScraperJobData, scraperQueue } from '@/lib/queue/scraper-queue';
-import ScraperFactory, { ScraperSource } from '@/lib/factories/scraper-factory';
+import ScraperFactory, { ISaveDbService, SupportedScraperSourceName } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
+import { ProductCardDataFromCrawling } from '@/types/crawl.type';
 
 apiLogger.info('[Scraper Worker] Starting worker process...');
 
@@ -22,17 +46,28 @@ apiLogger.info('[Scraper Worker] Starting worker process...');
  */
 async function processScraperJob(job: Job<ScraperJobData>) {
 
-  const { jobId, sellerId, source, mode, config } = job.data;
-
-  apiLogger.info('[Scraper Worker] Processing job', { 
-    jobId, 
-    source, 
+  // Destructure Job data được thêm vào để worker xử
+  const {
+    jobId,
+    sellerId,
+    scrapingSources,
     mode,
-    fullJobData: job.data 
+    config } = job.data;
+
+  apiLogger.info('[Scraper Worker] Processing job', {
+    jobId,
+    scrapingSources,
+    mode,
+    fullJobData: job.data
   });
 
+  // 2. Thiết lập ban đầu cho factory services: scraper product và save db
+  const scraperSourceName = scrapingSources[0].scrapingSourceName;
+
+  let dbService = {} as ISaveDbService
   try {
     // 1. Update job status to IN_PROGRESS
+    apiLogger.debug(`[DEBUG WORKER] About to update job ${jobId} to IN_PROGRESS`);
     await prisma.scrapeJob.update({
       where: { jobId },
       data: {
@@ -40,148 +75,184 @@ async function processScraperJob(job: Job<ScraperJobData>) {
         startedAt: new Date(),
       },
     });
+    apiLogger.debug(`[DEBUG WORKER] Successfully updated job ${jobId} status`);
 
     // Update Bull job progress
-    await job.progress(10);
+    await job.progress(5);
 
-    // 2. Thiết lập ban đầu cho factory
+    // tạo một instance của ScraperFactory với PrismaClient để tương tác với cơ sở dữ liệu.
     const scraperFactory = new ScraperFactory(prisma);
     //--> factory tạo job cho worker thực hiện: cụ thể ở đây là
-    // scraper để đi crawl dữ liệu
-    const scraper = scraperFactory.createProductListScraper(source as ScraperSource);
-    // dbService để save dữ liệu vào database
-    const dbService = scraperFactory.createSaveDbService(source as ScraperSource);
 
-    apiLogger.info('[Scraper Worker] Services initialized', { jobId, source });
+    // dbService để save dữ liệu vào database. TODO: Cần làm rõ logic của dbService đã xử lý như thế nào
+    dbService = scraperFactory.createSaveDbService(scraperSourceName as SupportedScraperSourceName);
+
+    //!!!!!! WARNING! TODO: hàm initializeSeller chưa được thiết lập. Cần làm rõ mục đích của hàm. 
+    // Theo flow thực tế thì seller đã được khởi tạo trước khi chạy từ trình quản lý của dashboard/admin
+    await dbService.initializeSeller(sellerId);
+
+    apiLogger.debug('[DEBUG WORKER] Services initialized', { jobId, scraperSourceName });
     // Ghi log thông tin dịch vụ đã được khởi tạo
     await job.progress(20);
 
     // 3. Real scraping using ScraperFactory and Crawlee
-    apiLogger.info('[Scraper Worker] Starting real scraping process...', { 
-      jobId, 
-      source, 
-      url: config.scrapingSourceUrl,
+    apiLogger.info('[INFO WORKER] Starting real scraping process...', {
+      jobId,
+      scraperSourceName,
       mode,
-      fullSiteCrawl: config.fullSiteCrawl
+      scrapingSourceUrl: scrapingSources[0].scrapingSourceUrl,
+      fullSiteCrawl: config.fullSiteCrawl,
     });
 
     const scrapeStartTime = Date.now();
 
-    let result = {
+    let aggregatedResult = {
       totalProducts: 0,
       totalPages: 0,
-      products: [] as any[],
+      products: [] as ProductCardDataFromCrawling[],
+      errors: 0,
       duration: 0,
     };
+    //Đếm số lượng scrapingSource
+    const scrapingSourceCount = scrapingSources.length;
+    // start from 10%
+    let currentProgress = 10; 
+    // Tính tiến độ trên mỗi source 80% for scraping (10% init, 10% save)
+    const progressPerSource = 80 / scrapingSourceCount; 
 
-    try {
-      // Debug logging to understand the condition
-      apiLogger.info('[Scraper Worker] Debug condition check', {
-        jobId,
-        source,
-        mode,
-        fullSiteCrawl: config.fullSiteCrawl,
-        conditionResult: mode === 'manual' && config.fullSiteCrawl
-      });
-      
-      if (mode === 'manual' && config.fullSiteCrawl) {
-        // Manual mode: Full site crawl - use reasonable page limit for manual scrape
-        apiLogger.info('[Scraper Worker] Manual mode - full site crawl with reasonable limit', { jobId, source });
-        
-        // Dynamic maxPages: Scrape first page to detect total pages from pagination
-        // Chúng ta sẽ không hardcore maxpage mà sẽ extractform HTML để tính được số lượng trang ở pagination.
-        result = await scraper.scrapeProductList(config.scrapingSourceUrl, 0); // 0 = auto-discover all pages
-        
-      } else if (mode === 'manual') {
-        // Manual mode fallback (if fullSiteCrawl is not set)
-        apiLogger.info('[Scraper Worker] Manual mode fallback - using default pages', { jobId, source });
-        
-        result = await scraper.scrapeProductList(config.scrapingSourceUrl, 5);
-        
-      } 
+    for (const [index, source] of scrapingSources.entries()) {
+      try {
+        // Debug logging to understand the condition
+        apiLogger.info('[INFO WORKER] Processing source', {
+          jobId,
+          sourceIndex: index + 1,
+          scrapingSourceName: source.scrapingSourceName,
+          scrapingSourceUrl: source.scrapingSourceUrl,
+          maxPage: source.maxPage,
+          fullSiteCrawl: config.fullSiteCrawl,
+        });
 
-    } catch (scrapeError) {
-      apiLogger.logError('[Scraper Worker] Real scraping failed', scrapeError as Error, {
-        jobId,
-        source,
-        duration: Date.now() - scrapeStartTime
-      });
-      
-      // Create fallback result for failed scraping
-      result = {
-        totalProducts: 0,
-        totalPages: 0,
-        products: [],
-        duration: Date.now() - scrapeStartTime
-      };
-      
-      // Update job with error status
-      await prisma.scrapeJob.update({
-        where: { jobId },
-        data: {
-          status: 'FAILED',
-          errorMessage: `Scraping failed: ${(scrapeError as Error).message}`,
-          errors: 1,
-        },
-      });
-      
-      throw scrapeError; // Re-throw to mark job as failed
+        // Phát hiện lỗi ở đây!!!!!!!!!!!!!!!!!!!!!!!
+        // scraper để đi crawl dữ liệu
+        const scraper = scraperFactory.createProductListScraper(scraperSourceName as SupportedScraperSourceName);
+
+        let pageResult;
+
+        if (mode === 'manual') {
+          if (config.fullSiteCrawl) {
+            // Crawl toàn bộ site (unlimited)
+            pageResult = await scraper.vancouverProductListScraper(source.scrapingSourceUrl, 0);
+          } else if (config.startPage && config.endPage) {
+            // Crawl với range pages
+            const maxPages = config.endPage - config.startPage + 1;
+            pageResult = await scraper.scrapeProductList(source.scrapingSourceUrl, maxPages);
+          } else {
+            // Default fallback
+            pageResult = await scraper.scrapeProductList(source.scrapingSourceUrl, 5);
+          }
+        } else if (mode === 'auto') {
+          // TODO: Implement auto mode logic
+          pageResult = await scraper.scrapeProductList(source.scrapingSourceUrl, 0);
+        } else if (mode === 'batch') {
+          // TODO: Implement batch mode logic  
+        } else if (mode === 'test') {
+          // TODO: Implement test mode logic
+        } else {
+          throw new Error(`Unsupported mode: ${mode}`);
+        }
+
+        //maxPage chỉ được sử dụng trong mode === 'test' | 'manual'. Ở mode auto, maxPage sẽ được crawl từ firstPage và viết logic xử lý trong scraperProductList
+        // TODO: Tiếp tục thực hiện logic với các mode khác.
+
+        //------------
+        if (!pageResult) {
+          apiLogger.warn('[Scraper Worker] No page result found', { jobId, source });
+          continue; // Skip to next source
+        }
+        // Aggregate
+        // sử dụng toán tư += để cộng giá trị vé trái và vế phải (tức cộng dồn) để cập nhật lại giá trị cho aggregatedResult cho đến khi hoàn thành loop.
+        aggregatedResult.totalProducts += pageResult.totalProducts;
+        aggregatedResult.totalPages += pageResult.totalPages;
+        aggregatedResult.products.push(...pageResult.products);
+
+        // Cập nhật progress per source
+        currentProgress += progressPerSource;
+        await job.progress(Math.min(currentProgress, 90));
+
+      } catch (scrapeError) {
+        aggregatedResult.errors += 1;
+        apiLogger.logError('[Scraper Worker] Real scraping failed', scrapeError as Error, {
+          jobId,
+          scrapingSourceName: source.scrapingSourceName,
+        });
+        // Continue to next source
+      }
     }
 
-    await job.progress(60);
-
-    // 4. Save products to database
-    // const categoryId = await dbService.getOrCreateCategory(sellerId, {
-    //   name: 'All Products',
-    //   slug: config.categorySlug,
-    //   seedType: undefined,
-    // });
-
-    // Update job with category info
-    await prisma.scrapeJob.update({
-      where: { jobId },
-      data: {
-        totalPages: result.totalPages,
-        productsScraped: result.totalProducts,
-      },
-    });
-
-    await job.progress(70);
-
-    const saveResult = await dbService.saveProductsToDatabase( result.products);
-
-    apiLogger.info('[Scraper Worker] Products saved', {
-      jobId,
-      saved: saveResult.saved,
-      updated: saveResult.updated,
-    });
+    aggregatedResult.duration = Date.now() - scrapeStartTime;
 
     await job.progress(90);
 
-    // 5. Update job to COMPLETED
+    // 4. Save products to database
+    const categoryId = await dbService.getOrCreateCategory(
+      {
+        name: 'All Products',
+        slug: 'all-products',
+        seedType: undefined,
+      }
+    );
+
+    // // Update job with category info
+    // await prisma.scrapeJob.update({
+    //   where: { jobId },
+    //   data: {
+    //     totalPages: result.totalPages,
+    //     productsScraped: result.totalProducts,
+    //   },
+    // });
+
+    // await job.progress(70);
+
+    const saveResult = await dbService.saveProductsToDatabase(aggregatedResult.products);
+    
+    await job.progress(95);
+    
+    apiLogger.debug('[DEBUG WORKER] Products saved', {
+      jobId,
+      status: aggregatedResult.errors === scrapingSourceCount ? 'FAILED' : 'COMPLETED',
+      totalPages: aggregatedResult.totalPages,
+      scraped: aggregatedResult.totalProducts,
+      saved: saveResult.saved,
+      updated: saveResult.updated,
+      errors: saveResult.errors,
+      duration: aggregatedResult.duration,
+    });
+    // 6. Update job COMPLETED with aggregated results
     await prisma.scrapeJob.update({
       where: { jobId },
       data: {
-        status: 'COMPLETED',
+        status: aggregatedResult.errors === scrapingSourceCount ? 'FAILED' : 'COMPLETED', // FAILED nếu all sources fail
         completedAt: new Date(),
+        totalPages: aggregatedResult.totalPages,
+        productsScraped: aggregatedResult.totalProducts,
         productsSaved: saveResult.saved,
         productsUpdated: saveResult.updated,
-        errors: saveResult.errors,
-        duration: result.duration,
+        errors: aggregatedResult.errors + saveResult.errors,
+        duration: aggregatedResult.duration,
       },
     });
 
     // 6. Log activity
-    await dbService.logScrapeActivity(sellerId, 'success', result.totalProducts, result.duration);
+    await dbService.logScrapeActivity(sellerId, aggregatedResult.errors === 0 ? 'success' : 'partial_success', aggregatedResult.totalProducts, aggregatedResult.duration);
 
     await job.progress(100);
 
-    apiLogger.info('[Scraper Worker] Job completed successfully', { jobId });
+    apiLogger.info('[INFO WORKER] Job completed successfully', { jobId });
 
     return {
       success: true,
       jobId,
-      totalProducts: result.totalProducts,
+      totalProducts: aggregatedResult.totalProducts,
       saved: saveResult.saved,
       updated: saveResult.updated,
     };
@@ -189,26 +260,26 @@ async function processScraperJob(job: Job<ScraperJobData>) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     apiLogger.logError(
-      '[Scraper Worker]',
+      '[INFO WORKER]',
       error instanceof Error ? error : new Error(String(error)),
       { jobId }
     );
 
-    // Mark job as FAILED in database
+    // Update job FAILED
     await prisma.scrapeJob.update({
       where: { jobId },
       data: {
         status: 'FAILED',
         completedAt: new Date(),
         errorMessage,
-        errorDetails: error instanceof Error ? { stack: error.stack } : {},
+        errorDetails: error instanceof Error ? { stack: error.stack } : undefined,
       },
     });
-
-    // Log failed activity - use factory to create appropriate service
-    const scraperFactory = new ScraperFactory(prisma);
-    const dbService = scraperFactory.createSaveDbService(source as ScraperSource);
-    await dbService.logScrapeActivity(sellerId, 'error', 0, 0);
+    // dbService = new ScraperFactory(prisma).createSaveDbService(scraperSourceName as SupportedScraperSourceName);
+    // Log failed activity
+    if (dbService) {
+      await dbService.logScrapeActivity(sellerId, 'error', 0, 0);
+    }
 
     throw error; // Re-throw for Bull to handle retry
   }
@@ -221,30 +292,30 @@ scraperQueue.process(async (job) => {
 
 // Handle worker events
 scraperQueue.on('completed', (job, result) => {
-  console.log(`[Scraper Worker] Job ${job.id} completed:`, result);
+  apiLogger.info(`[INFO WORKER] Job ${job.id} completed:`, result);
 });
 
 scraperQueue.on('failed', (job, error) => {
-  console.error(`[Scraper Worker] Job ${job.id} failed:`, error.message);
+  apiLogger.logError(`[ERROR WORKER] Job ${job.id} failed:`, {error: error.message});
 });
 
 scraperQueue.on('error', (error) => {
-  console.error('[Scraper Worker] Queue error:', error);
+  apiLogger.logError('[ERROR WORKER] Queue error:', {error});
 });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('[Scraper Worker] Shutting down...');
+  apiLogger.info('[INFO WORKER] Shutting down...');
   await scraperQueue.close();
   await prisma.$disconnect();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('[Scraper Worker] Shutting down...');
+  apiLogger.info('[INFO WORKER] Shutting down...');
   await scraperQueue.close();
   await prisma.$disconnect();
   process.exit(0);
 });
 
-console.log('[Scraper Worker] Worker ready, waiting for jobs...');
+apiLogger.info('[INFO WORKER] Worker ready, waiting for jobs...');

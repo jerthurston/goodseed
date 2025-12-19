@@ -14,22 +14,15 @@
  */
 
 import type { CategoryMetadataFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { CannabisType, Prisma, PrismaClient, Seller, StockStatus } from '@prisma/client';
+import { PrismaClient, Seller, StockStatus } from '@prisma/client';
 import { parseCannabisType, parseSeedType } from '../utils/data-mappers';
-import { SellerRaw } from '@/types/seller.type';
-import { prisma } from '@/lib/prisma';
-
-// TODO: Lấy thông tin seller từ db thay cho hardcore
-const SELLER_NAME = 'Vancouver Seed Bank';
-const SELLER_URL = 'https://vancouverseedbank.ca';
-const SCRAPING_SOURCE_URL = [
-    'https://vancouverseedbank.ca/shop',
-];
+import { apiLogger } from '@/lib/helpers/api-logger';
+import { ManualSelectors } from '@/lib/factories/scraper-factory';
 
 export class SaveDbService {
     private seller: Seller | null = null;
 
-    constructor(private prisma: PrismaClient) { }
+    constructor(private prisma: PrismaClient) {}
 
     /**
      * Initialize service with seller data form database
@@ -37,26 +30,55 @@ export class SaveDbService {
      */
     async initializeSeller(sellerId: string): Promise<void> {
         // Vì prisma là singelton nên cần dùng this.prisma nếu muốn lưu status cho seller
-        const seller = await this.prisma.seller.findUnique({
-            where:{id:sellerId},
-        });
-        if(!seller) {
-            throw new Error(`Seller with Id ${sellerId} not found`)
-        }
-        if(!seller.isActive) {
-            throw new Error(`Seller with Id ${sellerId} is not active`)
-        }
-        // Lưu seller vào state
-        this.seller = seller
-
-        await this.prisma.seller.update({
-            where:{id:sellerId},
-            data:{
-                lastScraped: new Date(),
-                status: 'in_progress',
-                updatedAt: new Date(),
+        try {
+            const seller = await this.prisma.seller.findUnique({
+                where:{id:sellerId},
+                select: {
+                    id: true,
+                    name: true,
+                    url: true,
+                    isActive: true,
+                    status: true,
+                    affiliateTag: true,
+                    autoScrapeInterval: true,
+                    lastScraped: true,
+                    createdAt: true,
+                    updatedAt: true
+                    // Exclude scrapingSourceUrl to avoid type mismatch
+                }
+            });
+            
+            if(!seller) {
+                throw new Error(`Seller with Id ${sellerId} not found`);
             }
-        })
+            if(!seller.isActive) {
+                throw new Error(`Seller with Id ${sellerId} is not active`);
+            }
+            
+            // Create compatible seller object with scrapingSourceUrl as empty array
+            // this.seller = {
+            //     ...seller,
+            //     scrapingSourceUrl: [] // Safe default to satisfy type
+            // } as any; // Type assertion to bypass strict checking
+            this.seller = seller;
+            
+        } catch (error) {
+            apiLogger.logError('[SaveDbService] Error initializing seller:', {error});
+            throw error;
+        }
+
+        // TODO: Cần tìm hiểu nguyên nhân lỗi khi update status cho seller ở đây.
+
+        // await this.prisma.seller.update({
+        //     where:{id:sellerId},
+        //     data:{
+        //         lastScraped: new Date(),
+        //         status: 'IN_PROGRESS',
+        //         updatedAt: new Date(),
+        //     }
+        // })
+
+        apiLogger.info('[SaveDbService] Seller initialized:', this.seller);
     }
 
     // Get Current seller info (must call initialize with seller first)
@@ -132,6 +154,26 @@ export class SaveDbService {
         }
 
         return category.id;
+    }
+
+    /**
+     * Save scraped products to database (implements ISaveDbService interface)
+     */
+    async saveProductsToDatabase(
+        products: ProductCardDataFromCrawling[]
+    ): Promise<{ saved: number; updated: number; errors: number }> {
+        if (!this.seller) {
+            throw new Error('Seller not initialized. Call initializeSeller() first.');
+        }
+
+        // Get default category for this seller (or create one)
+        const defaultCategory = await this.getOrCreateCategory({
+            name: 'Cannabis Seeds',
+            slug: 'cannabis-seeds',
+            seedType: 'Mixed'
+        });
+
+        return this.saveProductsToCategory(defaultCategory, products);
     }
 
     /**

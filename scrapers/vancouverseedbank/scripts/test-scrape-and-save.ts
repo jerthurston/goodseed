@@ -13,7 +13,7 @@
 
 import { prisma } from '@/lib/prisma';
 import 'dotenv/config';
-import { ProductListScraper } from '../core/product-list-scrapers';
+import { ProductListScraper } from '../core/vancouver-product-list-scraper';
 import { SaveDbService } from '../core/save-db-service';
 import type { CategoryMetadata } from '../core/types';
 

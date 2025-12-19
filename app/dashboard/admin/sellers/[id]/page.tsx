@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faArrowLeft, faStore, faEdit, faTrash, faEye, faPlay, faStop, faRefresh } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faStore, faEdit, faTrash, faEye, faPlay, faStop, faRefresh, faAdd } from '@fortawesome/free-solid-svg-icons'
 import {
   DashboardLayout,
   DashboardCard,
@@ -19,6 +19,10 @@ import { useScraperOperations } from "@/hooks/scraper-site/useScraperOperations"
 import { apiLogger } from "@/lib/helpers/api-logger"
 
 import style from '../../../(components)/dashboardAdmin.module.css'
+import { faAffiliatetheme } from "@fortawesome/free-brands-svg-icons"
+import ManageScrapingSourcesModal from "@/components/custom/modals/ManageScrapingSourcesModal"
+import { useState } from "react"
+import { en } from "zod/v4/locales"
 
 export default function AdminSellerDetailPage() {
   const params = useParams()
@@ -27,27 +31,30 @@ export default function AdminSellerDetailPage() {
 
   // ALL HOOKS MUST BE CALLED AT THE TOP - BEFORE ANY CONDITIONAL RETURNS
   const { seller, isLoading, isError, error } = useFetchSellerById(sellerId)
-  
+
   // TODO: Cần thiết lập lại hàm refetchScraperSites cho đúng
   const refetchScraperSites = () => {
     // Implement refetch logic here
   }
 
   const {
-      triggerManualScrape,
-      isTriggering,
-      triggerError,
-      activeJobs,
-  
-      toggleAutoScrape,
-      isToggling,
-      toggleError,
-  
-      updateInterval,
-      isUpdatingInterval,
-      updateIntervalError
-  
-    } = useScraperOperations(refetchScraperSites)
+    triggerManualScrape,
+    isTriggering,
+    triggerError,
+    activeJobs,
+
+    toggleAutoScrape,
+    isToggling,
+    toggleError,
+
+    updateInterval,
+    isUpdatingInterval,
+    updateIntervalError
+
+  } = useScraperOperations(refetchScraperSites)
+
+  // Modal states
+  const [isManageSourcesModalOpen, setIsManageSourcesModalOpen] = useState(false)
 
   // NOW WE CAN HAVE CONDITIONAL RETURNS AFTER ALL HOOKS ARE CALLED
   if (isLoading) {
@@ -73,7 +80,7 @@ export default function AdminSellerDetailPage() {
             {isError ? 'Error Loading Seller' : 'Seller Not Found'}
           </h1>
           <p className="text-(--text-primary-muted) mb-6">
-            {isError 
+            {isError
               ? `Error: ${error?.message || 'Failed to load seller data'}`
               : `Seller with ID "${sellerId}" not found.`
             }
@@ -89,56 +96,54 @@ export default function AdminSellerDetailPage() {
     )
   }
 
-   const handleManualScrape = async (sellerId: string, sellerName: string) => {
+  const handleManualScrape = async (sellerId: string, sellerName: string) => {
     try {
       // Show loading state immediately
       toast.loading(`Initiating scrape for ${sellerName}...`, {
         id: `scrape-${sellerId}` // Use consistent ID for updates
       },
-    );
-
-      await triggerManualScrape(
-        sellerId,
-        { maxPages: 30 }
       );
-
+      // Option 1: test manual trigger với fullsiteCrawl. Let schema defaults handle startPage/endPage
+      const scrapingConfig = { fullSiteCrawl: true };
+      // Option 2: test với số page cố định với startPage và endPage
+      // const scrapingConfig = { startPage: 1, endPage: 30 };
+      const result = await triggerManualScrape(sellerId, scrapingConfig);
       // Success toast is handled in the hook
       toast.dismiss(`scrape-${sellerId}`);
-      
+      toast.dismiss(`add Job ${activeJobs} successfully! Scraper processing will happen in the background.`);
+
     } catch (error) {
-      // Dismiss loading toast
+      // Dismiss loading toast.
       toast.dismiss(`scrape-${sellerId}`);
-      
+
       // Error is handled in the hook, but we can add fallback
       console.error("Manual scrape failed:", error);
     }
   }
 
-   const handleToggleAutoScrape = async (id: string, currentState: boolean) => {
-      try {
-        await toggleAutoScrape(id, currentState);
-        toast.success(`Auto scrape ${!currentState ? 'enabled' : 'disabled'}`);
-      } catch (error) {
-        apiLogger.logError("Error toggling auto scrape:", { error });
-        toast.error(`Error toggling auto scrape for ${id}`);
-      }
+  const handleToggleAutoScrape = async (id: string, currentState: boolean) => {
+    try {
+      await toggleAutoScrape(id, currentState);
+      toast.success(`Auto scrape ${!currentState ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      apiLogger.logError("Error toggling auto scrape:", { error });
+      toast.error(`Error toggling auto scrape for ${id}`);
     }
+  }
 
 
-  const handleRunScraper = async () => {
-    // TODO: Implement scraper run logic
-    console.log("Running scraper for seller:", seller!.id)
+  const handleConfigSource = () => {
+    setIsManageSourcesModalOpen(true)
   }
 
   const handleToggleStatus = async () => {
-    // TODO: Implement toggle status logic
-    console.log("Toggling status for seller:", seller!.id)
+    // TODO:
   }
 
   // At this point, seller is guaranteed to exist due to the checks above
   // Create a non-null reference for TypeScript
   const currentSeller = seller!
-  
+
   return (
     <div className="max-w-[1440px] mx-auto w-full min-h-screen bg-(--bg-main) p-6">
       {/* Header */}
@@ -161,87 +166,88 @@ export default function AdminSellerDetailPage() {
 
       <div className="space-y-6">
 
-{/* Actions Card */}
+        {/* Actions Card */}
 
-<DashboardCard key={currentSeller.id}>
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="font-['Poppins'] font-bold text-lg text-(--text-primary) mb-1">
-                  {currentSeller.name}
-                </h3>
-                <p className="font-['Poppins'] text-sm text-(--text-primary-muted)">
-                  {currentSeller.url}
-                </p>
-                <p className="font-['Poppins'] text-xs text-(--text-primary-muted) mt-2 flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  Last scraped: {currentSeller.lastScraped}
-                </p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <DashboardButton
-                  variant="secondary"
-                  onClick={() => handleManualScrape(currentSeller.id, currentSeller.name)}  
-                  disabled={isTriggering || activeJobs.has(currentSeller.id)}
-                  className="flex items-center gap-2"
-                >
-                  {isTriggering || activeJobs.has(currentSeller.id) ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600" />
-                      {activeJobs.has(currentSeller.id) ? 'Scraping...' : 'Starting...'}
-                    </>
-                  ) : (
-                    <>
-                      <PlayCircle className="h-4 w-4" />
-                      Manual Scrape
-                    </>
-                  )}
-                </DashboardButton>
-
-                {/* Show job status badge */}
-                {activeJobs.has(currentSeller.id) && (
-                  <div className="flex items-center gap-2 text-sm text-blue-600">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
-                    Job ID: {activeJobs.get(currentSeller.id)}
-                  </div>
-                )}
-              </div>
+        <DashboardCard key={currentSeller.id}>
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="font-['Poppins'] font-bold text-lg text-(--text-primary) mb-1">
+                {currentSeller.name}
+              </h3>
+              <p className="font-['Poppins'] text-sm text-(--text-primary-muted)">
+                {currentSeller.url}
+              </p>
+              <p className="font-['Poppins'] text-xs text-(--text-primary-muted) mt-2 flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                Last scraped: {currentSeller.lastScraped}
+              </p>
             </div>
+            <div className="flex flex-col gap-2">
+              <DashboardButton
+                variant="secondary"
+                onClick={() => handleManualScrape(currentSeller.id, currentSeller.name)}
+                disabled={isTriggering || activeJobs.has(currentSeller.id)}
+                className="flex items-center gap-2"
+              >
+                {isTriggering || activeJobs.has(currentSeller.id) ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600" />
+                    {activeJobs.has(currentSeller.id) ? 'Scraping...' : 'Starting...'}
+                  </>
+                ) : (
+                  <>
+                    <PlayCircle className="h-4 w-4" />
+                    Manual Scrape
+                  </>
+                )}
+              </DashboardButton>
 
-            <div className="flex items-center gap-6 pt-4 border-t-[3px] border-(--border-color)">
-              <DashboardToggle
-                label="Auto Scrape"
-                isActive={currentSeller.isAutoEnabled}
-                onChange={() => handleToggleAutoScrape(currentSeller.id, currentSeller.isAutoEnabled)}
-              />
-
-              {currentSeller.isAutoEnabled && (
-                <div className="flex items-center gap-2">
-                  <span className={style.toggleLabel}>
-                    Interval:
-                  </span>
-                  <select
-                    value={currentSeller.autoScrapeInterval || 6}
-                    onChange={(e) =>
-                      updateInterval(currentSeller.id, {
-                        isAutoEnabled: currentSeller.isAutoEnabled,
-                        autoScrapeInterval: Number(e.target.value)
-                      })
-                    }
-                    className={style.selectInterval}
-                  >
-                    <option value={1}>Every 1 hour</option>
-                    <option value={2}>Every 2 hours</option>
-                    <option value={4}>Every 4 hours</option>
-                    <option value={6}>Every 6 hours</option>
-                    <option value={8}>Every 8 hours</option>
-                    <option value={12}>Every 12 hours</option>
-                    <option value={24}>Every 24 hours</option>
-                  </select>
+              {/* Show job status badge */}
+              {activeJobs.has(currentSeller.id) && (
+                <div className="flex items-center gap-2 text-sm text-blue-600">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
+                  Job ID: {activeJobs.get(currentSeller.id)}
                 </div>
               )}
             </div>
-          </DashboardCard>     
+          </div>
 
+          <div className="flex items-center gap-6 pt-4 border-t-[3px] border-(--border-color)">
+            <DashboardToggle
+              label="Auto Scrape"
+              isActive={currentSeller.isAutoEnabled}
+              onChange={() => handleToggleAutoScrape(currentSeller.id, currentSeller.isAutoEnabled)}
+            />
+
+            {currentSeller.isAutoEnabled && (
+              <div className="flex items-center gap-2">
+                <span className={style.toggleLabel}>
+                  Interval:
+                </span>
+                <select
+                  value={currentSeller.autoScrapeInterval || 6}
+                  onChange={(e) =>
+                    updateInterval(currentSeller.id, {
+                      isAutoEnabled: currentSeller.isAutoEnabled,
+                      autoScrapeInterval: Number(e.target.value)
+                    })
+                  }
+                  className={style.selectInterval}
+                >
+                  <option value={1}>Every 1 hour</option>
+                  <option value={2}>Every 2 hours</option>
+                  <option value={4}>Every 4 hours</option>
+                  <option value={6}>Every 6 hours</option>
+                  <option value={8}>Every 8 hours</option>
+                  <option value={12}>Every 12 hours</option>
+                  <option value={24}>Every 24 hours</option>
+                </select>
+              </div>
+            )}
+          </div>
+        </DashboardCard>
+
+        {/*--> ACTIONS SECTION */}
         <DashboardCard>
           <div className={styles.cardHeader}>
             <div className="flex items-center gap-3">
@@ -253,12 +259,12 @@ export default function AdminSellerDetailPage() {
           </div>
           <div className="flex flex-wrap gap-4">
             <DashboardButton
-              onClick={handleRunScraper}
+              onClick={handleConfigSource}
             >
-              <FontAwesomeIcon icon={faPlay} className="mr-2" />
-              Run Scraper
+              <FontAwesomeIcon icon={faAdd} className="mr-2" />
+              Sources Configuration
             </DashboardButton>
-            
+
             <DashboardButton
               onClick={handleToggleStatus}
             >
@@ -285,7 +291,7 @@ export default function AdminSellerDetailPage() {
           </div>
         </DashboardCard>
 
-        {/* Seller Info Card */}
+        {/*--> SELLER INFORMATION CARD */}
         <DashboardCard>
           <div className={styles.cardHeader}>
             <div className="flex items-center gap-3">
@@ -310,9 +316,9 @@ export default function AdminSellerDetailPage() {
                   Website URL
                 </label>
                 <p className="font-['Poppins'] text-(--text-primary) break-all">
-                  <Link 
-                    href={currentSeller.url} 
-                    target="_blank" 
+                  <Link
+                    href={currentSeller.url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-(--brand-primary) hover:underline"
                   >
@@ -389,9 +395,28 @@ export default function AdminSellerDetailPage() {
             </div>
           </div>
         </DashboardCard>
-
-        
       </div>
+
+      {/*--> MODALS SECTION */}
+
+      {/* Sources Management Modal */}
+      <ManageScrapingSourcesModal
+        isOpen={isManageSourcesModalOpen}
+        onClose={() => setIsManageSourcesModalOpen(false)}
+        sellerId={sellerId}
+        sellerName={currentSeller.name}
+        onUpdateSuccess={() => {
+          // Optionally refetch seller data if needed
+          console.log('Scraping sources updated')
+        }}
+      />
+
+      {/* Active/Deactivate confirmation Modal */}
+
+
+      {/* Update Basic Seller Information Modal */}
+
+
     </div>
   )
 }

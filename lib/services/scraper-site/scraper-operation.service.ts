@@ -67,10 +67,19 @@ export class ScraperOperationService {
 
     public static async triggerManualScrape(
         sellerId: string,
-        options: {maxPages?:number} = {}
+        scrapingConfig: {
+            fullSiteCrawl?: boolean;
+            startPage?: number;
+            endPage?: number;
+        } = {}
     ): Promise<ManualScrapeResponse> {
         try {
-            const response = await api.post(`/admin/sellers/${sellerId}/scraper`, options);
+            apiLogger.debug("Đã vào được service triggerManualScrape", { sellerId, scrapingConfig });
+
+            const requestPayload = { scrapingConfig };
+            apiLogger.debug("Request payload being sent", requestPayload);
+
+            const response = await api.post(`/admin/sellers/${sellerId}/scraper`, requestPayload);
             
             apiLogger.logResponse("SellerService.triggerManualScrape", { response })
 

@@ -7,7 +7,7 @@
  * npm run tsx scrapers/sunwestgenetics/scripts/test-product-list-scraper.ts
  */
 
-import { ProductListScraper } from '../core/product-list-scrapers';
+import { ProductListScraper } from '../core/scrape-product-list';
 import { CATEGORY_URLS } from '../core/selectors';
 
 async function main() {

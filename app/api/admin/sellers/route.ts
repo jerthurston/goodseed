@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, url, scrapingSourceUrl, isActive, affiliateTag } = validation.data
+    const { name, url, isActive, affiliateTag, scrapingSources } = validation.data
 
     // Check if seller with same name already exists
     const existingSeller = await prisma.seller.findFirst({
@@ -85,17 +85,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create new seller
+    // Create new seller without scraping sources (they will be added separately later)
     const seller = await prisma.seller.create({
       data: {
         name: name.trim(),
         url: url.trim(),
-        scrapingSourceUrl: scrapingSourceUrl, // Already processed by Zod (array)
         isActive: Boolean(isActive),
-        affiliateTag: affiliateTag || null, // Optional field
+        affiliateTag: affiliateTag || null,
+        autoScrapeInterval: 6, // Default 6 hours, can be updated later
         status: 'pending', // Default status
         lastScraped: null, // Will be set when first scrape happens
-        autoScrapeInterval: 6, // Default 6 hours
+        // Note: scrapingSources will be empty initially, admin can add them later
+      },
+      include: {
+        scrapingSources: true // Include empty scrapingSources in response
       }
     })
 

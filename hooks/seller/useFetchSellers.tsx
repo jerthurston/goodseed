@@ -23,7 +23,7 @@ export function useFetchSellers(): UseFetchSellersResult {
         const duration = Date.now() - startTime
         apiLogger.logResponse(
           "useFetchSellers.queryFn",
-          {},
+          {data},
           {
             sellersCount: data.length,
             duration: `${duration}ms`,

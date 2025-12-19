@@ -6,7 +6,7 @@
  * 2. scrapeProductListByBatch() - Batch mode
  */
 
-import { ProductListScraper } from '../core/product-list-scrapers';
+import { ProductListScraper } from '../core/vancouver-product-list-scraper';
 
 const LISTING_URL = 'https://vancouverseedbank.ca/shop/jsf/epro-archive-products/';
 

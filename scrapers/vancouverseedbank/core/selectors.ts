@@ -36,12 +36,12 @@ export const VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS = {
     priceAmount: '.product_price_dfn .woocommerce-Price-amount',
     variationInputs: 'input.product_variation_radio',
 
-    // Option1: khi scrape đến khi không có trang tiếp theo nữa - Pagination - WooCommerce standard
-    nextPage: '.woocommerce-pagination .next',
-    pageLinks: '.woocommerce-pagination a.page-numbers',
-    currentPage: '.woocommerce-pagination span.current',
+    // Vancouver Seed Bank uses jet-smart-filters-pagination (NOT WooCommerce standard)
+    nextPage: '.jet-filters-pagination__item.next',
+    pageLinks: '.jet-filters-pagination__item[data-value] .jet-filters-pagination__link',
+    currentPage: '.jet-filters-pagination__item.jet-filters-pagination__current',
 
-    //Option2: Phục vụ tìm maxPage - trang cuối của pagination - dựa vào đó scrape function sẽ biết được tổng số phân trang cần crawl dữ liệu
+    // Pagination container and items for max page detection
     paginationContainer: '.jet-filters-pagination',
     paginationItems: '.jet-filters-pagination__item[data-value]',
 } as const;

@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 import { DashboardButton } from '@/app/dashboard/(components)/DashboardButton'
 import styles from '../../../app/dashboard/(components)/dashboardAdmin.module.css'
 import { validateSellerData } from '@/schemas/seller.schema'
@@ -20,7 +22,6 @@ interface UpdateSellerModalProps {
 interface SellerFormData {
     name: string
     url: string
-    scrapingSourceUrl: string
     isActive: boolean
     affiliateTag?: string
 }
@@ -38,7 +39,6 @@ const UpdateSellerModal: React.FC<UpdateSellerModalProps> = ({
     const [formData, setFormData] = useState<SellerFormData>({
         name: '',
         url: '',
-        scrapingSourceUrl: '',
         isActive: true,
         affiliateTag: ''
     })
@@ -49,6 +49,20 @@ const UpdateSellerModal: React.FC<UpdateSellerModalProps> = ({
     const [seller, setSeller] = useState<any>(null)
     const [showConfirmModal, setShowConfirmModal] = useState(false)
     const [pendingFormData, setPendingFormData] = useState<SellerFormData | null>(null)
+
+    // Prevent body scrolling when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.classList.add('modal-open')
+        } else {
+            document.body.classList.remove('modal-open')
+        }
+
+        // Cleanup function to remove class when component unmounts
+        return () => {
+            document.body.classList.remove('modal-open')
+        }
+    }, [isOpen])
 
     // Fetch seller data when sellerId changes
     useEffect(() => {
@@ -64,10 +78,6 @@ const UpdateSellerModal: React.FC<UpdateSellerModalProps> = ({
                     setFormData({
                         name: sellerData.name || '',
                         url: sellerData.url || '',
-                        // Handle scrapingSourceUrl - convert from array to string for form input
-                        scrapingSourceUrl: Array.isArray(sellerData.scrapingSourceUrl) 
-                            ? sellerData.scrapingSourceUrl[0] || '' 
-                            : sellerData.scrapingSourceUrl || '',
                         isActive: sellerData.isActive ?? true,
                         affiliateTag: sellerData.affiliateTag || ''
                     })
@@ -97,7 +107,6 @@ const UpdateSellerModal: React.FC<UpdateSellerModalProps> = ({
             setFormData({
                 name: '',
                 url: '',
-                scrapingSourceUrl: '',
                 isActive: true,
                 affiliateTag: ''
             })
@@ -293,32 +302,7 @@ const UpdateSellerModal: React.FC<UpdateSellerModalProps> = ({
                             )}
                         </div>
 
-                        {/* Scraping Source URL */}
-                        <div className={styles.formGroup}>
-                            <label 
-                                htmlFor="scrapingSourceUrl" 
-                                className={styles.formLabel}
-                            >
-                                Scraping Source URL *
-                            </label>
-                            <input
-                                type="url"
-                                id="scrapingSourceUrl"
-                                name="scrapingSourceUrl"
-                                value={formData.scrapingSourceUrl}
-                                onChange={handleInputChange}
-                                required
-                                className={styles.formInput}
-                                placeholder="https://example.com/products"
-                                disabled={isSubmitting}
-                            />
-                            {fieldErrors.scrapingSourceUrl && (
-                                <p className={styles.formError}>{fieldErrors.scrapingSourceUrl}</p>
-                            )}
-                            <p className={styles.formError} style={{ color: 'var(--text-primary-muted)', textTransform: 'none' }}>
-                                The URL where products are listed for scraping
-                            </p>
-                        </div>
+
 
                         {/* Affiliate Tag */}
                         <div className={styles.formGroup}>
@@ -377,7 +361,7 @@ const UpdateSellerModal: React.FC<UpdateSellerModalProps> = ({
                         <DashboardButton
                             type="submit"
                             variant="primary"
-                            disabled={isSubmitting || !formData.name || !formData.url || !formData.scrapingSourceUrl}
+                            disabled={isSubmitting || !formData.name || !formData.url}
                             style={{ flex: 1 }}
                         >
                             {isSubmitting ? 'Updating...' : 'Update Seller'}

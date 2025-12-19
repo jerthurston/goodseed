@@ -8,7 +8,7 @@
  * npm run tsx scrapers/sunwestgenetics/scripts/scrape-batch.ts
  */
 
-import { ProductListScraper } from '../core/product-list-scrapers';
+import { ProductListScraper } from '../core/scrape-product-list';
 import { SaveDbService } from '../core/save-db-service';
 import { CATEGORY_URLS } from '../core/selectors';
 import { PrismaClient } from '@prisma/client';

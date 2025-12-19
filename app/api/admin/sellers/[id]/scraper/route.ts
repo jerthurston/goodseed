@@ -10,21 +10,29 @@ import { prisma } from '@/lib/prisma';
 import { createManualScrapeJob } from '@/lib/helpers/server/createManualScrapeJob';
 import { ScraperFactory } from '@/lib/factories/scraper-factory';
 import { getScraperSource } from '@/lib/helpers/server/getScraperSource';
+import { getSellerById } from '@/lib/helpers/server/seller/getSellerById';
+import { apiLogger } from '@/lib/helpers/api-logger';
 
 const ManualScrapeSchema = z.object({
-  maxPages: z.number().optional().default(30), // Allow override maxPages
+  scrapingConfig: z.object({
+    fullSiteCrawl: z.boolean().default(true),
+    startPage: z.number().min(1).default(1),
+    endPage: z.number().min(1).default(30)
+  })
 });
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sellerId = params.id;
+    const resolvedParams = await params;
+    const sellerId = resolvedParams.id;
     const body = await request.json();
     
     // Validate input
     const validation = ManualScrapeSchema.safeParse(body);
+
     if (!validation.success) {
       return NextResponse.json(
         { 
@@ -38,11 +46,12 @@ export async function POST(
         { status: 400 }
       );
     }
+    // extract maxPage - TODO: Cần viết logic sử dụng với scrapingConfig
+    const { fullSiteCrawl, startPage, endPage } = validation.data.scrapingConfig;
 
+    apiLogger.debug("Scraping config nhận được ở route", {fullSiteCrawl, startPage, endPage});
     // Find seller
-    const seller = await prisma.seller.findUnique({
-      where: { id: sellerId }
-    });
+    const seller = await getSellerById(sellerId);
 
     if (!seller) {
       return NextResponse.json(
@@ -70,25 +79,9 @@ export async function POST(
       );
     }
 
-    // Get scraper source from seller name
-    const scraperSource = getScraperSource(seller.name);
-    
-    // Verify scraper is supported
-    const supportedSources = ScraperFactory.getSupportedSources();
-    if (!supportedSources.includes(scraperSource)) {
-      return NextResponse.json(
-        { 
-          success: false,
-          error: {
-            code: 'SCRAPER_NOT_SUPPORTED',
-            message: `Scraper for ${seller.name} (${scraperSource}) is not supported`
-          }
-        },
-        { status: 400 }
-      );
-    }
-
+   
     // Check for existing jobs
+    // Giải thích: Kiểm tra xem có công việc nào đang chờ xử lý hoặc đang tiến hành không
     const existingJob = await prisma.scrapeJob.findFirst({
       where: {
         sellerId,
@@ -111,13 +104,28 @@ export async function POST(
       );
     }
 
-    // Create scrape job
-    const jobResult = await createManualScrapeJob(seller, scraperSource, {
-      maxPages: validation.data.maxPages
+     // Get scraper source from seller name
+     const { scrapingSources } = seller;
+/**
+ * Create a manual scrape job for the seller.
+ * @param seller là object bao gồm id:string và scrapingSourceUrl:string[]
+ * @param scraperSource The scraper source
+ */
+    apiLogger.debug("Check scraping Config before transfer into createManualScrapeJob", { fullSiteCrawl, startPage, endPage });
+    const jobResult = await createManualScrapeJob({
+      sellerId,
+      scrapingSources: scrapingSources,
+      scrapingConfig:{
+        fullSiteCrawl,
+        startPage,
+        endPage
+      },
     });
 
-    // Update seller last scrape timestamp
-    await prisma.seller.update({
+    apiLogger.debug("Check jobResult", { jobResult });
+    apiLogger.debug("starting top update seller lastScraped", { sellerId });
+
+   const updateScrapeSeller = await prisma.seller.update({
       where: { id: sellerId },
       data: {
         lastScraped: new Date(),
@@ -125,20 +133,26 @@ export async function POST(
       }
     });
 
+    if(!updateScrapeSeller) {
+      apiLogger.logError("Failed to update seller lastScraped", { sellerId });
+    }
+
+    apiLogger.debug("Update seller lastScraped success", { sellerId });
+
     return NextResponse.json({
       success: true,
       data: {
-        jobId: jobResult.jobId,
+        jobId: jobResult,
         sellerId,
         sellerName: seller.name,
         status: 'PENDING',
         message: `Manual scrape job created for ${seller.name}`,
-        estimatedPages: validation.data.maxPages
+        estimatedPages: validation.data.scrapingConfig
       }
     });
 
   } catch (error) {
-    console.error('Manual scrape failed:', error);
+    apiLogger.logError('Manual scrape failed:', {error});
     
     return NextResponse.json(
       { 
@@ -146,7 +160,7 @@ export async function POST(
         error: {
           code: 'INTERNAL_ERROR',
           message: 'Failed to create scrape job',
-          details: process.env.NODE_ENV === 'development' ? error.message : undefined
+          details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
         }
       },
       { status: 500 }
@@ -157,10 +171,11 @@ export async function POST(
 // GET method to check scraper status
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sellerId = params.id;
+    const resolvedParams = await params;
+    const sellerId = resolvedParams.id;
     
     // Get seller with recent jobs
     const seller = await prisma.seller.findUnique({
