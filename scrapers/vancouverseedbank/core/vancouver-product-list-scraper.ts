@@ -65,7 +65,7 @@ import { apiLogger } from '@/lib/helpers/api-logger';
      * @param maxPages - Maximum pages to scrape (0 = crawl all pages until no products found)
      */
     // export async function scrapeProductList(listingUrl: string, maxPages: number = 5): Promise<ProductsDataResultFromCrawling> {
-    export async function vancouverProductListScraper(selectors: ManualSelectors): Promise<ProductsDataResultFromCrawling> {
+    export async function vancouverProductListScraper(siteConfig: SiteConfig): Promise<ProductsDataResultFromCrawling> {
 
         const startTime = Date.now();
 
@@ -76,6 +76,8 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 
         let actualPages = 0;
         const emptyPages = new Set<string>();
+
+        const {selectors} = siteConfig
 
 
         const crawler = new CheerioCrawler({
@@ -118,41 +120,51 @@ import { apiLogger } from '@/lib/helpers/api-logger';
       // Cách xử lý maxPages chổ này? 
 
         // Discover total pages from pagination first
-        // if (maxPages === 0) {
-        //     apiLogger.info('[Product List] Auto-crawl mode: Detecting total pages from pagination...');
-            
-        //     // First, crawl page 1 to detect maxPages from pagination
-        //     const firstPageUrl = getScrapingUrl(listingUrl, 1);
-        //     await crawler.run([firstPageUrl]);
-            
-        //     // Check first page result to get maxPages
-        //     const firstResults = await dataset.getData();
-        //     const firstResult = firstResults.items[0] as { products: ProductCardDataFromCrawling[], maxPages: number };
-            
-        //     let detectedMaxPages = firstResult.maxPages;
-        //     apiLogger.info(`[Product List] Detected ${detectedMaxPages} total pages from pagination`);
-            
-        //     // Now crawl remaining pages (2 to maxPages)
-        //     const remainingUrls: string[] = [];
-        //     for (let page = 2; page <= detectedMaxPages; page++) {
-        //         remainingUrls.push(getScrapingUrl(listingUrl, page));
-        //     }
-            
-        //     if (remainingUrls.length > 0) {
-        //         apiLogger.info(`[Product List] Crawling remaining ${remainingUrls.length} pages...`);
-        //         await crawler.run(remainingUrls);
-        //     }
-            
-        //     actualPages = detectedMaxPages;
-        // } else {
-        //     // Fixed pages mode
-        //     const urls: string[] = [];
-        //     for (let page = 1; page <= maxPages; page++) {
-        //         urls.push(getScrapingUrl(listingUrl, page));
-        //     }
-        //     await crawler.run(urls);
-        //     actualPages = maxPages;
-        // }
+        // Auto-crawl mode: Start với page 1 để detect maxPages, sau đó crawl remaining pages
+        apiLogger.info('[Product List] Starting crawl with page 1 to detect pagination...');
+        
+        // First, crawl page 1 to detect maxPages from pagination  
+        const baseUrl = siteConfig.baseUrl;
+        const firstPageUrl = `${baseUrl}/shop?page=1`; // Default URL format for Vancouver Seed Bank
+        await requestQueue.addRequest({ url: firstPageUrl });
+        await crawler.run();
+        
+        // Check first page result to get maxPages and products
+        const firstResults = await dataset.getData();
+        let detectedMaxPages = 1; // default fallback
+        
+        if (firstResults.items.length > 0) {
+            const firstResult = firstResults.items[0] as any;
+            if (firstResult.products && firstResult.products.length > 0) {
+                apiLogger.info(`[Product List] Found ${firstResult.products.length} products on page 1`);
+                
+                // Try to detect pagination from extractProductsFromHTML
+                detectedMaxPages = firstResult.maxPages || 1;
+                apiLogger.info(`[Product List] Detected ${detectedMaxPages} total pages from pagination`);
+                
+                // Now crawl remaining pages (2 to maxPages) if more than 1 page
+                if (detectedMaxPages > 1) {
+                    const remainingUrls: string[] = [];
+                    for (let page = 2; page <= Math.min(detectedMaxPages, 50); page++) { // Limit to 50 pages for safety
+                        remainingUrls.push(`${baseUrl}/shop?page=${page}`);
+                    }
+                    
+                    if (remainingUrls.length > 0) {
+                        apiLogger.info(`[Product List] Crawling remaining ${remainingUrls.length} pages...`);
+                        for (const url of remainingUrls) {
+                            await requestQueue.addRequest({ url });
+                        }
+                        await crawler.run();
+                    }
+                }
+                
+                actualPages = Math.min(detectedMaxPages, 50);
+            } else {
+                apiLogger.warn('[Product List] No products found on page 1, using fallback');
+            }
+        } else {
+            apiLogger.warn('[Product List] No results from page 1 crawl');
+        }
 
         // Collect results from dataset
         const results = await dataset.getData();
