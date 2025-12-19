@@ -36,14 +36,14 @@ export const VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS = {
     priceAmount: '.product_price_dfn .woocommerce-Price-amount',
     variationInputs: 'input.product_variation_radio',
 
-    // Vancouver Seed Bank uses jet-smart-filters-pagination (NOT WooCommerce standard)
-    nextPage: '.jet-filters-pagination__item.next',
-    pageLinks: '.jet-filters-pagination__item[data-value] .jet-filters-pagination__link',
-    currentPage: '.jet-filters-pagination__item.jet-filters-pagination__current',
+    // Vancouver Seed Bank uses WooCommerce standard pagination (NOT jet-smart-filters)
+    nextPage: '.page-numbers[href*="/page/"]', // Links to next pages
+    pageLinks: '.page-numbers[href]', // All page links
+    currentPage: '.page-numbers.current', // Current page
 
     // Pagination container and items for max page detection
-    paginationContainer: '.jet-filters-pagination',
-    paginationItems: '.jet-filters-pagination__item[data-value]',
+    paginationContainer: '.wp-pagenavi, .page-numbers', // WooCommerce pagination
+    paginationItems: '.page-numbers[href*="/page/"]', // Page links with /page/ in href
 } as const;
 
 // export const MAXPAGE_PAGINATION = {

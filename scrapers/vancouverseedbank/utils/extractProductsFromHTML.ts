@@ -175,37 +175,51 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
     try {
         let maxPageFound = 0;
         
-        // Check if pagination container exists
+        // Check if pagination container exists (WooCommerce standard)
         const $paginationContainer = $(selectors.paginationContainer);
         if ($paginationContainer.length > 0) {
-            console.log('[DEBUG] Pagination container found, analyzing items...');
+            console.log('[DEBUG] WooCommerce pagination found, analyzing pages...');
             
-            // Find all pagination items with data-value attributes
-            const allItems: string[] = [];
+            // Find all page links with /page/ in href
             $(selectors.paginationItems).each((_, element) => {
                 const $item = $(element);
-                const dataValue = $item.attr('data-value');
-                allItems.push(dataValue || 'undefined');
+                const href = $item.attr('href');
                 
-                // Skip non-numeric values like "next", "prev"
-                if (dataValue && /^\d+$/.test(dataValue)) {
-                    const pageNumber = parseInt(dataValue);
+                if (href && href.includes('/page/')) {
+                    // Extract page number from href like "/shop/page/154/"
+                    const match = href.match(/\/page\/(\d+)\//);
+                    if (match) {
+                        const pageNumber = parseInt(match[1]);
+                        if (pageNumber > maxPageFound) {
+                            maxPageFound = pageNumber;
+                        }
+                        console.log(`[DEBUG] Found page link: ${pageNumber} (href: ${href})`);
+                    }
+                }
+            });
+            
+            // Also check text content of .page-numbers for numeric values  
+            $('.page-numbers').each((_, element) => {
+                const $item = $(element);
+                const text = $item.text().trim();
+                
+                if (/^\d+$/.test(text)) {
+                    const pageNumber = parseInt(text);
                     if (pageNumber > maxPageFound) {
                         maxPageFound = pageNumber;
                     }
                 }
             });
             
-            console.log('[DEBUG] Found pagination items with data-values:', allItems);
             console.log('[DEBUG] Max page detected:', maxPageFound);
             
             maxPages = maxPageFound > 0 ? maxPageFound : null;
             
             if (maxPages) {
-                apiLogger.debug(`[Extract Pagination] Detected ${maxPages} total pages from pagination`);
+                apiLogger.debug(`[Extract Pagination] Detected ${maxPages} total pages from WooCommerce pagination`);
             }
         } else {
-            apiLogger.warn('[Extract Pagination] No pagination container found on this page');
+            apiLogger.warn('[Extract Pagination] No WooCommerce pagination container found on this page');
         }
     } catch (error) {
         apiLogger.logError('[Extract Max Pages] Error parsing pagination:', {error});

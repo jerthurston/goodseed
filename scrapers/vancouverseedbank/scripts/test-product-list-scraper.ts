@@ -11,7 +11,7 @@
  */
 
 import 'dotenv/config';
-import { ProductListScraper } from '../core/vancouver-product-list-scraper';
+import { vancouverProductListScraper } from '../core/vancouver-product-list-scraper';
 
 async function main() {
     const maxPages = parseInt(process.argv[2] || '1');
@@ -29,7 +29,9 @@ async function main() {
     console.log(`   ${testUrl}`);
     console.log('');
 
-    const scraper = new ProductListScraper();
+    
+
+    const scraper = new vancouverProductListScraper({siteConfig});
     const startTime = Date.now();
 
     try {
