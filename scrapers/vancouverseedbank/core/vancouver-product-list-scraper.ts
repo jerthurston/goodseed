@@ -111,7 +111,12 @@ import { apiLogger } from '@/lib/helpers/api-logger';
                 const hasNextPage = $(selectors.nextPage).length > 0;
                 log.info(`[Product List] Has next page: ${hasNextPage}`);
 
-                await dataset.pushData({ products, url: request.url, hasNextPage });
+                await dataset.pushData({ 
+                    products, 
+                    url: request.url, 
+                    hasNextPage,
+                    maxPages: maxPages // Include maxPages in dataset
+                });
 
                 // PROJECT REQUIREMENT: Wait 2-5 seconds between requests to same site
                 const delayMs = Math.floor(Math.random() * 3000) + 2000; // Random 2000-5000ms
