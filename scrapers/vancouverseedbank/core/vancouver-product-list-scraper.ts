@@ -69,6 +69,13 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 
         const startTime = Date.now();
 
+        // Debug log để kiểm tra siteConfig
+        apiLogger.info('[Product List] Starting with siteConfig', {
+            name: siteConfig.name,
+            baseUrl: siteConfig.baseUrl,
+            isImplemented: siteConfig.isImplemented
+        });
+
         const runId = Date.now();
         const datasetName = `vsb-${runId}`;
         const dataset = await Dataset.open(datasetName);

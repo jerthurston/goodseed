@@ -74,12 +74,9 @@ export class ScraperOperationService {
         } = {}
     ): Promise<ManualScrapeResponse> {
         try {
-            apiLogger.debug("Đã vào được service triggerManualScrape", { sellerId, scrapingConfig });
+            apiLogger.debug("Đã vào được service triggerManualScrape")
 
-            const requestPayload = { scrapingConfig };
-            apiLogger.debug("Request payload being sent", requestPayload);
-
-            const response = await api.post(`/admin/sellers/${sellerId}/scraper`, requestPayload);
+            const response = await api.post(`/admin/sellers/${sellerId}/scraper`, { scrapingConfig });
             
             apiLogger.logResponse("SellerService.triggerManualScrape", { response })
 

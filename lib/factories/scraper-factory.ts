@@ -245,7 +245,7 @@ export class ScraperFactory {
     // Tạo instance của product list scraper tương ứng với source
     switch (scraperSourceName) {
       case 'vancouverseedbank':
-        return vancouverProductListScraper(selectors);
+        return vancouverProductListScraper(siteConfig);
       // case 'sunwestgenetics':
       //   return new SunWestProductListScraper();
 
