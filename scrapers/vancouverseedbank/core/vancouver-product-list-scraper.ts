@@ -132,7 +132,7 @@ import { apiLogger } from '@/lib/helpers/api-logger';
         
         // First, crawl page 1 to detect maxPages from pagination  
         const baseUrl = siteConfig.baseUrl;
-        const firstPageUrl = `${baseUrl}/shop?page=1`; // Default URL format for Vancouver Seed Bank
+        const firstPageUrl = `${baseUrl}/shop/`; // Vancouver Seed Bank page 1 format
         await requestQueue.addRequest({ url: firstPageUrl });
         await crawler.run();
         
@@ -153,7 +153,8 @@ import { apiLogger } from '@/lib/helpers/api-logger';
                 if (detectedMaxPages > 1) {
                     const remainingUrls: string[] = [];
                     for (let page = 2; page <= Math.min(detectedMaxPages, 50); page++) { // Limit to 50 pages for safety
-                        remainingUrls.push(`${baseUrl}/shop?page=${page}`);
+                        // Vancouver Seed Bank WooCommerce standard format: /shop/page/2/
+                        remainingUrls.push(`${baseUrl}/shop/page/${page}/`);
                     }
                     
                     if (remainingUrls.length > 0) {
