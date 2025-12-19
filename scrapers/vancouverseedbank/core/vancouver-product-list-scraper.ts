@@ -65,7 +65,7 @@ import { apiLogger } from '@/lib/helpers/api-logger';
      * @param maxPages - Maximum pages to scrape (0 = crawl all pages until no products found)
      */
     // export async function scrapeProductList(listingUrl: string, maxPages: number = 5): Promise<ProductsDataResultFromCrawling> {
-    export async function vancouverProductListScraper(siteConfig: SiteConfig): Promise<ProductsDataResultFromCrawling> {
+    export async function vancouverProductListScraper(selectors: ManualSelectors): Promise<ProductsDataResultFromCrawling> {
 
         const startTime = Date.now();
 
@@ -77,7 +77,6 @@ import { apiLogger } from '@/lib/helpers/api-logger';
         let actualPages = 0;
         const emptyPages = new Set<string>();
 
-        const {selectors} = siteConfig
 
         const crawler = new CheerioCrawler({
             requestQueue,

@@ -237,17 +237,15 @@ export class ScraperFactory {
   createProductListScraper(scraperSourceName: SupportedScraperSourceName) {
     // Lấy cấu hình trang từ siteConfig,
     const siteConfig = this.getSiteConfig(scraperSourceName);
-    // Lấy selectors từ siteConfig
-    const selectors = siteConfig.selectors;
-    const baseUrl = siteConfig.baseUrl;
     // Kiểm tra xem scraper đã được triển khai chưa. True là đã thiết lập, false là chưa thiếp lập
     if (!siteConfig.isImplemented) {
       throw new Error(`Scraper for ${siteConfig.name} is not yet implemented. Please implement selectors first.`);
     }
+    const selectors = siteConfig.selectors;
     // Tạo instance của product list scraper tương ứng với source
     switch (scraperSourceName) {
       case 'vancouverseedbank':
-        return vancouverProductListScraper(siteConfig);
+        return vancouverProductListScraper(selectors);
       // case 'sunwestgenetics':
       //   return new SunWestProductListScraper();
 

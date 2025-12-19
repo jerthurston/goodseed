@@ -133,26 +133,16 @@ async function processScraperJob(job: Job<ScraperJobData>) {
         });
 
         // Phát hiện lỗi ở đây!!!!!!!!!!!!!!!!!!!!!!!
-        // scraper để đi crawl dữ liệu
-        const scraper = scraperFactory.createProductListScraper(scraperSourceName as SupportedScraperSourceName);
-
+        // scraper để đi crawl dữ liệu - createProductListScraper return Promise luôn
         let pageResult;
 
         if (mode === 'manual') {
-          if (config.fullSiteCrawl) {
-            // Crawl toàn bộ site (unlimited)
-            pageResult = await scraper.vancouverProductListScraper(source.scrapingSourceUrl, 0);
-          } else if (config.startPage && config.endPage) {
-            // Crawl với range pages
-            const maxPages = config.endPage - config.startPage + 1;
-            pageResult = await scraper.scrapeProductList(source.scrapingSourceUrl, maxPages);
-          } else {
-            // Default fallback
-            pageResult = await scraper.scrapeProductList(source.scrapingSourceUrl, 5);
-          }
+          // Với thiết kế hiện tại, createProductListScraper đã gọi function với siteConfig sẵn rồi
+          // Tất cả các trường hợp đều gọi cùng một function, chỉ khác config bên trong siteConfig
+          pageResult = await scraperFactory.createProductListScraper(scraperSourceName as SupportedScraperSourceName);
         } else if (mode === 'auto') {
           // TODO: Implement auto mode logic
-          pageResult = await scraper.scrapeProductList(source.scrapingSourceUrl, 0);
+          pageResult = await scraperFactory.createProductListScraper(scraperSourceName as SupportedScraperSourceName);
         } else if (mode === 'batch') {
           // TODO: Implement batch mode logic  
         } else if (mode === 'test') {
