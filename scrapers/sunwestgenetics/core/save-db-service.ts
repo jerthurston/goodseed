@@ -6,62 +6,116 @@
  * 
  * @usage
  * ```typescript
- * const dbService = new SunWestGeneticsDbService(prisma);
- * const sellerId = await dbService.initializeSeller();
- * const categoryId = await dbService.getOrCreateCategory(sellerId, metadata);
- * await dbService.saveProductsToCategory(categoryId, products);
+ * const dbService = new SaveDbService(prisma);
+ * await dbService.initializeSeller(sellerId);
+ * const categoryId = await dbService.getOrCreateCategory(metadata);
+ * await dbService.saveProductsToDatabase(products);
  * ```
  */
 
 import type { CategoryMetadataFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { CannabisType, PrismaClient, StockStatus } from '@prisma/client';
+import { PrismaClient, Seller, StockStatus } from '@prisma/client';
 import { parseCannabisType, parseSeedType } from '../utils/data-mappers';
+import { apiLogger } from '@/lib/helpers/api-logger';
+import { ISaveDbService } from '@/lib/factories/scraper-factory';
 
-const SELLER_NAME = 'SunWest Genetics';
-const SELLER_URL = 'https://sunwestgenetics.com';
-const SCRAPING_SOURCE_URL = 'https://sunwestgenetics.com/shop/';
+export class SaveDbService implements ISaveDbService {
+    private seller: Seller | null = null;
 
-export class SaveDbService {
-    constructor(private prisma: PrismaClient) { }
+    constructor(private prisma: PrismaClient) {}
 
     /**
-     * Initialize or get Seller record
-     * Returns seller ID for use in subsequent operations
+     * Initialize service with seller data from database
+     * @param sellerId
      */
-    async initializeSeller(): Promise<string> {
-        const seller = await this.prisma.seller.upsert({
-            where: { name: SELLER_NAME },
-            update: {
-                lastScraped: new Date(),
-                status: 'success',
-                updatedAt: new Date(),
-            },
-            create: {
-                name: SELLER_NAME,
-                url: SELLER_URL,
-                scrapingSourceUrl: SCRAPING_SOURCE_URL,
-                isActive: true,
-                lastScraped: new Date(),
-                status: 'success',
-            },
-        });
+    async initializeSeller(sellerId: string): Promise<void> {
+        // Vì prisma là singleton nên cần dùng this.prisma nếu muốn lưu status cho seller
+        try {
+            const seller = await this.prisma.seller.findUnique({
+                where: { id: sellerId },
+                select: {
+                    id: true,
+                    name: true,
+                    url: true,
+                    isActive: true,
+                    status: true,
+                    affiliateTag: true,
+                    autoScrapeInterval: true,
+                    lastScraped: true,
+                    createdAt: true,
+                    updatedAt: true
+                    // Exclude scrapingSourceUrl to avoid type mismatch
+                }
+            });
+            
+            if (!seller) {
+                throw new Error(`Seller with Id ${sellerId} not found`);
+            }
+            if (!seller.isActive) {
+                throw new Error(`Seller with Id ${sellerId} is not active`);
+            }
+            
+            this.seller = seller;
+            
+        } catch (error) {
+            apiLogger.logError('[SunWest SaveDbService] Error initializing seller:', { error });
+            throw error;
+        }
 
-        return seller.id;
+        apiLogger.info('[SunWest SaveDbService] Seller initialized:', this.seller);
     }
+
+    // Get Current seller info (must call initialize with seller first)
+    // Giải thích mục đích sử dụng getSeller(): Hàm này dùng để lấy thông tin của seller hiện tại
+    getSeller(): Seller {
+        if (!this.seller) {
+            throw new Error(`Service not initialized. Call initializeSeller() first`)
+        }
+
+        return this.seller;
+    }
+
+    // Get seller ID (must call initializeSeller first)
+    getSellerId(): string {
+        return this.getSeller().id;
+    }
+
+    // Update seller status after scraping completion
+    async updateSellerStatus(
+        status: 'success' | 'error',
+        message?: string
+    ): Promise<void> {
+        if (!this.seller) {
+            throw new Error(`Service not initialized. Call initializeSeller() first`)
+        }
+        // update seller status
+        await this.prisma.seller.update({
+            where: { id: this.seller.id },
+            data: {
+                status,
+                updatedAt: new Date(),
+            }
+        })
+    };
 
     /**
      * Get or create SeedProductCategory from CategoryMetadata
      * Returns category ID for saving products
      */
     async getOrCreateCategory(
-        sellerId: string,
-        metadata: CategoryMetadataFromCrawling
+        categoryData: {
+            name: string;
+            slug: string;
+            seedType?: string;
+        }
     ): Promise<string> {
+        const sellerId = this.getSellerId();
+        
         // Try to find existing category by slug
         let category = await this.prisma.seedProductCategory.findFirst({
             where: {
                 sellerId,
-                slug: metadata.slug
+                slug: categoryData.slug
             },
         });
 
@@ -70,8 +124,8 @@ export class SaveDbService {
             category = await this.prisma.seedProductCategory.create({
                 data: {
                     sellerId,
-                    name: metadata.name,
-                    slug: metadata.slug,
+                    name: categoryData.name,
+                    slug: categoryData.slug,
                 },
             });
         } else {
@@ -79,13 +133,33 @@ export class SaveDbService {
             category = await this.prisma.seedProductCategory.update({
                 where: { id: category.id },
                 data: {
-                    name: metadata.name,
+                    name: categoryData.name,
                     updatedAt: new Date(),
                 },
             });
         }
 
         return category.id;
+    }
+
+    /**
+     * Save scraped products to database (implements ISaveDbService interface)
+     */
+    async saveProductsToDatabase(
+        products: ProductCardDataFromCrawling[]
+    ): Promise<{ saved: number; updated: number; errors: number }> {
+        if (!this.seller) {
+            throw new Error('Seller not initialized. Call initializeSeller() first.');
+        }
+
+        // Get default category for this seller (or create one)
+        const defaultCategory = await this.getOrCreateCategory({
+            name: 'Cannabis Seeds',
+            slug: 'cannabis-seeds',
+            seedType: 'Mixed'
+        });
+
+        return this.saveProductsToCategory(defaultCategory, products);
     }
 
     /**
@@ -109,9 +183,7 @@ export class SaveDbService {
                     (product.seedType as any) : 
                     parseSeedType(product.name);
                     
-                const cannabisType = product.cannabisType ? 
-                    (product.cannabisType as any) : 
-                    parseCannabisType(product.cannabisType);
+                const cannabisType = parseCannabisType(product.cannabisType);
 
                 // Prepare data matching Prisma SeedProduct schema exactly
                 const productData = {
@@ -291,31 +363,45 @@ export class SaveDbService {
     }
 
     /**
-     * Update seller status after scraping
+     * Log scraping activity (implements ISaveDbService interface)
      */
-    async updateSellerStatus(sellerId: string, status: 'success' | 'error', message?: string): Promise<void> {
-        await this.prisma.seller.update({
-            where: { id: sellerId },
+    async logScrapeActivity(sellerId: string, status: string, productsCount: number, duration: number): Promise<void> {
+        await this.prisma.scrapeLog.create({
             data: {
+                sellerId,
                 status,
-                lastScraped: new Date(),
-                updatedAt: new Date(),
-                // Add message to notes if error
-                ...(status === 'error' && message && { notes: message }),
+                productsFound: productsCount,
+                duration,
             },
         });
     }
 
     /**
-     * Log scraping activity for analytics
+     * Get summary statistics for a seller
      */
-    async logScrapeActivity(sellerId: string, status: string, productsCount: number, duration: number): Promise<void> {
-        // This can be extended later to log to a separate analytics table
-        // For now, we update the seller record
-        await this.updateSellerStatus(
-            sellerId, 
-            status === 'success' ? 'success' : 'error',
-            `Scraped ${productsCount} products in ${duration}ms`
-        );
+    async getSellerStats(sellerId: string) {
+        const [categoryCount, productCount, lastScrape] = await Promise.all([
+            this.prisma.seedProductCategory.count({
+                where: { sellerId },
+            }),
+            this.prisma.seedProduct.count({
+                where: {
+                    category: {
+                        sellerId,
+                    },
+                },
+            }),
+            this.prisma.seller.findUnique({
+                where: { id: sellerId },
+                select: { lastScraped: true, status: true },
+            }),
+        ]);
+
+        return {
+            categories: categoryCount,
+            products: productCount,
+            lastScraped: lastScrape?.lastScraped,
+            status: lastScrape?.status,
+        };
     }
 }

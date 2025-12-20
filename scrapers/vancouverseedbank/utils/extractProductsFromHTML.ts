@@ -26,9 +26,15 @@ import { ProductCardDataFromCrawling } from '@/types/crawl.type';
  * @param $ - Cheerio loaded HTML object
  * @returns Object với products array và maxPages number
  */
-export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').load>, selectors: ManualSelectors): {
+export function extractProductsFromHTML(
+    $: ReturnType<typeof import('cheerio').load>, 
+    selectors: ManualSelectors,
+    baseUrl:string,
+    dbMaxPage?: number
+): {
     products: ProductCardDataFromCrawling[];
     maxPages: number | null;
+    
 } {
     const products: ProductCardDataFromCrawling[] = [];
     const seenUrls = new Set<string>();
@@ -44,7 +50,7 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
 
             // Resolve relative URL
             if (!url.startsWith('http')) {
-                url = url.startsWith('/') ? `${BASE_URL}${url}` : `${BASE_URL}/${url}`;
+                url = url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
             }
 
             // Skip duplicates
@@ -223,6 +229,12 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
         }
     } catch (error) {
         apiLogger.logError('[Extract Max Pages] Error parsing pagination:', {error});
+    }
+
+    // Ultimate fallback: use database maxPage value if no pagination detected
+    if (!maxPages && dbMaxPage && dbMaxPage > 0) {
+        maxPages = dbMaxPage;
+        apiLogger.info(`[Extract Pagination] Using database fallback: maxPages = ${dbMaxPage}`);
     }
 
     return {

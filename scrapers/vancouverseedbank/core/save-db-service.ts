@@ -17,7 +17,6 @@ import type { CategoryMetadataFromCrawling, ProductCardDataFromCrawling } from '
 import { PrismaClient, Seller, StockStatus } from '@prisma/client';
 import { parseCannabisType, parseSeedType } from '../utils/data-mappers';
 import { apiLogger } from '@/lib/helpers/api-logger';
-import { ManualSelectors } from '@/lib/factories/scraper-factory';
 
 export class SaveDbService {
     private seller: Seller | null = null;

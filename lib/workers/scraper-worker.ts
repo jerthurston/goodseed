@@ -139,10 +139,10 @@ async function processScraperJob(job: Job<ScraperJobData>) {
         if (mode === 'manual') {
           // Với thiết kế hiện tại, createProductListScraper đã gọi function với siteConfig sẵn rồi
           // Tất cả các trường hợp đều gọi cùng một function, chỉ khác config bên trong siteConfig
-          pageResult = await scraperFactory.createProductListScraper(scraperSourceName as SupportedScraperSourceName);
+          pageResult = await scraperFactory.createProductListScraper(scraperSourceName as SupportedScraperSourceName, source.maxPage);
         } else if (mode === 'auto') {
           // TODO: Implement auto mode logic
-          pageResult = await scraperFactory.createProductListScraper(scraperSourceName as SupportedScraperSourceName);
+          pageResult = await scraperFactory.createProductListScraper(scraperSourceName as SupportedScraperSourceName, source.maxPage);
         } else if (mode === 'batch') {
           // TODO: Implement batch mode logic  
         } else if (mode === 'test') {

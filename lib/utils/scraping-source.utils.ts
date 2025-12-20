@@ -12,8 +12,14 @@ export function extractScrapingSourceName(url: string): string {
     // Extract hostname part (before first slash)
     const hostname = withoutProtocol.split('/')[0]
     
-    // Extract name (before first dot)
-    const name = hostname.split('.')[0]
+    // Split by dots and find the actual domain name
+    const parts = hostname.split('.')
+    
+    // Skip 'www' prefix if present and get the main domain name
+    let name = parts[0]
+    if (name.toLowerCase() === 'www' && parts.length > 1) {
+      name = parts[1] // Use the second part as the domain name
+    }
     
     // Clean up and validate
     const cleanName = name.toLowerCase().trim()

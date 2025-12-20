@@ -14,16 +14,16 @@ import { SaveDbService as SunWestSaveDbService } from '@/scrapers/sunwestgenetic
 import { SaveDbService as CropKingSaveDbService } from '@/scrapers/cropkingseeds/core/save-db-service';
 
 // Product List Scrapers (core implementations)
-import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
 
-import { ProductListScraper as SunWestProductListScraper } from '@/scrapers/sunwestgenetics/core/scrape-product-list';
-import { PRODUCT_CARD_SELECTORS as SUNWEST_SELECTORS } from '@/scrapers/sunwestgenetics/core/selectors';
+import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
+import { SUNWESTGENETICS_SELECTORS } from '@/scrapers/sunwestgenetics/core/selectors';
 
 import {
   createCropKingSeedsScraper,
   CROPKINGSEEDS_SELECTORS
 } from '@/scrapers/cropkingseeds/hybrid/cropkingseeds-hybrid-scraper';
 import { vancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/vancouver-product-list-scraper';
+import { sunwestgeneticsProductListScraper } from '@/scrapers/sunwestgenetics/core/sunwestgenetics-scrape-product-list';
 
 
 
@@ -98,6 +98,9 @@ export interface ManualSelectors {
   
   // Pagination selectors (match existing selectors)
   nextPage?: string;
+  
+  // WooCommerce result count for calculating total pages
+  resultCount?: string;
   pageLinks?: string;
   currentPage?: string;
   paginationContainer?: string;
@@ -167,7 +170,7 @@ export class ScraperFactory {
       'sunwestgenetics': {
         name: 'SunWest Genetics', 
         baseUrl: 'https://www.sunwestgenetics.com',
-        selectors: SUNWEST_SELECTORS,
+        selectors: SUNWESTGENETICS_SELECTORS,
         isImplemented: true
       },
       'cropkingseeds': {
@@ -234,7 +237,7 @@ export class ScraperFactory {
    * Mục đích của hàm createProductListScraper: Tạo một instance của product list scraper tương ứng với source.
    * Kết quả: Trả về một instance của product list scraper
    */
-  createProductListScraper(scraperSourceName: SupportedScraperSourceName) {
+  createProductListScraper(scraperSourceName: SupportedScraperSourceName, dbMaxPage?: number) {
     // Lấy cấu hình trang từ siteConfig,
     const siteConfig = this.getSiteConfig(scraperSourceName);
     // Kiểm tra xem scraper đã được triển khai chưa. True là đã thiết lập, false là chưa thiếp lập
@@ -245,9 +248,9 @@ export class ScraperFactory {
     // Tạo instance của product list scraper tương ứng với source
     switch (scraperSourceName) {
       case 'vancouverseedbank':
-        return vancouverProductListScraper(siteConfig);
-      // case 'sunwestgenetics':
-      //   return new SunWestProductListScraper();
+        return vancouverProductListScraper(siteConfig, dbMaxPage);
+      case 'sunwestgenetics':
+        return sunwestgeneticsProductListScraper(siteConfig, dbMaxPage);
 
       //TODO: Thêm các scraper khác ở đây sau khi thiết lập xong
       default:
@@ -265,8 +268,8 @@ export class ScraperFactory {
       case 'vancouverseedbank':
         return new VancouverSaveDbService(this.prisma);
       
-      // case 'sunwestgenetics':
-      //   return new SunWestSaveDbService(this.prisma);
+      case 'sunwestgenetics':
+        return new SunWestSaveDbService(this.prisma);
       
       // case 'cropkingseeds':
       //   return new CropKingSaveDbService(this.prisma);

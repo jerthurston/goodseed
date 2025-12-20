@@ -7,10 +7,7 @@
 import { extractProductsFromHTML } from '@/scrapers/vancouverseedbank/utils/extractProductsFromHTML';
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { CheerioCrawler, Dataset, RequestQueue } from 'crawlee';
-import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from './selectors';
-import { getScrapingUrl } from '../utils/getScrapingUrl';
-import { BASE_URL } from './constants';
-import { ManualSelectors, SiteConfig } from '@/lib/factories/scraper-factory';
+import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
 /**
@@ -65,7 +62,8 @@ import { apiLogger } from '@/lib/helpers/api-logger';
      * @param maxPages - Maximum pages to scrape (0 = crawl all pages until no products found)
      */
     // export async function scrapeProductList(listingUrl: string, maxPages: number = 5): Promise<ProductsDataResultFromCrawling> {
-    export async function vancouverProductListScraper(siteConfig: SiteConfig): Promise<ProductsDataResultFromCrawling> {
+    export async function vancouverProductListScraper(siteConfig: SiteConfig, dbMaxPage?: number): Promise<ProductsDataResultFromCrawling> {
+        const {baseUrl, selectors} = siteConfig
 
         const startTime = Date.now();
 
@@ -84,7 +82,6 @@ import { apiLogger } from '@/lib/helpers/api-logger';
         let actualPages = 0;
         const emptyPages = new Set<string>();
 
-        const {selectors} = siteConfig
 
 
         const crawler = new CheerioCrawler({
@@ -93,7 +90,7 @@ import { apiLogger } from '@/lib/helpers/api-logger';
                 log.info(`[Product List] Scraping: ${request.url}`);
 
                 // Extract products and pagination from current page
-                const extractResult = extractProductsFromHTML($,selectors);
+                const extractResult = extractProductsFromHTML($,selectors,baseUrl,dbMaxPage);
                 const products = extractResult.products;
                 const maxPages = extractResult.maxPages;
                 
@@ -136,7 +133,6 @@ import { apiLogger } from '@/lib/helpers/api-logger';
         apiLogger.info('[Product List] Starting crawl with page 1 to detect pagination...');
         
         // First, crawl page 1 to detect maxPages from pagination  
-        const baseUrl = siteConfig.baseUrl;
         const firstPageUrl = `${baseUrl}/shop/`; // Vancouver Seed Bank page 1 format
         await requestQueue.addRequest({ url: firstPageUrl });
         await crawler.run();

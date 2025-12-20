@@ -1,41 +1,55 @@
-import { BASE_URL, PRODUCT_CARD_SELECTORS } from '@/scrapers/sunwestgenetics/core/selectors';
+import { ManualSelectors } from '@/lib/factories/scraper-factory';
+import { apiLogger } from '@/lib/helpers/api-logger';
 import { ProductCardDataFromCrawling } from '@/types/crawl.type';
 
 /**
- * extractProductsFromHTML - Pure extraction function for SunWest Genetics
+ * extractProductsFromHTML - Pure extraction function
  * 
  * Nhiệm vụ:
  * - Nhận vào HTML đã load sẵn (Cheerio $ object)
- * - Parse và extract dữ liệu từ các product cards của SunWest Genetics
- * - Trả về array ProductCardDataFromCrawling[]
+ * - Parse và extract dữ liệu từ các product cards
+ * - Extract thông tin pagination (maxPages)
+ * - Trả về object chứa products và maxPages
  * 
- * Dựa trên HTML structure thực tế từ user:
- * - li.product containers
- * - h3.prod_titles a links  
- * - figure.main_img img images
- * - .elementor-icon-list-text cho strain type, THC, CBD
- * - input.product_variation_radio cho pricing
+ * Khác với ProductListScraper:
+ * - Function này KHÔNG crawl web (không fetch HTML)
+ * - KHÔNG xử lý pagination navigation
+ * - KHÔNG quản lý crawler lifecycle
+ * - Chỉ parse HTML → extract data + pagination info
+ * 
+ * Sử dụng:
+ * - Được gọi bởi sunwestgeneticsProductListScraper()
+ * - Được gọi bởi scrape-batch.ts
+ * - Có thể dùng riêng khi đã có HTML sẵn
  * 
  * @param $ - Cheerio loaded HTML object
- * @returns Array of ProductCardDataFromCrawling
+ * @returns Object với products array và maxPages number
  */
-export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').load>): ProductCardDataFromCrawling[] {
+export function extractProductsFromHTML(
+    $: ReturnType<typeof import('cheerio').load>, 
+    selectors: ManualSelectors,
+    baseUrl: string,
+    dbMaxPage?: number
+): {
+    products: ProductCardDataFromCrawling[];
+    maxPages: number | null;
+    
+} {
     const products: ProductCardDataFromCrawling[] = [];
     const seenUrls = new Set<string>();
 
-    // SunWest Genetics uses li.product structure based on actual HTML analysis
-    $(PRODUCT_CARD_SELECTORS.productCard).each((_, element) => {
+    $(selectors.productCard).each((_, element) => {
         try {
             const $card = $(element);
 
             // Extract product link and URL
-            const $link = $card.find(PRODUCT_CARD_SELECTORS.productLink).first();
+            const $link = $card.find(selectors.productLink).first();
             let url = $link.attr('href');
             if (!url) return;
 
             // Resolve relative URL
             if (!url.startsWith('http')) {
-                url = url.startsWith('/') ? `${BASE_URL}${url}` : `${BASE_URL}/${url}`;
+                url = url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
             }
 
             // Skip duplicates
@@ -44,219 +58,225 @@ export function extractProductsFromHTML($: ReturnType<typeof import('cheerio').l
 
             // Extract product name
             const name = $link.text().trim();
-            if (!name || name.length < 3) return;
+            if (!name) return;
 
-            // Extract image using correct selector  
-            let finalImageUrl: string | undefined;
-            const $img = $card.find(PRODUCT_CARD_SELECTORS.productImage).first();
-            if ($img.length) {
-                const imageUrl = $img.attr('data-src') || $img.attr('src');
-                if (imageUrl && !imageUrl.startsWith('data:image/svg') && imageUrl.trim()) {
-                    finalImageUrl = imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`;
-                }
-            }
+            // Extract image - prioritize data-src over src (lazy loading)
+            const $img = $card.find(selectors.productImage).first();
+            const imageUrl = $img.attr('data-src') ||
+                $img.attr('data-lazy-src') ||
+                $img.attr('src');
 
-            // Extract strain type from .icatztop .elementor-icon-list-text
-            const strainTypeElement = $card.find(PRODUCT_CARD_SELECTORS.strainType).first();
-            const strainType = strainTypeElement.length ? strainTypeElement.text().trim() : undefined;
+            // Skip if image is placeholder SVG
+            const finalImageUrl = (imageUrl && !imageUrl.startsWith('data:image/svg'))
+                ? (imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`)
+                : undefined;
 
-            // Map SeedType from product name
-            let seedType: string | undefined;
-            if (name.toLowerCase().includes('autoflower')) {
-                seedType = 'AUTOFLOWER';
-            } else if (name.toLowerCase().includes('feminized')) {
-                seedType = 'FEMINIZED';
-            } else if (name.toLowerCase().includes('photoperiod')) {
-                seedType = 'PHOTOPERIOD';
-            } else {
-                seedType = 'REGULAR'; // Default fallback
-            }
+            // Extract cannabis type (Balanced Hybrid, Indica Dominant, etc.)
+            const cannabisType = $card.find(selectors.strainType).first().text().trim() || undefined;
 
-            // Map CannabisType from strainType
-            let cannabisType: string | undefined;
-            if (strainType) {
-                const strainLower = strainType.toLowerCase();
-                if (strainLower.includes('indica') && !strainLower.includes('sativa')) {
-                    cannabisType = 'INDICA';
-                } else if (strainLower.includes('sativa') && !strainLower.includes('indica')) {
-                    cannabisType = 'SATIVA';
-                } else if (strainLower.includes('hybrid') || (strainLower.includes('indica') && strainLower.includes('sativa'))) {
-                    cannabisType = 'HYBRID';
-                } else {
-                    cannabisType = 'HYBRID'; // Default fallback for ambiguous cases
-                }
-            }
+            // Extract badge (New Strain 2025, BOGO, etc.)
+            const badge = $card.find(selectors.badge).first().text().trim() || undefined;
 
-            // Extract THC level from .elementor-icon-list-text containing "THC:"
+            // Extract rating
+            const ratingText = $card.find(selectors.rating).first().text().trim();
+            const rating = ratingText ? parseFloat(ratingText) : undefined;
+
+            // Extract review count - remove parentheses
+            const reviewCountText = $card.find(selectors.reviewCount).first().text().trim();
+            const reviewCountMatch = reviewCountText.match(/\d+/);
+            const reviewCount = reviewCountMatch ? parseInt(reviewCountMatch[0]) : undefined;
+
+            // Extract THC level
+            const thcLevelText = $card.find(selectors.thcLevel).first().text().trim();
             let thcMin: number | undefined;
             let thcMax: number | undefined;
-            
-            $card.find('.elementor-icon-list-text').each((_, el) => {
-                const text = $(el).text();
-                if (text.includes('THC:')) {
-                    const thcLevelText = text.replace('THC:', '').trim();
-                    
-                    // Parse numbers from THC text
-                    const numberPattern = /(\d+(?:\.\d+)?)/g;
-                    const numbers = [];
-                    let match;
-                    while ((match = numberPattern.exec(thcLevelText)) !== null) {
-                        numbers.push(parseFloat(match[1]));
-                    }
-                    
-                    if (numbers.length === 1) {
-                        thcMin = thcMax = numbers[0];
-                    } else if (numbers.length >= 2) {
-                        thcMin = Math.min(...numbers);
-                        thcMax = Math.max(...numbers);
-                    }
-                }
-            });
 
-            // Extract CBD level from .elementor-icon-list-text containing "CBD:"
+            if (thcLevelText) {
+                // Parse "THC 17%" or "THC 20-23%"
+                const thcMatch = thcLevelText.match(/(\d+(?:\.\d+)?)-?(\d+(?:\.\d+)?)?%?/);
+                if (thcMatch) {
+                    thcMin = parseFloat(thcMatch[1]);
+                    thcMax = thcMatch[2] ? parseFloat(thcMatch[2]) : thcMin;
+                }
+            }
+
+            // Extract CBD level
+            const cbdLevelText = $card.find(selectors.cbdLevel).first().text().trim();
             let cbdMin: number | undefined;
             let cbdMax: number | undefined;
-            
-            $card.find('.elementor-icon-list-text').each((_, el) => {
-                const text = $(el).text();
-                if (text.includes('CBD:')) {
-                    const cbdLevelText = text.replace('CBD:', '').trim();
-                    
-                    // Only parse if it contains numbers (skip "Low", "High" etc.)
-                    if (/\d/.test(cbdLevelText)) {
-                        const numberPattern = /(\d+(?:\.\d+)?)/g;
-                        const numbers = [];
-                        let match;
-                        while ((match = numberPattern.exec(cbdLevelText)) !== null) {
-                            numbers.push(parseFloat(match[1]));
-                        }
-                        
-                        if (numbers.length === 1) {
-                            cbdMin = cbdMax = numbers[0];
-                        } else if (numbers.length >= 2) {
-                            cbdMin = Math.min(...numbers);
-                            cbdMax = Math.max(...numbers);
-                        }
-                    }
-                }
-            });
 
-            // Extract pricing from variation inputs with item-price attribute
+            if (cbdLevelText) {
+                // Parse "CBD : 1%" or "CBD : 0.5-1%"
+                const cbdMatch = cbdLevelText.match(/(\d+(?:\.\d+)?)-?(\d+(?:\.\d+)?)?%?/);
+                if (cbdMatch) {
+                    cbdMin = parseFloat(cbdMatch[1]);
+                    cbdMax = cbdMatch[2] ? parseFloat(cbdMatch[2]) : cbdMin;
+                }
+            }
+
+            // Extract flowering time
+            const floweringTime = $card.find(selectors.floweringTime).first().text().trim() || undefined;
+
+            // Extract growing level
+            const growingLevel = $card.find(selectors.growingLevel).first().text().trim() || undefined;
+
+            // Extract all pricing variations
+            // SunWest Genetics shows multiple variations (5 seeds, 10 seeds, 25 seeds)
             const pricings: Array<{ totalPrice: number; packSize: number; pricePerSeed: number }> = [];
-            
-            $card.find(PRODUCT_CARD_SELECTORS.variationInputs).each((_, input) => {
+
+            $card.find(selectors.variationInputs).each((_, input) => {
                 const $input = $(input);
                 const itemPrice = $input.attr('item-price');
                 const value = $input.attr('value'); // e.g., "5-seeds", "10-seeds", "25-seeds"
 
-                if (itemPrice && value) {
+                // Extract pack size from value attribute (e.g., "5-seeds" -> 5)
+                const packSizeMatch = value?.match(/(\d+)-seed/i);
+
+                if (itemPrice && packSizeMatch) {
                     const totalPrice = parseFloat(itemPrice);
-                    // Extract pack size from value (e.g., "5-seeds" -> 5)
-                    const packSizeMatch = value.match(/(\d+)/);
-                    
-                    if (packSizeMatch) {
-                        const packSize = parseInt(packSizeMatch[1]);
-                        pricings.push({
-                            totalPrice,
-                            packSize,
-                            pricePerSeed: totalPrice / packSize,
-                        });
-                    }
+                    const packSize = parseInt(packSizeMatch[1]);
+                    const pricePerSeed = totalPrice / packSize;
+
+                    pricings.push({
+                        totalPrice,
+                        packSize,
+                        pricePerSeed,
+                    });
                 }
             });
 
-            // Extract rating and reviews from .star-rating
-            let rating: number | undefined;
-            let reviewCount: number | undefined;
-            
-            const $rating = $card.find('.star-rating').first();
-            if ($rating.length) {
-                const ariaLabel = $rating.attr('aria-label');
-                if (ariaLabel) {
-                    // Extract rating from "Rated 5.00 out of 5"
-                    const ratingMatch = ariaLabel.match(/Rated (\d+(?:\.\d+)?)/);
-                    if (ratingMatch) {
-                        rating = parseFloat(ratingMatch[1]);
-                    }
-                }
-                
-                // Extract review count from text like "based on 1 customer rating"
-                const ratingText = $rating.text();
-                const reviewMatch = ratingText.match(/based on (\d+)/);
-                if (reviewMatch) {
-                    reviewCount = parseInt(reviewMatch[1]);
-                }
-            }
+            // Generate slug
+            const slug = name.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
 
-            // Extract growing level
-            let growingLevel: string | undefined;
-            $card.find('.elementor-icon-list-text').each((_, el) => {
-                const text = $(el).text();
-                if (text.includes('Growing Level:')) {
-                    growingLevel = text.replace(/.*Growing Level:\s*/, '').trim();
-                }
-            });
-
-            // Extract flowering time
-            let floweringTime: string | undefined;
-            $card.find('.elementor-icon-list-text').each((_, el) => {
-                const text = $(el).text();
-                if (text.includes('Flowering:')) {
-                    floweringTime = text.replace(/.*Flowering:\s*/, '').trim();
-                }
-            });
-
-            // Extract badges from product classes
-            let badge: string | undefined;
-            const productClasses = $card.attr('class') || '';
-            if (productClasses.includes('product_tag-new-strains')) {
-                badge = 'New Strain 2025';
-            } else if (productClasses.includes('product_tag-sale')) {
-                badge = 'Sale';
-            }
-
-            // Create product object following ProductCardDataFromCrawling type
-            const productData: ProductCardDataFromCrawling = {
+            products.push({
                 name,
                 url,
-                slug: url.split('/').pop()?.replace('.html', '') || name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-                
-                // Image
+                slug,
                 imageUrl: finalImageUrl,
-                
-                // Strain type & classification
-                strainType,
-                seedType,
                 cannabisType,
-                
-                // Badge
                 badge,
-                
-                // Rating & Reviews
                 rating,
                 reviewCount,
-                
-                // THC/CBD levels
+                thcLevel: thcLevelText || undefined,
                 thcMin,
                 thcMax,
+                cbdLevel: cbdLevelText || undefined,
                 cbdMin,
                 cbdMax,
-                
-                // Growing info
                 floweringTime,
                 growingLevel,
-                
-                // Pricing
                 pricings,
-            };
-
-            products.push(productData);
+            });
 
         } catch (error) {
-            console.error('Error extracting product:', error);
+            console.error('[Product List] Error parsing product card:', error);
         }
     });
 
-    console.log(`Extracted ${products.length} products from SunWest Genetics HTML`);
-    return products;
+    // Extract maximum page number from pagination using selectors
+    let maxPages: number | null = null;
+    try {
+        let maxPageFound = 0;
+        
+        // Check if pagination container exists (Jet Smart Filters)
+        const $paginationContainer = $(selectors.paginationContainer);
+        if ($paginationContainer.length > 0) {
+            console.log('[DEBUG] Jet Smart Filters pagination found, analyzing pages...');
+            
+            // Find all page items with data-value attribute (excluding prev/next)
+            $(selectors.paginationItems).each((_, element) => {
+                const $item = $(element);
+                const dataValue = $item.attr('data-value');
+                
+                // Skip if no data-value or if it's "next" or "prev"
+                if (!dataValue || dataValue === 'next' || dataValue === 'prev') {
+                    return;
+                }
+                
+                if (/^\d+$/.test(dataValue)) {
+                    const pageNumber = parseInt(dataValue);
+                    if (pageNumber > maxPageFound) {
+                        maxPageFound = pageNumber;
+                    }
+                    console.log(`[DEBUG] Found page item: ${pageNumber} (data-value: ${dataValue})`);
+                }
+            });
+            
+            // Fallback: If pagination is empty (JS-rendered), estimate from products per page
+            if (maxPageFound === 0) {
+                console.log('[DEBUG] Pagination container found but empty (likely JS-rendered)');
+                
+                // Try to calculate from WooCommerce result count
+                const resultCountText = $(selectors.resultCount).text().trim();
+                console.log('[DEBUG] WooCommerce result count:', resultCountText);
+                
+                if (resultCountText) {
+                    // Parse "Showing 1–16 of 2075 results" format
+                    const match = resultCountText.match(/Showing\s+\d+[–\-]\d+\s+of\s+(\d+)\s+results/i);
+                    if (match) {
+                        const totalProducts = parseInt(match[1]);
+                        const productsPerPage = products.length;
+                        if (totalProducts && productsPerPage > 0) {
+                            maxPages = Math.ceil(totalProducts / productsPerPage);
+                            console.log(`[DEBUG] Calculated from result count: ${totalProducts} total / ${productsPerPage} per page = ${maxPages} pages`);
+                        } else {
+                            // Fallback to conservative estimate
+                            maxPages = products.length === 16 ? 5 : 1;
+                        }
+                    } else {
+                        console.log('[DEBUG] Could not parse result count format');
+                        // Fallback to conservative estimate
+                        maxPages = products.length === 16 ? 5 : 1;
+                    }
+                } else {
+                    console.log('[DEBUG] No result count found, cannot determine total pages');
+                    // Cannot determine pagination without result count or HTML pagination
+                    // Return null to indicate unknown page count - let scraper handle this
+                    maxPages = null;
+                }
+            } else {
+                maxPages = maxPageFound;
+            }
+            
+            console.log('[DEBUG] Max page detected:', maxPageFound);
+            
+            if (maxPages) {
+                apiLogger.debug(`[Extract Pagination] Detected ${maxPages} total pages from Jet Smart Filters pagination`);
+            } else {
+                apiLogger.warn('[Extract Pagination] Pagination appears to be JS-rendered, cannot detect max pages from static HTML');
+            }
+        } else {
+            // Fallback: look for other pagination patterns
+            console.log('[DEBUG] No Jet Smart Filters pagination found, trying fallback...');
+            $('.page-numbers').each((_, element) => {
+                const $item = $(element);
+                const text = $item.text().trim();
+                
+                if (/^\d+$/.test(text)) {
+                    const pageNumber = parseInt(text);
+                    if (pageNumber > maxPageFound) {
+                        maxPageFound = pageNumber;
+                    }
+                }
+            });
+            
+            maxPages = maxPageFound > 0 ? maxPageFound : null;
+            apiLogger.warn('[Extract Pagination] No Jet Smart Filters pagination container found, used fallback');
+        }
+    } catch (error) {
+        apiLogger.logError('[Extract Max Pages] Error parsing pagination:', { error });
+    }
+
+    // Ultimate fallback: use database maxPage value if no pagination detected
+    if (!maxPages && dbMaxPage && dbMaxPage > 0) {
+        maxPages = dbMaxPage;
+        apiLogger.info(`[Extract Pagination] Using database fallback: maxPages = ${dbMaxPage}`);
+    }
+
+    return {
+        products,
+        maxPages
+    };
 }
