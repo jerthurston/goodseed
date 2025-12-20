@@ -157,7 +157,8 @@ import { apiLogger } from '@/lib/helpers/api-logger';
                 // Now crawl remaining pages (2 to maxPages) if more than 1 page
                 if (detectedMaxPages > 1) {
                     const remainingUrls: string[] = [];
-                    for (let page = 2; page <= Math.min(detectedMaxPages, 50); page++) { // Limit to 50 pages for safety
+                    //Lấy giá trị nào lớn nhất giữa maxPages và 50.
+                    for (let page = 2; page <= Math.max(detectedMaxPages, 50); page++) { // Limit to 50 pages for safety
                         // Vancouver Seed Bank WooCommerce standard format: /shop/page/2/
                         remainingUrls.push(`${baseUrl}/shop/page/${page}/`);
                     }
@@ -170,8 +171,8 @@ import { apiLogger } from '@/lib/helpers/api-logger';
                         await crawler.run();
                     }
                 }
-                
-                actualPages = Math.min(detectedMaxPages, 50);
+                //Lấy giá trị nào lớn nhất giữa maxPages và 50.
+                actualPages = Math.max(detectedMaxPages, 50);
             } else {
                 apiLogger.warn('[Product List] No products found on page 1, using fallback');
             }
