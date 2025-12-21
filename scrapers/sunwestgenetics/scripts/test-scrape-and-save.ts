@@ -1,75 +1,135 @@
 /**
  * Test SunWest Genetics Scrape and Save to Database
  * 
- * Script to test scraping and saving products to database
+ * Script to test complete scraping workflow and database save
+ * Tests the integration of all components together
  * 
  * Usage:
- * npm run tsx scrapers/sunwestgenetics/scripts/test-scrape-and-save.ts
+ * pnpm tsx scrapers/sunwestgenetics/scripts/test-scrape-and-save.ts
  */
 
-import { ProductListScraper } from '../core/product-list-scrapers';
-import { SaveDbService } from '../core/save-db-service';
-import { CATEGORY_URLS } from '../core/selectors';
+import { sunwestgeneticsProductListScraper } from '@/scrapers/sunwestgenetics/core/sunwestgenetics-scrape-product-list';
+import { SaveDbService } from '@/scrapers/sunwestgenetics/core/save-db-service';
+import { BASE_URL, CATEGORY_URLS } from '@/scrapers/sunwestgenetics/core/selectors';
+import { SUNWESTGENETICS_SELECTORS } from '@/scrapers/sunwestgenetics/core/selectors';
+import { apiLogger } from '@/lib/helpers/api-logger';
 import { prisma } from '@/lib/prisma';
-import 'dotenv/config';
 
-async function main() {
-    console.log('🧪 Testing SunWest Genetics Scrape and Save...');
+// Site configuration for SunWest Genetics
+const siteConfig = {
+    name: 'SunWest Genetics',
+    baseUrl: BASE_URL,
+    isImplemented: true,
+    selectors: SUNWESTGENETICS_SELECTORS
+};
 
-    const scraper = new ProductListScraper();
-    const dbService = new SaveDbService(prisma);
+async function testScrapeAndSave() {
+    console.log('🧪 Testing SunWest Genetics Complete Workflow...');
+    console.log('📍 Target URL:', CATEGORY_URLS.allProducts);
+    console.log('');
 
     try {
-        // Initialize seller
-        console.log('\n🏪 Initializing seller...');
-        const sellerId = await dbService.initializeSeller();
-        console.log(`✅ Seller ID: ${sellerId}`);
+        // Initialize database service
+        console.log('🗄️  Initializing database service...');
+        const dbService = new SaveDbService(prisma);
+        
+        // Get or create SunWest Genetics seller
+        console.log('🏪 Setting up seller...');
+        const seller = await prisma.seller.upsert({
+            where: { name: 'SunWest Genetics' },
+            update: {},
+            create: {
+                name: 'SunWest Genetics',
+                url: BASE_URL,
+                isActive: true,
+                status: 'active',
+                affiliateTag: 'sunwest',
+                autoScrapeInterval: 86400, // 24 hours
+            }
+        });
 
-        // Create category metadata
+        // Initialize service with seller
+        await dbService.initializeSeller(seller.id);
+        console.log(`✅ Seller initialized: ${seller.name} (ID: ${seller.id})`);
+
+        // Create category metadata  
         const categoryMetadata = {
-            name: 'All Products',
-            slug: 'all-products',
-            description: 'All cannabis seeds from SunWest Genetics',
+            name: 'All Cannabis Seeds',
+            slug: 'all-cannabis-seeds',
+            seedType: 'MIXED'
         };
 
         // Get or create category
-        console.log('\n📁 Creating category...');
-        const categoryId = await dbService.getOrCreateCategory(sellerId, categoryMetadata);
-        console.log(`✅ Category ID: ${categoryId}`);
+        console.log('📁 Setting up category...');
+        const categoryId = await dbService.getOrCreateCategory(categoryMetadata);
+        console.log(`✅ Category setup with ID: ${categoryId}`);
 
-        // Scrape products (just 1 page for testing)
-        console.log('\n🕷️  Scraping products (1 page)...');
-        const result = await scraper.scrapeProductList(CATEGORY_URLS.allProducts, 1);
-        console.log(`✅ Scraped ${result.totalProducts} products`);
+        // Test scraping (single page first)
+        console.log('');
+        console.log('🕷️  Starting scrape test (1 page only)...');
+        
+        const scrapeResult = await sunwestgeneticsProductListScraper(siteConfig);
+        
+        console.log('📊 Scrape Results:');
+        console.log(`   Products found: ${scrapeResult.products.length}`);
+        console.log(`   Total products: ${scrapeResult.totalProducts}`);
+        console.log(`   Total pages: ${scrapeResult.totalPages}`);
+        console.log(`   Duration: ${scrapeResult.duration}ms`);
 
-        if (result.products.length === 0) {
-            console.log('\n⚠️  No products found! Check selectors in selectors.ts');
+        if (scrapeResult.products.length === 0) {
+            console.log('');
+            console.log('⚠️  No products found! Check selectors configuration.');
+            console.log('💡 Run test-sunwest-scraper.ts first to verify selectors.');
             return;
         }
 
+        // Display sample products
+        console.log('');
+        console.log('🔍 Sample scraped products:');
+        scrapeResult.products.slice(0, 2).forEach((product, index) => {
+            console.log(`${index + 1}. ${product.name}`);
+            console.log(`   - URL: ${product.url}`);
+            console.log(`   - Type: ${product.cannabisType || 'N/A'}`);
+            console.log(`   - THC: ${product.thcLevel || 'N/A'}`);
+            console.log(`   - Pricing variations: ${product.pricings?.length || 0}`);
+        });
+
         // Save to database
-        console.log('\n💾 Saving to database...');
-        const saveResult = await dbService.saveProductsToCategory(categoryId, result.products);
-        console.log(`✅ Save Results:`);
-        console.log(`   - Saved: ${saveResult.saved}`);
-        console.log(`   - Updated: ${saveResult.updated}`);
-        console.log(`   - Errors: ${saveResult.errors}`);
+        console.log('');
+        console.log('💾 Saving products to database...');
+        
+        const saveResult = await dbService.saveProductsToDatabase(scrapeResult.products);
+        
+        console.log(`✅ Database Results:`);
+        console.log(`   Saved: ${saveResult.saved} products`);
+        console.log(`   Updated: ${saveResult.updated} products`);
+        console.log(`   Errors: ${saveResult.errors} products`);
 
-        // Get stats
-        console.log('\n📊 Getting stats...');
-        const stats = await dbService.getScrapingStats(sellerId);
-        console.log(`✅ Stats:`);
-        console.log(`   - Total Categories: ${stats.totalCategories}`);
-        console.log(`   - Total Products: ${stats.totalProducts}`);
-        console.log(`   - Last Scraped: ${stats.lastScraped}`);
-
-        console.log('\n✨ Test completed successfully!');
+        // Summary
+        console.log('');
+        console.log('🎉 Test Summary:');
+        console.log(`   ✅ Scraper: Working (${scrapeResult.products.length} products)`);
+        console.log(`   ✅ Database: Working (${saveResult.saved + saveResult.updated} products saved)`);
+        console.log(`   ✅ Integration: Complete`);
+        console.log('');
+        console.log('🚀 SunWest Genetics scraper is ready for production!');
 
     } catch (error) {
-        console.error('\n❌ Error during testing:', error);
-        await dbService.updateSellerStatus(await dbService.initializeSeller(), 'error', error instanceof Error ? error.message : 'Unknown error');
+        console.error('❌ Test failed:', error);
+        apiLogger.logError('Scrape and save test failed:', { 
+            error: error instanceof Error ? error.message : String(error)
+        });
+        throw error;
     }
 }
 
 // Run the test
-main().catch(console.error);
+testScrapeAndSave()
+    .then(() => {
+        console.log('🏁 Test completed successfully');
+        process.exit(0);
+    })
+    .catch((error) => {
+        console.error('💥 Test failed:', error);
+        process.exit(1);
+    });

@@ -1,7 +1,7 @@
 List danh sách website cần scraper dữ liệu cho Goodseed:
 
 This group will all share the same affiliate tag:
-https://vancouverseedbank.ca/             | proccessing   
+https://vancouverseedbank.ca/           
 https://bcbuddepot.com/                            
 https://beaverseed.com/                            
 https://www.maryjanesgarden.com/           

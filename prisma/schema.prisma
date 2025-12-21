@@ -12,10 +12,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// ==============================================================================
-// Auth Models - NextAuth.js v5 with Prisma Adapter
-// ==============================================================================
-
 enum UserRole {
   ADMIN
   USER
@@ -145,24 +141,49 @@ enum StockStatus {
 // Đại diện cho các site bán hạt giống (e.g., Seed Supreme, ILGM, Herbies)
 // GoodSeed làm affiliate marketing để chuyển hướng traffic đến website của họ
 model Seller {
-  id                  String    @id @default(cuid())
-  name                String    @unique // "Seed Supreme", "ILGM"
-  url                 String // Homepage URL
-  scrapingSourceUrl   String // URL of products listing page to scrape (e.g., https://vancouverseedbank.ca/shop/jsf/epro-archive-products/)
-  affiliateTag        String? // Affiliate tag để tạo commission URL
-  isActive            Boolean   @default(true) // Kill switch để ẩn seller
-  autoScrapeInterval  Int?      @default(6) // Auto scrape interval in hours
-  lastScraped         DateTime?
-  status              String? // success/error
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  id   String @id @default(cuid())
+  name String @unique // "Seed Supreme", "ILGM"
+  url  String // Homepage URL Seller
+  affiliateTag       String? // Affiliate tag để tạo commission URL
+  isActive           Boolean   @default(true) // Kill switch để ẩn seller
+  autoScrapeInterval Int?      @default(6) // Auto scrape interval in hours
 
-  seedCategories SeedProductCategory[]
-  scrapeLogs     ScrapeLog[]
-  scrapeJobs     ScrapeJob[]
+  lastScraped        DateTime? //TODO: có thể để scrapeLog quản lý luôn
+  status             String? // success/error - TODO: có thể để scrapeLog quản lý luôn
+
+  // Scraper Configuration (Simple approach) - Build tính năng Crud seller trong tương lai nếu yêu cầu
+  // productCardHtml     String? // Raw HTML của 1 product card (admin copy/paste)
+  // jsonLd              String? // Raw JSON-LD data (nếu có)
+  // paginationPattern   String? // Pattern phân trang: "?pagenum={page}"
+  // maxPages            Int?    @default(10)
+
+  // Auto-computed selectors (hệ thống tự tính)
+  // computedSelectors   Json?   // Selectors được hệ thống phân tích tự động
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  scrapingSources ScrapingSource[]
+  seedCategories  SeedProductCategory[]
+  scrapeLogs      ScrapeLog[]
+  scrapeJobs      ScrapeJob[]
 
   @@index([isActive])
   @@index([lastScraped])
+}
+
+model ScrapingSource {
+  id                 String @id @default(cuid())
+  sellerId           String // Removed @unique to allow multiple sources per seller
+  scrapingSourceUrl  String @unique // https://vancouverseedbank.ca/shop ; https://vancouverseedbank.ca/product-category/new-strain/
+  scrapingSourceName String //e.g. "vancouverseedbank,herbies..."
+  maxPage            Int
+
+  //Relations
+  seller Seller @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([id, sellerId])
+  @@unique([sellerId, scrapingSourceUrl]) // Prevent duplicate URL per seller
 }
 
 // SeedProductCategory là danh mục product :Sativa, Indica, Hybrid. 
@@ -182,7 +203,7 @@ model SeedProductCategory {
   // Relations
   seller       Seller        @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   seedProducts SeedProduct[] // 1 Category → N Products
-  scrapeJobs   ScrapeJob[]   // Jobs targeting this category
+  scrapeJobs   ScrapeJob[] // Jobs targeting this category
 
   @@index([id])
 }
@@ -298,11 +319,11 @@ model ScrapeLog {
 
 // ScrapeJobStatus - Job execution status
 enum ScrapeJobStatus {
-  PENDING     // Job created, waiting to start
+  PENDING // Job created, waiting to start
   IN_PROGRESS // Currently scraping
-  COMPLETED   // Successfully finished
-  FAILED      // Error occurred
-  CANCELLED   // Manually stopped
+  COMPLETED // Successfully finished
+  FAILED // Error occurred
+  CANCELLED // Manually stopped
 }
 
 // ScrapeJob - Track scraping job progress and status
@@ -313,7 +334,7 @@ model ScrapeJob {
   status   ScrapeJobStatus @default(PENDING)
 
   // Job Configuration
-  mode             String  // "batch", "auto", "test"
+  mode             String // "batch", "auto", "test"
   targetCategoryId String? // Which SeedProductCategory to save products into
   startPage        Int?
   endPage          Int?
@@ -322,10 +343,10 @@ model ScrapeJob {
   // Progress Tracking
   currentPage     Int?
   totalPages      Int?
-  productsScraped Int      @default(0)
-  productsSaved   Int      @default(0)
-  productsUpdated Int      @default(0)
-  errors          Int      @default(0)
+  productsScraped Int  @default(0)
+  productsSaved   Int  @default(0)
+  productsUpdated Int  @default(0)
+  errors          Int  @default(0)
 
   // Timing
   startedAt   DateTime?
@@ -350,6 +371,3 @@ model ScrapeJob {
   @@index([createdAt])
   @@index([targetCategoryId])
 }
-
-// Update Seller model to include scrapeJobs relation
-// (Add this line to Seller model's relations section)

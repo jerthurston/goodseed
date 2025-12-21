@@ -1,6 +1,5 @@
 /**
- * GET /api/cron/scraper
- * 
+ * Triiger tự động cho tất cả sellers có schedule bật
  * Cron endpoint for automated daily scraping
  * Triggered by AWS EventBridge or other schedulers
  * 
@@ -151,6 +150,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<CronResponse>>
             await addScraperJob({
                 jobId,
                 sellerId: seller.id,
+                source: seller.name.toLowerCase().replace(/\s+/g, ''), // Convert seller name to source
                 mode: 'auto',
                 config: {
                     scrapingSourceUrl: seller.scrapingSourceUrl,

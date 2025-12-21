@@ -34,6 +34,7 @@
 }
 
 .sidebarItem {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -76,6 +77,63 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Dropdown Sidebar Items */
+.sidebarDropdown {
+  margin-left: 0;
+  border-left: 3px solid var(--border-color);
+  padding-left: 1rem;
+  margin-top: 0.5rem;
+}
+
+.sidebarDropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-main);
+  color: var(--text-primary-muted);
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  margin-bottom: 0.25rem;
+  border-radius: 0;
+}
+
+.sidebarDropdownItem:hover {
+  background-color: var(--bg-section);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  transform: translateX(4px);
+}
+
+.sidebarDropdownItem:last-child {
+  margin-bottom: 0;
+}
+
+.sidebarItemWithDropdown {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex: 1;
+}
+
+.sidebarDropdownIcon {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+  margin-left: auto;
+  flex-shrink: 0;
+  min-width: 1rem;
+  text-align: center;
+}
+
+.sidebarDropdownIconExpanded {
+  transform: rotate(90deg);
 }
 
 /* ============================================================
@@ -461,4 +519,242 @@
   background-color: var(--bg-main);
   padding:0.1rem;
   cursor: pointer;
+}
+
+/* ============================================================
+   MODAL COMPONENTS
+   ============================================================ */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.modalContent {
+  background-color: var(--bg-main);
+  border: 6px solid var(--border-color);
+  border-radius: 0;
+  box-shadow: 8px 8px 0 var(--border-color);
+  width: 100%;
+  max-width: 32rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Wide Modal Content for Managing Scraping Sources */
+.modalContentWide {
+  background-color: var(--bg-main);
+  border: 6px solid var(--border-color);
+  border-radius: 0;
+  box-shadow: 8px 8px 0 var(--border-color);
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Responsive width for desktop/laptop */
+@media (min-width: 1024px) {
+  .modalContentWide {
+    width: 50%;
+  }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 3px solid var(--border-color);
+}
+
+.modalTitle {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.modalCloseButton {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  background-color: var(--bg-section);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 0 var(--border-color);
+}
+
+.modalCloseButton:hover {
+  background-color: var(--danger-color);
+  color: white;
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+.modalBody {
+  padding: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formLabel {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.5px;
+}
+
+.formInput {
+  width: 100%;
+  padding: 0.75rem;
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  background-color: var(--bg-section);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 3px 3px 0 var(--brand-primary);
+}
+
+.formInput::placeholder {
+  color: var(--text-primary-muted);
+}
+
+.formError {
+  margin-top: 0.5rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--danger-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.modalFooter {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 3px solid var(--border-color);
+}
+
+/* ============================================================
+   DROPDOWN COMPONENTS
+   ============================================================ */
+.dropdownContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdownTrigger {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  background-color: var(--bg-section);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 0 var(--border-color);
+}
+
+.dropdownTrigger:hover {
+  background-color: var(--text-primary);
+  color: var(--bg-main);
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background-color: var(--bg-main);
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  box-shadow: 6px 6px 0 var(--border-color);
+  z-index: 10;
+  min-width: 10rem;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.dropdownItem:hover {
+  background-color: var(--bg-section);
+}
+
+.dropdownItemUpdate:hover {
+  background-color: var(--brand-primary);
+  color: var(--bg-main);
+}
+
+.dropdownItemDelete:hover {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+/* ============================================================
+   FORM READONLY STYLES
+   ============================================================ */
+.readOnly {
+  cursor: default !important;
+  background-color: var(--bg-section) !important;
+  color: var(--text-primary-muted) !important;
+  border-style: dashed !important;
+}
+
+.readOnly:focus {
+  border-color: var(--border-color) !important;
+  box-shadow: none !important;
 }

@@ -2,6 +2,7 @@ import api from "@/lib/api"
 import { apiLogger } from "@/lib/helpers/api-logger"
 import { ScraperSiteApiResponse } from "@/types/scraperStite.type"
 import { SellerRaw, SellerUpdateResponse } from "@/types/seller.type"
+import { type UpdateSellerInput } from "@/schemas/seller.schema"
 
 
 
@@ -35,30 +36,62 @@ export class SellerService {
     }
   }
 
-  public static async updateSellerStatus(
+  /**
+   * Fetch a specific seller by ID from API
+   * UI components should use SellerTransformer to transform this data as needed
+   */
+  public static async fetchSellerById(sellerId: string): Promise<SellerRaw> {
+    const startTime = Date.now()
+
+    try {
+      apiLogger.logRequest("SellerService.fetchSellerById", { sellerId })
+
+      const response = await api.get<SellerRaw>(`/admin/sellers/${sellerId}`)
+
+      const duration = Date.now() - startTime
+      apiLogger.logResponse(
+        "SellerService.fetchSellerById",
+        { sellerId },
+        {
+          sellerName: response.data.name,
+          duration: `${duration}ms`,
+        }
+      )
+
+      return response.data
+    } catch (error) {
+      apiLogger.logError("SellerService.fetchSellerById", error as Error, { sellerId })
+      throw error
+    }
+  }
+
+  /**
+   * Update seller fields (status, name, url, settings, etc.)
+   */
+  public static async updateSeller(
     id: string,
-    isActive: boolean
+    data: Omit<Partial<UpdateSellerInput>, 'id'>
   ): Promise<SellerUpdateResponse> {
     try {
-      apiLogger.logRequest("SellerService.updateSellerStatus", {
+      apiLogger.logRequest("SellerService.updateSeller", {
         id,
-        isActive,
+        data,
       })
 
       const response = await api.patch<SellerUpdateResponse>(
         `/admin/sellers/${id}`,
-        { isActive }
+        data
       )
 
-      apiLogger.logResponse("SellerService.updateSellerStatus", {}, { 
+      apiLogger.logResponse("SellerService.updateSeller", {}, { 
         sellerId: response.data.id,
         sellerName: response.data.name,
-        isActive: response.data.isActive 
+        fieldsUpdated: Object.keys(data)
       })
 
       return response.data
     } catch (error) {
-      apiLogger.logError("SellerService.updateSellerStatus", error as Error)
+      apiLogger.logError("SellerService.updateSeller", error as Error)
       throw error
     }
   }

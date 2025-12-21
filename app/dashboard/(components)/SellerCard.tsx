@@ -1,7 +1,9 @@
 "use client"
 
-import { Clock, Play } from "lucide-react"
+import { Clock, Play, MoreVertical, Edit, Trash2, PlusCircle, LogInIcon } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
 import {
+  ActionSellerCardBtn,
   DashboardBadge,
   DashboardButton,
   DashboardCard,
@@ -19,9 +21,12 @@ interface SellerCardProps {
   toggleError?: Error | null;
   onToggleActive?: (id: string) => void
   onManualScrape?: (id: string) => void
+  onUpdate?: (id: string) => void
+  onDelete?: (id: string) => void
   showActions?: boolean
 }
-import {toast} from 'sonner';
+import { toast } from 'sonner';
+import { useRouter } from "next/navigation"
 
 export function SellerCard({
   seller,
@@ -29,8 +34,12 @@ export function SellerCard({
   toggleError,
   onToggleActive,
   onManualScrape,
+  onUpdate,
+  onDelete,
   showActions = false,
 }: SellerCardProps) {
+
+  const router = useRouter();
   return (
     <DashboardCard hover>
       <DashboardCardHeader>
@@ -92,20 +101,41 @@ export function SellerCard({
       )}
 
       {showActions && (
-        <DashboardCardFooter className="flex justify-between">
-          <DashboardButton
-            variant="outline"
-            onClick={
-              () => {
-              onToggleActive?.(seller.id)
-              toggleError !== null ? toast.error(`Error: ${toggleError?.message}`) : toast.success(`Seller ${seller.isActive ? 'deactivated' : 'activated'} successfully!`)
-            }
-            }
-            disabled={isToggling}
-            className="text-sm px-4 py-2"
-          >
-            {seller.isActive ? "Deactivate" : "Activate"}
-          </DashboardButton>
+        <DashboardCardFooter className="flex justify-between items-center">
+          <div className="flex flex-row items-center gap-4">
+            <DashboardButton
+              variant="outline"
+              onClick={
+                () => {
+                  onToggleActive?.(seller.id)
+                  toggleError !== null ? toast.error(`Error: ${toggleError?.message}`) : toast.success(`Seller ${seller.isActive ? 'tideacvated' : 'activated'} successfully!`)
+                }
+              }
+              disabled={isToggling}
+              className="text-sm px-4 py-2"
+            >
+              {seller.isActive ? "Deactivate" : "Activate"}
+            </DashboardButton>
+
+            <DashboardButton
+              variant="secondary"
+              className="flex items-center gap-2"
+              onClick={() => router.push(`/dashboard/admin/sellers/${seller.id}`)}
+            >
+              <>
+                <LogInIcon className="h-4 w-4" />
+                Access
+              </>
+            </DashboardButton>
+          </div>
+
+          {/* Action buttons dropdown: delete or update */}
+          <ActionSellerCardBtn
+            sellerId={seller.id}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+          />
+
           {onManualScrape && (
             <DashboardIconButton
               variant="secondary"

@@ -1,7 +1,7 @@
 "use client"
 
 import { apiLogger } from "@/lib/helpers/api-logger"
-import { ScraperOperationService } from "@/lib/services/scraper-site/scraper-operation.service"
+import { ScraperOperationService } from "@/lib/services/manual-scraper/scraper-operation.service"
 import { SellerService } from "@/lib/services/seller/seller.service"
 import { UseFetchScraperSitesResult } from "@/types/scraperStite.type"
 import { useQuery } from "@tanstack/react-query"

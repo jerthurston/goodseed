@@ -1,5 +1,12 @@
-import { NextResponse } from "next/server"
+/**
+ * API route to manage sellers
+ * Handles GET: Fetch all sellers
+ * Handles POST: Create a new seller
+ */
+
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { createSellerSchema, validateSellerData } from "@/schemas/seller.schema"
 
 export async function GET() {
   try {
@@ -33,6 +40,81 @@ export async function GET() {
     console.error("Error fetching sellers:", error)
     return NextResponse.json(
       { error: "Failed to fetch sellers" },
+      { status: 500 }
+    )
+  }
+}
+
+// Create new seller
+export async function POST(request: NextRequest) {
+  try {
+    // TODO: Need to authenticate for admin role in the future
+    
+    const body = await request.json()
+
+    // Validate request body using Zod schema
+    const validation = validateSellerData(body)
+    
+    if (!validation.success) {
+      return NextResponse.json(
+        { 
+          error: validation.error.message,
+          details: validation.error.details,
+          fields: validation.error.fields
+        },
+        { status: 400 }
+      )
+    }
+
+    const { name, url, isActive, affiliateTag, scrapingSources } = validation.data
+
+    // Check if seller with same name already exists
+    const existingSeller = await prisma.seller.findFirst({
+      where: { 
+        name: {
+          equals: name,
+          mode: 'insensitive'
+        }
+      }
+    })
+
+    if (existingSeller) {
+      return NextResponse.json(
+        { error: `Seller with name "${name}" already exists` },
+        { status: 409 }
+      )
+    }
+
+    // Create new seller without scraping sources (they will be added separately later)
+    const seller = await prisma.seller.create({
+      data: {
+        name: name.trim(),
+        url: url.trim(),
+        isActive: Boolean(isActive),
+        affiliateTag: affiliateTag || null,
+        autoScrapeInterval: 6, // Default 6 hours, can be updated later
+        status: 'pending', // Default status
+        lastScraped: null, // Will be set when first scrape happens
+        // Note: scrapingSources will be empty initially, admin can add them later
+      },
+      include: {
+        scrapingSources: true // Include empty scrapingSources in response
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: `Seller "${seller.name}" created successfully`,
+      data: seller
+    }, { status: 201 })
+
+  } catch (error) {
+    console.error("Error creating seller:", error)
+    return NextResponse.json(
+      { 
+        error: "Failed to create seller",
+        details: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     )
   }
