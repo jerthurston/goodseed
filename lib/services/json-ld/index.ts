@@ -31,8 +31,8 @@ export {
 export type { ScraperProduct } from './extractor';
 
 // Utilities (moved from hybrid-factory)
-export { 
-  testJsonLdAvailability,
-  generateScraperReport,
-  processUrlsBatch
-} from '../scraper/hybrid-utilities';
+// export { 
+//   testJsonLdAvailability,
+//   generateScraperReport,
+//   processUrlsBatch
+// } from '../auto-scraper/hybrid-utilities(legacy-code)';

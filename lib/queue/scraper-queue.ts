@@ -37,9 +37,20 @@ export interface ScraperJobData {
     scrapingSourceName: string;
     maxPage: number;
   }>;
-  // scraper source: 'vancouverseedbank' | 'sunwestgenetics' | 'cropkingseeds'
   mode: 'batch' | 'auto' | 'manual' | 'test';
   config: ScrapeJobConfig;
+}
+
+//interface cho repeat options - cho job lặp lại - dùng ở mode === auto
+export interface RepeatJobOptions {
+  repeat:{
+    cron?:string;
+    every?:number;
+    startDate?: Date | string | number;
+    endDate?: Date | string | number;
+    limit?: number;
+  };
+  jobId?:string; // Unique Id for repeat jobs
 }
 
 // Queue options
@@ -105,10 +116,14 @@ scraperQueue.on('active', (job) => {
 });
 
 /**
+ * Sử dụng cho manual scraper
  * Thêm Job vào hàng đợi queue, sau khi khởi tạo queue với các tùy chọn ở trên
  * Trả về một Promise chứa Bull Job instance để theo dõi
  */
-export async function addScraperJob(data: ScraperJobData): Promise<Job<ScraperJobData>> {
+export async function addScraperJob(
+  data: ScraperJobData,
+  repeatOptions?: RepeatJobOptions
+): Promise<Job<ScraperJobData>> {
   // Validate and sanitize all config values
   if (!Array.isArray(data.scrapingSources) || data.scrapingSources.length === 0) {
     // apiLogger.logError(`[Scraper Queue] Invalid scrapingSourceUrl: ${typeof data.config.scrapingSourceUrl}`, {})
@@ -126,31 +141,38 @@ export async function addScraperJob(data: ScraperJobData): Promise<Job<ScraperJo
     })),
     mode: data.mode,
     config: {
-      //mode ===  'batch' | 'test' | 'manual'
       startPage: data.config.startPage ? Number(data.config.startPage) : undefined,
       endPage: data.config.endPage ? Number(data.config.endPage) : undefined,
-      //mode ===  'auto'
       fullSiteCrawl: Boolean(data.config.fullSiteCrawl),
     }
   };
 
-  const job = await scraperQueue.add(cleanData, {
-    jobId: data.jobId, // Use our jobId as Bull job ID for easy tracking
-    priority: data.mode === 'manual' ? 10 : 5, // Manual jobs get higher priority
-  });
-
-  apiLogger.info(`[Scraper Queue] Added job ${job.id}`, {
+  // Prepare job options
+  let jobOptions = {
+    jobId: data.jobId,
+    priority: data.mode === 'manual' ? 10 : 5,
+  };
+  // Add repeat options if provided (for auto scraper)
+  if (repeatOptions) {
+    jobOptions = { ...jobOptions, ...repeatOptions };
+    // LOG repeat job creation
+    apiLogger.info(`[Scraper Queue] Created repeat job ${data.jobId}`, {
+      sellerId: cleanData.sellerId,
+      mode: cleanData.mode,
+      repeatOptions: repeatOptions.repeat
+    });
+  }
+  // Create job with jobOptions
+  const job = await scraperQueue.add(cleanData, jobOptions);
+  // LOG job creation
+  const logMessage = repeatOptions ? 'Created repeat job' : 'Added job';
+  apiLogger.info(`[Scraper Queue] ${logMessage} ${job.id}`, {
     sellerId: cleanData.sellerId,
     mode: cleanData.mode,
     urlsCount: cleanData.scrapingSources.length,
-    config: cleanData.config
+    config: cleanData.config,
+    isRepeat: !!repeatOptions
   });
-
-  //TODO:  Xem xét để chỉ trả về jobId và message – không expose full Job object
-  // return {
-  //   jobId: job.id,
-  //   message: 'Job queued successfully',
-  // };
 
   return job; 
   // sau khi thêm thông tin job vào hàng đợt queue bull, worker sẽ lấy job này để xử lý.
@@ -232,6 +254,48 @@ export async function cleanQueue(
   apiLogger.info(`[Scraper Queue] Cleaned old jobs (grace: ${graceMs}ms, types: ${types.join(', ')})`);
 }
 
+
+/**
+ * Remove scheduled repeat job với improved logic
+ */
+export async function unscheduleAutoScrapeJob(sellerId: string): Promise<void> {
+  try {
+    const repeatJobs = await scraperQueue.getRepeatableJobs();
+    
+    // Tìm tất cả jobs liên quan đến seller này
+    const sellerJobs = repeatJobs.filter(job => 
+      job.id === `auto_scrape_${sellerId}` || 
+      job.name === `auto-scrape-${sellerId}`
+    );
+    
+    // Remove tất cả jobs liên quan
+    for (const job of sellerJobs) {
+      await scraperQueue.removeRepeatableByKey(job.key);
+      apiLogger.info('[Scraper Queue] Removed repeat job', {
+        sellerId,
+        jobKey: job.key,
+        jobId: job.id,
+      });
+    }
+    
+    if (sellerJobs.length === 0) {
+      apiLogger.info('[Scraper Queue] No repeat jobs found for seller', { sellerId });
+    }
+    
+  } catch (error) {
+    apiLogger.logError('[Scraper Queue] Failed to unschedule auto job', error as Error, { sellerId });
+    throw error;
+  }
+}
+
+/**
+ * Get all scheduled auto jobs
+ */
+export async function getScheduledAutoJobs() {
+  return await scraperQueue.getRepeatableJobs();
+}
+
+
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   apiLogger.info('[Scraper Queue] Closing queue...');
@@ -242,5 +306,7 @@ process.on('SIGINT', async () => {
   apiLogger.info('[Scraper Queue] Received SIGINT – closing queue gracefully...');
   await scraperQueue.close();
 });
+
+
 
 export default scraperQueue;

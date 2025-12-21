@@ -62,6 +62,8 @@ export async function createManualScrapeJob({
         scrapingSources, 
         mode: 'manual', 
         config: { fullSiteCrawl, startPage, endPage } });
+
+        
     await addScraperJob({
         jobId,
         sellerId,

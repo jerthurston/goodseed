@@ -30,7 +30,7 @@
    Alert admin nếu fail (SNS/Slack)
  */
 
-   //NOTE: Không throw lỗi ở cấp worker, tránh crash app crawl, chỉ update scrapeJob để thông báo!
+//NOTE: Không throw lỗi ở cấp worker, tránh crash app crawl, chỉ update scrapeJob để thông báo!
 
 import { Job } from 'bull';
 import { prisma } from '@/lib/prisma';
@@ -38,6 +38,8 @@ import { ScraperJobData, scraperQueue } from '@/lib/queue/scraper-queue';
 import ScraperFactory, { ISaveDbService, SupportedScraperSourceName } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { ProductCardDataFromCrawling } from '@/types/crawl.type';
+import { AutoScraperScheduler } from '../services/auto-scraper/backend/auto-scraper-scheduler.service';
+import { initializeAutoScraperOnWorkerStart, cleanupAutoScraperOnWorkerShutdown } from '@/lib/helpers/server/initializeAutoScraperJobs';
 
 apiLogger.info('[Scraper Worker] Starting worker process...');
 
@@ -116,9 +118,9 @@ async function processScraperJob(job: Job<ScraperJobData>) {
     //Đếm số lượng scrapingSource
     const scrapingSourceCount = scrapingSources.length;
     // start from 10%
-    let currentProgress = 10; 
+    let currentProgress = 10;
     // Tính tiến độ trên mỗi source 80% for scraping (10% init, 10% save)
-    const progressPerSource = 80 / scrapingSourceCount; 
+    const progressPerSource = 80 / scrapingSourceCount;
 
     for (const [index, source] of scrapingSources.entries()) {
       try {
@@ -204,9 +206,9 @@ async function processScraperJob(job: Job<ScraperJobData>) {
     // await job.progress(70);
 
     const saveResult = await dbService.saveProductsToDatabase(aggregatedResult.products);
-    
+
     await job.progress(95);
-    
+
     apiLogger.debug('[DEBUG WORKER] Products saved', {
       jobId,
       status: aggregatedResult.errors === scrapingSourceCount ? 'FAILED' : 'COMPLETED',
@@ -286,26 +288,31 @@ scraperQueue.on('completed', (job, result) => {
 });
 
 scraperQueue.on('failed', (job, error) => {
-  apiLogger.logError(`[ERROR WORKER] Job ${job.id} failed:`, {error: error.message});
+  apiLogger.logError(`[ERROR WORKER] Job ${job.id} failed:`, { error: error.message });
 });
 
 scraperQueue.on('error', (error) => {
-  apiLogger.logError('[ERROR WORKER] Queue error:', {error});
+  apiLogger.logError('[ERROR WORKER] Queue error:', { error });
 });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  apiLogger.info('[INFO WORKER] Shutting down...');
+  apiLogger.info('[Scraper Worker] Received SIGTERM, shutting down gracefully...');
+  
+  await cleanupAutoScraperOnWorkerShutdown();
   await scraperQueue.close();
-  await prisma.$disconnect();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  apiLogger.info('[INFO WORKER] Shutting down...');
+  apiLogger.info('[Scraper Worker] Received SIGINT, shutting down gracefully...');
+  
+  await cleanupAutoScraperOnWorkerShutdown();
   await scraperQueue.close();
-  await prisma.$disconnect();
   process.exit(0);
 });
 
-apiLogger.info('[INFO WORKER] Worker ready, waiting for jobs...');
+apiLogger.info('[Scraper Worker] Worker ready, waiting for jobs...');
+
+// Server Startup Initialization cho auto scraper
+initializeAutoScraperOnWorkerStart();

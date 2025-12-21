@@ -1,5 +1,5 @@
 import { apiLogger } from "@/lib/helpers/api-logger";
-import { ScraperOperationService } from "@/lib/services/scraper-site/scraper-operation.service";
+import { ScraperOperationService } from "@/lib/services/manual-scraper/scraper-operation.service";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
