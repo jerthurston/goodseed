@@ -39,7 +39,7 @@ import ScraperFactory, { ISaveDbService, SupportedScraperSourceName } from '@/li
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { AutoScraperScheduler } from '../services/auto-scraper/backend/auto-scraper-scheduler.service';
-import { initializeAutoScraperOnWorkerStart, cleanupAutoScraperOnWorkerShutdown } from '@/lib/helpers/server/initializeAutoScraperJobs';
+import { initializeWorkerSync, cleanupWorkerSync } from '@/lib/workers/scraper-worker-startup';
 
 apiLogger.info('[Scraper Worker] Starting worker process...');
 
@@ -299,7 +299,7 @@ scraperQueue.on('error', (error) => {
 process.on('SIGTERM', async () => {
   apiLogger.info('[Scraper Worker] Received SIGTERM, shutting down gracefully...');
   
-  await cleanupAutoScraperOnWorkerShutdown();
+  await cleanupWorkerSync();
   await scraperQueue.close();
   process.exit(0);
 });
@@ -307,12 +307,12 @@ process.on('SIGTERM', async () => {
 process.on('SIGINT', async () => {
   apiLogger.info('[Scraper Worker] Received SIGINT, shutting down gracefully...');
   
-  await cleanupAutoScraperOnWorkerShutdown();
+  await cleanupWorkerSync();
   await scraperQueue.close();
   process.exit(0);
 });
 
 apiLogger.info('[Scraper Worker] Worker ready, waiting for jobs...');
 
-// Server Startup Initialization cho auto scraper
-initializeAutoScraperOnWorkerStart();
+// Comprehensive Worker Initialization
+initializeWorkerSync();

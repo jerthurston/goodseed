@@ -11,13 +11,14 @@ import {
   DashboardToggle,
   SellerCard,
   StatsOverview,
+  AutoScraperTabContent,
 } from "../(components)"
 
 import { type Seller } from "@/types/seller.type"
 import { SellerTransformer } from "@/lib/transfomers/seller.transformer"
 import { SellerUI } from "@/types/seller.type"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faHeart, faSearchDollar, faShieldAlt, faChartDiagram, faChartBar, faChartLine, faUser, faTools, faChevronDown, faChevronRight, faStore, faChevronUp } from '@fortawesome/free-solid-svg-icons'
+import { faHeart, faSearchDollar, faShieldAlt, faChartDiagram, faChartBar, faChartLine, faUser, faTools, faChevronDown, faChevronRight, faStore, faChevronUp, faRobot } from '@fortawesome/free-solid-svg-icons'
 import RecentActivity from "../(components)/DashboardOverview"
 import DashboardOverview from "../(components)/DashboardOverview"
 import DashboardSellersTabContent from "../(components)/DashboardSellersTabContent"
@@ -27,7 +28,7 @@ import { useRouter } from "next/navigation"
 import styles from "../(components)/dashboardAdmin.module.css"
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"sellers" | "scraper" | "overview">(
+  const [activeTab, setActiveTab] = useState<"sellers" | "scraper" | "overview" | "auto-scraper">(
     "overview"
   )
   const [isSellersExpanded, setIsSellersExpanded] = useState(false)
@@ -112,6 +113,15 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+          
+          <DashboardSidebarItem
+            icon={<FontAwesomeIcon icon={faRobot} className="text-lg"/>}
+            isActive={activeTab === "auto-scraper"}
+            onClick={() => setActiveTab("auto-scraper")}
+          >
+            Auto Scraper
+          </DashboardSidebarItem>
+          
           {/* <DashboardSidebarItem
             icon={<FontAwesomeIcon icon={faTools} className="text-lg"/>}
             isActive={activeTab === "scraper"}
@@ -141,6 +151,14 @@ export default function AdminDashboard() {
         {/* Sellers Management */}
         {activeTab === "sellers" && (
           <DashboardSellersTabContent
+            sellers={sellers}
+            refetchSellers={refetchSellers}
+          />
+        )}
+
+        {/* Auto Scraper Management */}
+        {activeTab === "auto-scraper" && (
+          <AutoScraperTabContent
             sellers={sellers}
             refetchSellers={refetchSellers}
           />

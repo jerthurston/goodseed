@@ -2,14 +2,16 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faArrowLeft, faStore, faEdit, faTrash, faEye, faPlay, faStop, faRefresh, faAdd } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faStore, faEdit, faTrash, faEye, faPlay, faStop, faRefresh, faAdd, faRobot } from '@fortawesome/free-solid-svg-icons'
 import {
   DashboardLayout,
   DashboardCard,
   DashboardButton,
   DashboardToggle,
 } from "../../../(components)"
+import { SellerAutoScraperCard, AutoScraperSection } from "@/components/custom/auto-scraper"
 import { useFetchSellerById } from "@/hooks/seller"
+import { useAutoScraper } from "@/hooks/admin/auto-scrape/useAutoScraper"
 import styles from "../../../(components)/dashboardAdmin.module.css"
 import Link from "next/link"
 import { Clock, PlayCircle } from "lucide-react"
@@ -31,6 +33,13 @@ export default function AdminSellerDetailPage() {
 
   // ALL HOOKS MUST BE CALLED AT THE TOP - BEFORE ANY CONDITIONAL RETURNS
   const { seller, isLoading, isError, error } = useFetchSellerById(sellerId)
+  
+  // Auto scraper hook for enhanced functionality
+  const {
+    startSellerAutoScraper,
+    stopSellerAutoScraper,
+    isLoading: isAutoScraperLoading,
+  } = useAutoScraper()
 
   // TODO: Cần thiết lập lại hàm refetchScraperSites cho đúng
   const refetchScraperSites = () => {
@@ -290,6 +299,20 @@ export default function AdminSellerDetailPage() {
             </DashboardButton>
           </div>
         </DashboardCard>
+
+        {/*--> AUTO SCRAPER MANAGEMENT SECTION */}
+        <AutoScraperSection 
+          seller={{
+            id: currentSeller.id,
+            name: currentSeller.name,
+            isAutoEnabled: currentSeller.isAutoEnabled,
+            autoScrapeInterval: currentSeller.autoScrapeInterval
+          }}
+          onRefresh={() => {
+            // This will trigger a refetch of seller data
+            window.location.reload(); // Simple refresh for now
+          }}
+        />
 
         {/*--> SELLER INFORMATION CARD */}
         <DashboardCard>

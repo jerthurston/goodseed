@@ -45,4 +45,5 @@ export { ActionSellerCardBtn } from "./ActionSellerCardBtn"
 
 //Defautl component export
 export { default as DashboardOverview } from "./DashboardOverview"
+export { default as AutoScraperTabContent } from "./AutoScraperTabContent"
 

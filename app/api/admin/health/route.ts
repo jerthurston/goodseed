@@ -44,7 +44,7 @@ export async function GET() {
         const redisStart = Date.now();
         try {
             const redis = new Redis({
-                host: process.env.REDIS_HOST || 'redis',
+                host: process.env.REDIS_HOST || 'localhost',
                 port: parseInt(process.env.REDIS_PORT || '6379'),
                 password: process.env.REDIS_PASSWORD,
                 retryStrategy: () => null, // Don't retry for health check
