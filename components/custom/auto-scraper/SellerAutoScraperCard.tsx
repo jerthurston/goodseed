@@ -4,6 +4,7 @@ import { DashboardToggle } from '@/app/dashboard/(components)/DashboardToggle';
 import { DashboardCard, DashboardCardHeader } from '@/app/dashboard/(components)/DashboardCard';
 import AutoScraperStatusBadge from './AutoScraperStatusBadge';
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
+import { apiLogger } from '@/lib/helpers/api-logger';
 
 interface SellerAutoScraperCardProps {
   sellerId: string;
@@ -31,7 +32,7 @@ export default function SellerAutoScraperCard({
   // Auto scraper is "enabled" if autoScrapeInterval is set (> 0)
   const isAutoEnabled = autoScrapeInterval != null && autoScrapeInterval > 0;
   
-  console.log('SellerAutoScraperCard render:', { 
+  apiLogger.debug('SellerAutoScraperCard render:', { 
     sellerId, 
     sellerName, 
     autoScrapeInterval, 
@@ -79,7 +80,7 @@ export default function SellerAutoScraperCard({
                 Interval:
               </span>
               <select
-                value={autoScrapeInterval || 24}
+                value={autoScrapeInterval || 8}
                 onChange={(e) => {
                   if (onIntervalChange) {
                     onIntervalChange(sellerId, Number(e.target.value));
@@ -88,9 +89,9 @@ export default function SellerAutoScraperCard({
                 disabled={isLoading || isRunning}
                 className={styles.selectInterval}
               >
-                <option value={1}>Every 1 hour</option>
-                <option value={2}>Every 2 hours</option>
-                <option value={4}>Every 4 hours</option>
+                {/* <option value={1}>Every 1 hour</option> */}
+                {/* <option value={2}>Every 2 hours</option> */}
+                {/* <option value={4}>Every 4 hours</option> */}
                 <option value={6}>Every 6 hours</option>
                 <option value={8}>Every 8 hours</option>
                 <option value={12}>Every 12 hours</option>

@@ -145,7 +145,7 @@ model Seller {
   name String @unique // "Seed Supreme", "ILGM"
   url  String // Homepage URL Seller
   affiliateTag       String? // Affiliate tag để tạo commission URL
-  isActive           Boolean   @default(true) // Kill switch để ẩn seller
+  isActive           Boolean   @default(true) // Kill switch để ẩn cách products của seller ở trang seed
   autoScrapeInterval Int?      @default(6) // Auto scrape interval in hours
 
   lastScraped        DateTime? //TODO: có thể để scrapeLog quản lý luôn

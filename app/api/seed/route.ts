@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
                 page,
                 limit,
                 sortBy,
+                filterActiveSellers: true, // Log that we're filtering active sellers only
             }
         );
         //3. Tính skip cho pagination
@@ -55,6 +56,15 @@ export async function GET(req: NextRequest) {
         //4. Xây dựng điều kiện lọc (where) cho prisma query
         const whereClause: Prisma.SeedProductWhereInput = {
             AND: [
+                // Filter: Only show products from active sellers
+                {
+                    category: {
+                        seller: {
+                            isActive: true
+                        }
+                    }
+                },
+
                 //search keyword
                 search ? {
                     OR: [
@@ -130,6 +140,7 @@ export async function GET(req: NextRequest) {
                             id: true,
                             name: true,
                             url: true,
+                            isActive: true, // Add isActive to verify filtering
                         }
                     }
                 }
@@ -158,16 +169,26 @@ export async function GET(req: NextRequest) {
         let seeds = await prisma.seedProduct.findMany({
             where: whereClause,
             orderBy,
-            include: inCludeClause
+            include: inCludeClause,
         });
 
         const totalBeforeFilter = seeds.length;
 
-        apiLogger.debug('[API /seed] Query results before price filter:', {
+        apiLogger.debug('[API /seed] Query results after active sellers filter:', {
             totalSeeds: totalBeforeFilter,
+            activeSellersOnly: true,
             minPrice,
             maxPrice,
         });
+
+        // Verify all returned seeds have active sellers (debug logging)
+        if (totalBeforeFilter > 0) {
+            apiLogger.debug('[API /seed] ✅ Query completed with active sellers filter', {
+                totalProducts: totalBeforeFilter,
+                sampleCategoryId: seeds[0]?.categoryId,
+                activeSellerFilterApplied: true
+            });
+        }
 
         // 8. Filter out seeds without pricing first
         seeds = seeds.filter(seed => seed.pricings.length > 0);

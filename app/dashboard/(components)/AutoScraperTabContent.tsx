@@ -11,6 +11,7 @@ import {
 } from '@/components/custom/auto-scraper';
 import { DashboardCard, DashboardCardHeader } from './DashboardCard';
 import styles from './dashboardAdmin.module.css';
+import { apiLogger } from '@/lib/helpers/api-logger';
 
 interface AutoScraperTabContentProps {
   sellers: SellerUI[];
@@ -158,7 +159,7 @@ export default function AutoScraperTabContent({
       // Success toast is handled by mutation's onSuccess
       toast.dismiss(loadingToast);
     } catch (error) {
-      console.error(`Seller toggle failed for ${sellerId}:`, error);
+      apiLogger.logError(`Seller toggle failed for ${sellerId}:`, error as Error);
       
       // Error toast is handled by mutation's onError
       const seller = sellers.find(s => s.id === sellerId);
@@ -182,7 +183,7 @@ export default function AutoScraperTabContent({
       refreshJobStats();
     } catch (error) {
       // Error already handled by mutation's onError
-      console.error('Interval change failed:', error);
+      apiLogger.logError('Interval change failed:', error as Error);
     }
   };
 

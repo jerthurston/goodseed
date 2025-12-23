@@ -121,14 +121,6 @@ export default function AdminDashboard() {
           >
             Auto Scraper
           </DashboardSidebarItem>
-          
-          {/* <DashboardSidebarItem
-            icon={<FontAwesomeIcon icon={faTools} className="text-lg"/>}
-            isActive={activeTab === "scraper"}
-            onClick={() => setActiveTab("scraper")}
-          >
-            Scrapers
-          </DashboardSidebarItem> */}
         </DashboardSidebar>
       }
     >
@@ -163,14 +155,7 @@ export default function AdminDashboard() {
             refetchSellers={refetchSellers}
           />
         )}
-
-        {/* Scraper Management */}
-        {/* {activeTab === "scraper" && (
-          <DashboardScraperSitesTabContent
-            scraperSites={scraperSites}
-            refetchScraperSites={refetchScraperSites}
-          />
-        )} */}
+       
         </div>
       )}
     </DashboardLayout>

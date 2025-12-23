@@ -115,12 +115,12 @@ export function useAutoScraper() {
       const sellerName = data.data?.name || 'seller';
       
       if (interval === null) {
-        toast.success(`🛑 Disabled auto scraper for ${sellerName}`, {
-          description: 'Auto scraping đã được tắt cho seller này.'
+        toast.success(`🛑 Auto scraper disabled for ${sellerName}`, {
+          description: 'Auto scraping has been disabled for this seller.'
         });
       } else {
-        toast.success(`✅ Enabled auto scraper for ${sellerName}`, {
-          description: `Interval đã được set to ${interval} hours. Use "Start All Auto Scrape" to activate.`
+        toast.success(`✅ Auto scraper interval updated for ${sellerName}`, {
+          description: `Interval set to ${interval} hours. Use "Start All Auto Scrapers" to activate the schedule.`
         });
       }
       
@@ -131,8 +131,8 @@ export function useAutoScraper() {
     },
     onError: (error, variables) => {
       const { sellerId, interval } = variables;
-      toast.error('❌ Failed to update auto scrape setting', {
-        description: error instanceof Error ? error.message : 'Check server logs for details'
+      toast.error('❌ Failed to update auto scraper interval', {
+        description: error instanceof Error ? error.message : 'Please check server logs for details'
       });
       console.error('Update seller interval error:', error, { sellerId, interval });
     },
