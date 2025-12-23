@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useAutoScraper } from '@/hooks/admin/auto-scrape/useAutoScraper';
 import { useBulkAutoScraperStatus } from '@/hooks/admin/auto-scrape/useAutoScraperStatus';
+import { useJobStatistics } from '@/hooks/admin/auto-scrape/useJobStatistics';
 import { SellerUI } from '@/types/seller.type';
 import { 
   AutoScraperControlPanel, 
@@ -24,6 +26,7 @@ export default function AutoScraperTabContent({
     stopAllAutoScraper,
     startSellerAutoScraper,
     stopSellerAutoScraper,
+    updateSellerInterval,
     isLoading,
     isBulkOperationLoading,
   } = useAutoScraper();
@@ -35,13 +38,34 @@ export default function AutoScraperTabContent({
     refreshAllStatus 
   } = useBulkAutoScraperStatus();
 
+  // Real-time job statistics monitoring
+  const { 
+    jobStats, 
+    isLoading: isJobStatsLoading,
+    refreshJobStats 
+  } = useJobStatistics();
+
   // Calculate stats với real-time data or fallback to sellers data
   const autoScraperStats = {
     totalSellers: autoScraperStatus?.data?.totalSellers || sellers.length,
     activeSellers: autoScraperStatus?.data?.activeSellers || sellers.filter(s => s.isAutoEnabled).length,
-    pendingJobs: autoScraperStatus?.data?.pendingJobs || 0,
-    lastRun: autoScraperStatus?.data?.lastBulkRun ? new Date(autoScraperStatus.data.lastBulkRun) : undefined,
+    jobCounts: jobStats?.data?.jobCounts || {
+      CREATED: 0,
+      WAITING: 0,
+      DELAYED: 0,
+      ACTIVE: 0,
+      COMPLETED: 0,
+      FAILED: 0,
+      CANCELLED: 0,
+      SCHEDULED: 0
+    },
+    summary: jobStats?.data?.summary,
+    lastRun: jobStats?.data?.lastRun ? new Date(jobStats.data.lastRun) : undefined,
+    nextScheduledRun: jobStats?.data?.nextScheduledRun ? new Date(jobStats.data.nextScheduledRun) : undefined,
   };
+
+  // Get number of active auto-scrapers from stats
+  const activeAutoScrapers = jobStats?.data?.summary?.activeAutoScrapers || 0;
 
   // Extract seller statuses from bulk status data
   const sellerStatuses = autoScraperStatus?.data?.sellers || {};
@@ -53,7 +77,33 @@ export default function AutoScraperTabContent({
 
   const handleBulkAction = async (action: 'start' | 'stop') => {
     try {
+      // Check for eligible sellers before starting auto scraper
       if (action === 'start') {
+        const eligibleSellers = sellers.filter(s => s.isActive && s.autoScrapeInterval && s.autoScrapeInterval > 0);
+        
+        if (eligibleSellers.length === 0) {
+          toast.warning('⚠️ No sellers configured for auto scraping', {
+            description: 'Please enable auto scraping for individual sellers first. Go to seller details to configure auto scrape intervals.',
+            duration: 8000,
+            action: {
+              label: 'View Sellers',
+              onClick: () => {
+                // Could redirect to sellers page or scroll to seller management
+                const element = document.querySelector('[data-testid="seller-management"]');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' });
+                }
+              }
+            }
+          });
+          return; // Early return without proceeding
+        }
+        
+        toast.info(`🚀 Starting auto scraper for ${eligibleSellers.length} eligible sellers...`, {
+          description: 'Previous auto jobs will be cancelled and rescheduled. This may temporarily increase cancelled job count.',
+          duration: 4000
+        });
+        
         await startAllAutoScraper.mutateAsync();
       } else {
         await stopAllAutoScraper.mutateAsync();
@@ -62,17 +112,26 @@ export default function AutoScraperTabContent({
       // Force multiple refreshes to ensure data consistency
       await Promise.all([
         refetchSellers(), // Refresh sellers data
-        refreshAllStatus() // Refresh auto scraper status  
+        refreshAllStatus(), // Refresh auto scraper status  
+        refreshJobStats() // Refresh job statistics
       ]);
       
       // Add a delayed refresh to handle potential race conditions
       setTimeout(() => {
         refetchSellers();
         refreshAllStatus();
+        refreshJobStats();
       }, 1000);
       
     } catch (error) {
       console.error(`Bulk ${action} failed:`, error);
+      
+      // Enhanced error handling with toast
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`❌ Failed to ${action} auto scraper`, {
+        description: errorMessage,
+        duration: 6000
+      });
     }
   };
 
@@ -81,24 +140,56 @@ export default function AutoScraperTabContent({
       const seller = sellers.find(s => s.id === sellerId);
       if (!seller) return;
       
-      const action = seller.isAutoEnabled ? 'stop' : 'start';
+      // Determine new interval value
+      const newInterval = seller.autoScrapeInterval && seller.autoScrapeInterval > 0 ? null : 24; // Default to 24 hours
+      const action = newInterval ? 'enable' : 'disable';
       
-      if (action === 'start') {
-        await startSellerAutoScraper.mutateAsync(sellerId);
-      } else {
-        await stopSellerAutoScraper.mutateAsync(sellerId);
-      }
-      refetchSellers(); // Refresh sellers data  
-      refreshAllStatus(); // Refresh auto scraper status
+      // Show loading toast
+      const loadingToast = toast.loading(`${action === 'enable' ? 'Enabling' : 'Disabling'} auto scraper for ${seller.name}...`);
+      
+      // Update seller's autoScrapeInterval
+      await updateSellerInterval.mutateAsync({ sellerId, interval: newInterval });
+      
+      // Refresh data
+      refetchSellers();
+      refreshAllStatus();
+      refreshJobStats();
+      
+      // Success toast is handled by mutation's onSuccess
+      toast.dismiss(loadingToast);
     } catch (error) {
       console.error(`Seller toggle failed for ${sellerId}:`, error);
+      
+      // Error toast is handled by mutation's onError
+      const seller = sellers.find(s => s.id === sellerId);
+      toast.error(`❌ Failed to ${seller?.autoScrapeInterval ? 'disable' : 'enable'} auto scraper for ${seller?.name || 'seller'}`, {
+        duration: 6000
+      });
+    }
+  };
+
+  const handleIntervalChange = async (sellerId: string, interval: number) => {
+    try {
+      const seller = sellers.find(s => s.id === sellerId);
+      if (!seller) return;
+
+      // Use the actual API mutation
+      await updateSellerInterval.mutateAsync({ sellerId, interval });
+
+      // Refresh data
+      refetchSellers();
+      refreshAllStatus();
+      refreshJobStats();
+    } catch (error) {
+      // Error already handled by mutation's onError
+      console.error('Interval change failed:', error);
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Real-time Status Indicator */}
-      {isStatusLoading && (
+      {(isStatusLoading || isJobStatsLoading) && (
         <div className="text-center py-2">
           <div 
             className="inline-flex items-center gap-2 px-3 py-1 text-sm font-['Poppins']"
@@ -111,20 +202,25 @@ export default function AutoScraperTabContent({
       )}
       
       {/* Auto Scraper Overview */}
-      <AutoScraperOverview stats={autoScraperStats} />
+      <AutoScraperOverview 
+        stats={autoScraperStats} 
+        isLoading={isStatusLoading || isJobStatsLoading}
+      />
       
       {/* Bulk Control Panel */}
       <AutoScraperControlPanel
         totalSellers={sellers.length}
         activeSellers={activeSellers}
+        activeAutoScrapers={activeAutoScrapers}
         onBulkAction={handleBulkAction}
         isLoading={isBulkOperationLoading}
       />
       
       {/* Individual Seller Controls */}
-      <DashboardCard className={styles.card}>
+      <DashboardCard className={styles.card} data-testid="seller-management">
         <DashboardCardHeader className={styles.cardHeader}>
-          <h3 
+         <div className='flex flex-col justify-start'>
+           <h3 
             className="text-lg font-semibold font-['Poppins']"
             style={{ color: 'var(--text-primary)' }}
           >
@@ -134,23 +230,27 @@ export default function AutoScraperTabContent({
             className="text-sm font-['Poppins']"
             style={{ color: 'var(--text-primary-muted)' }}
           >
-            Configure auto scraping for each seller individually
+            Configure auto scraping for each seller individually. Enable auto scraping here to use the "Start All" feature above.
           </p>
+         </div>
         </DashboardCardHeader>
         
         <div className={styles.cardBody}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {sellers.map((seller) => {
               const sellerStatus = sellerStatuses[seller.id];
+              
               return (
                 <SellerAutoScraperCard
                   key={seller.id}
                   sellerId={seller.id}
                   sellerName={seller.name}
-                  isScheduled={seller.isAutoEnabled || false}
+                  isScheduled={seller.autoScrapeInterval != null && seller.autoScrapeInterval > 0}
                   isRunning={sellerStatus?.isRunning || false}
                   nextRun={sellerStatus?.nextScheduledRun}
+                  autoScrapeInterval={seller.autoScrapeInterval}
                   onToggle={() => handleSellerToggle(seller.id)}
+                  onIntervalChange={handleIntervalChange}
                   isLoading={isLoading || isStatusLoading}
                 />
               );
@@ -163,6 +263,20 @@ export default function AutoScraperTabContent({
               style={{ color: 'var(--text-primary-muted)' }}
             >
               No sellers found. Add sellers first to enable auto scraping.
+            </div>
+          )}
+          
+          {sellers.length > 0 && sellers.every(s => !s.autoScrapeInterval || s.autoScrapeInterval <= 0) && (
+            <div 
+              className="text-center py-6 px-4 rounded-lg border border-amber-200 bg-amber-50 mt-4"
+            >
+              <div className="text-amber-800 font-medium mb-2">
+                ⚠️ Auto Scraping Not Configured
+              </div>
+              <div className="text-amber-700 text-sm">
+                None of your sellers have auto scraping intervals configured. 
+                Please go to individual seller detail pages to set up auto scraping schedules.
+              </div>
             </div>
           )}
         </div>

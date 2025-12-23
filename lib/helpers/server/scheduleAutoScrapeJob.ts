@@ -20,23 +20,40 @@ interface CreateScheduleAutoScrapeJobProps {
 }
 
 /**
+ * Auto Scraper Schedule Configuration
+ * Thay đổi các giá trị này để điều chỉnh lịch chạy auto scraper
+ */
+const AUTO_SCRAPER_SCHEDULE = {
+    MINUTE: 45,     // Phút (0-59) - hiện tại: 45 phút
+    HOUR: 15,       // Giờ cho daily job (0-23) - hiện tại: 15 (3 PM Edmonton)
+    HOURS: {
+        MORNING: 3,     // 3 AM
+        AFTERNOON: 15,  // 3 PM
+        EVENING: 19,    // 7 PM
+        NIGHT: 23      // 11 PM
+    }
+};
+
+/**
  * Generate cron pattern từ autoScrapeInterval (hours)
  */
 function generateCronPattern(intervalHours: number): string {
-    // Chạy vào giờ ít traffic (2:00 AM) và mỗi interval hours
+    const { MINUTE, HOUR, HOURS } = AUTO_SCRAPER_SCHEDULE;
+    
+    // TEST: Chạy lúc 15:45 (3:45 PM Edmonton time) để test auto scraper
     if (intervalHours === 24) {
-        return '0 2 * * *'; // Daily lúc 2:00 AM
+        return `${MINUTE} ${HOUR} * * *`; // Daily lúc 3:45 PM for testing
     } else if (intervalHours === 12) {
-        return '0 2,14 * * *'; // 2:00 AM và 2:00 PM
+        return `${MINUTE} ${HOURS.MORNING},${HOURS.AFTERNOON} * * *`; // 3:45 AM và 3:45 PM
     } else if (intervalHours === 8) {
-        return '0 2,10,18 * * *'; // 2:00 AM, 10:00 AM, 6:00 PM
+        return `${MINUTE} ${HOURS.MORNING},11,${HOURS.EVENING} * * *`; // 3:45 AM, 11:45 AM, 7:45 PM
     } else if (intervalHours === 6) {
-        return '0 */6 * * *'; // Every 6 hours starting từ midnight
+        return `${MINUTE} */${intervalHours} * * *`; // Every 6 hours starting từ 45 minutes
     } else if (intervalHours === 4) {
-        return '0 2,6,10,14,18,22 * * *'; // Every 4 hours, avoiding peak hours
+        return `${MINUTE} ${HOURS.MORNING},7,11,${HOURS.AFTERNOON},${HOURS.EVENING},${HOURS.NIGHT} * * *`; // Every 4 hours at 45 minutes
     } else {
         // Fallback cho các interval khác
-        return `0 */${intervalHours} * * *`;
+        return `${MINUTE} */${intervalHours} * * *`;
     }
 }
 
@@ -61,7 +78,9 @@ export async function createScheduleAutoScrapeJob({
             throw new Error('No scraping sources provided');
         }
 
-        // IMPORTANT: sử dụng unscheduleAutoScrapeJob để hủy bỏ job cũ
+        // IMPORTANT: Cleanup any existing auto jobs before scheduling new ones
+        // This will cause old jobs to be marked as CANCELLED in database for clean state
+        apiLogger.info('[Schedule Auto Job] Cleaning up existing auto jobs', { sellerId, sellerName });
         await unscheduleAutoScrapeJob(sellerId);
 
         // Tạo job vào database cho bảng model Scrape phục vụ cho monitoring
@@ -71,7 +90,7 @@ export async function createScheduleAutoScrapeJob({
             data: {
                 jobId,
                 sellerId,
-                status: "PENDING",
+                status: "CREATED", // Job được tạo trong database, chưa vào queue
                 mode: "auto",
                 targetCategoryId,
                 currentPage: 0,

@@ -86,7 +86,7 @@ export async function POST(
       where: {
         sellerId,
         status: {
-          in: ['PENDING', 'IN_PROGRESS']
+          in: ['WAITING', 'ACTIVE']
         }
       }
     });
@@ -203,7 +203,7 @@ export async function GET(
 
     // Check active jobs
     const activeJob = seller.scrapeJobs.find(job => 
-      job.status === 'PENDING' || job.status === 'IN_PROGRESS'
+      job.status === 'WAITING' || job.status === 'ACTIVE'
     );
 
     return NextResponse.json({

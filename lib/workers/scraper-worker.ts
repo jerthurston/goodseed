@@ -34,6 +34,7 @@
 
 import { Job } from 'bull';
 import { prisma } from '@/lib/prisma';
+import { ScrapeJobStatus } from '@prisma/client';
 import { ScraperJobData, scraperQueue } from '@/lib/queue/scraper-queue';
 import ScraperFactory, { ISaveDbService, SupportedScraperSourceName } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
@@ -73,7 +74,7 @@ async function processScraperJob(job: Job<ScraperJobData>) {
     await prisma.scrapeJob.update({
       where: { jobId },
       data: {
-        status: 'IN_PROGRESS',
+        status: ScrapeJobStatus.ACTIVE, // Job đang chạy
         startedAt: new Date(),
       },
     });
@@ -223,7 +224,7 @@ async function processScraperJob(job: Job<ScraperJobData>) {
     await prisma.scrapeJob.update({
       where: { jobId },
       data: {
-        status: aggregatedResult.errors === scrapingSourceCount ? 'FAILED' : 'COMPLETED', // FAILED nếu all sources fail
+        status: aggregatedResult.errors === scrapingSourceCount ? ScrapeJobStatus.FAILED : ScrapeJobStatus.COMPLETED, // FAILED nếu all sources fail
         completedAt: new Date(),
         totalPages: aggregatedResult.totalPages,
         productsScraped: aggregatedResult.totalProducts,
@@ -234,8 +235,8 @@ async function processScraperJob(job: Job<ScraperJobData>) {
       },
     });
 
-    // 6. Log activity
-    await dbService.logScrapeActivity(sellerId, aggregatedResult.errors === 0 ? 'success' : 'partial_success', aggregatedResult.totalProducts, aggregatedResult.duration);
+    // 6. Log activity - TEMP DISABLED for testing
+    // await dbService.logScrapeActivity(sellerId, aggregatedResult.errors === 0 ? 'success' : 'partial_success', aggregatedResult.totalProducts, aggregatedResult.duration);
 
     await job.progress(100);
 
@@ -261,17 +262,17 @@ async function processScraperJob(job: Job<ScraperJobData>) {
     await prisma.scrapeJob.update({
       where: { jobId },
       data: {
-        status: 'FAILED',
+        status: ScrapeJobStatus.FAILED,
         completedAt: new Date(),
         errorMessage,
         errorDetails: error instanceof Error ? { stack: error.stack } : undefined,
       },
     });
     // dbService = new ScraperFactory(prisma).createSaveDbService(scraperSourceName as SupportedScraperSourceName);
-    // Log failed activity
-    if (dbService) {
-      await dbService.logScrapeActivity(sellerId, 'error', 0, 0);
-    }
+    // Log failed activity - TEMP DISABLED for testing
+    // if (dbService) {
+    //   await dbService.logScrapeActivity(sellerId, 'error', 0, 0);
+    // }
 
     throw error; // Re-throw for Bull to handle retry
   }

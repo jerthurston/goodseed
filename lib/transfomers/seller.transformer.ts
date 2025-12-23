@@ -45,6 +45,8 @@ export class SellerTransformer {
       url: raw.url,
       isActive: raw.isActive,
       lastScraped,
+      autoScrapeInterval: raw.autoScrapeInterval,
+      isAutoEnabled: raw.autoScrapeInterval != null && raw.autoScrapeInterval > 0,
       stats: {
         successRate,
         productsScraped: totalProductsScraped,

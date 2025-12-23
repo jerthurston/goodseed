@@ -38,6 +38,7 @@ export default function AdminSellerDetailPage() {
   const {
     startSellerAutoScraper,
     stopSellerAutoScraper,
+    updateSellerInterval,
     isLoading: isAutoScraperLoading,
   } = useAutoScraper()
 
@@ -50,16 +51,7 @@ export default function AdminSellerDetailPage() {
     triggerManualScrape,
     isTriggering,
     triggerError,
-    activeJobs,
-
-    toggleAutoScrape,
-    isToggling,
-    toggleError,
-
-    updateInterval,
-    isUpdatingInterval,
-    updateIntervalError
-
+    activeJobs
   } = useScraperOperations(refetchScraperSites)
 
   // Modal states
@@ -130,13 +122,36 @@ export default function AdminSellerDetailPage() {
     }
   }
 
-  const handleToggleAutoScrape = async (id: string, currentState: boolean) => {
+  const handleToggleAutoScrape = async (sellerId: string, currentIsAutoEnabled: boolean) => {
     try {
-      await toggleAutoScrape(id, currentState);
-      toast.success(`Auto scrape ${!currentState ? 'enabled' : 'disabled'}`);
+      if (currentIsAutoEnabled) {
+        // Disable: set autoScrapeInterval to null
+        await updateSellerInterval.mutateAsync({
+          sellerId,
+          interval: null
+        });
+      } else {
+        // Enable: set autoScrapeInterval to default 24 hours
+        await updateSellerInterval.mutateAsync({
+          sellerId,
+          interval: 24
+        });
+      }
     } catch (error) {
       apiLogger.logError("Error toggling auto scrape:", { error });
-      toast.error(`Error toggling auto scrape for ${id}`);
+      toast.error(`Failed to ${currentIsAutoEnabled ? 'disable' : 'enable'} auto scrape`);
+    }
+  }
+
+  const handleIntervalChange = async (sellerId: string, interval: number) => {
+    try {
+      await updateSellerInterval.mutateAsync({
+        sellerId,
+        interval
+      });
+    } catch (error) {
+      apiLogger.logError("Error updating interval:", { error });
+      toast.error("Failed to update scraping interval");
     }
   }
 
@@ -226,6 +241,7 @@ export default function AdminSellerDetailPage() {
               label="Auto Scrape"
               isActive={currentSeller.isAutoEnabled}
               onChange={() => handleToggleAutoScrape(currentSeller.id, currentSeller.isAutoEnabled)}
+              disabled={updateSellerInterval.isPending}
             />
 
             {currentSeller.isAutoEnabled && (
@@ -234,13 +250,9 @@ export default function AdminSellerDetailPage() {
                   Interval:
                 </span>
                 <select
-                  value={currentSeller.autoScrapeInterval || 6}
-                  onChange={(e) =>
-                    updateInterval(currentSeller.id, {
-                      isAutoEnabled: currentSeller.isAutoEnabled,
-                      autoScrapeInterval: Number(e.target.value)
-                    })
-                  }
+                  value={currentSeller.autoScrapeInterval || 24}
+                  onChange={(e) => handleIntervalChange(currentSeller.id, Number(e.target.value))}
+                  disabled={updateSellerInterval.isPending}
                   className={style.selectInterval}
                 >
                   <option value={1}>Every 1 hour</option>

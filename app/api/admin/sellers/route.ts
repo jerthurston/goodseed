@@ -15,7 +15,12 @@ export async function GET() {
 
     // Get sellers with scrape logs and jobs data
     const sellers = await prisma.seller.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        url: true,
+        isActive: true,
+        autoScrapeInterval: true,
         scrapeLogs: {
           orderBy: { timestamp: "desc" },
           take: 1, // Get latest scrape log

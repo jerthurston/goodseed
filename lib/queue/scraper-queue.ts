@@ -295,6 +295,60 @@ export async function getScheduledAutoJobs() {
   return await scraperQueue.getRepeatableJobs();
 }
 
+/**
+ * Get comprehensive queue statistics including both immediate and repeat jobs
+ */
+export async function getQueueStatistics() {
+  try {
+    const [waiting, active, completed, failed, delayed, repeatJobs] = await Promise.all([
+      scraperQueue.getWaiting(),
+      scraperQueue.getActive(),
+      scraperQueue.getCompleted(),
+      scraperQueue.getFailed(), 
+      scraperQueue.getDelayed(),
+      scraperQueue.getRepeatableJobs()
+    ]);
+
+    // Count auto-scraper repeat jobs (filter by job ID pattern)
+    const autoScraperRepeatJobs = repeatJobs.filter(job => 
+      job.id && (job.id.includes('auto_scrape_') || job.id.includes('auto_'))
+    );
+
+    const stats = {
+      immediate: {
+        waiting: waiting.length,
+        active: active.length,
+        completed: completed.length,
+        failed: failed.length,
+        delayed: delayed.length,
+        total: waiting.length + active.length + completed.length + failed.length + delayed.length
+      },
+      scheduled: {
+        repeatJobs: repeatJobs.length,
+        autoScraperJobs: autoScraperRepeatJobs.length,
+        totalScheduled: repeatJobs.length
+      },
+      combined: {
+        totalJobs: waiting.length + active.length + completed.length + failed.length + delayed.length + repeatJobs.length,
+        activeAutoScrapers: autoScraperRepeatJobs.length,
+        pendingJobs: waiting.length + delayed.length
+      }
+    };
+
+    apiLogger.info('[Scraper Queue] Queue statistics fetched', {
+      immediate: stats.immediate.total,
+      scheduled: stats.scheduled.totalScheduled,
+      autoScrapers: stats.scheduled.autoScraperJobs
+    });
+
+    return stats;
+
+  } catch (error) {
+    apiLogger.logError('[Scraper Queue] Failed to fetch queue statistics', error as Error);
+    throw error;
+  }
+}
+
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {

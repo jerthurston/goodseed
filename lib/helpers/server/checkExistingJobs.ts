@@ -5,7 +5,7 @@ export async function checkExistingJobs (sellerId:string, sellerName:string) {
         where:{
             sellerId,
             mode: 'manual',
-            status: { in: ['PENDING', 'IN_PROGRESS']}
+            status: { in: ['CREATED', 'WAITING', 'DELAYED', 'ACTIVE']}
         }
     });
 

@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStore, faClock, faPlay, faStop, faCog } from '@fortawesome/free-solid-svg-icons';
-import { DashboardButton } from '@/app/dashboard/(components)/DashboardButton';
+import { faStore, faClock } from '@fortawesome/free-solid-svg-icons';
+import { DashboardToggle } from '@/app/dashboard/(components)/DashboardToggle';
 import { DashboardCard, DashboardCardHeader } from '@/app/dashboard/(components)/DashboardCard';
 import AutoScraperStatusBadge from './AutoScraperStatusBadge';
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
@@ -11,7 +11,9 @@ interface SellerAutoScraperCardProps {
   isScheduled: boolean;
   isRunning?: boolean;
   nextRun?: Date;
+  autoScrapeInterval?: number | null;
   onToggle: () => void;
+  onIntervalChange?: (sellerId: string, interval: number) => void;
   isLoading: boolean;
 }
 
@@ -21,9 +23,21 @@ export default function SellerAutoScraperCard({
   isScheduled,
   isRunning = false,
   nextRun,
+  autoScrapeInterval,
   onToggle,
+  onIntervalChange,
   isLoading
 }: SellerAutoScraperCardProps) {
+  // Auto scraper is "enabled" if autoScrapeInterval is set (> 0)
+  const isAutoEnabled = autoScrapeInterval != null && autoScrapeInterval > 0;
+  
+  console.log('SellerAutoScraperCard render:', { 
+    sellerId, 
+    sellerName, 
+    autoScrapeInterval, 
+    isAutoEnabled,
+    isScheduled 
+  });
   return (
     <DashboardCard className={styles.card}>
       <div className="space-y-4">
@@ -43,56 +57,68 @@ export default function SellerAutoScraperCard({
             </span>
           </div>
           <AutoScraperStatusBadge 
-            isScheduled={isScheduled}
-            isRunning={isRunning}
+            status={isRunning ? 'ACTIVE' : (isScheduled ? 'SCHEDULED' : 'CANCELLED')}
             nextRun={nextRun}
           />
         </div>
 
-        {/* Schedule Information */}
-        {isScheduled && nextRun && (
+        {/* Auto Scraper Controls - New toggle-based style */}
+        <div className="flex items-center gap-6 pt-4" 
+             style={{ borderColor: 'var(--border-color)' }}
+             >
+          <DashboardToggle
+            label="Auto Scrape"
+            isActive={isAutoEnabled}
+            onChange={() => onToggle()}
+            disabled={isLoading || isRunning}
+          />
+
+          {isAutoEnabled && (
+            <div className="flex items-center gap-2">
+              <span className={styles.toggleLabel}>
+                Interval:
+              </span>
+              <select
+                value={autoScrapeInterval || 24}
+                onChange={(e) => {
+                  if (onIntervalChange) {
+                    onIntervalChange(sellerId, Number(e.target.value));
+                  }
+                }}
+                disabled={isLoading || isRunning}
+                className={styles.selectInterval}
+              >
+                <option value={1}>Every 1 hour</option>
+                <option value={2}>Every 2 hours</option>
+                <option value={4}>Every 4 hours</option>
+                <option value={6}>Every 6 hours</option>
+                <option value={8}>Every 8 hours</option>
+                <option value={12}>Every 12 hours</option>
+                <option value={24}>Every 24 hours</option>
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Warning for no interval configured */}
+        {isAutoEnabled && (!autoScrapeInterval || autoScrapeInterval <= 0) && (
           <div 
-            className="text-sm font-['Poppins']" 
+            className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 border border-amber-200 mt-2"
+          >
+            ⚠️ No interval configured - auto scraper won't work
+          </div>
+        )}
+
+        {/* Schedule Information */}
+        {isAutoEnabled && nextRun && (
+          <div 
+            className="text-sm font-['Poppins'] mt-3" 
             style={{ color: 'var(--text-primary-muted)' }}
           >
             <FontAwesomeIcon icon={faClock} className="mr-2" />
             Next run: {nextRun.toLocaleDateString()} {nextRun.toLocaleTimeString()}
           </div>
         )}
-
-        {/* Controls - Sử dụng dashboard button styles */}
-        <div className={styles.cardFooter}>
-          {isScheduled ? (
-            <DashboardButton
-              onClick={onToggle}
-              disabled={isLoading || isRunning}
-              variant="danger"
-              className={styles.button}
-            >
-              <FontAwesomeIcon icon={faStop} className="mr-2" />
-              {isRunning ? 'Running...' : 'Stop Auto'}
-            </DashboardButton>
-          ) : (
-            <DashboardButton
-              onClick={onToggle}
-              disabled={isLoading || isRunning}
-              variant="primary"
-              className={styles.button}
-            >
-              <FontAwesomeIcon icon={faPlay} className="mr-2" />
-              Start Auto
-            </DashboardButton>
-          )}
-          
-          <DashboardButton
-            variant="outline"
-            className={styles.button}
-            onClick={() => {/* TODO: Open schedule config modal */}}
-          >
-            <FontAwesomeIcon icon={faCog} className="mr-2" />
-            Configure
-          </DashboardButton>
-        </div>
       </div>
     </DashboardCard>
   )

@@ -1,57 +1,107 @@
 import { NextResponse } from 'next/server';
-import { scraperQueue } from '@/lib/queue/scraper-queue';
+import { getQueueStats, getScheduledAutoJobs } from '@/lib/queue/scraper-queue';
+import scraperQueue from '@/lib/queue/scraper-queue';
+import { apiLogger } from '@/lib/helpers/api-logger';
 
+/**
+ * GET /api/debug/queue - Comprehensive queue status và monitoring
+ * 
+ * Tổng hợp tất cả thông tin về Bull queue:
+ * - Queue statistics (waiting, active, completed, failed, delayed)
+ * - Scheduled auto jobs (repeat jobs)
+ * - Analysis summary để verify Stop All
+ * - Sample jobs để debugging
+ */
 export async function GET() {
   try {
-    // Get queue stats từ Bull
-    const [waiting, active, completed, failed, delayed, repeatJobs] = await Promise.all([
+    apiLogger.info('[Debug Queue] Status check requested');
+
+    // 1. Get comprehensive queue stats
+    const queueStats = await getQueueStats();
+
+    // 2. Get scheduled auto jobs
+    const scheduledJobs = await getScheduledAutoJobs();
+
+    // 3. Get sample jobs từ queue để debugging
+    const [waiting, active, failed] = await Promise.all([
       scraperQueue.getWaiting(),
       scraperQueue.getActive(), 
-      scraperQueue.getCompleted(),
-      scraperQueue.getFailed(),
-      scraperQueue.getDelayed(),
-      scraperQueue.getRepeatableJobs() // Correct method name
+      scraperQueue.getFailed()
     ]);
 
-    const queueStats = {
-      waiting: waiting.length,
-      active: active.length, 
-      completed: completed.length,
-      failed: failed.length,
-      delayed: delayed.length,
-      repeat: repeatJobs.length,
-      total: waiting.length + active.length + completed.length + failed.length + delayed.length
-    };
-
-    // Get sample job details
     const sampleJobs = {
       waiting: waiting.slice(0, 3).map((job: any) => ({
         id: job.id,
-        data: job.data,
-        opts: job.opts
+        data: job.data?.mode || 'unknown',
+        sellerId: job.data?.sellerId || 'unknown'
       })),
-      repeat: repeatJobs.slice(0, 5).map((job: any) => ({
+      active: active.slice(0, 3).map((job: any) => ({
         id: job.id,
-        key: job.key,
-        cron: job.cron,
-        next: job.next
+        data: job.data?.mode || 'unknown',
+        sellerId: job.data?.sellerId || 'unknown',
+        processedOn: job.processedOn
+      })),
+      failed: failed.slice(0, 3).map((job: any) => ({
+        id: job.id,
+        data: job.data?.mode || 'unknown',
+        sellerId: job.data?.sellerId || 'unknown',
+        failedReason: job.failedReason
       }))
+    };
+
+    // 4. Analysis summary cho Stop All verification
+    const analysis = {
+      hasActiveJobs: queueStats.active > 0,
+      hasScheduledJobs: scheduledJobs.length > 0,
+      totalJobs: queueStats.total,
+      isSystemIdle: queueStats.active === 0 && scheduledJobs.length === 0,
+      stopAllStatus: scheduledJobs.length === 0 ? 'SUCCESS' : 'PENDING'
+    };
+
+    // 5. Detailed scheduled jobs info
+    const scheduledJobsInfo = {
+      count: scheduledJobs.length,
+      jobs: scheduledJobs.map(job => ({
+        id: job.id,
+        cron: job.cron,
+        tz: job.tz,
+        endDate: job.endDate,
+        next: job.next,
+        key: job.key
+      }))
+    };
+
+    const response = {
+      timestamp: new Date().toISOString(),
+      queueStats,
+      scheduledJobs: scheduledJobsInfo,
+      sampleJobs,
+      analysis,
+      summary: {
+        message: queueStats.active > 0 ? 
+          `⚠️ Queue đang active với ${queueStats.active} jobs running` :
+          scheduledJobs.length > 0 ?
+          `📅 Queue idle nhưng có ${scheduledJobs.length} scheduled jobs` :
+          `✅ Queue hoàn toàn clean - không có jobs nào`,
+        recommendation: 
+          queueStats.active > 0 ? 'Có jobs đang chạy - cần stop nếu muốn dừng' :
+          scheduledJobs.length > 0 ? 'Có auto jobs scheduled - cần Stop All để dừng hoàn toàn' :
+          'Hệ thống đã dừng hoàn toàn'
+      }
     };
 
     return NextResponse.json({
       success: true,
-      data: {
-        stats: queueStats,
-        samples: sampleJobs,
-        message: `Queue có ${queueStats.waiting} waiting jobs, ${queueStats.repeat} repeat jobs`
-      }
+      data: response
     });
 
   } catch (error) {
+    apiLogger.logError('[Debug Queue] Failed to get queue status', error as Error);
+    
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      message: 'Failed to get queue stats'
+      message: 'Failed to get comprehensive queue status'
     }, { status: 500 });
   }
 }

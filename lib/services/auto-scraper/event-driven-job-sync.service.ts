@@ -24,13 +24,13 @@ export class EventDrivenJobSync {
     // 1. Job started event
     scraperQueue.on('active', async (job) => {
       try {
-        await this.updateJobStatus(job.id.toString(), 'IN_PROGRESS', {
+        await this.updateJobStatus(job.id.toString(), ScrapeJobStatus.ACTIVE, {
           startedAt: new Date()
         });
         
         apiLogger.info('[Job Sync] Job started', { 
           jobId: job.id, 
-          status: 'IN_PROGRESS' 
+          status: ScrapeJobStatus.ACTIVE 
         });
       } catch (error) {
         apiLogger.logError('[Job Sync] Failed to sync job start', error as Error, { 
@@ -42,7 +42,7 @@ export class EventDrivenJobSync {
     // 2. Job completed event
     scraperQueue.on('completed', async (job, result) => {
       try {
-        await this.updateJobStatus(job.id.toString(), 'COMPLETED', {
+        await this.updateJobStatus(job.id.toString(), ScrapeJobStatus.COMPLETED, {
           completedAt: new Date(),
           duration: job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : undefined,
           // Extract result data if available
@@ -53,7 +53,7 @@ export class EventDrivenJobSync {
         
         apiLogger.info('[Job Sync] Job completed', { 
           jobId: job.id, 
-          status: 'COMPLETED',
+          status: ScrapeJobStatus.COMPLETED,
           duration: job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : undefined
         });
       } catch (error) {
@@ -66,7 +66,7 @@ export class EventDrivenJobSync {
     // 3. Job failed event
     scraperQueue.on('failed', async (job, err) => {
       try {
-        await this.updateJobStatus(job.id.toString(), 'FAILED', {
+        await this.updateJobStatus(job.id.toString(), ScrapeJobStatus.FAILED, {
           completedAt: new Date(),
           errorMessage: err.message,
           errorDetails: { 
@@ -78,7 +78,7 @@ export class EventDrivenJobSync {
         
         apiLogger.info('[Job Sync] Job failed', { 
           jobId: job.id, 
-          status: 'FAILED',
+          status: ScrapeJobStatus.FAILED,
           error: err.message
         });
       } catch (error) {
@@ -91,7 +91,7 @@ export class EventDrivenJobSync {
     // 4. Job stalled event (job bị stuck)
     scraperQueue.on('stalled', async (job) => {
       try {
-        await this.updateJobStatus(job.id.toString(), 'FAILED', {
+        await this.updateJobStatus(job.id.toString(), ScrapeJobStatus.FAILED, {
           errorMessage: 'Job stalled - exceeded timeout or worker crashed',
           errorDetails: { 
             reason: 'stalled',
@@ -158,7 +158,7 @@ export class EventDrivenJobSync {
       await prisma.scrapeJob.create({
         data: {
           ...jobData,
-          status: 'PENDING'
+          status: 'CREATED'  // Job tạo trong database, chưa vào queue
         }
       });
       
@@ -181,7 +181,7 @@ export class EventDrivenJobSync {
 
       const result = await prisma.scrapeJob.deleteMany({
         where: {
-          status: { in: ['COMPLETED', 'FAILED'] },
+          status: { in: [ScrapeJobStatus.COMPLETED, ScrapeJobStatus.FAILED] },
           completedAt: { lt: cutoffDate }
         }
       });

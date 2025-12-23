@@ -122,11 +122,11 @@ export class JobStatusSyncService {
    */
   static async handleMissingJobs(queueJobIds: string[]): Promise<void> {
     try {
-      // 1. Get tất cả PENDING/IN_PROGRESS jobs từ database
+      // 1. Get tất cả CREATED/WAITING/DELAYED/ACTIVE jobs từ database
       const dbJobs = await prisma.scrapeJob.findMany({
         where: {
           status: {
-            in: ['PENDING', 'IN_PROGRESS']
+            in: ['CREATED', 'WAITING', 'DELAYED', 'ACTIVE']
           }
         },
         select: {
@@ -202,8 +202,10 @@ export class JobStatusSyncService {
           total: waiting.length + active.length + completed.length + failed.length
         },
         database: {
-          pending: dbStatsMap.PENDING || 0,
-          in_progress: dbStatsMap.IN_PROGRESS || 0,
+          created: dbStatsMap.CREATED || 0,
+          waiting: dbStatsMap.WAITING || 0,
+          delayed: dbStatsMap.DELAYED || 0,
+          active: dbStatsMap.ACTIVE || 0,
           completed: dbStatsMap.COMPLETED || 0,
           failed: dbStatsMap.FAILED || 0,
           cancelled: dbStatsMap.CANCELLED || 0,
@@ -231,10 +233,11 @@ export class JobStatusSyncService {
     }
     
     if (processedOn) {
-      return 'IN_PROGRESS';
+      return 'ACTIVE';
     }
     
-    return 'PENDING';
+    // Default for jobs in queue but not yet processed
+    return 'WAITING';
   }
 
   /**

@@ -41,7 +41,7 @@ export async function DELETE(
       where: { 
         jobId: jobId,
         status: {
-          in: ['PENDING', 'IN_PROGRESS']
+          in: ['WAITING', 'ACTIVE']
         }
       },
       data: {
@@ -118,7 +118,7 @@ export async function POST() {
       where: { 
         jobId: { in: activeJobIds },
         status: {
-          in: ['PENDING', 'IN_PROGRESS']
+          in: ['WAITING', 'ACTIVE']
         }
       },
       data: {

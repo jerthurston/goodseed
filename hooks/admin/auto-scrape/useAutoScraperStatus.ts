@@ -21,9 +21,12 @@ export function useAutoScraperStatus(sellerId?: string) {
     queryFn: async () => {
       try {
         if (sellerId) {
+          // Lấy status cho một seller cụ thể nếu truyền sellerId
           apiLogger.info('[useAutoScraperStatus] Fetching seller auto scraper status', { sellerId });
           return await AutoScraperService.getSellerAutoScraperStatus(sellerId);
         } else {
+          // Lấy status cho toàn bộ hệ thống sử dụng ở page dashboard/admin. 
+          // TODO: Cần viết lại service và api thay getAutoScraperHealth().
           apiLogger.info('[useAutoScraperStatus] Fetching auto scraper health status');
           return await AutoScraperService.getAutoScraperHealth();
         }

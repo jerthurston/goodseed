@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { createScheduleAutoScrapeJob } from '@/lib/helpers/server/scheduleAutoScrapeJob';
-import { unscheduleAutoScrapeJob, getScheduledAutoJobs, scraperQueue } from '@/lib/queue/scraper-queue';
+import { unscheduleAutoScrapeJob, getScheduledAutoJobs, scraperQueue, getQueueStatistics } from '@/lib/queue/scraper-queue';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { JobStatusSyncService } from '@/lib/services/auto-scraper/job-status-sync.service';
 
@@ -541,10 +541,10 @@ export class AutoScraperScheduler {
             isActive: true // Total active sellers regardless of auto scraping status
           }
         }),
-        // Get synced pending jobs from database
+        // Get synced waiting/created jobs from database  
         prisma.scrapeJob.count({
           where: {
-            status: 'PENDING'
+            status: { in: ['CREATED', 'WAITING'] }
           }
         })
       ]);
@@ -583,6 +583,157 @@ export class AutoScraperScheduler {
         coverage: 0,
         lastChecked: new Date(),
         error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Get detailed job statistics for auto scraper dashboard
+   * Returns job counts by status for AutoScraperOverview component
+   * 
+   * Used by:
+   * - Dashboard overview components
+   * - Real-time monitoring
+   * - Performance metrics
+   */
+  static async getJobStatistics() {
+    try {
+      apiLogger.info('[Auto Scheduler] Fetching comprehensive job statistics');
+
+      // Sync job statuses before getting statistics
+      await JobStatusSyncService.syncAllJobStatuses();
+
+      // Get job counts by status from database (immediate jobs)
+      const [
+        createdJobs,
+        waitingJobs, 
+        delayedJobs,
+        activeJobs,
+        completedJobs,
+        failedJobs,
+        cancelledJobs,
+        totalSellers,
+        activeSellers
+      ] = await Promise.all([
+        prisma.scrapeJob.count({ where: { status: 'CREATED' } }),
+        prisma.scrapeJob.count({ where: { status: 'WAITING' } }),
+        prisma.scrapeJob.count({ where: { status: 'DELAYED' } }),
+        prisma.scrapeJob.count({ where: { status: 'ACTIVE' } }),
+        prisma.scrapeJob.count({ where: { status: 'COMPLETED' } }),
+        prisma.scrapeJob.count({ where: { status: 'FAILED' } }),
+        prisma.scrapeJob.count({ where: { status: 'CANCELLED' } }),
+        prisma.seller.count({ where: { isActive: true } }),
+        prisma.seller.count({ 
+          where: { 
+            isActive: true,
+            autoScrapeInterval: { not: null, gt: 0 }
+          }
+        })
+      ]);
+
+      // Get queue statistics (includes repeat jobs)
+      const queueStats = await getQueueStatistics();
+
+      // Get recent run information
+      const lastCompletedJob = await prisma.scrapeJob.findFirst({
+        where: { status: 'COMPLETED' },
+        orderBy: { updatedAt: 'desc' },
+        select: { updatedAt: true }
+      });
+
+      // Calculate next scheduled run (based on earliest scheduled job)
+      const nextScheduledJob = await prisma.scrapeJob.findFirst({
+        where: { 
+          status: { in: ['CREATED', 'WAITING', 'DELAYED'] }
+        },
+        orderBy: { createdAt: 'asc' },
+        select: { createdAt: true }
+      });
+
+      const jobCounts = {
+        CREATED: createdJobs,
+        WAITING: waitingJobs, 
+        DELAYED: delayedJobs,
+        ACTIVE: activeJobs,
+        COMPLETED: completedJobs,
+        FAILED: failedJobs,
+        CANCELLED: cancelledJobs,
+        // Add repeat jobs info
+        SCHEDULED: queueStats.scheduled.autoScraperJobs
+      };
+
+      const totalImmediateJobs = Object.values(jobCounts).reduce((sum, count) => sum + count, 0) - queueStats.scheduled.autoScraperJobs;
+      const totalJobs = totalImmediateJobs + queueStats.scheduled.autoScraperJobs;
+      const successRate = completedJobs + failedJobs > 0 
+        ? Math.round((completedJobs / (completedJobs + failedJobs)) * 100)
+        : 0;
+
+      const stats = {
+        jobCounts,
+        totalSellers,
+        activeSellers,
+        lastRun: lastCompletedJob?.updatedAt,
+        nextScheduledRun: nextScheduledJob?.createdAt,
+        queueDetails: queueStats,
+        summary: {
+          totalJobs,
+          totalImmediateJobs,
+          totalScheduledJobs: queueStats.scheduled.autoScraperJobs,
+          successRate,
+          activeCount: activeJobs,
+          pendingCount: createdJobs + waitingJobs + delayedJobs,
+          activeAutoScrapers: queueStats.scheduled.autoScraperJobs
+        },
+        lastChecked: new Date()
+      };
+
+      apiLogger.info('[Auto Scheduler] Comprehensive job statistics fetched successfully', {
+        totalJobs,
+        immediateJobs: totalImmediateJobs,
+        scheduledJobs: queueStats.scheduled.autoScraperJobs,
+        activeJobs,
+        completedJobs,
+        failedJobs,
+        successRate
+      });
+
+      return stats;
+
+    } catch (error) {
+      apiLogger.logError('[Auto Scheduler] Failed to fetch job statistics', error as Error);
+      
+      // Return empty stats on error
+      return {
+        jobCounts: {
+          CREATED: 0,
+          WAITING: 0,
+          DELAYED: 0,
+          ACTIVE: 0,
+          COMPLETED: 0,
+          FAILED: 0,
+          CANCELLED: 0,
+          SCHEDULED: 0
+        },
+        totalSellers: 0,
+        activeSellers: 0,
+        lastRun: null,
+        nextScheduledRun: null,
+        queueDetails: {
+          immediate: { waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0, total: 0 },
+          scheduled: { repeatJobs: 0, autoScraperJobs: 0, totalScheduled: 0 },
+          combined: { totalJobs: 0, activeAutoScrapers: 0, pendingJobs: 0 }
+        },
+        summary: {
+          totalJobs: 0,
+          totalImmediateJobs: 0,
+          totalScheduledJobs: 0,
+          successRate: 0,
+          activeCount: 0,
+          pendingCount: 0,
+          activeAutoScrapers: 0
+        },
+        lastChecked: new Date(),
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

@@ -58,7 +58,7 @@ export default function AutoScraperSection({ seller, onRefresh }: AutoScraperSec
           <div className="flex items-center gap-3">
             <FontAwesomeIcon icon={faRobot} className="text-xl" style={{ color: 'var(--brand-primary)' }} />
             <h2 className="font-['Archivo_Black'] text-xl uppercase" style={{ color: 'var(--text-primary)' }}>
-              Auto Scraper Management
+              Auto Scraper Schedule Information
             </h2>
           </div>
           <p className="text-sm font-['Poppins'] mt-1" style={{ color: 'var(--text-primary-muted)' }}>
@@ -86,7 +86,7 @@ export default function AutoScraperSection({ seller, onRefresh }: AutoScraperSec
           </div>
         )}
         
-        {/* Enhanced Seller Auto Scraper Card */}
+        {/* Enhanced Seller Auto Scraper Card
         <SellerAutoScraperCard
           sellerId={seller.id}
           sellerName={seller.name}
@@ -95,7 +95,7 @@ export default function AutoScraperSection({ seller, onRefresh }: AutoScraperSec
           nextRun={sellerStatus?.data?.nextScheduledRun ? new Date(sellerStatus.data.nextScheduledRun) : undefined}
           onToggle={handleToggle}
           isLoading={isLoading || isStatusLoading}
-        />
+        /> */}
         
         {/* Additional Configuration Panel */}
         <div 

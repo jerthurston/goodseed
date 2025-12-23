@@ -40,7 +40,7 @@ export async function createManualScrapeJob({
         data: {
             jobId,
             sellerId,
-            status: 'PENDING',
+            status: 'CREATED', // Job được tạo trong database, chưa vào queue
             mode: 'manual',
             targetCategoryId,
             currentPage: 0,

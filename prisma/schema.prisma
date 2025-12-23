@@ -317,13 +317,15 @@ model ScrapeLog {
   @@index([status])
 }
 
-// ScrapeJobStatus - Job execution status
+// ScrapeJobStatus - Job execution status (sync with Bull Queue states)
 enum ScrapeJobStatus {
-  PENDING // Job created, waiting to start
-  IN_PROGRESS // Currently scraping
-  COMPLETED // Successfully finished
-  FAILED // Error occurred
-  CANCELLED // Manually stopped
+  CREATED    // Job created in database, not yet in queue
+  WAITING    // Job in Bull queue, waiting to be processed
+  DELAYED    // Job scheduled for future execution (Bull delayed set)
+  ACTIVE     // Job currently running (Bull active set)
+  COMPLETED  // Job finished successfully (Bull completed set)
+  FAILED     // Job failed with error (Bull failed set)
+  CANCELLED  // Job manually cancelled or removed
 }
 
 // ScrapeJob - Track scraping job progress and status
@@ -331,7 +333,7 @@ model ScrapeJob {
   id       String          @id @default(cuid())
   sellerId String
   jobId    String          @unique // External job ID for API (e.g., "scrape_1234567890")
-  status   ScrapeJobStatus @default(PENDING)
+  status   ScrapeJobStatus @default(CREATED)
 
   // Job Configuration
   mode             String // "batch", "auto", "test"
