@@ -1,6 +1,7 @@
 // lib/transformers/seller.transformer.ts
 
 import { apiLogger } from '@/lib/helpers/api-logger';
+import { ScrapeJobStatus } from '@prisma/client';
 import { SellerRaw, SellerUI } from '@/types/seller.type';
 
 
@@ -20,7 +21,7 @@ export class SellerTransformer {
 
     // Calculate scrape job statistics
     const completedJobs = raw.scrapeJobs.filter(
-      (job) => job.status === "COMPLETED"
+      (job) => job.status === ScrapeJobStatus.COMPLETED
     );
     const totalRuns = raw.scrapeJobs.length;
     const successfulRuns = completedJobs.length;

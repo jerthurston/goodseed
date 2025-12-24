@@ -6,6 +6,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { ScrapeJobStatus } from '@prisma/client';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
 async function debugAutoScraper() {
@@ -57,13 +58,13 @@ async function debugAutoScraper() {
     // 4. Check current job counts
     console.log('\n4️⃣ Current job statistics:');
     const jobCounts = await Promise.all([
-      prisma.scrapeJob.count({ where: { status: 'CREATED' } }),
-      prisma.scrapeJob.count({ where: { status: 'WAITING' } }),
-      prisma.scrapeJob.count({ where: { status: 'DELAYED' } }),
-      prisma.scrapeJob.count({ where: { status: 'ACTIVE' } }),
-      prisma.scrapeJob.count({ where: { status: 'COMPLETED' } }),
-      prisma.scrapeJob.count({ where: { status: 'FAILED' } }),
-      prisma.scrapeJob.count({ where: { status: 'CANCELLED' } }),
+      prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.CREATED } }),
+      prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.WAITING } }),
+      prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.DELAYED } }),
+      prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.ACTIVE } }),
+      prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.COMPLETED } }),
+      prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.FAILED } }),
+      prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.CANCELLED } }),
     ]);
 
     console.log(`  CREATED: ${jobCounts[0]}`);

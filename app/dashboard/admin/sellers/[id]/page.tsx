@@ -31,6 +31,10 @@ export default function AdminSellerDetailPage() {
   const router = useRouter()
   const sellerId = params.id as string
 
+  // Separate loading states for different operations
+  const [isManualScrapeLoading, setIsManualScrapeLoading] = useState(false)
+  const [isQuickTestLoading, setIsQuickTestLoading] = useState(false)
+
   // ALL HOOKS MUST BE CALLED AT THE TOP - BEFORE ANY CONDITIONAL RETURNS
   const { seller, isLoading, isError, error } = useFetchSellerById(sellerId)
   
@@ -99,26 +103,74 @@ export default function AdminSellerDetailPage() {
 
   const handleManualScrape = async (sellerId: string, sellerName: string) => {
     try {
-      // Show loading state immediately
+      setIsManualScrapeLoading(true)
+      
+      // Show loading toast
       toast.loading(`Initiating scrape for ${sellerName}...`, {
-        id: `scrape-${sellerId}` // Use consistent ID for updates
-      },
-      );
+        id: `scrape-${sellerId}`
+      });
+      
       // Option 1: test manual trigger với fullsiteCrawl. Let schema defaults handle startPage/endPage
       const scrapingConfig = { fullSiteCrawl: true };
       // Option 2: test với số page cố định với startPage và endPage
       // const scrapingConfig = { startPage: 1, endPage: 30 };
       const result = await triggerManualScrape(sellerId, scrapingConfig);
+      
       // Success toast is handled in the hook
       toast.dismiss(`scrape-${sellerId}`);
-      toast.dismiss(`add Job ${activeJobs} successfully! Scraper processing will happen in the background.`);
+      toast.success(`Manual scrape started for ${sellerName}!`);
 
     } catch (error) {
-      // Dismiss loading toast.
+      // Dismiss loading toast
       toast.dismiss(`scrape-${sellerId}`);
 
       // Error is handled in the hook, but we can add fallback
       console.error("Manual scrape failed:", error);
+    } finally {
+      setIsManualScrapeLoading(false)
+    }
+  }
+
+  const handleQuickTest = async (sellerId: string, sellerName: string) => {
+    try {
+      setIsQuickTestLoading(true)
+      
+      // Show loading toast
+      toast.loading(`Starting quick test for ${sellerName} (2 pages)...`, {
+        id: `test-${sellerId}`
+      });
+
+      // Quick test: only first 2 pages for fast testing
+      const scrapingConfig = { 
+        startPage: 1, 
+        endPage: 2,
+        mode: 'test' 
+      };
+      
+      const result = await triggerManualScrape(sellerId, scrapingConfig);
+      
+      // Success toast
+      toast.dismiss(`test-${sellerId}`);
+      toast.success(`Quick test started for ${sellerName}!`, {
+        description: "Testing first 2 pages only - check results in ~30 seconds"
+      });
+
+      // Auto-clear loading state after 3 seconds (since quick test is fast)
+      setTimeout(() => {
+        setIsQuickTestLoading(false)
+      }, 3000);
+
+    } catch (error) {
+      // Dismiss loading toast
+      toast.dismiss(`test-${sellerId}`);
+
+      // Error toast
+      toast.error(`Quick test failed for ${sellerName}`, {
+        description: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+      
+      console.error("Quick test failed:", error);
+      setIsQuickTestLoading(false)
     }
   }
 
@@ -180,6 +232,7 @@ export default function AdminSellerDetailPage() {
             Seller Details & Management
           </p>
         </div>
+        {/* Back to Button */}
         <DashboardButton
           onClick={() => router.push("/dashboard/admin")}
         >
@@ -189,9 +242,7 @@ export default function AdminSellerDetailPage() {
       </div>
 
       <div className="space-y-6">
-
         {/* Actions Card */}
-
         <DashboardCard key={currentSeller.id}>
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -206,17 +257,18 @@ export default function AdminSellerDetailPage() {
                 Last scraped: {currentSeller.lastScraped}
               </p>
             </div>
+            {/* Manual Scrape Button trigger */}
             <div className="flex flex-col gap-2">
               <DashboardButton
                 variant="secondary"
                 onClick={() => handleManualScrape(currentSeller.id, currentSeller.name)}
-                disabled={isTriggering || activeJobs.has(currentSeller.id)}
+                disabled={isManualScrapeLoading}
                 className="flex items-center gap-2"
               >
-                {isTriggering || activeJobs.has(currentSeller.id) ? (
+                {isManualScrapeLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600" />
-                    {activeJobs.has(currentSeller.id) ? 'Scraping...' : 'Starting...'}
+                    Starting Manual...
                   </>
                 ) : (
                   <>
@@ -226,11 +278,42 @@ export default function AdminSellerDetailPage() {
                 )}
               </DashboardButton>
 
-              {/* Show job status badge */}
-              {activeJobs.has(currentSeller.id) && (
+              {/* Quick Test Scrape with first page */}
+              <DashboardButton
+                variant="outline"
+                onClick={() => handleQuickTest(currentSeller.id, currentSeller.name)}
+                disabled={isQuickTestLoading}
+                className={`flex items-center gap-2 text-sm transition-all duration-200 ${
+                  isQuickTestLoading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-orange-50'
+                }`}
+              >
+                {isQuickTestLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-orange-300 border-t-orange-600" />
+                    Testing...
+                  </>
+                ) : (
+                  <>
+                    <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
+                    Quick Test (2 pages)
+                  </>
+                )}
+              </DashboardButton>
+
+
+              {/* Show job status badge - only for manual scrape */}
+              {activeJobs.has(currentSeller.id) && isManualScrapeLoading && (
                 <div className="flex items-center gap-2 text-sm text-blue-600">
                   <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
-                  Job ID: {activeJobs.get(currentSeller.id)}
+                  Manual Job ID: {activeJobs.get(currentSeller.id)}
+                </div>
+              )}
+              
+              {/* Quick test status */}
+              {isQuickTestLoading && (
+                <div className="flex items-center gap-2 text-sm text-orange-600">
+                  <div className="w-2 h-2 bg-orange-600 rounded-full animate-pulse" />
+                  Quick test running...
                 </div>
               )}
             </div>
@@ -312,7 +395,7 @@ export default function AdminSellerDetailPage() {
           </div>
         </DashboardCard>
 
-        {/*--> AUTO SCRAPER MANAGEMENT SECTION */}
+        {/*--> AUTO SCRAPER SCHEDULE INFORMATION SECTION */}
         <AutoScraperSection 
           seller={{
             id: currentSeller.id,

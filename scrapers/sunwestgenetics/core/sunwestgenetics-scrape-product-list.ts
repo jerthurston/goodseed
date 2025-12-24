@@ -59,7 +59,12 @@ import { apiLogger } from '@/lib/helpers/api-logger';
  * - Auto-detects total pages from first page crawl
  * - Returns ProductsDataResultFromCrawling
  */
-export async function sunwestgeneticsProductListScraper(siteConfig: SiteConfig, dbMaxPage?: number): Promise<ProductsDataResultFromCrawling> {
+export async function sunwestgeneticsProductListScraper(
+    siteConfig: SiteConfig, 
+    dbMaxPage?: number,
+    startPage: number = 1,
+    endPage?: number
+): Promise<ProductsDataResultFromCrawling> {
     const startTime = Date.now();
     
     const { selectors, baseUrl } = siteConfig;
@@ -67,7 +72,9 @@ export async function sunwestgeneticsProductListScraper(siteConfig: SiteConfig, 
     apiLogger.info('[SunWest Product List] Starting with siteConfig', {
         name: siteConfig.name,
         baseUrl: siteConfig.baseUrl,
-        isImplemented: siteConfig.isImplemented
+        isImplemented: siteConfig.isImplemented,
+        startPage,
+        endPage
     });
 
     const runId = Date.now();
@@ -121,38 +128,44 @@ export async function sunwestgeneticsProductListScraper(siteConfig: SiteConfig, 
         maxRequestRetries: 3,
     });
 
-    // Auto-crawl mode: Start with page 1 to detect maxPages, then crawl remaining pages
-    apiLogger.info('[SunWest Product List] Starting crawl with page 1 to detect pagination...');
+    // Auto-crawl mode: Start with startPage to detect maxPages, then crawl remaining pages
+    apiLogger.info(`[SunWest Product List] Starting crawl with page ${startPage} to detect pagination...`);
         
-    // First, crawl page 1 to detect maxPages from pagination  
-    const firstPageUrl = `${baseUrl}/shop/`; // SunWest Genetics page 1 format
+    // First, crawl startPage to detect maxPages from pagination  
+    const firstPageUrl = startPage === 1 ? 
+        `${baseUrl}/shop/` : 
+        `${baseUrl}/shop/page/${startPage}/`;
+    
     await requestQueue.addRequest({ url: firstPageUrl });
     await crawler.run();
     
     // Check first page result to get maxPages and products
     const firstResults = await dataset.getData();
-    let detectedMaxPages = 1; // default fallback
+    let detectedMaxPages = startPage; // default fallback
     
     if (firstResults.items.length > 0) {
         const firstResult = firstResults.items[0] as any;
         if (firstResult.products && firstResult.products.length > 0) {
-            apiLogger.info(`[SunWest Product List] Found ${firstResult.products.length} products on page 1`);
+            apiLogger.info(`[SunWest Product List] Found ${firstResult.products.length} products on page ${startPage}`);
             
             // Try to detect pagination from extractProductsFromHTML
-            detectedMaxPages = firstResult.maxPages || 1;
+            detectedMaxPages = firstResult.maxPages || startPage;
             apiLogger.info(`[SunWest Product List] Detected ${detectedMaxPages} total pages from pagination`);
             
-            // Now crawl remaining pages (2 to maxPages) if more than 1 page
-            if (detectedMaxPages > 1) {
+            // Calculate effective end page
+            const effectiveEndPage = endPage ? Math.min(endPage, detectedMaxPages) : detectedMaxPages;
+            
+            // Now crawl remaining pages (startPage+1 to effectiveEndPage) if needed
+            if (effectiveEndPage > startPage) {
                 const remainingUrls: string[] = [];
-                // Limit to detected maxPages or 50 pages for safety (whichever is smaller)
-                for (let page = 2; page <= Math.min(detectedMaxPages, 50); page++) {
+                
+                for (let page = startPage + 1; page <= effectiveEndPage; page++) {
                     // SunWest Genetics WooCommerce standard format: /shop/page/2/
                     remainingUrls.push(`${baseUrl}/shop/page/${page}/`);
                 }
                 
                 if (remainingUrls.length > 0) {
-                    apiLogger.info(`[SunWest Product List] Crawling remaining ${remainingUrls.length} pages...`);
+                    apiLogger.info(`[SunWest Product List] Crawling remaining ${remainingUrls.length} pages (${startPage + 1} to ${effectiveEndPage})...`);
                     for (const url of remainingUrls) {
                         await requestQueue.addRequest({ url });
                     }
@@ -160,12 +173,12 @@ export async function sunwestgeneticsProductListScraper(siteConfig: SiteConfig, 
                 }
             }
             
-            actualPages = Math.max(detectedMaxPages, 50);
+            actualPages = effectiveEndPage - startPage + 1;
         } else {
-            apiLogger.warn('[SunWest Product List] No products found on page 1, using fallback');
+            apiLogger.warn(`[SunWest Product List] No products found on page ${startPage}, using fallback`);
         }
     } else {
-        apiLogger.warn('[SunWest Product List] No results from page 1 crawl');
+        apiLogger.warn(`[SunWest Product List] No results from page ${startPage} crawl`);
     }
 
     // Collect results from dataset

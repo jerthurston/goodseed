@@ -45,10 +45,10 @@ export class EventDrivenJobSync {
         await this.updateJobStatus(job.id.toString(), ScrapeJobStatus.COMPLETED, {
           completedAt: new Date(),
           duration: job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : undefined,
-          // Extract result data if available
-          productsScraped: result?.productsFound || 0,
-          productsSaved: result?.productsSaved || 0,
-          productsUpdated: result?.productsUpdated || 0
+          // Extract result data if available - map correct field names
+          productsScraped: result?.totalProducts || 0,
+          productsSaved: result?.saved || 0,
+          productsUpdated: result?.updated || 0
         });
         
         apiLogger.info('[Job Sync] Job completed', { 
@@ -158,7 +158,7 @@ export class EventDrivenJobSync {
       await prisma.scrapeJob.create({
         data: {
           ...jobData,
-          status: 'CREATED'  // Job tạo trong database, chưa vào queue
+          status: ScrapeJobStatus.CREATED  // Job tạo trong database, chưa vào queue
         }
       });
       

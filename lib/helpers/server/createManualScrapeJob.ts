@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { getSellerById } from "./seller/getSellerById";
 import { apiLogger } from "../api-logger";
 import { ScrapeJobConfig } from "@/types/scrapeJob.type";
-import { ScrapingSource } from "@prisma/client";
+import { ScrapingSource, ScrapeJobStatus } from "@prisma/client";
 import { config } from "process";
 
 // Giải thích: Hàm này tạo một job mới cho việc scrape dữ liệu thủ công từ một seller cụ thể
@@ -40,7 +40,7 @@ export async function createManualScrapeJob({
         data: {
             jobId,
             sellerId,
-            status: 'CREATED', // Job được tạo trong database, chưa vào queue
+            status: ScrapeJobStatus.CREATED, // Job được tạo trong database, chưa vào queue
             mode: 'manual',
             targetCategoryId,
             currentPage: 0,

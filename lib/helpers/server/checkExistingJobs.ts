@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/prisma"
+import { ScrapeJobStatus } from "@prisma/client"
 
 export async function checkExistingJobs (sellerId:string, sellerName:string) {
     const existingJob = await prisma.scrapeJob.findFirst({
         where:{
             sellerId,
             mode: 'manual',
-            status: { in: ['CREATED', 'WAITING', 'DELAYED', 'ACTIVE']}
+            status: { in: [ScrapeJobStatus.CREATED, ScrapeJobStatus.WAITING, ScrapeJobStatus.DELAYED, ScrapeJobStatus.ACTIVE]}
         }
     });
 

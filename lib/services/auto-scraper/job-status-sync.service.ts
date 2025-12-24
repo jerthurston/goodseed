@@ -126,7 +126,7 @@ export class JobStatusSyncService {
       const dbJobs = await prisma.scrapeJob.findMany({
         where: {
           status: {
-            in: ['CREATED', 'WAITING', 'DELAYED', 'ACTIVE']
+            in: [ScrapeJobStatus.CREATED, ScrapeJobStatus.WAITING, ScrapeJobStatus.DELAYED, ScrapeJobStatus.ACTIVE]
           }
         },
         select: {
@@ -151,7 +151,7 @@ export class JobStatusSyncService {
         prisma.scrapeJob.update({
           where: { id: job.id },
           data: {
-            status: 'CANCELLED',
+            status: ScrapeJobStatus.CANCELLED,
             updatedAt: new Date()
           }
         })
@@ -225,19 +225,19 @@ export class JobStatusSyncService {
    */
   private static mapBullStatusToDb(finishedOn?: number | null, failedReason?: string | null, processedOn?: number | null): ScrapeJobStatus {
     if (failedReason) {
-      return 'FAILED';
+      return ScrapeJobStatus.FAILED;
     }
     
     if (finishedOn) {
-      return 'COMPLETED';
+      return ScrapeJobStatus.COMPLETED;
     }
     
     if (processedOn) {
-      return 'ACTIVE';
+      return ScrapeJobStatus.ACTIVE;
     }
     
     // Default for jobs in queue but not yet processed
-    return 'WAITING';
+    return ScrapeJobStatus.WAITING;
   }
 
   /**

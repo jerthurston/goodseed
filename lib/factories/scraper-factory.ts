@@ -237,7 +237,12 @@ export class ScraperFactory {
    * Mục đích của hàm createProductListScraper: Tạo một instance của product list scraper tương ứng với source.
    * Kết quả: Trả về một instance của product list scraper
    */
-  createProductListScraper(scraperSourceName: SupportedScraperSourceName, dbMaxPage?: number) {
+  createProductListScraper(
+    scraperSourceName: SupportedScraperSourceName, 
+    dbMaxPage?: number,
+    startPage: number = 1,
+    endPage?: number
+  ) {
     // Lấy cấu hình trang từ siteConfig,
     const siteConfig = this.getSiteConfig(scraperSourceName);
     // Kiểm tra xem scraper đã được triển khai chưa. True là đã thiết lập, false là chưa thiếp lập
@@ -248,9 +253,9 @@ export class ScraperFactory {
     // Tạo instance của product list scraper tương ứng với source
     switch (scraperSourceName) {
       case 'vancouverseedbank':
-        return vancouverProductListScraper(siteConfig, dbMaxPage);
+        return vancouverProductListScraper(siteConfig, dbMaxPage); // Vancouver doesn't support startPage/endPage yet
       case 'sunwestgenetics':
-        return sunwestgeneticsProductListScraper(siteConfig, dbMaxPage);
+        return sunwestgeneticsProductListScraper(siteConfig, dbMaxPage, startPage, endPage);
 
       //TODO: Thêm các scraper khác ở đây sau khi thiết lập xong
       default:

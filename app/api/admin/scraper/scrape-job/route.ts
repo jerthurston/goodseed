@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ScrapeJobStatus } from "@prisma/client";
 import { apiLogger } from "@/lib/helpers/api-logger";
 
 /**
@@ -44,7 +45,10 @@ export async function GET(request: NextRequest) {
     }
     
     if (status) {
-      where.status = status;
+      // Validate status is a valid enum value
+      if (Object.values(ScrapeJobStatus).includes(status as ScrapeJobStatus)) {
+        where.status = status as ScrapeJobStatus;
+      }
     }
     
     if (mode) {

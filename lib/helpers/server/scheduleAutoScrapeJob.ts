@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ScrapeJobConfig } from "@/types/scrapeJob.type";
+import { ScrapeJobStatus } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { apiLogger } from "../api-logger";
 import { addScraperJob, unscheduleAutoScrapeJob } from "@/lib/queue/scraper-queue";
@@ -90,7 +91,7 @@ export async function createScheduleAutoScrapeJob({
             data: {
                 jobId,
                 sellerId,
-                status: "CREATED", // Job được tạo trong database, chưa vào queue
+                status: ScrapeJobStatus.CREATED, // Job được tạo trong database, chưa vào queue
                 mode: "auto",
                 targetCategoryId,
                 currentPage: 0,

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { ScrapeJobStatus } from '@prisma/client';
 import { createScheduleAutoScrapeJob } from '@/lib/helpers/server/scheduleAutoScrapeJob';
 import { unscheduleAutoScrapeJob, getScheduledAutoJobs, scraperQueue, getQueueStatistics } from '@/lib/queue/scraper-queue';
 import { apiLogger } from '@/lib/helpers/api-logger';
@@ -544,7 +545,7 @@ export class AutoScraperScheduler {
         // Get synced waiting/created jobs from database  
         prisma.scrapeJob.count({
           where: {
-            status: { in: ['CREATED', 'WAITING'] }
+            status: { in: [ScrapeJobStatus.CREATED, ScrapeJobStatus.WAITING] }
           }
         })
       ]);
@@ -615,13 +616,13 @@ export class AutoScraperScheduler {
         totalSellers,
         activeSellers
       ] = await Promise.all([
-        prisma.scrapeJob.count({ where: { status: 'CREATED' } }),
-        prisma.scrapeJob.count({ where: { status: 'WAITING' } }),
-        prisma.scrapeJob.count({ where: { status: 'DELAYED' } }),
-        prisma.scrapeJob.count({ where: { status: 'ACTIVE' } }),
-        prisma.scrapeJob.count({ where: { status: 'COMPLETED' } }),
-        prisma.scrapeJob.count({ where: { status: 'FAILED' } }),
-        prisma.scrapeJob.count({ where: { status: 'CANCELLED' } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.CREATED } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.WAITING } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.DELAYED } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.ACTIVE } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.COMPLETED } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.FAILED } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.CANCELLED } }),
         prisma.seller.count({ where: { isActive: true } }),
         prisma.seller.count({ 
           where: { 
@@ -636,7 +637,7 @@ export class AutoScraperScheduler {
 
       // Get recent run information
       const lastCompletedJob = await prisma.scrapeJob.findFirst({
-        where: { status: 'COMPLETED' },
+        where: { status: ScrapeJobStatus.COMPLETED },
         orderBy: { updatedAt: 'desc' },
         select: { updatedAt: true }
       });
@@ -644,7 +645,7 @@ export class AutoScraperScheduler {
       // Calculate next scheduled run (based on earliest scheduled job)
       const nextScheduledJob = await prisma.scrapeJob.findFirst({
         where: { 
-          status: { in: ['CREATED', 'WAITING', 'DELAYED'] }
+          status: { in: [ScrapeJobStatus.CREATED, ScrapeJobStatus.WAITING, ScrapeJobStatus.DELAYED] }
         },
         orderBy: { createdAt: 'asc' },
         select: { createdAt: true }
