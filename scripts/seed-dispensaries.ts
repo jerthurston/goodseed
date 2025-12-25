@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { log } from '@/lib/utils';
 import 'dotenv/config';
 
 /**

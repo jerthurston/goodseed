@@ -28,6 +28,9 @@ export { DashboardProgressBar } from "./DashboardProgressBar"
 export { DashboardAlert } from "./DashboardAlert"
 export type { DashboardAlertVariant } from "./DashboardAlert"
 
+// Logs Components
+export { LogsTabContent } from "./LogsTabContent"
+
 // Table Components
 export {
   DashboardTable, DashboardTableBody, DashboardTableCell, DashboardTableHeader, DashboardTableRow

@@ -1,5 +1,6 @@
 'use client'
-import FilterModal, { FilterState } from "@/components/custom/modals/FilterModal"
+import FilterModal from "@/components/custom/modals/FilterModal"
+import { SeedFilter } from "@/types/seed.type"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
@@ -9,7 +10,7 @@ const FilterBtnForHomepage = () => {
     const handleOpenFilter = () => {
         setIsFilterModalOpen(true)
     }
-    const handleApplyFilters = (filters: FilterState) => {
+    const handleApplyFilters = (filters: SeedFilter) => {
         // TODO: Implement filter logic - navigate to seeds page with filter params
         console.log('Applied filters:', filters)
         const params = new URLSearchParams()

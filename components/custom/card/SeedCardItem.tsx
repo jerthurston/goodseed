@@ -52,19 +52,19 @@ const SeedCardItem = ({
                     aria-label={`View ${seed.name} details on vendor site`}
                 >
                     <div className="card-img-aspect">
-                        {' '}
+                        {/* {' '} */}
                         <Image
                             src={seed.imageUrl}
                             alt={seed.name}
-                            className="card-img"
-                            width={300}
-                            height={200}
-                            unoptimized
+                            className="card-img object-cover w-full h-full"
+                            width={800}
+                            height={800}
+                            // unoptimized
                         />
-                        {' '}
+                        {/* {' '} */}
                     </div>
                 </Link>
-                <span className={`seed-type-pill-on-image ${seed.seedType.toLowerCase()}`}>
+                <span className={`seed-type-pill-on-image ${seed.seedType?.toLowerCase()}`}>
                     {seed.seedType}
                 </span>
                 {/* -->add to bookmark list */}

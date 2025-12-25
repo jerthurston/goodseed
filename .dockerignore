@@ -18,6 +18,9 @@ pnpm-debug.log*
 coverage
 dist
 build
+
+# Development files (already deleted)
+scrapers/*/scripts/
 tmp
 temp
 *.pid

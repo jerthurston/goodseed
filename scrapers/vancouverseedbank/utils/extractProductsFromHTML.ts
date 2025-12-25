@@ -69,7 +69,7 @@ export function extractProductsFromHTML(
 
             // Skip if image is placeholder SVG
             const finalImageUrl = (imageUrl && !imageUrl.startsWith('data:image/svg'))
-                ? (imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`)
+                ? (imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`)
                 : undefined;
 
             // Extract cannabis type (Balanced Hybrid, Indica Dominant, etc.)

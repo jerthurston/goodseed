@@ -22,7 +22,7 @@ async function testExtractFunction() {
         
         console.log('\n🔧 Testing extractProductsFromHTML function...');
         
-        const result = extractProductsFromHTML($, VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS);
+        const result = extractProductsFromHTML($, VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS, testUrl, 1 );
         
         console.log('\n📊 Results:');
         console.log(`Products found: ${result.products.length}`);

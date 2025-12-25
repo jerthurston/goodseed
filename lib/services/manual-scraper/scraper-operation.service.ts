@@ -144,32 +144,31 @@ export class ScraperOperationService {
   }
 
     // Toggle automatic scrape settings for a given scraper site ID
-    // public static async toggleAutoScrape(
-    //     id:string,
-    //     settings: { isAutoEnabled: boolean; autoScrapeInterval: number }
-    // ): Promise<ScraperSiteApiResponse> {
-    //     const starttime = Date.now();
-    //     apiLogger.logRequest("ScraperOperationService.toggleAutoScrape", {
-    //         id,
-    //         settings
-    //     });
-    //     try {
-    //         const response = await api.patch<ScraperSiteApiResponse>(
-    //             `/admin/scraper-sites/${id}`,
-    //             settings
-    //         );
-    //         const duration = Date.now() - starttime;
-    //         apiLogger.logResponse("ScraperOperationService.toggleAutoScrape", { 
-    //             duration: `${duration}ms`,
-    //             response: { ...response.data }
-    //         });
-    //         return response.data;
-    //     } catch (error) {
-    //         apiLogger.logError("ScraperOperationService.toggleAutoScrape", error as Error);
-    //         throw error;
-    //     }
-
-    // }
+    public static async toggleAutoScrape(
+        id:string,
+        settings: { isAutoEnabled: boolean; autoScrapeInterval: number }
+    ): Promise<ScraperSiteApiResponse> {
+        const starttime = Date.now();
+        apiLogger.logRequest("ScraperOperationService.toggleAutoScrape", {
+            id,
+            settings
+        });
+        try {
+            const response = await api.patch<ScraperSiteApiResponse>(
+                `/admin/scraper-sites/${id}`,
+                settings
+            );
+            const duration = Date.now() - starttime;
+            apiLogger.logResponse("ScraperOperationService.toggleAutoScrape", { 
+                duration: `${duration}ms`,
+                response: { ...response.data }
+            });
+            return response.data;
+        } catch (error) {
+            apiLogger.logError("ScraperOperationService.toggleAutoScrape", error as Error);
+            throw error;
+        }
+    }
 
     // Update scraper site settings for a given scraper site ID
     public static async updateScraperSiteSettings(

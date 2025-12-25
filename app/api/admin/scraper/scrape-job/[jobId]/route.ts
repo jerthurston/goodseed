@@ -14,10 +14,13 @@ import { getJob } from "@/lib/queue/scraper-queue";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
+  let jobId = '';
+  
   try {
-    const { jobId } = params;
+    const resolvedParams = await params;
+    jobId = resolvedParams.jobId;
 
     if (!jobId) {
       return NextResponse.json(
@@ -104,7 +107,7 @@ export async function GET(
 
   } catch (error) {
     apiLogger.logError('[ScrapeJob API] Failed to fetch job details', error as Error, {
-      jobId: params?.jobId
+      jobId: jobId
     });
 
     return NextResponse.json(
@@ -124,10 +127,13 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
+  let jobId = '';
+  
   try {
-    const { jobId } = params;
+    const resolvedParams = await params;
+    jobId = resolvedParams.jobId;
 
     if (!jobId) {
       return NextResponse.json(
@@ -184,7 +190,7 @@ export async function DELETE(
 
   } catch (error) {
     apiLogger.logError('[ScrapeJob API] Failed to cancel job', error as Error, {
-      jobId: params?.jobId
+      jobId: jobId
     });
 
     return NextResponse.json(

@@ -8,26 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     
-    "# Modern Hybrid Scraper Scripts": "",
-    "scraper:hybrid-test": "tsx scripts/test/test-hybrid-extraction.ts",
-    "scraper:factory-demo": "tsx scripts/demo/enhanced-factory-demo.ts", 
-    "scraper:setup": "tsx scripts/setup/setup-new-site.ts",
-    
-    "# Legacy Scripts (kept for reference)": "",
-    "scraper": "tsx scripts/test-scraper.ts",
-    "scraper:leafly": "tsx scripts/test-scraper.ts leafly",
-    "test:scraper": "tsx scripts/test-scraper-simple.ts",
-    "scrape:save": "tsx scripts/scrape-and-save.ts",
-    
-    "# Modern Cron System": "",
+    "# Production Scripts": "",
     "cron:start": "tsx scripts/cron/cron-server.ts",
-    "cron:test-priority": "tsx scripts/test/test-cron-priority.ts",
-    "cron:test-all": "tsx scripts/test/test-cron-all.ts",
-    
-    "# Database & Utilities": "",
-    "db:check": "tsx scripts/check-db.ts", 
     "db:seed:dispensaries": "tsx scripts/seed-dispensaries.ts",
-    "test:products": "tsx scripts/test/test-products.ts",
     "worker:scraper": "tsx lib/workers/scraper-worker.ts"
   },
   "dependencies": {

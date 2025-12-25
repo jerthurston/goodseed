@@ -9,7 +9,7 @@ export async function validateSeller(sellerId:string) {
         select:{
             id:true,
             name:true,
-            scrapingSourceUrl:true,
+            url:true,
             isActive:true,
         }
     })

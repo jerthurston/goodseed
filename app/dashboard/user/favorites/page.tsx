@@ -1,10 +1,11 @@
 'use client'
 
-import SeedCardItem, { type Seed } from '@/components/custom/card/SeedCardItem'
+import SeedCardItem from '@/components/custom/card/SeedCardItem'
 import AddToListModal, { type UserList } from '@/components/custom/modals/AddToListModal'
 import DeleteListConfirmModal from '@/components/custom/modals/DeleteListConfirmModal'
 import ManageListModal from '@/components/custom/modals/ManageListModal'
 import UnfavoriteConfirmModal from '@/components/custom/modals/UnfavoriteConfirmModal'
+import { SeedFilter } from '@/types/seed.type'
 import { faSeedling, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
@@ -43,7 +44,7 @@ const FavouritePage = () => {
     })
 
     // Mock seeds data - without listId, will be filtered by memberships
-    const [allSeeds] = useState<Seed[]>([
+    const [allSeeds] = useState<any[]>([
         {
             id: 'P001',
             name: 'Blue Dream',

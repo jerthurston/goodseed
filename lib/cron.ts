@@ -1,4 +1,5 @@
 import cron from 'node-cron';
+import { apiLogger } from './helpers/api-logger';
 
 /**
  * Modern Cron Jobs cho Hybrid Cannabis Scraping System
@@ -55,9 +56,9 @@ async function triggerScrapingJob(sites?: string[]): Promise<void> {
     }
 
     const result = await response.json();
-    console.console.log(`[CRON] Scraping triggered: ${result.data.jobsQueued} jobs queued for ${result.data.totalSellers} sites`);
+    apiLogger.debug(`[CRON] Scraping triggered: ${result.data.jobsQueued} jobs queued for ${result.data.totalSellers} sites`);
   } catch (error) {
-    console.error('[CRON] Failed to trigger scraping:', error);
+    apiLogger.logError('[CRON] Failed to trigger scraping:', error as Error);
     throw error;
   }
 }

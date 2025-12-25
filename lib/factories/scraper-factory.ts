@@ -6,22 +6,17 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { CheerioCrawler } from 'crawlee';
 
 // Database services (retained for data persistence)
 import { SaveDbService as VancouverSaveDbService } from '@/scrapers/vancouverseedbank/core/save-db-service';
 import { SaveDbService as SunWestSaveDbService } from '@/scrapers/sunwestgenetics/core/save-db-service';
-import { SaveDbService as CropKingSaveDbService } from '@/scrapers/cropkingseeds/core/save-db-service';
 
 // Product List Scrapers (core implementations)
 
 import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
 import { SUNWESTGENETICS_SELECTORS } from '@/scrapers/sunwestgenetics/core/selectors';
 
-import {
-  createCropKingSeedsScraper,
-  CROPKINGSEEDS_SELECTORS
-} from '@/scrapers/cropkingseeds/hybrid/cropkingseeds-hybrid-scraper';
+
 import { vancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/vancouver-product-list-scraper';
 import { sunwestgeneticsProductListScraper } from '@/scrapers/sunwestgenetics/core/sunwestgenetics-scrape-product-list';
 
@@ -176,7 +171,7 @@ export class ScraperFactory {
       'cropkingseeds': {
         name: 'Crop King Seeds',
         baseUrl: 'https://www.cropkingseeds.ca',
-        selectors: CROPKINGSEEDS_SELECTORS,
+        selectors: {} as ManualSelectors,
         isImplemented: true
       },
       'bcbuddepot': {

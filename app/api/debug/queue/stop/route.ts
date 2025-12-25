@@ -13,12 +13,19 @@ import { apiLogger } from '@/lib/helpers/api-logger';
  * Stop specific job by ID
  */
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ jobId: string }> }
+  request: NextRequest
 ) {
   try {
-    const resolvedParams = await params;
-    const { jobId } = resolvedParams;
+    // Get jobId from request body or query params
+    const url = new URL(request.url);
+    const jobId = url.searchParams.get('jobId');
+    
+    if (!jobId) {
+      return NextResponse.json({
+        success: false,
+        message: 'Job ID is required',
+      }, { status: 400 });
+    }
 
     apiLogger.info('[Debug] Force stopping job', { jobId });
 

@@ -1,6 +1,7 @@
 'use client'
 
-import FilterModal, { FilterState } from '@/components/custom/modals/FilterModal'
+import FilterModal from '@/components/custom/modals/FilterModal'
+import { SeedFilter } from '@/types/seed.type'
 import { faSearch, faSlidersH } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRouter } from 'next/navigation'
@@ -22,7 +23,7 @@ const SearchBtnForResultPage = () => {
         setIsFilterModalOpen(true)
     }
 
-    const handleApplyFilters = (filters: FilterState) => {
+    const handleApplyFilters = (filters: SeedFilter) => {
         console.log('Applied filters:', filters)
         const params = new URLSearchParams()
 

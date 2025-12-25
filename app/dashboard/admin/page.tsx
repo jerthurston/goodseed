@@ -27,7 +27,7 @@ import { useFetchScraperSites, useFetchSellers } from "@/hooks/seller"
 import { useRouter } from "next/navigation"
 import styles from "../(components)/dashboardAdmin.module.css"
 import ErrorAlertBanner from "@/components/custom/admin/ErrorAlertBanner"
-import ErrorAlertTabContent from "../(components)/ErrorAlertTabContent"
+import { LogsTabContent } from "../(components)/LogsTabContent"
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"sellers" | "scraper" | "overview" | "auto-scraper" | "error-alert">(
@@ -129,7 +129,7 @@ export default function AdminDashboard() {
             isActive={activeTab === "error-alert"}
             onClick={() => setActiveTab("error-alert")}
           >
-            Error Alert
+            Activity Monitoring
           </DashboardSidebarItem>
         </DashboardSidebar>
       }
@@ -177,7 +177,7 @@ export default function AdminDashboard() {
 
         {/* Error Alert Management */}
         {activeTab === "error-alert" && (
-          <ErrorAlertTabContent
+          <LogsTabContent
             sellers={sellers.map(seller => ({ id: seller.id, name: seller.name }))}
             onRefreshData={() => {
               refetchSellers();

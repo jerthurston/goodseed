@@ -1,0 +1,35 @@
+{
+  "family": "goodseed-migration-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::396260462264:role/goodseed-free-ecs-task-execution-role",
+  "taskRoleArn": "arn:aws:iam::396260462264:role/goodseed-free-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "migration",
+      "image": "396260462264.dkr.ecr.us-east-1.amazonaws.com/goodseed-free:latest",
+      "essential": true,
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://goodseed_user:GoodSeed2024SecureDB@goodseed-free-db.cq7eog2a85qn.us-east-1.rds.amazonaws.com:5432/goodseed_free"
+        }
+      ],
+      "command": ["npx", "prisma", "migrate", "deploy"],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/goodseed-free/app",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "migration"
+        }
+      }
+    }
+  ]
+}

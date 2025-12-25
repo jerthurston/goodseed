@@ -204,7 +204,7 @@ async function main() {
     // Inspect main categories
     const urlsToInspect = [
         CATEGORY_URLS.allProducts,
-        CATEGORY_URLS.seeds,
+        CATEGORY_URLS.marijuanaSeeds,
         CATEGORY_URLS.feminized,
     ];
 

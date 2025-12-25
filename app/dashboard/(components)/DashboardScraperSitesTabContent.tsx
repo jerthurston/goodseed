@@ -65,7 +65,7 @@ const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentP
 
       await triggerManualScrape(
         sellerId,
-        { maxPages: 30 }
+        { endPage: 30 }
       );
 
       // Success toast is handled in the hook
