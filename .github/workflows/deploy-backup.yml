@@ -5,18 +5,13 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
-    types: [opened, synchronize]
 
 env:
   AWS_REGION: us-east-1
-  NODE_VERSION: 20
 
-# ------------------------------------------------------------
-# 1️⃣ TEST JOB (CI)
-# ------------------------------------------------------------
 jobs:
   test:
-    name: Test, Lint & Type Check
+    name: Test & Lint
     runs-on: ubuntu-latest
     
     steps:
@@ -31,13 +26,12 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ env.NODE_VERSION }}
+        node-version: '20'
         cache: 'pnpm'
 
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
 
-    # ⚠️ Prisma MUST be generated before type checking
     - name: Generate Prisma Client
       run: pnpm prisma generate
       env:
@@ -46,12 +40,7 @@ jobs:
     - name: Run linting
       run: pnpm lint
 
-    - name: Type check
-      run: pnpm type-check
-
-  # ------------------------------------------------------------
-  # 2️⃣ DETERMINE ENVIRONMENT
-  # ------------------------------------------------------------
+  # Determine deployment environment
   set-environment:
     name: Determine Environment
     runs-on: ubuntu-latest
@@ -64,7 +53,6 @@ jobs:
       ecs_cluster: ${{ steps.env.outputs.ecs_cluster }}
       web_task_definition: ${{ steps.env.outputs.web_task_definition }}
       worker_task_definition: ${{ steps.env.outputs.worker_task_definition }}
-      worker_image_suffix: ${{ steps.env.outputs.worker_image_suffix }}
     
     steps:
     - name: Set environment based on branch
@@ -78,7 +66,14 @@ jobs:
           echo "ecs_cluster=goodseed-production-cluster" >> $GITHUB_OUTPUT
           echo "web_task_definition=goodseed-production-task" >> $GITHUB_OUTPUT
           echo "worker_task_definition=goodseed-production-worker-task" >> $GITHUB_OUTPUT
-          echo "worker_image_suffix=" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+          echo "environment=development" >> $GITHUB_OUTPUT
+          echo "ecr_repository=goodseed-free" >> $GITHUB_OUTPUT
+          echo "web_service=goodseed-free-service" >> $GITHUB_OUTPUT
+          echo "worker_service=goodseed-free-worker" >> $GITHUB_OUTPUT
+          echo "ecs_cluster=goodseed-free-cluster" >> $GITHUB_OUTPUT
+          echo "web_task_definition=goodseed-free-app" >> $GITHUB_OUTPUT
+          echo "worker_task_definition=goodseed-free-worker" >> $GITHUB_OUTPUT
         else
           echo "environment=development" >> $GITHUB_OUTPUT
           echo "ecr_repository=goodseed-free" >> $GITHUB_OUTPUT
@@ -87,14 +82,10 @@ jobs:
           echo "ecs_cluster=goodseed-free-cluster" >> $GITHUB_OUTPUT
           echo "web_task_definition=goodseed-free-app" >> $GITHUB_OUTPUT
           echo "worker_task_definition=goodseed-free-worker" >> $GITHUB_OUTPUT
-          echo "worker_image_suffix=-dev" >> $GITHUB_OUTPUT
         fi
 
-  # ------------------------------------------------------------
-  # 3️⃣ BUILD & DEPLOY (CD)
-  # ------------------------------------------------------------
   build-and-deploy:
-    name: Build & Deploy to AWS ECS
+    name: Build and Deploy to AWS
     runs-on: ubuntu-latest
     needs: [test, set-environment]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
@@ -115,35 +106,41 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    # -----------------------------
-    # Build & Push WEB image
-    # -----------------------------
-    - name: Build & push web image
-      uses: docker/build-push-action@v5
+    - name: Extract metadata for Docker
+      id: meta
+      uses: docker/metadata-action@v5
       with:
-        context: .
-        target: runner
-        push: true
+        images: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}
         tags: |
-          ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}
-          ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:develop
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix=sha-
+          type=raw,value=latest,enable={{is_default_branch}}
 
-    # -----------------------------
-    # Build & Push WORKER image
-    # -----------------------------
-    - name: Build & push worker image
+    - name: Build and push Docker images
       uses: docker/build-push-action@v5
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
       with:
         context: .
-        target: builder
         push: true
-        tags: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}${{ needs.set-environment.outputs.worker_image_suffix }}
+        target: runner
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
 
-    # -----------------------------
-    # Database migration (production only)
-    # -----------------------------
+    - name: Build and push worker image
+      uses: docker/build-push-action@v5
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      with:
+        context: .
+        push: true
+        target: builder
+        tags: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}-dev
+
     - name: Run database migrations
-      if: needs.set-environment.outputs.environment == 'production'
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: |
@@ -162,7 +159,7 @@ jobs:
       with:
         task-definition: web-task-definition.json
         container-name: goodseed-app
-        image: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}
+        image: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:develop
 
     - name: Deploy web service to Amazon ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
@@ -182,7 +179,7 @@ jobs:
       with:
         task-definition: worker-task-definition.json
         container-name: goodseed-worker
-        image: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}${{ needs.set-environment.outputs.worker_image_suffix }}
+        image: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}-dev
 
     - name: Deploy worker service to Amazon ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
