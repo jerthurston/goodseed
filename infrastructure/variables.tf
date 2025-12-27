@@ -18,6 +18,18 @@ variable "project_name" {
   default     = "goodseed"
 }
 
+variable "domain_name" {
+  description = "Domain name for the application (e.g., goodseed.com)"
+  type        = string
+  default     = ""  # Optional - leave empty to use ALB DNS names
+}
+
+variable "enable_custom_domain" {
+  description = "Whether to use custom domain with Route 53 and SSL"
+  type        = bool
+  default     = false  # Start false for MVP, set true when you have domain
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for VPC"
   type        = string

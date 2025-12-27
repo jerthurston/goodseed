@@ -300,11 +300,39 @@ resource "aws_lb_target_group" "app" {
   })
 }
 
-# ALB Listener
+# ALB Listener - HTTP (redirect to HTTPS if custom domain enabled)
 resource "aws_lb_listener" "web" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
+  
+  default_action {
+    type = var.enable_custom_domain ? "redirect" : "forward"
+    
+    # Redirect to HTTPS if custom domain is enabled
+    dynamic "redirect" {
+      for_each = var.enable_custom_domain ? [1] : []
+      content {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+    
+    # Forward to target group if no custom domain
+    target_group_arn = var.enable_custom_domain ? null : aws_lb_target_group.app.arn
+  }
+}
+
+# ALB HTTPS Listener (only if custom domain is enabled)
+resource "aws_lb_listener" "web_https" {
+  count = var.enable_custom_domain && var.domain_name != "" ? 1 : 0
+  
+  load_balancer_arn = aws_lb.main.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  certificate_arn   = aws_acm_certificate_validation.main[0].certificate_arn
   
   default_action {
     type             = "forward"
