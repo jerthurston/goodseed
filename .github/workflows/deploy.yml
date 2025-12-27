@@ -159,7 +159,7 @@ jobs:
       with:
         task-definition: web-task-definition.json
         container-name: goodseed-app
-        image: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}
+        image: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:develop
 
     - name: Deploy web service to Amazon ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
