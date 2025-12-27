@@ -40,8 +40,8 @@ jobs:
     - name: Run linting
       run: pnpm lint
 
-    - name: Check TypeScript (type check only)
-      run: npx tsc --noEmit
+    - name: Check TypeScript (with CI config)
+      run: npx tsc --project tsconfig.ci.json --noEmit
 
   # Determine deployment environment
   set-environment:
