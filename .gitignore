@@ -86,6 +86,45 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# Binary executables and large files
+*.exe
+*.bin
+*.app
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.msi
+*.zip
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z
+
+# Terraform binaries and providers
+terraform
+terraform.exe
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.*
+terraform.tfvars
+*.tfplan
+*.tfstate.backup
+
+# Platform-specific executables
+*.so
+*.dll
+*.dylib
+*.a
+*.lib
+
+# Large development tools
+node_modules/.bin/
+vendor/
+dist/
+build/
+
 # vercel
 .vercel
 
