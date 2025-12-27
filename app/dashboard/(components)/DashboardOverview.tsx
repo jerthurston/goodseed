@@ -3,6 +3,9 @@ import { DashboardCard } from './DashboardCard'
 import { SellerUI } from '@/types/seller.type'
 import { SellerCard } from './SellerCard'
 import { StatsOverview } from './StatsOverview'
+import AutoScraperSystemOverview from '@/components/custom/auto-scraper/AutoScraperSystemOverview'
+import AutoScraperRecentActivity from '@/components/custom/auto-scraper/AutoScraperRecentActivity'
+import AutoScraperPerformanceMetrics from '@/components/custom/auto-scraper/AutoScraperPerformanceMetrics'
 
 
 interface DashboardOverviewProps {
@@ -33,7 +36,20 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ sellers }) => {
                 },
               }}
             />
-            <DashboardCard className="mt-6">
+            
+            {/* Auto Scraper System Overview */}
+            <AutoScraperSystemOverview sellersCount={sellers.length} />
+            
+            {/* Auto Scraper Performance Metrics */}
+            <AutoScraperPerformanceMetrics />
+            
+            {/* Split layout for Recent Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              {/* Auto Scraper Recent Activity */}
+              <AutoScraperRecentActivity />
+              
+              {/* Recent Seller Activity */}
+              <DashboardCard>
                 <h2 className="font-['Archivo_Black'] text-3xl uppercase text-(--brand-primary) tracking-tight mb-4">
                     Recent Activity
                 </h2>
@@ -45,7 +61,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ sellers }) => {
                             <SellerCard key={seller.id} seller={seller} />
                         ))}
                 </div>
-            </DashboardCard>
+              </DashboardCard>
+            </div>
         </>
     )
 }

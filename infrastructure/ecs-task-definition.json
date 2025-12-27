@@ -1,0 +1,66 @@
+{
+  "family": "goodseed-free-app",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::396260462264:role/goodseed-free-ecs-task-execution-role",
+  "taskRoleArn": "arn:aws:iam::396260462264:role/goodseed-free-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "goodseed-app",
+      "image": "396260462264.dkr.ecr.us-east-1.amazonaws.com/goodseed-free:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://goodseed_user:GoodSeed2024SecureDB@goodseed-free-db.cq7eog2a85qn.us-east-1.rds.amazonaws.com:5432/goodseed_free?sslmode=disable"
+        },
+        {
+          "name": "NEXTAUTH_SECRET",
+          "value": "goodseed-nextauth-secret-key-production-2024"
+        },
+        {
+          "name": "NEXTAUTH_URL",
+          "value": "http://goodseed-free-alb-1825640970.us-east-1.elb.amazonaws.com"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "goodseed-free-redis.lxu2zc.ng.0001.use1.cache.amazonaws.com"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/goodseed-free/app",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:3000/api/admin/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

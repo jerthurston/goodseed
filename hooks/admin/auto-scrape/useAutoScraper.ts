@@ -107,32 +107,69 @@ export function useAutoScraper() {
     },
   });
 
+  const updateSellerInterval = useMutation({
+    mutationFn: ({ sellerId, interval }: { sellerId: string; interval: number | null }) => 
+      AutoScraperService.updateSellerInterval(sellerId, interval),
+    onSuccess: (data, variables) => {
+      const { sellerId, interval } = variables;
+      const sellerName = data.data?.name || 'seller';
+      
+      if (interval === null) {
+        toast.success(`🛑 Auto scraper disabled for ${sellerName}`, {
+          description: 'Auto scraping has been disabled for this seller.'
+        });
+      } else {
+        toast.success(`✅ Auto scraper interval updated for ${sellerName}`, {
+          description: `Interval set to ${interval} hours. Use "Start All Auto Scrapers" to activate the schedule.`
+        });
+      }
+      
+      // Invalidate queries để refresh data
+      queryClient.invalidateQueries({ queryKey: ['sellers'] });
+      queryClient.invalidateQueries({ queryKey: ['seller', sellerId] });
+      queryClient.invalidateQueries({ queryKey: ['auto-scraper-health'] });
+    },
+    onError: (error, variables) => {
+      const { sellerId, interval } = variables;
+      toast.error('❌ Failed to update auto scraper interval', {
+        description: error instanceof Error ? error.message : 'Please check server logs for details'
+      });
+      console.error('Update seller interval error:', error, { sellerId, interval });
+    },
+  });
+
   return {
     // Mutations
     startAllAutoScraper,
     stopAllAutoScraper,
     startSellerAutoScraper,
     stopSellerAutoScraper,
+    updateSellerInterval,
     
     // Loading states
     isStartingAll: startAllAutoScraper.isPending,
     isStoppingAll: stopAllAutoScraper.isPending,
     isStartingSeller: startSellerAutoScraper.isPending,
     isStoppingSeller: stopSellerAutoScraper.isPending,
+    isUpdatingInterval: updateSellerInterval.isPending,
     
     // Helper computed states
     isLoading: startAllAutoScraper.isPending || 
                stopAllAutoScraper.isPending || 
                startSellerAutoScraper.isPending || 
-               stopSellerAutoScraper.isPending,
+               stopSellerAutoScraper.isPending ||
+               updateSellerInterval.isPending,
                
     isBulkOperationLoading: startAllAutoScraper.isPending || stopAllAutoScraper.isPending,
-    isSellerOperationLoading: startSellerAutoScraper.isPending || stopSellerAutoScraper.isPending,
+    isSellerOperationLoading: startSellerAutoScraper.isPending || 
+                              stopSellerAutoScraper.isPending ||
+                              updateSellerInterval.isPending,
     
     // Error states
     startAllError: startAllAutoScraper.error,
     stopAllError: stopAllAutoScraper.error,
     startSellerError: startSellerAutoScraper.error,
     stopSellerError: stopSellerAutoScraper.error,
+    updateIntervalError: updateSellerInterval.error,
   };
 }

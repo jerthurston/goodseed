@@ -2,14 +2,16 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faArrowLeft, faStore, faEdit, faTrash, faEye, faPlay, faStop, faRefresh, faAdd } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faStore, faEdit, faTrash, faEye, faPlay, faStop, faRefresh, faAdd, faRobot } from '@fortawesome/free-solid-svg-icons'
 import {
   DashboardLayout,
   DashboardCard,
   DashboardButton,
   DashboardToggle,
 } from "../../../(components)"
+import { SellerAutoScraperCard, AutoScraperSection } from "@/components/custom/auto-scraper"
 import { useFetchSellerById } from "@/hooks/seller"
+import { useAutoScraper } from "@/hooks/admin/auto-scrape/useAutoScraper"
 import styles from "../../../(components)/dashboardAdmin.module.css"
 import Link from "next/link"
 import { Clock, PlayCircle } from "lucide-react"
@@ -29,8 +31,20 @@ export default function AdminSellerDetailPage() {
   const router = useRouter()
   const sellerId = params.id as string
 
+  // Separate loading states for different operations
+  const [isManualScrapeLoading, setIsManualScrapeLoading] = useState(false)
+  const [isQuickTestLoading, setIsQuickTestLoading] = useState(false)
+
   // ALL HOOKS MUST BE CALLED AT THE TOP - BEFORE ANY CONDITIONAL RETURNS
   const { seller, isLoading, isError, error } = useFetchSellerById(sellerId)
+  
+  // Auto scraper hook for enhanced functionality
+  const {
+    startSellerAutoScraper,
+    stopSellerAutoScraper,
+    updateSellerInterval,
+    isLoading: isAutoScraperLoading,
+  } = useAutoScraper()
 
   // TODO: Cần thiết lập lại hàm refetchScraperSites cho đúng
   const refetchScraperSites = () => {
@@ -41,16 +55,7 @@ export default function AdminSellerDetailPage() {
     triggerManualScrape,
     isTriggering,
     triggerError,
-    activeJobs,
-
-    toggleAutoScrape,
-    isToggling,
-    toggleError,
-
-    updateInterval,
-    isUpdatingInterval,
-    updateIntervalError
-
+    activeJobs
   } = useScraperOperations(refetchScraperSites)
 
   // Modal states
@@ -98,36 +103,107 @@ export default function AdminSellerDetailPage() {
 
   const handleManualScrape = async (sellerId: string, sellerName: string) => {
     try {
-      // Show loading state immediately
+      setIsManualScrapeLoading(true)
+      
+      // Show loading toast
       toast.loading(`Initiating scrape for ${sellerName}...`, {
-        id: `scrape-${sellerId}` // Use consistent ID for updates
-      },
-      );
+        id: `scrape-${sellerId}`
+      });
+      
       // Option 1: test manual trigger với fullsiteCrawl. Let schema defaults handle startPage/endPage
       const scrapingConfig = { fullSiteCrawl: true };
       // Option 2: test với số page cố định với startPage và endPage
       // const scrapingConfig = { startPage: 1, endPage: 30 };
       const result = await triggerManualScrape(sellerId, scrapingConfig);
+      
       // Success toast is handled in the hook
       toast.dismiss(`scrape-${sellerId}`);
-      toast.dismiss(`add Job ${activeJobs} successfully! Scraper processing will happen in the background.`);
+      toast.success(`Manual scrape started for ${sellerName}!`);
 
     } catch (error) {
-      // Dismiss loading toast.
+      // Dismiss loading toast
       toast.dismiss(`scrape-${sellerId}`);
 
       // Error is handled in the hook, but we can add fallback
       console.error("Manual scrape failed:", error);
+    } finally {
+      setIsManualScrapeLoading(false)
     }
   }
 
-  const handleToggleAutoScrape = async (id: string, currentState: boolean) => {
+  const handleQuickTest = async (sellerId: string, sellerName: string) => {
     try {
-      await toggleAutoScrape(id, currentState);
-      toast.success(`Auto scrape ${!currentState ? 'enabled' : 'disabled'}`);
+      setIsQuickTestLoading(true)
+      
+      // Show loading toast
+      toast.loading(`Starting quick test for ${sellerName} (2 pages)...`, {
+        id: `test-${sellerId}`
+      });
+
+      // Quick test: only first 2 pages for fast testing
+      const scrapingConfig = { 
+        startPage: 1, 
+        endPage: 2,
+        mode: 'test' 
+      };
+      
+      const result = await triggerManualScrape(sellerId, scrapingConfig);
+      
+      // Success toast
+      toast.dismiss(`test-${sellerId}`);
+      toast.success(`Quick test started for ${sellerName}!`, {
+        description: "Testing first 2 pages only - check results in ~30 seconds"
+      });
+
+      // Auto-clear loading state after 3 seconds (since quick test is fast)
+      setTimeout(() => {
+        setIsQuickTestLoading(false)
+      }, 3000);
+
+    } catch (error) {
+      // Dismiss loading toast
+      toast.dismiss(`test-${sellerId}`);
+
+      // Error toast
+      toast.error(`Quick test failed for ${sellerName}`, {
+        description: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+      
+      console.error("Quick test failed:", error);
+      setIsQuickTestLoading(false)
+    }
+  }
+
+  const handleToggleAutoScrape = async (sellerId: string, currentIsAutoEnabled: boolean) => {
+    try {
+      if (currentIsAutoEnabled) {
+        // Disable: set autoScrapeInterval to null
+        await updateSellerInterval.mutateAsync({
+          sellerId,
+          interval: null
+        });
+      } else {
+        // Enable: set autoScrapeInterval to default 24 hours
+        await updateSellerInterval.mutateAsync({
+          sellerId,
+          interval: 24
+        });
+      }
     } catch (error) {
       apiLogger.logError("Error toggling auto scrape:", { error });
-      toast.error(`Error toggling auto scrape for ${id}`);
+      toast.error(`Failed to ${currentIsAutoEnabled ? 'disable' : 'enable'} auto scrape`);
+    }
+  }
+
+  const handleIntervalChange = async (sellerId: string, interval: number) => {
+    try {
+      await updateSellerInterval.mutateAsync({
+        sellerId,
+        interval
+      });
+    } catch (error) {
+      apiLogger.logError("Error updating interval:", { error });
+      toast.error("Failed to update scraping interval");
     }
   }
 
@@ -156,6 +232,7 @@ export default function AdminSellerDetailPage() {
             Seller Details & Management
           </p>
         </div>
+        {/* Back to Button */}
         <DashboardButton
           onClick={() => router.push("/dashboard/admin")}
         >
@@ -165,9 +242,7 @@ export default function AdminSellerDetailPage() {
       </div>
 
       <div className="space-y-6">
-
         {/* Actions Card */}
-
         <DashboardCard key={currentSeller.id}>
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -182,17 +257,18 @@ export default function AdminSellerDetailPage() {
                 Last scraped: {currentSeller.lastScraped}
               </p>
             </div>
+            {/* Manual Scrape Button trigger */}
             <div className="flex flex-col gap-2">
               <DashboardButton
                 variant="secondary"
                 onClick={() => handleManualScrape(currentSeller.id, currentSeller.name)}
-                disabled={isTriggering || activeJobs.has(currentSeller.id)}
+                disabled={isManualScrapeLoading}
                 className="flex items-center gap-2"
               >
-                {isTriggering || activeJobs.has(currentSeller.id) ? (
+                {isManualScrapeLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600" />
-                    {activeJobs.has(currentSeller.id) ? 'Scraping...' : 'Starting...'}
+                    Starting Manual...
                   </>
                 ) : (
                   <>
@@ -202,11 +278,42 @@ export default function AdminSellerDetailPage() {
                 )}
               </DashboardButton>
 
-              {/* Show job status badge */}
-              {activeJobs.has(currentSeller.id) && (
+              {/* Quick Test Scrape with first page */}
+              <DashboardButton
+                variant="outline"
+                onClick={() => handleQuickTest(currentSeller.id, currentSeller.name)}
+                disabled={isQuickTestLoading}
+                className={`flex items-center gap-2 text-sm transition-all duration-200 ${
+                  isQuickTestLoading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-orange-50'
+                }`}
+              >
+                {isQuickTestLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-orange-300 border-t-orange-600" />
+                    Testing...
+                  </>
+                ) : (
+                  <>
+                    <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
+                    Quick Test (2 pages)
+                  </>
+                )}
+              </DashboardButton>
+
+
+              {/* Show job status badge - only for manual scrape */}
+              {activeJobs.has(currentSeller.id) && isManualScrapeLoading && (
                 <div className="flex items-center gap-2 text-sm text-blue-600">
                   <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
-                  Job ID: {activeJobs.get(currentSeller.id)}
+                  Manual Job ID: {activeJobs.get(currentSeller.id)}
+                </div>
+              )}
+              
+              {/* Quick test status */}
+              {isQuickTestLoading && (
+                <div className="flex items-center gap-2 text-sm text-orange-600">
+                  <div className="w-2 h-2 bg-orange-600 rounded-full animate-pulse" />
+                  Quick test running...
                 </div>
               )}
             </div>
@@ -217,6 +324,7 @@ export default function AdminSellerDetailPage() {
               label="Auto Scrape"
               isActive={currentSeller.isAutoEnabled}
               onChange={() => handleToggleAutoScrape(currentSeller.id, currentSeller.isAutoEnabled)}
+              disabled={updateSellerInterval.isPending}
             />
 
             {currentSeller.isAutoEnabled && (
@@ -225,13 +333,9 @@ export default function AdminSellerDetailPage() {
                   Interval:
                 </span>
                 <select
-                  value={currentSeller.autoScrapeInterval || 6}
-                  onChange={(e) =>
-                    updateInterval(currentSeller.id, {
-                      isAutoEnabled: currentSeller.isAutoEnabled,
-                      autoScrapeInterval: Number(e.target.value)
-                    })
-                  }
+                  value={currentSeller.autoScrapeInterval || 24}
+                  onChange={(e) => handleIntervalChange(currentSeller.id, Number(e.target.value))}
+                  disabled={updateSellerInterval.isPending}
                   className={style.selectInterval}
                 >
                   <option value={1}>Every 1 hour</option>
@@ -290,6 +394,20 @@ export default function AdminSellerDetailPage() {
             </DashboardButton>
           </div>
         </DashboardCard>
+
+        {/*--> AUTO SCRAPER SCHEDULE INFORMATION SECTION */}
+        <AutoScraperSection 
+          seller={{
+            id: currentSeller.id,
+            name: currentSeller.name,
+            isAutoEnabled: currentSeller.isAutoEnabled,
+            autoScrapeInterval: currentSeller.autoScrapeInterval
+          }}
+          onRefresh={() => {
+            // This will trigger a refetch of seller data
+            window.location.reload(); // Simple refresh for now
+          }}
+        />
 
         {/*--> SELLER INFORMATION CARD */}
         <DashboardCard>

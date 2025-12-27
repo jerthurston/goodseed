@@ -12,41 +12,67 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST (req:NextRequest) {
     try {
-        apiLogger.info('[API] Scheduling all sellers for auto scraping...');
+        let body;
+        try {
+            body = await req.json();
+        } catch (jsonError) {
+            // Handle empty or invalid JSON
+            apiLogger.warn('[API] Invalid JSON in request body, using defaults');
+            body = {};
+        }
+        const action = body?.action || 'start'; // Default to start nếu không có action
+        
+        apiLogger.info('[API] Auto scraper bulk operation requested', { action });
 
-        // Sử dụng AutoScraperScheduler để bulk initialize - add các job có seller thỏa điều kiện vào queue bull
-        const results = await AutoScraperScheduler.initializeAllAutoJobs();
-        // Tính toán thống kê tổng hợp kết quả trả về từ service
-        const scheduled = results.details.filter(result => result.status === 'scheduled');
+        let results;
+        let operationType;
+        
+        if (action === 'stop') {
+            // Stop operation
+            apiLogger.info('[API] Stopping all sellers for auto scraping...');
+            results = await AutoScraperScheduler.stopAllAutoJobs();
+            operationType = 'stop';
+        } else {
+            // Start operation (default)
+            apiLogger.info('[API] Scheduling all sellers for auto scraping...');
+            results = await AutoScraperScheduler.initializeAllAutoJobs();
+            operationType = 'start';
+        }
+
+        // Calculate summary statistics
+        const successKey = operationType === 'stop' ? 'stopped' : 'scheduled';
+        const successful = results.details.filter(result => result.status === successKey);
         const failed = results.details.filter(result => result.status === 'failed');
 
         const response = {
-            success:true,
-            data:{
+            success: true,
+            data: {
+                action: operationType,
                 totalProcessed: results.details.length,
-                scheduled: scheduled.length,
+                [successKey]: successful.length,
                 failed: failed.length,
                 details: results.details,
-                message: `Bulk auto scraper operation completed: ${scheduled.length}/${results.details.length} sellers scheduled`
+                message: `Bulk auto scraper ${operationType} completed: ${successful.length}/${results.details.length} sellers ${operationType === 'stop' ? 'stopped' : 'scheduled'}`
             },
             timeStamp: new Date().toISOString(),
         };
 
-        apiLogger.info('[Auto Scraper Api] Bulk start operation completed',{
+        apiLogger.info(`[Auto Scraper Api] Bulk ${operationType} operation completed`, {
+            action: operationType,
             totalProcessed: response.data.totalProcessed,
-            scheduled: response.data.scheduled,
+            successful: successful.length,
             failed: response.data.failed,
         });
 
         return NextResponse.json(response);
     } catch (error) {
         const errorMessage = error instanceof Error ?  error.message : 'Unknown error';
-        apiLogger.logError('[Auto Scraper Api] Failed to start auto scraper', error as Error );
+        apiLogger.logError('[Auto Scraper Api] Failed auto scraper operation', error as Error );
 
         return NextResponse.json({
-            success:false,
-            error:{
-                code:'AUTO_SCRAPER_FAILED',
+            success: false,
+            error: {
+                code: 'AUTO_SCRAPER_FAILED',
                 message: errorMessage
             },
             timeStamp: new Date().toISOString(),

@@ -78,7 +78,7 @@ async function testPaginationDetection() {
             
             // Test extract function
             console.log('\n🧪 Testing extractProductsFromHTML...');
-            const result = extractProductsFromHTML($, VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS);
+            const result = extractProductsFromHTML($, VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS, testUrl, 1);
             
             console.log(`Products found: ${result.products.length}`);
             console.log(`Max pages detected: ${result.maxPages}`);

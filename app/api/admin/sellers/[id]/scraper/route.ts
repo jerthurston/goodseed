@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { ScrapeJobStatus } from '@prisma/client';
 import { createManualScrapeJob } from '@/lib/helpers/server/createManualScrapeJob';
 import { ScraperFactory } from '@/lib/factories/scraper-factory';
 import { getScraperSource } from '@/lib/helpers/server/getScraperSource';
@@ -86,7 +87,7 @@ export async function POST(
       where: {
         sellerId,
         status: {
-          in: ['PENDING', 'IN_PROGRESS']
+          in: [ScrapeJobStatus.WAITING, ScrapeJobStatus.ACTIVE]
         }
       }
     });
@@ -203,7 +204,7 @@ export async function GET(
 
     // Check active jobs
     const activeJob = seller.scrapeJobs.find(job => 
-      job.status === 'PENDING' || job.status === 'IN_PROGRESS'
+      job.status === ScrapeJobStatus.WAITING || job.status === ScrapeJobStatus.ACTIVE
     );
 
     return NextResponse.json({

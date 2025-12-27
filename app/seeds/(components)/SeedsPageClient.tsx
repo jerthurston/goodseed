@@ -70,7 +70,7 @@ const SeedsPageClient = () => {
 
     // --> Log data for debugging (remove after UI integration)
     useEffect(() => {
-        console.log('🎨 [SeedsPageClient] Data from useSeeds:', {
+       apiLogger.debug('🎨 [SeedsPageClient] Data from useSeeds:', {
             seedsCount: seeds.length,
             pagination,
             isLoading,

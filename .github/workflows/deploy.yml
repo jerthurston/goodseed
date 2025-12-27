@@ -1,0 +1,230 @@
+name: Deploy to AWS ECS
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: latest
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Run linting
+      run: pnpm lint
+
+    - name: Check TypeScript
+      run: pnpm type-check || npx tsc --noEmit
+
+    - name: Generate Prisma Client
+      run: pnpm prisma generate
+      env:
+        DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+
+  # Determine deployment environment
+  set-environment:
+    name: Determine Environment
+    runs-on: ubuntu-latest
+    needs: test
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      ecr_repository: ${{ steps.env.outputs.ecr_repository }}
+      web_service: ${{ steps.env.outputs.web_service }}
+      worker_service: ${{ steps.env.outputs.worker_service }}
+      ecs_cluster: ${{ steps.env.outputs.ecs_cluster }}
+      web_task_definition: ${{ steps.env.outputs.web_task_definition }}
+      worker_task_definition: ${{ steps.env.outputs.worker_task_definition }}
+    
+    steps:
+    - name: Set environment based on branch
+      id: env
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "environment=production" >> $GITHUB_OUTPUT
+          echo "ecr_repository=goodseed-production" >> $GITHUB_OUTPUT
+          echo "web_service=goodseed-production-service" >> $GITHUB_OUTPUT
+          echo "worker_service=goodseed-production-worker" >> $GITHUB_OUTPUT
+          echo "ecs_cluster=goodseed-production-cluster" >> $GITHUB_OUTPUT
+          echo "web_task_definition=goodseed-production-task" >> $GITHUB_OUTPUT
+          echo "worker_task_definition=goodseed-production-worker-task" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+          echo "environment=development" >> $GITHUB_OUTPUT
+          echo "ecr_repository=goodseed-free" >> $GITHUB_OUTPUT
+          echo "web_service=goodseed-free-service" >> $GITHUB_OUTPUT
+          echo "worker_service=goodseed-free-worker" >> $GITHUB_OUTPUT
+          echo "ecs_cluster=goodseed-free-cluster" >> $GITHUB_OUTPUT
+          echo "web_task_definition=goodseed-free-task" >> $GITHUB_OUTPUT
+          echo "worker_task_definition=goodseed-free-worker-task" >> $GITHUB_OUTPUT
+        else
+          echo "environment=development" >> $GITHUB_OUTPUT
+          echo "ecr_repository=goodseed-free" >> $GITHUB_OUTPUT
+          echo "web_service=goodseed-free-service" >> $GITHUB_OUTPUT
+          echo "worker_service=goodseed-free-worker" >> $GITHUB_OUTPUT
+          echo "ecs_cluster=goodseed-free-cluster" >> $GITHUB_OUTPUT
+          echo "web_task_definition=goodseed-free-task" >> $GITHUB_OUTPUT
+          echo "worker_task_definition=goodseed-free-worker-task" >> $GITHUB_OUTPUT
+        fi
+
+  build-and-deploy:
+    name: Build and Deploy to AWS
+    runs-on: ubuntu-latest
+    needs: [test, set-environment]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    environment: ${{ needs.set-environment.outputs.environment }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Extract metadata for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix=sha-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker images
+      uses: docker/build-push-action@v5
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      with:
+        context: .
+        push: true
+        target: runner
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build and push worker image
+      uses: docker/build-push-action@v5
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      with:
+        context: .
+        push: true
+        target: builder
+        tags: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}-dev
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Run database migrations
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      run: |
+        # Install dependencies and run migrations
+        npm install -g pnpm
+        pnpm install --frozen-lockfile
+        pnpm prisma migrate deploy
+
+    - name: Download web task definition
+      run: |
+        aws ecs describe-task-definition \
+          --task-definition ${{ needs.set-environment.outputs.web_task_definition }} \
+          --query taskDefinition > web-task-definition.json
+
+    - name: Update web task definition with new image
+      id: web-task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: web-task-definition.json
+        container-name: goodseed-app
+        image: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}
+
+    - name: Deploy web service to Amazon ECS
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.web-task-def.outputs.task-definition }}
+        service: ${{ needs.set-environment.outputs.web_service }}
+        cluster: ${{ needs.set-environment.outputs.ecs_cluster }}
+        wait-for-service-stability: true
+
+    - name: Download worker task definition
+      run: |
+        aws ecs describe-task-definition \
+          --task-definition ${{ needs.set-environment.outputs.worker_task_definition }} \
+          --query taskDefinition > worker-task-definition.json
+
+    - name: Update worker task definition with dev image
+      id: worker-task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: worker-task-definition.json
+        container-name: goodseed-worker
+        image: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}-dev
+
+    - name: Deploy worker service to Amazon ECS
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.worker-task-def.outputs.task-definition }}
+        service: ${{ needs.set-environment.outputs.worker_service }}
+        cluster: ${{ needs.set-environment.outputs.ecs_cluster }}
+        wait-for-service-stability: true
+
+    - name: Verify deployment health
+      run: |
+        # Get ALB endpoint
+        ALB_URL="http://goodseed-free-alb-1825640970.us-east-1.elb.amazonaws.com"
+        
+        # Wait for services to be stable
+        echo "⏳ Waiting for services to become healthy..."
+        sleep 60
+        
+        # Test web service health
+        echo "🔍 Testing web service health..."
+        curl -f $ALB_URL/api/health || (echo "❌ Web health check failed" && exit 1)
+        echo "✅ Web service is healthy"
+        
+        # Test worker service (queue stats)
+        echo "🔍 Testing worker service health..."
+        STATS=$(curl -s $ALB_URL/api/admin/scraper/stats)
+        echo "Queue stats: $STATS"
+        
+        # Check if worker is processing jobs
+        WAITING_JOBS=$(echo $STATS | jq -r '.data.jobCounts.WAITING // 0')
+        if [ "$WAITING_JOBS" -gt 10 ]; then
+          echo "⚠️  Warning: $WAITING_JOBS jobs waiting (possible worker issue)"
+        else
+          echo "✅ Worker service is processing jobs correctly"
+        fi
+        
+        echo "🎉 Web + Worker deployment completed successfully!"

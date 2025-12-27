@@ -34,12 +34,15 @@
 
 import { Job } from 'bull';
 import { prisma } from '@/lib/prisma';
+import { ScrapeJobStatus } from '@prisma/client';
 import { ScraperJobData, scraperQueue } from '@/lib/queue/scraper-queue';
 import ScraperFactory, { ISaveDbService, SupportedScraperSourceName } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { AutoScraperScheduler } from '../services/auto-scraper/backend/auto-scraper-scheduler.service';
-import { initializeAutoScraperOnWorkerStart, cleanupAutoScraperOnWorkerShutdown } from '@/lib/helpers/server/initializeAutoScraperJobs';
+import { ErrorProcessorService } from '../services/error-monitoring/error-processor.service';
+import { logScrapeActivity } from '../helpers/server/logScrapeActivity';
+import { initializeWorkerSync, cleanupWorkerSync } from '@/lib/workers/scraper-worker-startup';
 
 apiLogger.info('[Scraper Worker] Starting worker process...');
 
@@ -73,7 +76,7 @@ async function processScraperJob(job: Job<ScraperJobData>) {
     await prisma.scrapeJob.update({
       where: { jobId },
       data: {
-        status: 'IN_PROGRESS',
+        status: ScrapeJobStatus.ACTIVE, // Job đang chạy
         startedAt: new Date(),
       },
     });
@@ -141,14 +144,30 @@ async function processScraperJob(job: Job<ScraperJobData>) {
         if (mode === 'manual') {
           // Với thiết kế hiện tại, createProductListScraper đã gọi function với siteConfig sẵn rồi
           // Tất cả các trường hợp đều gọi cùng một function, chỉ khác config bên trong siteConfig
-          pageResult = await scraperFactory.createProductListScraper(scraperSourceName as SupportedScraperSourceName, source.maxPage);
+          pageResult = await scraperFactory.createProductListScraper(
+            scraperSourceName as SupportedScraperSourceName, 
+            source.maxPage,
+            config.startPage || 1,
+            config.endPage
+          );
         } else if (mode === 'auto') {
           // TODO: Implement auto mode logic
-          pageResult = await scraperFactory.createProductListScraper(scraperSourceName as SupportedScraperSourceName, source.maxPage);
+          pageResult = await scraperFactory.createProductListScraper(
+            scraperSourceName as SupportedScraperSourceName, 
+            source.maxPage,
+            config.startPage || 1,
+            config.endPage
+          );
         } else if (mode === 'batch') {
           // TODO: Implement batch mode logic  
         } else if (mode === 'test') {
-          // TODO: Implement test mode logic
+          // Test mode with limited pages
+          pageResult = await scraperFactory.createProductListScraper(
+            scraperSourceName as SupportedScraperSourceName, 
+            source.maxPage,
+            config.startPage || 1,
+            config.endPage || 2 // Default to 2 pages for test
+          );
         } else {
           throw new Error(`Unsupported mode: ${mode}`);
         }
@@ -173,9 +192,19 @@ async function processScraperJob(job: Job<ScraperJobData>) {
 
       } catch (scrapeError) {
         aggregatedResult.errors += 1;
+        
+        // Enhanced error logging with classification
+        const errorClassification = ErrorProcessorService.classifyError(scrapeError as Error, {
+          jobId,
+          scrapingSourceName: source.scrapingSourceName,
+          source: 'worker'
+        });
+
         apiLogger.logError('[Scraper Worker] Real scraping failed', scrapeError as Error, {
           jobId,
           scrapingSourceName: source.scrapingSourceName,
+          errorType: errorClassification.type,
+          errorSeverity: errorClassification.severity
         });
         // Continue to next source
       }
@@ -211,7 +240,7 @@ async function processScraperJob(job: Job<ScraperJobData>) {
 
     apiLogger.debug('[DEBUG WORKER] Products saved', {
       jobId,
-      status: aggregatedResult.errors === scrapingSourceCount ? 'FAILED' : 'COMPLETED',
+      status: aggregatedResult.errors === scrapingSourceCount ? ScrapeJobStatus.FAILED : ScrapeJobStatus.COMPLETED,
       totalPages: aggregatedResult.totalPages,
       scraped: aggregatedResult.totalProducts,
       saved: saveResult.saved,
@@ -223,7 +252,7 @@ async function processScraperJob(job: Job<ScraperJobData>) {
     await prisma.scrapeJob.update({
       where: { jobId },
       data: {
-        status: aggregatedResult.errors === scrapingSourceCount ? 'FAILED' : 'COMPLETED', // FAILED nếu all sources fail
+        status: aggregatedResult.errors === scrapingSourceCount ? ScrapeJobStatus.FAILED : ScrapeJobStatus.COMPLETED, // FAILED nếu all sources fail
         completedAt: new Date(),
         totalPages: aggregatedResult.totalPages,
         productsScraped: aggregatedResult.totalProducts,
@@ -234,8 +263,8 @@ async function processScraperJob(job: Job<ScraperJobData>) {
       },
     });
 
-    // 6. Log activity
-    await dbService.logScrapeActivity(sellerId, aggregatedResult.errors === 0 ? 'success' : 'partial_success', aggregatedResult.totalProducts, aggregatedResult.duration);
+    // 6. Log activity - TEMP DISABLED for testing
+    // await dbService.logScrapeActivity(sellerId, aggregatedResult.errors === 0 ? 'success' : 'partial_success', aggregatedResult.totalProducts, aggregatedResult.duration);
 
     await job.progress(100);
 
@@ -251,26 +280,52 @@ async function processScraperJob(job: Job<ScraperJobData>) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
+    // Enhanced error classification and logging
+    const errorClassification = ErrorProcessorService.classifyError(error instanceof Error ? error : errorMessage, {
+      jobId,
+      sellerId,
+      source: 'worker'
+    });
+
     apiLogger.logError(
-      '[INFO WORKER]',
+      '[Scraper Worker] Job failed',
       error instanceof Error ? error : new Error(String(error)),
-      { jobId }
+      { 
+        jobId,
+        sellerId,
+        errorType: errorClassification.type,
+        errorSeverity: errorClassification.severity,
+        recommendation: errorClassification.recommendation.action
+      }
     );
 
-    // Update job FAILED
+    // Update job FAILED with enhanced error details
     await prisma.scrapeJob.update({
       where: { jobId },
       data: {
-        status: 'FAILED',
+        status: ScrapeJobStatus.FAILED,
         completedAt: new Date(),
         errorMessage,
-        errorDetails: error instanceof Error ? { stack: error.stack } : undefined,
+        errorDetails: {
+          stack: error instanceof Error ? error.stack : undefined,
+          errorType: errorClassification.type,
+          severity: errorClassification.severity,
+          recommendation: errorClassification.recommendation.action,
+          confidence: errorClassification.confidence
+        },
       },
     });
-    // dbService = new ScraperFactory(prisma).createSaveDbService(scraperSourceName as SupportedScraperSourceName);
-    // Log failed activity
-    if (dbService) {
-      await dbService.logScrapeActivity(sellerId, 'error', 0, 0);
+
+    // Log failed activity with enhanced error info
+    try {
+      await logScrapeActivity(sellerId, 'error', 0, 0, {
+        jobId,
+        errorType: errorClassification.type,
+        errorMessage,
+        severity: errorClassification.severity
+      });
+    } catch (logError) {
+      apiLogger.logError('[Scraper Worker] Failed to log scrape activity', logError as Error, { jobId });
     }
 
     throw error; // Re-throw for Bull to handle retry
@@ -299,7 +354,7 @@ scraperQueue.on('error', (error) => {
 process.on('SIGTERM', async () => {
   apiLogger.info('[Scraper Worker] Received SIGTERM, shutting down gracefully...');
   
-  await cleanupAutoScraperOnWorkerShutdown();
+  await cleanupWorkerSync();
   await scraperQueue.close();
   process.exit(0);
 });
@@ -307,12 +362,12 @@ process.on('SIGTERM', async () => {
 process.on('SIGINT', async () => {
   apiLogger.info('[Scraper Worker] Received SIGINT, shutting down gracefully...');
   
-  await cleanupAutoScraperOnWorkerShutdown();
+  await cleanupWorkerSync();
   await scraperQueue.close();
   process.exit(0);
 });
 
 apiLogger.info('[Scraper Worker] Worker ready, waiting for jobs...');
 
-// Server Startup Initialization cho auto scraper
-initializeAutoScraperOnWorkerStart();
+// Comprehensive Worker Initialization
+initializeWorkerSync();

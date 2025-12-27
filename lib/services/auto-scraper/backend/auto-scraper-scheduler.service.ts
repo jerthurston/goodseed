@@ -1,7 +1,9 @@
 import { prisma } from '@/lib/prisma';
+import { ScrapeJobStatus } from '@prisma/client';
 import { createScheduleAutoScrapeJob } from '@/lib/helpers/server/scheduleAutoScrapeJob';
-import { unscheduleAutoScrapeJob, getScheduledAutoJobs } from '@/lib/queue/scraper-queue';
+import { unscheduleAutoScrapeJob, getScheduledAutoJobs, scraperQueue, getQueueStatistics } from '@/lib/queue/scraper-queue';
 import { apiLogger } from '@/lib/helpers/api-logger';
+import { JobStatusSyncService } from '@/lib/services/auto-scraper/job-status-sync.service';
 
 /**
  * Auto Scraper Scheduler Service
@@ -28,25 +30,30 @@ export class AutoScraperScheduler {
     try {
       apiLogger.info('[Auto Scheduler] Starting bulk auto jobs initialization');
 
-      // 1. Lấy tất cả sellers eligible cho auto scraping
+      // 1. Lấy tất cả active sellers (bao gồm cả những sellers chưa có autoScrapeInterval)
       const activeSellers = await prisma.seller.findMany({
         where: {
           isActive: true,
-          autoScrapeInterval: { 
-            not: null,
-            gt: 0 
-          },
         },
         include: {
           scrapingSources: true,
         }
       });
 
-      apiLogger.info('[Auto Scheduler] Found eligible sellers', { 
-        count: activeSellers.length 
+      // 2. Filter và setup default interval cho sellers eligible for auto scraping
+      const eligibleSellers = activeSellers
+        .filter(seller => seller.scrapingSources.length > 0) // Chỉ sellers có scraping sources
+        .map(seller => ({
+          ...seller,
+          autoScrapeInterval: seller.autoScrapeInterval || 24 // Default 24h nếu null
+        }));
+
+      apiLogger.info('[Auto Scheduler] Found eligible sellers after filtering', { 
+        total: activeSellers.length,
+        eligible: eligibleSellers.length 
       });
 
-      if (activeSellers.length === 0) {
+      if (eligibleSellers.length === 0) {
         return {
           totalProcessed: 0,
           scheduled: 0,
@@ -56,24 +63,19 @@ export class AutoScraperScheduler {
         };
       }
 
-      // 2. Process each seller
+      // 3. Process each eligible seller
       const results = [];
       let scheduledCount = 0;
       let failedCount = 0;
       
-      for (const seller of activeSellers) {
+      for (const seller of eligibleSellers) {
         try {
-          // Validate seller has scraping sources
-          if (seller.scrapingSources.length === 0) {
-            results.push({
-              sellerId: seller.id,
-              sellerName: seller.name,
-              status: 'failed',
-              error: 'No scraping sources configured',
-              interval: `${seller.autoScrapeInterval}h`,
+          // Update seller interval in database if it was null
+          if (!activeSellers.find(s => s.id === seller.id)?.autoScrapeInterval) {
+            await prisma.seller.update({
+              where: { id: seller.id },
+              data: { autoScrapeInterval: seller.autoScrapeInterval }
             });
-            failedCount++;
-            continue;
           }
 
           // Schedule auto job using helper function
@@ -129,11 +131,11 @@ export class AutoScraperScheduler {
       }
 
       const summary = {
-        totalProcessed: activeSellers.length,
+        totalProcessed: eligibleSellers.length,
         scheduled: scheduledCount,
         failed: failedCount,
         details: results,
-        message: `Bulk initialization completed: ${scheduledCount}/${activeSellers.length} jobs scheduled`
+        message: `Bulk initialization completed: ${scheduledCount}/${eligibleSellers.length} jobs scheduled`
       };
 
       apiLogger.info('[Auto Scheduler] Bulk initialization completed', summary);
@@ -204,7 +206,14 @@ export class AutoScraperScheduler {
 
       for (const seller of sellers) {
         try {
+          // Stop the scheduled job
           await unscheduleAutoScrapeJob(seller.id);
+
+          // Update database để set autoScrapeInterval = null
+          await prisma.seller.update({
+            where: { id: seller.id },
+            data: { autoScrapeInterval: null }
+          });
 
           results.push({
             sellerId: seller.id,
@@ -514,7 +523,10 @@ export class AutoScraperScheduler {
    */
   static async getAutoScraperHealth() {
     try {
-      const [scheduledJobs, activeSellers, totalSellers] = await Promise.all([
+      // Sync job statuses trước khi return health data
+      await JobStatusSyncService.syncAllJobStatuses();
+
+      const [scheduledJobs, activeSellers, totalSellers, pendingJobs] = await Promise.all([
         getScheduledAutoJobs(),
         prisma.seller.count({
           where: {
@@ -527,10 +539,13 @@ export class AutoScraperScheduler {
         }),
         prisma.seller.count({
           where: {
-            autoScrapeInterval: { 
-              not: null,
-              gt: 0 
-            }
+            isActive: true // Total active sellers regardless of auto scraping status
+          }
+        }),
+        // Get synced waiting/created jobs from database  
+        prisma.scrapeJob.count({
+          where: {
+            status: { in: [ScrapeJobStatus.CREATED, ScrapeJobStatus.WAITING] }
           }
         })
       ]);
@@ -540,10 +555,11 @@ export class AutoScraperScheduler {
         scheduledJobs: scheduledJobs.length,
         activeSellers,
         totalSellers,
+        pendingJobs: pendingJobs, // Synced database count
         coverage: activeSellers > 0 ? Math.round((scheduledJobs.length / activeSellers) * 100) : 0,
         lastChecked: new Date(),
         details: {
-          scheduledJobIds: scheduledJobs.map(job => job.id),
+          scheduledJobIds: scheduledJobs.map((job: any) => job.id),
           missingJobs: Math.max(0, activeSellers - scheduledJobs.length),
         }
       };
@@ -564,9 +580,161 @@ export class AutoScraperScheduler {
         scheduledJobs: 0,
         activeSellers: 0,
         totalSellers: 0,
+        pendingJobs: 0, // Fix naming
         coverage: 0,
         lastChecked: new Date(),
         error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Get detailed job statistics for auto scraper dashboard
+   * Returns job counts by status for AutoScraperOverview component
+   * 
+   * Used by:
+   * - Dashboard overview components
+   * - Real-time monitoring
+   * - Performance metrics
+   */
+  static async getJobStatistics() {
+    try {
+      apiLogger.info('[Auto Scheduler] Fetching comprehensive job statistics');
+
+      // Sync job statuses before getting statistics
+      await JobStatusSyncService.syncAllJobStatuses();
+
+      // Get job counts by status from database (immediate jobs)
+      const [
+        createdJobs,
+        waitingJobs, 
+        delayedJobs,
+        activeJobs,
+        completedJobs,
+        failedJobs,
+        cancelledJobs,
+        totalSellers,
+        activeSellers
+      ] = await Promise.all([
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.CREATED } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.WAITING } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.DELAYED } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.ACTIVE } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.COMPLETED } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.FAILED } }),
+        prisma.scrapeJob.count({ where: { status: ScrapeJobStatus.CANCELLED } }),
+        prisma.seller.count({ where: { isActive: true } }),
+        prisma.seller.count({ 
+          where: { 
+            isActive: true,
+            autoScrapeInterval: { not: null, gt: 0 }
+          }
+        })
+      ]);
+
+      // Get queue statistics (includes repeat jobs)
+      const queueStats = await getQueueStatistics();
+
+      // Get recent run information
+      const lastCompletedJob = await prisma.scrapeJob.findFirst({
+        where: { status: ScrapeJobStatus.COMPLETED },
+        orderBy: { updatedAt: 'desc' },
+        select: { updatedAt: true }
+      });
+
+      // Calculate next scheduled run (based on earliest scheduled job)
+      const nextScheduledJob = await prisma.scrapeJob.findFirst({
+        where: { 
+          status: { in: [ScrapeJobStatus.CREATED, ScrapeJobStatus.WAITING, ScrapeJobStatus.DELAYED] }
+        },
+        orderBy: { createdAt: 'asc' },
+        select: { createdAt: true }
+      });
+
+      const jobCounts = {
+        CREATED: createdJobs,
+        WAITING: waitingJobs, 
+        DELAYED: delayedJobs,
+        ACTIVE: activeJobs,
+        COMPLETED: completedJobs,
+        FAILED: failedJobs,
+        CANCELLED: cancelledJobs,
+        // Add repeat jobs info
+        SCHEDULED: queueStats.scheduled.autoScraperJobs
+      };
+
+      const totalImmediateJobs = Object.values(jobCounts).reduce((sum, count) => sum + count, 0) - queueStats.scheduled.autoScraperJobs;
+      const totalJobs = totalImmediateJobs + queueStats.scheduled.autoScraperJobs;
+      const successRate = completedJobs + failedJobs > 0 
+        ? Math.round((completedJobs / (completedJobs + failedJobs)) * 100)
+        : 0;
+
+      const stats = {
+        jobCounts,
+        totalSellers,
+        activeSellers,
+        lastRun: lastCompletedJob?.updatedAt,
+        nextScheduledRun: nextScheduledJob?.createdAt,
+        queueDetails: queueStats,
+        summary: {
+          totalJobs,
+          totalImmediateJobs,
+          totalScheduledJobs: queueStats.scheduled.autoScraperJobs,
+          successRate,
+          activeCount: activeJobs,
+          pendingCount: createdJobs + waitingJobs + delayedJobs,
+          activeAutoScrapers: queueStats.scheduled.autoScraperJobs
+        },
+        lastChecked: new Date()
+      };
+
+      apiLogger.info('[Auto Scheduler] Comprehensive job statistics fetched successfully', {
+        totalJobs,
+        immediateJobs: totalImmediateJobs,
+        scheduledJobs: queueStats.scheduled.autoScraperJobs,
+        activeJobs,
+        completedJobs,
+        failedJobs,
+        successRate
+      });
+
+      return stats;
+
+    } catch (error) {
+      apiLogger.logError('[Auto Scheduler] Failed to fetch job statistics', error as Error);
+      
+      // Return empty stats on error
+      return {
+        jobCounts: {
+          CREATED: 0,
+          WAITING: 0,
+          DELAYED: 0,
+          ACTIVE: 0,
+          COMPLETED: 0,
+          FAILED: 0,
+          CANCELLED: 0,
+          SCHEDULED: 0
+        },
+        totalSellers: 0,
+        activeSellers: 0,
+        lastRun: null,
+        nextScheduledRun: null,
+        queueDetails: {
+          immediate: { waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0, total: 0 },
+          scheduled: { repeatJobs: 0, autoScraperJobs: 0, totalScheduled: 0 },
+          combined: { totalJobs: 0, activeAutoScrapers: 0, pendingJobs: 0 }
+        },
+        summary: {
+          totalJobs: 0,
+          totalImmediateJobs: 0,
+          totalScheduledJobs: 0,
+          successRate: 0,
+          activeCount: 0,
+          pendingCount: 0,
+          activeAutoScrapers: 0
+        },
+        lastChecked: new Date(),
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

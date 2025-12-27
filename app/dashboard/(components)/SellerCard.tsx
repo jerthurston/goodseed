@@ -14,32 +14,52 @@ import {
   DashboardProgressBar,
 } from "./index"
 import { SellerUI } from "@/types/seller.type"
+import { toast } from 'sonner';
+import { useRouter } from "next/navigation"
+import ActionConfirmModal from "@/components/custom/modals/ActionConfirmModal"
+import { useSellerOperations } from "@/hooks/seller"
 
 interface SellerCardProps {
   seller: SellerUI;
-  isToggling?: boolean;
-  toggleError?: Error | null;
-  onToggleActive?: (id: string) => void
   onManualScrape?: (id: string) => void
   onUpdate?: (id: string) => void
   onDelete?: (id: string) => void
   showActions?: boolean
+  refetchSellers?: () => void
 }
-import { toast } from 'sonner';
-import { useRouter } from "next/navigation"
 
 export function SellerCard({
   seller,
-  isToggling,
-  toggleError,
-  onToggleActive,
   onManualScrape,
   onUpdate,
   onDelete,
   showActions = false,
+  refetchSellers,
 }: SellerCardProps) {
-
   const router = useRouter();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Use seller operations hook
+  const { toggleSellerStatus, isUpdating, updateError } = useSellerOperations(refetchSellers);
+
+  const handleToggleClick = () => {
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmToggle = async () => {
+    try {
+      await toggleSellerStatus(seller.id, seller.isActive);
+      setShowConfirmModal(false);
+      toast.success(`Seller ${seller.isActive ? 'deactivated' : 'activated'} successfully!`);
+    } catch (error) {
+      console.error("Error toggling seller:", error);
+      toast.error(`Error: ${updateError?.message || 'Failed to toggle seller status'}`);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowConfirmModal(false);
+  };
   return (
     <DashboardCard hover>
       <DashboardCardHeader>
@@ -105,13 +125,8 @@ export function SellerCard({
           <div className="flex flex-row items-center gap-4">
             <DashboardButton
               variant="outline"
-              onClick={
-                () => {
-                  onToggleActive?.(seller.id)
-                  toggleError !== null ? toast.error(`Error: ${toggleError?.message}`) : toast.success(`Seller ${seller.isActive ? 'tideacvated' : 'activated'} successfully!`)
-                }
-              }
-              disabled={isToggling}
+              onClick={handleToggleClick}
+              disabled={isUpdating}
               className="text-sm px-4 py-2"
             >
               {seller.isActive ? "Deactivate" : "Activate"}
@@ -145,6 +160,16 @@ export function SellerCard({
           )}
         </DashboardCardFooter>
       )}
+
+      {/* Confirmation Modal */}
+      <ActionConfirmModal
+        isOpen={showConfirmModal}
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmToggle}
+        actionType={seller.isActive ? 'deactivate' : 'activate'}
+        sellerName={seller.name}
+        isLoading={isUpdating}
+      />
     </DashboardCard>
   )
 }

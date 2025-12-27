@@ -14,11 +14,12 @@ import { useQuery } from '@tanstack/react-query';
  * Custom hook useSeeds với TanStack Query
  */
 export function useFetchSeeds(options: UseSeedsInputOptions): UseSeedsOutputResult {
+    //--> Log: options input
     apiLogger.logRequest('useSeeds', {
         options,
         enabled: options.enabled ?? true
     });
-
+    // useQuery function
     const query = useQuery({
         queryKey: ['seeds', options],
         queryFn: async () => {

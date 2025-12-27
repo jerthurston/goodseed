@@ -112,4 +112,46 @@ export class AutoScraperService {
       throw error;
     }
   }
+
+  /**
+   * Get job statistics for auto scraper overview
+   */
+  static async getJobStatistics() {
+    try {
+      apiLogger.info('[AutoScraperService] Fetching job statistics');
+      
+      const response = await api.get('/admin/scraper/stats');
+      
+      apiLogger.info('[AutoScraperService] Job statistics fetched successfully');
+      
+      return response.data;
+    } catch (error) {
+      apiLogger.logError('[AutoScraperService] Failed to get job statistics', error as Error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update seller auto scrape interval
+   */
+  static async updateSellerInterval(sellerId: string, interval: number | null) {
+    try {
+      apiLogger.info('[AutoScraperService] Updating seller auto scrape interval', { sellerId, interval });
+      
+      const response = await api.patch(`/admin/sellers/${sellerId}`, {
+        autoScrapeInterval: interval
+      });
+      
+      apiLogger.info('[AutoScraperService] Seller interval updated successfully', { 
+        sellerId, 
+        interval,
+        sellerName: response.data.data?.name 
+      });
+      
+      return response.data;
+    } catch (error) {
+      apiLogger.logError('[AutoScraperService] Failed to update seller interval', error as Error, { sellerId, interval });
+      throw error;
+    }
+  }
 }

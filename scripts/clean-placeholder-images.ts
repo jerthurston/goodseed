@@ -5,7 +5,7 @@ async function main() {
     console.log('Cleaning placeholder images...');
 
     // Delete all ProductImage relations
-    const deletedRelations = await prisma.productImage.deleteMany();
+    const deletedRelations = await prisma.image.deleteMany();
     console.log(`Deleted ${deletedRelations.count} ProductImage relations`);
 
     // Delete placeholder images

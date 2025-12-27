@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, Clock, Play, Settings, Users } from "lucide-react"
+import { BarChart3, Clock, Play, Settings, Users, AlertTriangle } from "lucide-react"
 import { useState, useMemo } from "react"
 import {
   DashboardButton,
@@ -11,13 +11,14 @@ import {
   DashboardToggle,
   SellerCard,
   StatsOverview,
+  AutoScraperTabContent,
 } from "../(components)"
 
 import { type Seller } from "@/types/seller.type"
 import { SellerTransformer } from "@/lib/transfomers/seller.transformer"
 import { SellerUI } from "@/types/seller.type"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faHeart, faSearchDollar, faShieldAlt, faChartDiagram, faChartBar, faChartLine, faUser, faTools, faChevronDown, faChevronRight, faStore, faChevronUp } from '@fortawesome/free-solid-svg-icons'
+import { faHeart, faSearchDollar, faShieldAlt, faChartDiagram, faChartBar, faChartLine, faUser, faTools, faChevronDown, faChevronRight, faStore, faChevronUp, faRobot } from '@fortawesome/free-solid-svg-icons'
 import RecentActivity from "../(components)/DashboardOverview"
 import DashboardOverview from "../(components)/DashboardOverview"
 import DashboardSellersTabContent from "../(components)/DashboardSellersTabContent"
@@ -25,9 +26,11 @@ import DashboardScraperSitesTabContent from "../(components)/DashboardScraperSit
 import { useFetchScraperSites, useFetchSellers } from "@/hooks/seller"
 import { useRouter } from "next/navigation"
 import styles from "../(components)/dashboardAdmin.module.css"
+import ErrorAlertBanner from "@/components/custom/admin/ErrorAlertBanner"
+import { LogsTabContent } from "../(components)/LogsTabContent"
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"sellers" | "scraper" | "overview">(
+  const [activeTab, setActiveTab] = useState<"sellers" | "scraper" | "overview" | "auto-scraper" | "error-alert">(
     "overview"
   )
   const [isSellersExpanded, setIsSellersExpanded] = useState(false)
@@ -112,13 +115,22 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
-          {/* <DashboardSidebarItem
-            icon={<FontAwesomeIcon icon={faTools} className="text-lg"/>}
-            isActive={activeTab === "scraper"}
-            onClick={() => setActiveTab("scraper")}
+          
+          <DashboardSidebarItem
+            icon={<FontAwesomeIcon icon={faRobot} className="text-lg"/>}
+            isActive={activeTab === "auto-scraper"}
+            onClick={() => setActiveTab("auto-scraper")}
           >
-            Scrapers
-          </DashboardSidebarItem> */}
+            Auto Scraper
+          </DashboardSidebarItem>
+          
+          <DashboardSidebarItem
+            icon={<AlertTriangle className="text-lg"/>}
+            isActive={activeTab === "error-alert"}
+            onClick={() => setActiveTab("error-alert")}
+          >
+            Activity Monitoring
+          </DashboardSidebarItem>
         </DashboardSidebar>
       }
     >
@@ -135,7 +147,16 @@ export default function AdminDashboard() {
         <div className="space-y-6">
           {/* Overview */}
           {activeTab === "overview" && (
-          <DashboardOverview sellers={sellers} />
+          <>
+            <ErrorAlertBanner 
+              criticalOnly={false}
+              onRefresh={() => {
+                refetchSellers();
+                // Optionally refresh other data
+              }}
+            />
+            <DashboardOverview sellers={sellers} />
+          </>
         )}
 
         {/* Sellers Management */}
@@ -146,13 +167,24 @@ export default function AdminDashboard() {
           />
         )}
 
-        {/* Scraper Management */}
-        {/* {activeTab === "scraper" && (
-          <DashboardScraperSitesTabContent
-            scraperSites={scraperSites}
-            refetchScraperSites={refetchScraperSites}
+        {/* Auto Scraper Management */}
+        {activeTab === "auto-scraper" && (
+          <AutoScraperTabContent
+            sellers={sellers}
+            refetchSellers={refetchSellers}
           />
-        )} */}
+        )}
+
+        {/* Error Alert Management */}
+        {activeTab === "error-alert" && (
+          <LogsTabContent
+            sellers={sellers.map(seller => ({ id: seller.id, name: seller.name }))}
+            onRefreshData={() => {
+              refetchSellers();
+            }}
+          />
+        )}
+       
         </div>
       )}
     </DashboardLayout>

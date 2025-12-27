@@ -63,7 +63,7 @@ export async function GET(
   }
 }
 
-// Update seller active status
+// Update seller active status and auto scraper settings
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -71,14 +71,55 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await request.json()
-    const { isActive } = body
+    
+    // Validate fields (only allow these specific updates for security)
+    const allowedFields = ['isActive', 'autoScrapeInterval']
+    const updateData: Record<string, any> = {}
+    
+    for (const [key, value] of Object.entries(body)) {
+      if (allowedFields.includes(key)) {
+        updateData[key] = value
+      }
+    }
+
+    // Validate autoScrapeInterval if provided
+    if ('autoScrapeInterval' in updateData) {
+      const validIntervals = [1, 2, 4, 6, 8, 12, 24]
+      const interval = Number(updateData.autoScrapeInterval)
+      
+      if (updateData.autoScrapeInterval !== null && (!validIntervals.includes(interval))) {
+        return NextResponse.json(
+          { error: "Invalid autoScrapeInterval. Must be one of: 1, 2, 4, 6, 8, 12, 24 (hours), or null to disable" },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Check if seller exists
+    const existingSeller = await prisma.seller.findUnique({
+      where: { id }
+    })
+
+    if (!existingSeller) {
+      return NextResponse.json(
+        { error: "Seller not found" },
+        { status: 404 }
+      )
+    }
 
     const updatedSeller = await prisma.seller.update({
       where: { id },
-      data: { isActive },
+      data: {
+        ...updateData,
+        updatedAt: new Date()
+      },
     })
 
-    return NextResponse.json(updatedSeller)
+    return NextResponse.json({
+      success: true,
+      message: "Seller updated successfully",
+      data: updatedSeller
+    })
   } catch (error) {
     console.error("Error updating seller:", error)
     return NextResponse.json(
@@ -121,7 +162,7 @@ export async function PUT(
       )
     }
 
-    const { name, url, scrapingSourceUrl, isActive, affiliateTag } = validation.data
+    const { name, url, scrapingSources, isActive, affiliateTag } = validation.data
 
     // Check if seller exists
     const existingSeller = await prisma.seller.findUnique({
@@ -163,7 +204,7 @@ export async function PUT(
       data: {
         name: name.trim(),
         url: url.trim(),
-        scrapingSourceUrl: scrapingSourceUrl, // Already processed by Zod (array)
+        // Note: scrapingSources are handled separately in related model
         isActive: Boolean(isActive),
         affiliateTag: affiliateTag || null, // Optional field
         updatedAt: new Date()

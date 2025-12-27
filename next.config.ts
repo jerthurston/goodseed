@@ -1,8 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Mark Crawlee and its dependencies as external for server-side
-  serverExternalPackages: ['crawlee', 'cheerio', 'puppeteer', 'playwright'],
+  // Enable standalone output for Docker
+  output: 'standalone',
+  
+  // Mark server-only packages as external for Turbopack
+  serverExternalPackages: ['crawlee', 'cheerio', 'puppeteer', 'playwright', 'bull', '@prisma/client'],
 
   images: {
     remotePatterns: [
@@ -19,6 +22,63 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'vancouverseedbank.ca',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.sunwestgenetics.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'sunwestgenetics.com',
+        pathname: '/**',
+      },
+      // Add more common seed vendor domains
+      {
+        protocol: 'https',
+        hostname: 'www.cropkingseeds.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cropkingseeds.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.leafly.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'leafly.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'mjseedscanada.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.mjseedscanada.com',
+        pathname: '/**',
+      },
+      // Add wildcard for common image CDNs
+      {
+        protocol: 'https',
+        hostname: '*.amazonaws.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.cloudfront.net',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
         pathname: '/**',
       },
 

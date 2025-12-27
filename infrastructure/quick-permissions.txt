@@ -1,0 +1,12 @@
+# Quick permission commands (run with admin credentials)
+
+# 1. Remove permissions boundary
+aws iam delete-user-permissions-boundary --user-name goodseed-deploy
+
+# 2. Attach AdministratorAccess (temporary - for quick setup)
+aws iam attach-user-policy \
+    --user-name goodseed-deploy \
+    --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
+
+# 3. Verify
+aws iam list-attached-user-policies --user-name goodseed-deploy

@@ -29,6 +29,7 @@ export interface SellerRaw {
   name: string;
   url: string;
   isActive: boolean;
+  autoScrapeInterval: number | null;
   scrapeLogs: Array<{
     id: string;
     timestamp: Date;

@@ -30,6 +30,7 @@
 
 import { apiLogger } from "@/lib/helpers/api-logger";
 import { prisma } from "@/lib/prisma";
+import { ScrapeJobStatus } from "@prisma/client";
 import { addScraperJob } from "@/lib/queue/scraper-queue";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
@@ -104,7 +105,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<CronResponse>>
             select: {
                 id: true,
                 name: true,
-                scrapingSourceUrl: true,
+                scrapingSources:true
             },
         });
 
@@ -134,7 +135,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<CronResponse>>
                 data: {
                     jobId,
                     sellerId: seller.id,
-                    status: 'PENDING',
+                    status: ScrapeJobStatus.CREATED,
                     mode: 'auto', // Auto mode for cron
                     targetCategoryId: null,
                     currentPage: 0,
@@ -150,13 +151,13 @@ export async function GET(req: NextRequest): Promise<NextResponse<CronResponse>>
             await addScraperJob({
                 jobId,
                 sellerId: seller.id,
-                source: seller.name.toLowerCase().replace(/\s+/g, ''), // Convert seller name to source
+                scrapingSources: seller.scrapingSources, // Convert seller name to source
                 mode: 'auto',
                 config: {
-                    scrapingSourceUrl: seller.scrapingSourceUrl,
-                    categorySlug: 'all-products',
-                    maxPages: 0, // No limit for auto mode
-                },
+                    fullSiteCrawl: true,
+                    startPage: 0,
+                    endPage: 0,
+                }
             });
 
             queuedJobs.push({

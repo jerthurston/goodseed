@@ -2,7 +2,6 @@
 import React, { useState } from 'react'
 import { SellerCard } from './SellerCard'
 import { SellerUI } from '@/types/seller.type'
-import { useSellerOperations } from '@/hooks/seller'
 import { DashboardButton } from './DashboardButton';
 import { Plus, PlusCircle } from 'lucide-react';
 import CreateSellerModal from '@/components/custom/modals/CreateSellerModal';
@@ -17,9 +16,6 @@ interface DashboardSellersTabContentProps {
 }
 
 const DashboardSellersTabContent = ({ sellers, refetchSellers }: DashboardSellersTabContentProps) => {
-  // Use custom hook for seller operations following the architecture pattern
-  const { toggleSellerStatus, isToggling, toggleError } = useSellerOperations(refetchSellers)
-  
   // Modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
@@ -27,17 +23,6 @@ const DashboardSellersTabContent = ({ sellers, refetchSellers }: DashboardSeller
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [sellerToDelete, setSellerToDelete] = useState<SellerUI | null>(null)
   const [isDeletingSeller, setIsDeletingSeller] = useState(false)
-
-  const handleToggleSeller = async (id: string) => {
-    const seller = sellers.find((s) => s.id === id)
-    if (!seller) return
-
-    try {
-      await toggleSellerStatus(id, seller.isActive)
-    } catch (error) {
-      console.error("Error toggling seller:", error)
-    }
-  }
 
   // Function to refetch and show notification on success
   const handleCreateSellerSuccess = () => {
@@ -137,11 +122,9 @@ const DashboardSellersTabContent = ({ sellers, refetchSellers }: DashboardSeller
           <SellerCard
             key={seller.id}
             seller={seller}
-            isToggling={isToggling}
-            toggleError={toggleError}
-            onToggleActive={handleToggleSeller}
             onUpdate={handleUpdateSeller}
             onDelete={handleDeleteSeller}
+            refetchSellers={refetchSellers}
             showActions
           />
         ))}

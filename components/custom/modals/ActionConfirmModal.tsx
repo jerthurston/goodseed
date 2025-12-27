@@ -1,11 +1,11 @@
 'use client'
 
 import React from 'react'
-import { AlertTriangle, CheckCircle, Trash2, Edit } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Trash2, Edit, EyeOff, Eye } from 'lucide-react'
 import { DashboardButton } from '@/app/dashboard/(components)/DashboardButton'
 import styles from '../../../app/dashboard/(components)/dashboardAdmin.module.css'
 
-export type ActionType = 'update' | 'delete'
+export type ActionType = 'update' | 'delete' | 'deactivate' | 'activate'
 
 interface ActionConfirmModalProps {
     isOpen: boolean
@@ -48,6 +48,26 @@ const ActionConfirmModal: React.FC<ActionConfirmModalProps> = ({
                     confirmVariant: 'danger' as const,
                     alertVariant: 'critical' as const
                 }
+            case 'deactivate':
+                return {
+                    icon: <EyeOff className="w-6 h-6" />,
+                    title: 'Confirm Deactivation',
+                    message: `Are you sure you want to deactivate "${sellerName}"?`,
+                    description: 'Deactivating this seller will hide all their seed products from the public seeds page (http://localhost:3000/seeds). The seller and products can be reactivated later.',
+                    confirmText: isLoading ? 'Deactivating...' : 'Yes, Deactivate',
+                    confirmVariant: 'danger' as const,
+                    alertVariant: 'warning' as const
+                }
+            case 'activate':
+                return {
+                    icon: <Eye className="w-6 h-6" />,
+                    title: 'Confirm Activation',
+                    message: `Are you sure you want to activate "${sellerName}"?`,
+                    description: 'Activating this seller will make all their seed products visible on the public seeds page (http://localhost:3000/seeds).',
+                    confirmText: isLoading ? 'Activating...' : 'Yes, Activate',
+                    confirmVariant: 'primary' as const,
+                    alertVariant: 'info' as const
+                }
             default:
                 return {
                     icon: <AlertTriangle className="w-6 h-6" />,
@@ -86,11 +106,18 @@ const ActionConfirmModal: React.FC<ActionConfirmModalProps> = ({
             className={styles.modalOverlay}
             onClick={handleOverlayClick}
         >
-            <div className={styles.modalContent} style={{ maxWidth: '28rem' }}>
+            <div className={styles.modalContent + `max-w-[90%] md:max-w-[450px] bg-[#FAF6E9] border-8 border-[#3b4a3f]`} 
+            // style={{ maxWidth: '32rem' }}
+            >
                 {/* Header */}
                 <div className={styles.modalHeader}>
                     <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-md ${actionType === 'delete' ? 'bg-red-100' : 'bg-blue-100'}`}>
+                        <div className={`p-2 rounded-md ${
+                            actionType === 'delete' ? 'bg-red-100' : 
+                            actionType === 'deactivate' ? 'bg-orange-100' :
+                            actionType === 'activate' ? 'bg-green-100' :
+                            'bg-blue-100'
+                        }`}>
                             {config.icon}
                         </div>
                         <h2 className={styles.modalTitle}>
@@ -155,6 +182,29 @@ const ActionConfirmModal: React.FC<ActionConfirmModalProps> = ({
                                         <li>• All scraping history and logs</li>
                                         <li>• Associated product categories</li>
                                         <li>• All scraped product data</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Additional Warning for Deactivate */}
+                    {actionType === 'deactivate' && (
+                        <div className={`${styles.alert} ${styles.warning}`} style={{ marginTop: '1rem' }}>
+                            <div className={styles.icon}>
+                                <EyeOff className="w-5 h-5" />
+                            </div>
+                            <div className={styles.content}>
+                                <div className={styles.title}>
+                                    Product Visibility Impact
+                                </div>
+                                <div className={styles.message}>
+                                    This will immediately:
+                                    <ul style={{ marginTop: '0.5rem', paddingLeft: '1rem' }}>
+                                        <li>• Hide all seed products from public view</li>
+                                        <li>• Stop auto-scraping for this seller</li>
+                                        <li>• Prevent new products from being displayed</li>
+                                        <li>• Keep all data safe (can be reactivated)</li>
                                     </ul>
                                 </div>
                             </div>
