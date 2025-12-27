@@ -171,6 +171,7 @@ jobs:
         service: ${{ needs.set-environment.outputs.web_service }}
         cluster: ${{ needs.set-environment.outputs.ecs_cluster }}
         wait-for-service-stability: true
+        wait-for-minutes: 10
 
     - name: Copy worker task definition
       run: |
@@ -191,11 +192,23 @@ jobs:
         service: ${{ needs.set-environment.outputs.worker_service }}
         cluster: ${{ needs.set-environment.outputs.ecs_cluster }}
         wait-for-service-stability: true
+        wait-for-minutes: 10
 
     - name: Verify deployment health
       run: |
-        # Get ALB endpoint
-        ALB_URL="http://goodseed-free-alb-1825640970.us-east-1.elb.amazonaws.com"
+        # Determine public URL based on environment
+        if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          ENVIRONMENT="production"
+          # When custom domain is enabled: https://app.goodseed.com
+          ALB_URL="http://goodseed-production-alb-xxx.us-east-1.elb.amazonaws.com"  # Update when prod ALB exists
+        else
+          ENVIRONMENT="development"  
+          # When custom domain is enabled: https://dev.goodseed.com
+          ALB_URL="http://goodseed-free-alb-1825640970.us-east-1.elb.amazonaws.com"
+        fi
+        
+        echo "🌍 Environment: $ENVIRONMENT"
+        echo "🔗 Public URL: $ALB_URL"
         
         # Wait for services to be stable
         echo "⏳ Waiting for services to become healthy..."
@@ -215,6 +228,10 @@ jobs:
         echo "🔍 Testing worker service health..."
         STATS=$(curl -s $ALB_URL/api/admin/scraper/stats)
         echo "Queue stats: $STATS"
+        
+        echo ""
+        echo "🎉 Deployment successful!"
+        echo "📱 Access your application at: $ALB_URL"
         
         # Check if worker is processing jobs
         WAITING_JOBS=$(echo $STATS | jq -r '.data.jobCounts.WAITING // 0')
