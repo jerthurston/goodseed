@@ -1,8 +1,8 @@
 
 
 import CookieBanner from "@/components/custom/CookieBanner";
-import Footer from "@/components/custom/Footer";
-import Header from "@/components/custom/Header";
+import Footer from "@/components/custom/footer";
+import Header from "@/components/custom/header";
 import AgeVerificationModal from "@/components/custom/modals/AgeVerificationModal";
 import { archivoBlack, poppins } from "@/lib/fonts";
 import { ReactQueryProvider } from "@/lib/providers/react-query-provider";
