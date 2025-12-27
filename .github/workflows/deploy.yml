@@ -32,11 +32,6 @@ jobs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
 
-    - name: Clean TypeScript cache
-      run: |
-        rm -rf .next
-        rm -rf tsconfig.tsbuildinfo
-
     - name: Generate Prisma Client
       run: pnpm prisma generate
       env:
@@ -45,8 +40,8 @@ jobs:
     - name: Run linting
       run: pnpm lint
 
-    - name: Check TypeScript
-      run: pnpm type-check
+    - name: Check TypeScript (type check only)
+      run: npx tsc --noEmit
 
   # Determine deployment environment
   set-environment:
