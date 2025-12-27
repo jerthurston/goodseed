@@ -44,6 +44,47 @@ yarn-error.log*
 .env.test
 .env.production
 .env.development
+.env.docker
+
+# AWS & Cloud Configuration
+.aws/
+aws.config
+aws-config.json
+terraform.tfvars
+terraform.tfstate*
+*.pem
+*.p12
+*.key
+*.crt
+*.cert
+
+# Database & Redis Configuration
+database.config
+redis.config
+*.sql
+*.dump
+
+# SSH & API Keys
+id_rsa*
+id_ecdsa*
+id_ed25519*
+*.ppk
+api-keys.json
+secrets.json
+credentials.json
+
+# Docker Secrets
+docker-compose.override.yml
+secrets/
+docker-secrets/
+
+# Logs with potentially sensitive data
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
 # vercel
 .vercel

@@ -1,0 +1,36 @@
+{
+  "serviceName": "goodseed-free-worker",
+  "cluster": "goodseed-free-cluster",
+  "taskDefinition": "goodseed-free-worker",
+  "desiredCount": 1,
+  "launchType": "FARGATE",
+  "platformVersion": "LATEST",
+  "networkConfiguration": {
+    "awsvpcConfiguration": {
+      "subnets": [
+        "subnet-00c3e80ea37fff186",
+        "subnet-09bf8c380ec8196ca"
+      ],
+      "securityGroups": [
+        "sg-0a31204372c708be3"
+      ],
+      "assignPublicIp": "ENABLED"
+    }
+  },
+  "enableExecuteCommand": true,
+  "enableLogging": true,
+  "tags": [
+    {
+      "key": "Project",
+      "value": "GoodSeed"
+    },
+    {
+      "key": "Environment",
+      "value": "production"
+    },
+    {
+      "key": "Component",
+      "value": "worker"
+    }
+  ]
+}
