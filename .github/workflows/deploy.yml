@@ -72,16 +72,16 @@ jobs:
           echo "web_service=goodseed-free-service" >> $GITHUB_OUTPUT
           echo "worker_service=goodseed-free-worker" >> $GITHUB_OUTPUT
           echo "ecs_cluster=goodseed-free-cluster" >> $GITHUB_OUTPUT
-          echo "web_task_definition=goodseed-free-task" >> $GITHUB_OUTPUT
-          echo "worker_task_definition=goodseed-free-worker-task" >> $GITHUB_OUTPUT
+          echo "web_task_definition=goodseed-free-app" >> $GITHUB_OUTPUT
+          echo "worker_task_definition=goodseed-free-worker" >> $GITHUB_OUTPUT
         else
           echo "environment=development" >> $GITHUB_OUTPUT
           echo "ecr_repository=goodseed-free" >> $GITHUB_OUTPUT
           echo "web_service=goodseed-free-service" >> $GITHUB_OUTPUT
           echo "worker_service=goodseed-free-worker" >> $GITHUB_OUTPUT
           echo "ecs_cluster=goodseed-free-cluster" >> $GITHUB_OUTPUT
-          echo "web_task_definition=goodseed-free-task" >> $GITHUB_OUTPUT
-          echo "worker_task_definition=goodseed-free-worker-task" >> $GITHUB_OUTPUT
+          echo "web_task_definition=goodseed-free-app" >> $GITHUB_OUTPUT
+          echo "worker_task_definition=goodseed-free-worker" >> $GITHUB_OUTPUT
         fi
 
   build-and-deploy:
@@ -149,11 +149,9 @@ jobs:
         pnpm install --frozen-lockfile
         pnpm prisma migrate deploy
 
-    - name: Download web task definition
+    - name: Copy web task definition
       run: |
-        aws ecs describe-task-definition \
-          --task-definition ${{ needs.set-environment.outputs.web_task_definition }} \
-          --query taskDefinition > web-task-definition.json
+        cp infrastructure/ecs-task-definition.json web-task-definition.json
 
     - name: Update web task definition with new image
       id: web-task-def
@@ -171,11 +169,9 @@ jobs:
         cluster: ${{ needs.set-environment.outputs.ecs_cluster }}
         wait-for-service-stability: true
 
-    - name: Download worker task definition
+    - name: Copy worker task definition
       run: |
-        aws ecs describe-task-definition \
-          --task-definition ${{ needs.set-environment.outputs.worker_task_definition }} \
-          --query taskDefinition > worker-task-definition.json
+        cp infrastructure/ecs-worker-task-definition.json worker-task-definition.json
 
     - name: Update worker task definition with dev image
       id: worker-task-def
