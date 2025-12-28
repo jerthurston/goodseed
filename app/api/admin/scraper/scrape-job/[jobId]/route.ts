@@ -31,8 +31,8 @@ export async function GET(
 
     apiLogger.info('[ScrapeJob API] Get job details request', { jobId });
 
-    // Get job from database
-    const scrapeJob = await prisma.scrapeJob.findUnique({
+    // Get job from database - try by jobId first, then by id
+    let scrapeJob = await prisma.scrapeJob.findUnique({
       where: { jobId },
       include: {
         seller: {
@@ -59,6 +59,37 @@ export async function GET(
         }
       }
     });
+
+    // If not found by jobId, try by id (database primary key)
+    if (!scrapeJob) {
+      scrapeJob = await prisma.scrapeJob.findUnique({
+        where: { id: jobId },
+        include: {
+          seller: {
+            select: { 
+              id: true, 
+              name: true, 
+              url: true,
+              scrapingSources: {
+                select: {
+                  id: true,
+                  scrapingSourceName: true,
+                  scrapingSourceUrl: true,
+                  maxPage: true
+                }
+              }
+            }
+          },
+          targetCategory: {
+            select: {
+              id: true,
+              name: true,
+              slug: true
+            }
+          }
+        }
+      });
+    }
 
     if (!scrapeJob) {
       return NextResponse.json(
@@ -118,12 +149,13 @@ export async function GET(
 }
 
 /**
- * DELETE /api/admin/scraper/scrape-job/[jobId] - Cancel/delete a scrape job
+ * DELETE /api/admin/scraper/scrape-job/[jobId] - Delete a scrape job
  * 
- * Cancels active job and updates database status
+ * Permanently delete a job from the database
+ * If job is active, cancel it first, then delete
  * 
- * @param params.jobId - The job ID to cancel
- * @returns Cancellation result
+ * @param params.jobId - The job ID to delete
+ * @returns Deletion result
  */
 export async function DELETE(
   request: NextRequest,
@@ -142,54 +174,92 @@ export async function DELETE(
       );
     }
 
-    apiLogger.info('[ScrapeJob API] Cancel job request', { jobId });
+    apiLogger.info('[ScrapeJob API] Delete job request', { jobId });
 
-    // Check if job exists in database
-    const scrapeJob = await prisma.scrapeJob.findUnique({
-      where: { jobId }
+    // Check if job exists in database with detailed logging
+    // Try to find by jobId first, then by id (database primary key)
+    let scrapeJob = await prisma.scrapeJob.findUnique({
+      where: { jobId },
+      include: {
+        seller: {
+          select: { name: true }
+        }
+      }
+    });
+
+    // If not found by jobId, try by id (database primary key)
+    if (!scrapeJob) {
+      scrapeJob = await prisma.scrapeJob.findUnique({
+        where: { id: jobId },
+        include: {
+          seller: {
+            select: { name: true }
+          }
+        }
+      });
+    }
+
+    apiLogger.info('[ScrapeJob API] Job lookup result', { 
+      jobId, 
+      found: !!scrapeJob,
+      jobStatus: scrapeJob?.status,
+      sellerName: scrapeJob?.seller?.name,
+      actualJobId: scrapeJob?.jobId,
+      searchMethod: scrapeJob ? 'found' : 'not_found'
     });
 
     if (!scrapeJob) {
+      apiLogger.warn('[ScrapeJob API] Job not found in database', { jobId });
       return NextResponse.json(
         { error: "Job not found" },
         { status: 404 }
       );
     }
 
-    // Try to cancel Bull queue job if it's active
+    // Try to cancel Bull queue job if it's active (before deleting)
     let queueCancelled = false;
     try {
       const queueJob = await getJob(jobId);
       if (queueJob && !queueJob.finishedOn) {
         await queueJob.remove();
         queueCancelled = true;
-        apiLogger.info('[ScrapeJob API] Bull queue job cancelled', { jobId });
+        apiLogger.info('[ScrapeJob API] Bull queue job cancelled before deletion', { jobId });
       }
     } catch (queueError) {
-      apiLogger.warn('[ScrapeJob API] Could not cancel queue job', { 
+      apiLogger.warn('[ScrapeJob API] Could not cancel queue job before deletion', { 
         jobId, 
         error: queueError 
       });
+      // Continue with deletion even if queue cancel fails
     }
 
-    // Update database status
-    const updatedJob = await prisma.scrapeJob.update({
-      where: { jobId },
-      data: {
-        status: "CANCELLED",
-        completedAt: new Date()
-      }
+    // Delete job from database using the correct identifier
+    await prisma.scrapeJob.delete({
+      where: { id: scrapeJob.id }  // Use database ID for deletion
+    });
+
+    apiLogger.info('[ScrapeJob API] Job deleted successfully', {
+      jobId,
+      sellerName: scrapeJob.seller.name,
+      originalStatus: scrapeJob.status,
+      queueCancelled
     });
 
     return NextResponse.json({
-      message: "Job cancelled successfully",
+      success: true,
+      message: "Job deleted successfully",
       jobId,
       queueCancelled,
-      updatedJob
+      deletedJob: {
+        id: scrapeJob.id,
+        jobId: scrapeJob.jobId,
+        status: scrapeJob.status,
+        sellerName: scrapeJob.seller.name
+      }
     });
 
   } catch (error) {
-    apiLogger.logError('[ScrapeJob API] Failed to cancel job', error as Error, {
+    apiLogger.logError('[ScrapeJob API] Failed to delete job', error as Error, {
       jobId: jobId
     });
 

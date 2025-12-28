@@ -1,0 +1,192 @@
+
+/**
+ * POST /api/admin/scraper/scrape-job/[jobId]/cancel - Cancel or stop a running scrape job
+ * Workflow:
+ 
+ */
+
+import { apiLogger } from "@/lib/helpers/api-logger";
+import { prisma } from "@/lib/prisma";
+import { getJob } from "@/lib/queue/scraper-queue";
+import { ScrapeJobStatus } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
+
+
+export async function POST(
+    request:NextRequest,
+    {params}:{params:Promise<{id:string}>}
+) {
+   try {
+     const {id:sellerId} = await params;
+
+    let body;
+    try {
+        body = await request.json();
+    } catch (error) {
+        return NextResponse.json({
+            success: false,
+            error: "Invalid JSON body"
+        }, { status: 400 });
+    }
+
+    const { jobId, reason = 'Job cancelled by admin' } = body;
+    
+    // Validate required jobId
+    if (!jobId) {
+        return NextResponse.json({
+            success: false,
+            error: "Job ID is required"
+        }, { status: 400 });
+    }
+
+    apiLogger.info("[Seller Cancel Job API]", { 
+        sellerId, 
+        jobId,
+        reason,
+        timeStamp: new Date().toString() 
+    });
+
+    // Step 1: Validate seller exists and get seller Info
+
+    const seller = await prisma.seller.findUnique({
+        where:{id:sellerId},
+        select:{
+            id:true,
+            name:true,
+            isActive:true
+        }
+    });
+
+    if(!seller) {
+        return NextResponse.json({
+            success:false,
+            message:"Seller not found"
+        })
+    }
+
+    // Step 2: Find specific scrape job by jobId and sellerId
+    const unfinishedJob = await prisma.scrapeJob.findFirst({
+        where: {
+            jobId: jobId,           // Must match exact jobId from request
+            sellerId: sellerId,     // Must belong to this seller
+            status: {
+                in: [ScrapeJobStatus.CREATED, ScrapeJobStatus.WAITING, ScrapeJobStatus.DELAYED, ScrapeJobStatus.ACTIVE]
+            }
+        }
+    });
+
+    apiLogger.debug("[Seller Cancel Job API] Found unfinished job", { unfinishedJob });
+
+    if (!unfinishedJob) {
+        return NextResponse.json({
+            success: false,
+            error: "Job not found or cannot be cancelled"
+        }, { status: 404 });
+    }
+
+    let queueCancelResult = 'not_applicable'
+
+    // Step 3: Cancel job in Bull Queue (if exists)
+    try {
+        const bullJob = await getJob(unfinishedJob.jobId);
+        apiLogger.info("[Debug] Bull job status", { 
+            jobId: unfinishedJob.jobId,
+            bullJobExists: !!bullJob,
+            bullJobData: bullJob ? {
+                id: bullJob.id,
+                processedOn: bullJob.processedOn,
+                finishedOn: bullJob.finishedOn,
+                failedReason: bullJob.failedReason
+            } : null
+        });
+        
+        if(bullJob) {
+            await bullJob.remove();
+            queueCancelResult = 'removed_from_queue';
+            apiLogger.info("[Seller Cancel Job API] Bull job removed from queue", {
+                jobId: unfinishedJob.jobId,
+                sellerId
+            });
+        } else {
+            queueCancelResult = 'not_found_in_queue_job_likely_processing';
+            apiLogger.warn("[Seller Cancel Job API] Job not in queue - likely being processed by worker", {
+                jobId: unfinishedJob.jobId,
+                sellerId
+            });
+        }
+
+    } catch (error) {
+        // Log error but don't fail the entire operation
+        apiLogger.logError('[Seller Cancel Job] Failed to remove from queue', error as Error, {
+          jobId: unfinishedJob.jobId,
+          sellerId
+        });
+        queueCancelResult = 'queue_removal_failed';
+    }
+
+    // Step 5: Update job status in database
+    apiLogger.info('[Seller Cancel Job] Job cancelled successfully in queue and updating database');
+
+    const cancelledJob = await prisma.scrapeJob.update({
+        where:{id:unfinishedJob.id},
+        data:{
+            status:ScrapeJobStatus.CANCELLED,
+            completedAt: new Date(),
+            errorMessage:reason,
+            updatedAt: new Date()
+        }
+    })
+
+     // Step 5: Update job status in database
+    apiLogger.info('[Seller Cancel Job] Job cancelled successfully in queue and updating database', {
+      jobId: cancelledJob.jobId,
+      sellerId,
+      sellerName: seller.name,
+      previousStatus: cancelledJob.status,
+      newStatus: 'CANCELLED',
+      reason,
+      queueCancelResult,
+      cancelledAt: cancelledJob.completedAt
+    });
+
+
+    // Step 6: Clean up any related resources
+
+    apiLogger.info('[Seller Cancel Job] Cleaning up resources', {
+      jobId: cancelledJob.jobId,
+      sellerId,
+      sellerName: seller.name
+    });
+
+    const response = {
+        success:true,
+        data:{
+            jobId: unfinishedJob.jobId,
+            sellerId,
+            reason,
+            queueStatus: queueCancelResult
+        },
+        message:`Scrape job cancelled successfully`
+    }
+
+    // Respond to the client
+    return NextResponse.json(response);
+
+   } catch (error) {
+       apiLogger.logError('[Seller Cancel Job API] Failed to cancel job', error as Error, {
+      sellerId: (await params).id
+    });
+
+    return NextResponse.json(
+      { 
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to cancel scrape job. Please try again.',
+          details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+        }
+      },
+      { status: 500 }
+    );
+   }
+}

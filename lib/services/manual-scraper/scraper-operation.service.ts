@@ -5,27 +5,27 @@ import { NextApiResponse } from "next";
 
 
 interface ManualScrapeSuccessResponse {
-    success:true;
-    message:string;
-    data:{
-        jobId:string;
-        sellerName:string;
-        source:string;
-        statusUrl:string;
-        estimatedDuration:string;
-        pagesLimit:number;
+    success: true;
+    message: string;
+    data: {
+        jobId: string;
+        sellerName: string;
+        source: string;
+        statusUrl: string;
+        estimatedDuration: string;
+        pagesLimit: number;
     }
 };
 
 interface ManualScrapeErrorResponse {
-    success:false;
+    success: false;
     error: {
-        code:string;
-        message:string;
-        details?:any;
-        availableSource?:string[];
-        existingJob?:string;
-        statusUrl?:string;
+        code: string;
+        message: string;
+        details?: any;
+        availableSource?: string[];
+        existingJob?: string;
+        statusUrl?: string;
     }
 }
 
@@ -77,7 +77,7 @@ export class ScraperOperationService {
             apiLogger.debug("Đã vào được service triggerManualScrape")
 
             const response = await api.post(`/admin/sellers/${sellerId}/scraper`, { scrapingConfig });
-            
+
             apiLogger.logResponse("SellerService.triggerManualScrape", { response })
 
             return {
@@ -85,7 +85,7 @@ export class ScraperOperationService {
                 data: response.data,
                 message: 'Manual scrape triggered successfully.'
             }
-            
+
         } catch (error: any) {
 
             // Handle different types of API errors
@@ -107,9 +107,9 @@ export class ScraperOperationService {
             });
 
             return {
-                success:false,
-                error:{
-                    code:"NETWORK_ERROR",
+                success: false,
+                error: {
+                    code: "NETWORK_ERROR",
                     message: 'Failed to connect to scraper service. Please check your network connection and try again.'
                 }
             }
@@ -122,30 +122,30 @@ export class ScraperOperationService {
 
     // TODO: Cần xác định getScraperSatus để làm gì và định nghĩa lại output type
     static async getScraperStatus(sellerId: string): Promise<any> {
-    try {
-      const response = await api.get(`/admin/sellers/${sellerId}/scraper`);
-      
-      return {
-        success: true,
-        data: response.data.data
-      };
-      
-    } catch (error: any) {
-      console.error('Get scraper status failed:', error);
-      
-      return {
-        success: false,
-        error: {
-          code: error.response?.data?.error?.code || 'UNKNOWN_ERROR',
-          message: error.response?.data?.error?.message || 'Failed to get scraper status'
+        try {
+            const response = await api.get(`/admin/sellers/${sellerId}/scraper`);
+
+            return {
+                success: true,
+                data: response.data.data
+            };
+
+        } catch (error: any) {
+            console.error('Get scraper status failed:', error);
+
+            return {
+                success: false,
+                error: {
+                    code: error.response?.data?.error?.code || 'UNKNOWN_ERROR',
+                    message: error.response?.data?.error?.message || 'Failed to get scraper status'
+                }
+            };
         }
-      };
     }
-  }
 
     // Toggle automatic scrape settings for a given scraper site ID
     public static async toggleAutoScrape(
-        id:string,
+        id: string,
         settings: { isAutoEnabled: boolean; autoScrapeInterval: number }
     ): Promise<ScraperSiteApiResponse> {
         const starttime = Date.now();
@@ -159,7 +159,7 @@ export class ScraperOperationService {
                 settings
             );
             const duration = Date.now() - starttime;
-            apiLogger.logResponse("ScraperOperationService.toggleAutoScrape", { 
+            apiLogger.logResponse("ScraperOperationService.toggleAutoScrape", {
                 duration: `${duration}ms`,
                 response: { ...response.data }
             });
@@ -172,10 +172,10 @@ export class ScraperOperationService {
 
     // Update scraper site settings for a given scraper site ID
     public static async updateScraperSiteSettings(
-        id:string,
-        settings:{
-            isAutoEnabled:boolean;
-            autoScrapeInterval:number;
+        id: string,
+        settings: {
+            isAutoEnabled: boolean;
+            autoScrapeInterval: number;
         }
     ): Promise<ScraperSiteApiResponse> {
         const startTime = Date.now();
@@ -200,5 +200,30 @@ export class ScraperOperationService {
         }
 
     }
+
+    /**
+     * Stop/cancel a running manual scrape job
+     * @param sellerId - The ID of the seller
+     * @param jobId - The ID of the job to stop
+     */
+    public static async stopManualScrape(sellerId: string, jobId: string) {
+        try {
+            apiLogger.debug("ScraperOperationService.stopManualScrape", { sellerId, jobId });
+            const response = await api.post(`/admin/sellers/${sellerId}/scraper/cancel`, { jobId });
+            apiLogger.logResponse("ScraperOperationService.stopManualScrape", { response });
+
+            return {
+                success: true,
+                data: response.data,
+            }
+        } catch (error) {
+            apiLogger.logError("ScraperOperationService.stopManualScrape", error as Error);
+            return {
+                success: false,
+                error: "Failed to stop manual scrape"
+            }
+        }
+    }
+
 
 }

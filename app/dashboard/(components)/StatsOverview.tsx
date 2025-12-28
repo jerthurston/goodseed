@@ -1,5 +1,8 @@
 import { CheckCircle, ShoppingBag, TrendingUp } from "lucide-react"
 import { DashboardStatsCard } from "./index"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faAdd, faAnchorCircleCheck, faCartShopping, faFilePowerpoint, faStore, faTree } from "@fortawesome/free-solid-svg-icons"
+import { faElementor, faProductHunt, faResearchgate } from "@fortawesome/free-brands-svg-icons"
 
 interface StatsOverviewProps {
   stats: {
@@ -18,26 +21,28 @@ export function StatsOverview({ stats }: StatsOverviewProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <DashboardStatsCard
-        label="Total Sellers"
+        label="Total Sellers in system"
         value={stats.totalSellers}
-        icon={<ShoppingBag className="w-10 h-10" />}
+        icon={<FontAwesomeIcon icon={faStore} size="lg"/>}
         trend={stats.trends?.sellers}
       />
       <DashboardStatsCard
-        label="Active Sellers"
+        label="Eligible Sellers for Auto Scraping"
         value={stats.activeSellers}
-        icon={<CheckCircle className="w-10 h-10" />}
+        icon={<FontAwesomeIcon icon={faTree} size="lg"/>}
       />
       <DashboardStatsCard
-        label="Total Products"
+        label="Total Products In Database"
         value={stats.totalProducts}
-        icon={<TrendingUp className="w-10 h-10" />}
+        icon={<FontAwesomeIcon icon={faCartShopping} size="lg"/>}
         trend={stats.trends?.products}
       />
+      {/* Tính lại số lượng sản phẩm đang được hiển thị ở trang /seeds sẵn sàng cho tìm kiếm */}
       <DashboardStatsCard
-        label="Success Rate"
-        value={`${stats.successRate}%`}
-        icon={<CheckCircle className="w-10 h-10" />}
+        label="Number Of Products Displayed"
+        value={`${stats.totalProducts}`}
+        icon={<FontAwesomeIcon icon={faResearchgate} size="lg"/>}
+        trend={undefined}
       />
     </div>
   )

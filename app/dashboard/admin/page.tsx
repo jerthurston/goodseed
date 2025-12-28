@@ -1,36 +1,29 @@
 "use client"
 
-import { BarChart3, Clock, Play, Settings, Users, AlertTriangle } from "lucide-react"
 import { useState, useMemo } from "react"
 import {
-  DashboardButton,
-  DashboardCard,
   DashboardLayout,
   DashboardSidebar,
   DashboardSidebarItem,
-  DashboardToggle,
-  SellerCard,
-  StatsOverview,
   AutoScraperTabContent,
 } from "../(components)"
 
-import { type Seller } from "@/types/seller.type"
-import { SellerTransformer } from "@/lib/transfomers/seller.transformer"
-import { SellerUI } from "@/types/seller.type"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faHeart, faSearchDollar, faShieldAlt, faChartDiagram, faChartBar, faChartLine, faUser, faTools, faChevronDown, faChevronRight, faStore, faChevronUp, faRobot } from '@fortawesome/free-solid-svg-icons'
-import RecentActivity from "../(components)/DashboardOverview"
 import DashboardOverview from "../(components)/DashboardOverview"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { SellerTransformer } from "@/lib/transfomers/seller.transformer"
 import DashboardSellersTabContent from "../(components)/DashboardSellersTabContent"
-import DashboardScraperSitesTabContent from "../(components)/DashboardScraperSitesTabContent"
 import { useFetchScraperSites, useFetchSellers } from "@/hooks/seller"
 import { useRouter } from "next/navigation"
 import styles from "../(components)/dashboardAdmin.module.css"
 import ErrorAlertBanner from "@/components/custom/admin/ErrorAlertBanner"
 import { LogsTabContent } from "../(components)/LogsTabContent"
 
+import { AlertTriangle } from "lucide-react"
+import { faChartLine, faUser, faStore, faRobot } from '@fortawesome/free-solid-svg-icons'
+import { AlertTabContent } from "../(components)/AlertTabContent"
+
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"sellers" | "scraper" | "overview" | "auto-scraper" | "error-alert">(
+  const [activeTab, setActiveTab] = useState<"sellers" | "scraper" | "overview" | "auto-scraper" | "alert">(
     "overview"
   )
   const [isSellersExpanded, setIsSellersExpanded] = useState(false)
@@ -72,6 +65,7 @@ export default function AdminDashboard() {
       subtitle="Manage sellers and scraping operations"
       sidebar={
         <DashboardSidebar title="Admin Panel">
+          {/* Overview */}
           <DashboardSidebarItem
             icon={<FontAwesomeIcon icon={faChartLine} className="text-lg" />}
             isActive={activeTab === "overview"}
@@ -79,7 +73,6 @@ export default function AdminDashboard() {
           >
             Overview
           </DashboardSidebarItem>
-          
           {/* Sellers with dropdown */}
           <div className="space-y-1">
             <DashboardSidebarItem
@@ -115,21 +108,21 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
-          
+          {/* Scraper Config */}
           <DashboardSidebarItem
             icon={<FontAwesomeIcon icon={faRobot} className="text-lg"/>}
             isActive={activeTab === "auto-scraper"}
             onClick={() => setActiveTab("auto-scraper")}
           >
-            Auto Scraper
+            Scraper Config
           </DashboardSidebarItem>
-          
+          {/* Error and Success Alerts */}
           <DashboardSidebarItem
             icon={<AlertTriangle className="text-lg"/>}
-            isActive={activeTab === "error-alert"}
-            onClick={() => setActiveTab("error-alert")}
+            isActive={activeTab === "alert"}
+            onClick={() => setActiveTab("alert")}
           >
-            Activity Monitoring
+            Error & Success Alerts
           </DashboardSidebarItem>
         </DashboardSidebar>
       }
@@ -147,16 +140,16 @@ export default function AdminDashboard() {
         <div className="space-y-6">
           {/* Overview */}
           {activeTab === "overview" && (
-          <>
-            <ErrorAlertBanner 
-              criticalOnly={false}
-              onRefresh={() => {
-                refetchSellers();
-                // Optionally refresh other data
-              }}
-            />
+          // <>
+          //   <ErrorAlertBanner 
+          //     criticalOnly={false}
+          //     onRefresh={() => {
+          //       refetchSellers();
+          //       // Optionally refresh other data
+          //     }}
+          //   />
             <DashboardOverview sellers={sellers} />
-          </>
+          // </>
         )}
 
         {/* Sellers Management */}
@@ -176,8 +169,17 @@ export default function AdminDashboard() {
         )}
 
         {/* Error Alert Management */}
-        {activeTab === "error-alert" && (
+        {/* {activeTab === "alert" && (
           <LogsTabContent
+            sellers={sellers.map(seller => ({ id: seller.id, name: seller.name }))}
+            onRefreshData={() => {
+              refetchSellers();
+            }}
+          />
+        )} */}
+
+        {activeTab === "alert" && (
+          <AlertTabContent
             sellers={sellers.map(seller => ({ id: seller.id, name: seller.name }))}
             onRefreshData={() => {
               refetchSellers();

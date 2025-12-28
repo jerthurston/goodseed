@@ -17,6 +17,12 @@ export interface UseScraperOperationsResult {
 //   getJobStatus: (jobId: string) => Promise<any>;
 //   clearCompletedJobs: () => void;
 
+    //Job stop operation
+    stopManualScrape:(sellerId:string, jobId:string)=>Promise<void>
+    isStoppingJob:boolean;
+    stopJobError:Error | null;
+    removeActiveJob: (sellerId:string) => void;
+
 
     // Automatic scrape operations
     toggleAutoScrape: (id: string, currentState: boolean) => Promise<void>;
@@ -127,6 +133,58 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
         }
     })
 
+    //Stop job mutation
+    const stopManualJobMutation = useMutation({
+        mutationFn: async({sellerId, jobId}:{sellerId:string ; jobId:string})=>{
+            try {
+                // TODO: Replace with actual API call
+                apiLogger.debug("UseScraperOperation.stopJob", { sellerId, jobId });
+                const result = await ScraperOperationService.stopManualScrape(sellerId, jobId);
+                apiLogger.debug("UseScraperOperation.stopJob successfully", {result});
+                
+                return result;
+            } catch (error) {
+                apiLogger.logError("UseScraperOperation.stopJob failed", error as Error);
+                throw error;
+            }
+        },
+
+        onSuccess:(response, {sellerId})=>{
+            // Remove from active jobs
+            setActiveJobs(prev=>{
+                const newMap = new Map(prev);
+                newMap.delete(sellerId);
+                return newMap;
+            });
+
+            toast.success("Job stopped successfully", {
+                description: "The scraping job has been stopped.",
+                duration: 5000
+            });
+
+            //  response owr onSuccess để làm gì: có thể dùng để cập nhật UI hoặc trạng thái
+            apiLogger.logResponse("useScraperOperation.stopJob", { response });
+        },
+
+        onError: (error: Error, { sellerId }) => {
+            apiLogger.logError("useScraperOperation.stopJob", error, { sellerId });
+            toast.error("Job stop failed", {
+                description: "Failed to stop the scraping job. Please try again.",
+                duration: 5000
+            });
+        },
+
+        
+    })
+
+    const removeActiveJob = (sellerId: string) => {
+            setActiveJobs(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(sellerId);
+                return newMap;
+            });
+        }
+
     return {
         //Manual scrape operation
         triggerManualScrape: async (id: string, scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number }) => {
@@ -148,7 +206,19 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
             await updateIntervalMutation.mutateAsync({ id, settings });
         },
         isUpdatingInterval: updateIntervalMutation.isPending,
-        updateIntervalError: updateIntervalMutation.error
+        updateIntervalError: updateIntervalMutation.error,
+
+        // Manual Stop job operation
+        stopManualScrape: async (sellerId: string, jobId:string) => {
+            // const jobId = activeJobs.get(sellerId);
+            if(!jobId) {
+                throw new Error("No active job found for this seller")
+            }
+            await stopManualJobMutation.mutateAsync({ sellerId, jobId });
+        },
+        isStoppingJob: stopManualJobMutation.isPending,
+        stopJobError: stopManualJobMutation.error,
+        removeActiveJob,
     }
 }
 

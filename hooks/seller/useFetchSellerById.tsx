@@ -35,6 +35,10 @@ export function useFetchSellerById(sellerId: string | undefined): UseFetchSeller
         // Fetch specific seller by ID using dedicated API endpoint
         const seller = await SellerService.fetchSellerById(sellerId)
 
+        apiLogger.debug('[Seller raw result in useFetchSellerById.queryFn]', { seller })
+
+        const transformedSeller = SellerTransformer.toUI(seller)
+
         const duration = Date.now() - startTime
         apiLogger.logResponse(
           "useFetchSellerById.queryFn",
@@ -45,7 +49,7 @@ export function useFetchSellerById(sellerId: string | undefined): UseFetchSeller
           }
         )
         
-        return seller
+        return transformedSeller
       } catch (error) {
         apiLogger.logError("useFetchSellerById.queryFn", error as Error, { sellerId })
         throw error

@@ -187,6 +187,9 @@ export class SaveDbService {
         let updated = 0;
         let errors = 0;
 
+        // Get sellerId once at the beginning
+        const sellerId = this.getSellerId();
+
         console.log(`sample initial products data with length = 3:`, products.slice(0, 3));
 
         for (const product of products) {
@@ -217,6 +220,7 @@ export class SaveDbService {
                         },
                     },
                     update: {
+                        sellerId, // Use pre-calculated sellerId
                         name: product.name,
                         url: product.url,
                         description: product.cannabisType || null,
@@ -232,6 +236,7 @@ export class SaveDbService {
                         updatedAt: new Date(),
                     },
                     create: {
+                        sellerId, // Use pre-calculated sellerId
                         categoryId,
                         name: product.name,
                         slug: product.slug,

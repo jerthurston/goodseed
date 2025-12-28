@@ -29,13 +29,13 @@ export class SellerTransformer {
       totalRuns > 0 ? Math.round((successfulRuns / totalRuns) * 100) : 0;
 
     // Calculate total products scraped
-    const totalProductsScraped = raw.seedCategories.reduce(
+    const totalProductsScraped = raw.seedCategories?.reduce(
       (sum, category) => sum + category.seedProducts.length,
       0
     );
 
     // Format last scraped time
-    const latestScrapeLog = raw.scrapeLogs[0];
+    const latestScrapeLog = raw.scrapeLogs?.[0];
     const lastScraped = latestScrapeLog
       ? this.formatRelativeTime(new Date(latestScrapeLog.timestamp))
       : "Never";
@@ -53,6 +53,8 @@ export class SellerTransformer {
         productsScraped: totalProductsScraped,
         totalRuns,
       },
+      //map scrape jobs to UI format
+      scrapeJobs: raw.scrapeJobs
     };
 
     apiLogger.logResponse('SellerTransformer.toUI', {}, {

@@ -150,7 +150,8 @@ async function processScraperJob(job: Job<ScraperJobData>) {
             config.startPage || 1,
             config.endPage
           );
-        } else if (mode === 'auto') {
+        } 
+        else if (mode === 'auto') {
           // TODO: Implement auto mode logic
           pageResult = await scraperFactory.createProductListScraper(
             scraperSourceName as SupportedScraperSourceName, 
@@ -158,9 +159,11 @@ async function processScraperJob(job: Job<ScraperJobData>) {
             config.startPage || 1,
             config.endPage
           );
-        } else if (mode === 'batch') {
+        } 
+        else if (mode === 'batch') {
           // TODO: Implement batch mode logic  
-        } else if (mode === 'test') {
+        } 
+        else if (mode === 'test') {
           // Test mode with limited pages
           pageResult = await scraperFactory.createProductListScraper(
             scraperSourceName as SupportedScraperSourceName, 
@@ -206,7 +209,15 @@ async function processScraperJob(job: Job<ScraperJobData>) {
           errorType: errorClassification.type,
           errorSeverity: errorClassification.severity
         });
-        // Continue to next source
+        // Viết tiếp logic update trạng thái và cập nhật lỗi cho scrapeJob
+        await prisma.scrapeJob.update({
+          where:{jobId},
+          data:{
+            status:ScrapeJobStatus.FAILED,
+            updatedAt: new Date(),
+            errorMessage:"Worker crawled failed",
+          }
+        })
       }
     }
 

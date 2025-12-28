@@ -174,7 +174,10 @@ export class SaveDbService implements ISaveDbService {
         let updated = 0;
         let errors = 0;
 
-        console.log(`[SunWest DB] Processing ${products.length} products for category ${categoryId}`);
+        // Get sellerId once at the beginning
+        const sellerId = this.getSellerId();
+
+        apiLogger.debug(`[SunWest DB] Processing ${products.length} products for category ${categoryId}`);
 
         for (const product of products) {
             try {
@@ -216,7 +219,10 @@ export class SaveDbService implements ISaveDbService {
                     // Update existing product
                     await this.prisma.seedProduct.update({
                         where: { id: existingProduct.id },
-                        data: productData,
+                        data: {
+                            ...productData,
+                            sellerId, // Use pre-calculated sellerId
+                        },
                     });
                     seedProductId = existingProduct.id;
                     updated++;
@@ -226,12 +232,13 @@ export class SaveDbService implements ISaveDbService {
                     const newProduct = await this.prisma.seedProduct.create({
                         data: {
                             ...productData,
+                            sellerId, // Use pre-calculated sellerId
                             categoryId,
                         },
                     });
                     seedProductId = newProduct.id;
                     saved++;
-                    console.log(`[SunWest DB] Created: ${product.name}`);
+                    apiLogger.debug(`[SunWest DB] Created: ${product.name}`);
                 }
 
                 // Handle pricing (delete old ones and create new)
@@ -256,12 +263,12 @@ export class SaveDbService implements ISaveDbService {
                 }
 
             } catch (error) {
-                console.error(`[SunWest DB] Error processing product ${product.name}:`, error);
+                apiLogger.logError(`[SunWest DB] Error processing product ${product.name}:`, error as Error);
                 errors++;
             }
         }
 
-        console.log(`[SunWest DB] Results: ${saved} saved, ${updated} updated, ${errors} errors`);
+        apiLogger.debug(`[SunWest DB] Results: ${saved} saved, ${updated} updated, ${errors} errors`);
         return { saved, updated, errors };
     }
 

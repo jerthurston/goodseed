@@ -15,7 +15,8 @@ import {
   BarChart3,
   Download,
   CheckCircle2,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +25,8 @@ import {
   useScraperErrorMonitor, 
   ScraperErrorAlert 
 } from '@/hooks/admin/error-monitoring/useScraperErrorMonitor';
-import { useScrapJobs } from '@/hooks/admin/useScrapJobs';
+import { useFetchScrapeJobs } from '@/hooks/admin/scrape-job/useFetchScrapeJobs';
+import { useDeleteScrapeJob } from '@/hooks/admin/scrape-job/useDeleteScrapeJob';
 import { 
   ErrorProcessorService, 
   ScraperErrorType, 
@@ -33,6 +35,8 @@ import {
 import { useScraperOperations } from '@/hooks/scraper-site/useScraperOperations';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { DashboardCard, DashboardCardHeader } from '@/app/dashboard/(components)/DashboardCard';
+import { ActivityList } from '@/app/dashboard/(components)/ActivityList';
+import { ActivityData } from '@/app/dashboard/(components)/ActivityItem';
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilter, faToolbox } from '@fortawesome/free-solid-svg-icons';
@@ -75,6 +79,7 @@ export function LogsTabContent({
   });
 
   const [selectedErrors, setSelectedErrors] = useState<Set<string>>(new Set());
+  const [selectedJobs, setSelectedJobs] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [currentView, setCurrentView] = useState<'all' | 'errors' | 'success'>('all');
 
@@ -100,7 +105,7 @@ export function LogsTabContent({
     isLoading: jobsLoading,
     error: jobsError,
     refreshJobs
-  } = useScrapJobs({
+  } = useFetchScrapeJobs({
     timeframe: filters.timeframe,
     limit: 50
   });
@@ -108,11 +113,43 @@ export function LogsTabContent({
   // Scraper operations for retry functionality
   const { triggerManualScrape } = useScraperOperations(refreshErrors);
 
-  // Filtered errors based on current filters
-  const filteredErrors = useMemo(() => {
-    if (!errors) return [];
+  // Delete job functionality
+  const { deleteJob, isDeletingJob, deleteError, reset: resetDeleteError } = useDeleteScrapeJob();
 
-    return errors.filter(error => {
+  // Convert failed jobs to error alerts for unified display
+  // This includes jobs that are "COMPLETED" but failed to save any products (saved: 0, updated: 0)
+  const jobErrors = useMemo(() => {
+    if (!failedJobs) return [];
+
+    return failedJobs.map(job => ({
+      id: `job-${job.id}`,
+      sellerId: job.sellerId,
+      sellerName: job.sellerName,
+      timestamp: job.endTime || job.updatedAt,
+      errorMessage: job.errorMessage || 
+        (job.status === 'COMPLETED' && job.productsSaved === 0 && job.productsUpdated === 0
+          ? `Job completed but failed to save products. Scraped: ${job.productsScraped}, Saved: 0, Updated: 0`
+          : `Job failed with status: ${job.status}`
+        ),
+      errorSource: 'JOB' as const,
+      jobId: job.id,
+      duration: job.duration,
+      productsScraped: job.productsScraped,
+      productsSaved: job.productsSaved,
+      productsUpdated: job.productsUpdated
+    }));
+  }, [failedJobs]);
+
+  // Combine regular errors with job errors
+  const allErrors = useMemo(() => {
+    return [...(errors || []), ...jobErrors];
+  }, [errors, jobErrors]);
+
+  // Filtered errors based on current filters (now includes job errors)
+  const filteredErrors = useMemo(() => {
+    if (!allErrors) return [];
+
+    return allErrors.filter(error => {
       // Text search
       if (filters.search && !error.errorMessage.toLowerCase().includes(filters.search.toLowerCase()) 
           && !error.sellerName.toLowerCase().includes(filters.search.toLowerCase())) {
@@ -143,31 +180,8 @@ export function LogsTabContent({
 
       return true;
     });
-  }, [errors, filters]);
+  }, [allErrors, filters]);
 
-  // Error statistics
-  const errorStats = useMemo(() => {
-    if (!filteredErrors.length) return null;
-
-    const byType = filteredErrors.reduce((acc, error) => {
-      const classification = ErrorProcessorService.classifyError(error.errorMessage);
-      acc[classification.type] = (acc[classification.type] || 0) + 1;
-      return acc;
-    }, {} as Record<ScraperErrorType, number>);
-
-    const bySeverity = filteredErrors.reduce((acc, error) => {
-      const classification = ErrorProcessorService.classifyError(error.errorMessage);
-      acc[classification.severity] = (acc[classification.severity] || 0) + 1;
-      return acc;
-    }, {} as Record<ErrorSeverity, number>);
-
-    const bySeller = filteredErrors.reduce((acc, error) => {
-      acc[error.sellerName] = (acc[error.sellerName] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return { byType, bySeverity, bySeller };
-  }, [filteredErrors]);
 
   /**
    * Handle filter updates
@@ -177,63 +191,139 @@ export function LogsTabContent({
   };
 
   /**
-   * Handle refresh
+   * Handle retry single error/activity
    */
-  const handleRefresh = () => {
-    refreshErrors();
-    refreshJobs();
-    onRefreshData?.();
-    toast.success('Data refreshed');
-    apiLogger.info('[ErrorAlertTab] Data refreshed manually');
-  };
-
-  /**
-   * Handle retry single error
-   */
-  const handleRetryError = async (error: ScraperErrorAlert) => {
+  const handleRetryActivity = async (activity: ActivityData) => {
     try {
-      await triggerManualScrape(error.sellerId, {});
-      toast.success(`Retry initiated for ${error.sellerName}`);
+      await triggerManualScrape(activity.sellerId, {});
+      toast.success(`Retry initiated for ${activity.sellerName}`);
       
-      // Remove from selection if it was selected
-      setSelectedErrors(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(error.id);
-        return newSet;
-      });
+      // Remove from selection if it was selected (for errors)
+      if (activity.type === 'error') {
+        setSelectedErrors(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(activity.id);
+          return newSet;
+        });
+      }
       
     } catch (err) {
       toast.error('Failed to retry scraper');
       apiLogger.logError('[ErrorAlertTab] Retry failed', err as Error, { 
-        errorId: error.id,
-        sellerId: error.sellerId 
+        activityId: activity.id,
+        sellerId: activity.sellerId 
       });
     }
   };
 
   /**
-   * Handle bulk retry
+   * Handle delete single job/activity
    */
-  const handleBulkRetry = async () => {
-    if (selectedErrors.size === 0) return;
-
-    const selectedErrorList = filteredErrors.filter(error => selectedErrors.has(error.id));
-    const uniqueSellers = [...new Set(selectedErrorList.map(error => ({ 
-      id: error.sellerId, 
-      name: error.sellerName 
-    })))];
+  const handleDeleteActivity = async (activity: ActivityData) => {
+    // Need jobId to delete - works for both error and success jobs
+    const jobId = activity.jobId || activity.id;
+    
+    if (!jobId) {
+      toast.error('Cannot delete: Job ID not found');
+      return;
+    }
 
     try {
-      await Promise.all(
-        uniqueSellers.map(seller => triggerManualScrape(seller.id, {}))
-      );
+      // Reset any previous delete errors
+      resetDeleteError();
+      
+      await deleteJob(jobId);
+      toast.success(`Job deleted successfully for ${activity.sellerName}`);
+      
+      apiLogger.info('[LogsTabContent] Job deleted', { 
+        activityId: activity.id,
+        jobId: jobId,
+        sellerId: activity.sellerId,
+        sellerName: activity.sellerName,
+        activityType: activity.type
+      });
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete job';
+      toast.error(errorMessage);
+      
+      apiLogger.logError('[LogsTabContent] Delete job failed', err as Error, { 
+        activityId: activity.id,
+        jobId: jobId,
+        sellerId: activity.sellerId,
+        activityType: activity.type
+      });
+    }
+  };
 
-      toast.success(`Retry initiated for ${uniqueSellers.length} seller(s)`);
-      setSelectedErrors(new Set());
+  /**
+   * Handle bulk delete jobs
+   */
+  const handleBulkDelete = async () => {
+    if (selectedJobs.size === 0) return;
+
+    const selectedJobList = successfulJobs.filter(job => selectedJobs.has(job.id));
+    
+    if (selectedJobList.length === 0) {
+      toast.error('No jobs selected for deletion');
+      return;
+    }
+
+    try {
+      // Reset any previous delete errors
+      resetDeleteError();
+      
+      // Delete jobs in parallel with Promise.allSettled to handle partial failures
+      const deletePromises = selectedJobList.map(async (job) => {
+        try {
+          await deleteJob(job.id);
+          return { success: true, jobId: job.id, sellerName: job.sellerName };
+        } catch (error) {
+          apiLogger.logError('[LogsTabContent] Bulk delete individual job failed', error as Error, { 
+            jobId: job.id,
+            sellerName: job.sellerName 
+          });
+          return { success: false, jobId: job.id, sellerName: job.sellerName, error };
+        }
+      });
+
+      const results = await Promise.allSettled(deletePromises);
+      
+      // Process results
+      const successful = results
+        .filter((result): result is PromiseFulfilledResult<{ success: true; jobId: string; sellerName: string }> => 
+          result.status === 'fulfilled' && result.value.success
+        )
+        .map(result => result.value);
+      
+      const failed = results
+        .filter(result => 
+          result.status === 'rejected' || 
+          (result.status === 'fulfilled' && !result.value.success)
+        );
+
+      // Show results
+      if (successful.length > 0) {
+        toast.success(`Successfully deleted ${successful.length} job(s)`);
+        setSelectedJobs(new Set()); // Clear selection
+      }
+      
+      if (failed.length > 0) {
+        toast.error(`Failed to delete ${failed.length} job(s)`);
+      }
+
+      apiLogger.info('[LogsTabContent] Bulk delete completed', {
+        total: selectedJobList.length,
+        successful: successful.length,
+        failed: failed.length,
+        selectedJobIds: Array.from(selectedJobs)
+      });
       
     } catch (error) {
-      toast.error('Failed to retry some scrapers');
-      apiLogger.logError('[ErrorAlertTab] Bulk retry failed', error as Error);
+      toast.error('Bulk delete operation failed');
+      apiLogger.logError('[LogsTabContent] Bulk delete failed', error as Error, {
+        selectedJobsCount: selectedJobs.size
+      });
     }
   };
 
@@ -274,31 +364,27 @@ export function LogsTabContent({
   };
 
   /**
-   * Get severity color class
+   * Toggle job selection (for success jobs)
    */
-  const getSeverityColor = (severity: ErrorSeverity) => {
-    switch (severity) {
-      case 'CRITICAL': return 'text-red-600 bg-red-50';
-      case 'HIGH': return 'text-orange-600 bg-orange-50';
-      case 'MEDIUM': return 'text-yellow-600 bg-yellow-50';
-      default: return 'text-gray-600 bg-gray-50';
-    }
+  const toggleJobSelection = (jobId: string) => {
+    setSelectedJobs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(jobId)) {
+        newSet.delete(jobId);
+      } else {
+        newSet.add(jobId);
+      }
+      return newSet;
+    });
   };
 
   /**
-   * Format timestamp
+   * Select all visible success jobs
    */
-  const formatTimestamp = (timestamp: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - new Date(timestamp).getTime();
-    const minutes = Math.floor(diff / 60000);
-    
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return new Date(timestamp).toLocaleDateString();
+  const selectAllJobs = () => {
+    setSelectedJobs(new Set(successfulJobs.map(job => job.id)));
   };
+
 
   return (
     <div className="space-y-6">
@@ -312,74 +398,25 @@ export function LogsTabContent({
         </p>
       </div>
 
-      {/* Statistics Overview */}
-      {errorStats && (
-        <div className={styles.errorStatsGrid}>
-          <div className={styles.errorCard}>
-            <div className={styles.errorCardContent}>
-              <div className={styles.errorCardIcon}>
-                <AlertTriangle className="h-8 w-8 text-orange-500" />
-              </div>
-              <div className={styles.errorCardInfo}>
-                <p className={styles.errorCardValue}>{filteredErrors.length}</p>
-                <p className={styles.errorCardLabel}>Total Errors</p>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.errorCard}>
-            <div className={styles.errorCardContent}>
-              <div className={styles.errorCardIcon}>
-                <AlertCircle className="h-8 w-8 text-red-500" />
-              </div>
-              <div className={styles.errorCardInfo}>
-                <p className={styles.errorCardValue}>{errorStats.bySeverity.CRITICAL || 0}</p>
-                <p className={styles.errorCardLabel}>Critical Errors</p>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.errorCard}>
-            <div className={styles.errorCardContent}>
-              <div className={styles.errorCardIcon}>
-                <User className="h-8 w-8 text-blue-500" />
-              </div>
-              <div className={styles.errorCardInfo}>
-                <p className={styles.errorCardValue}>{Object.keys(errorStats.bySeller).length}</p>
-                <p className={styles.errorCardLabel}>Affected Sellers</p>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.errorCard}>
-            <div className={styles.errorCardContent}>
-              <div className={styles.errorCardIcon}>
-                <Clock className="h-8 w-8 text-green-500" />
-              </div>
-              <div className={styles.errorCardInfo}>
-                <p className={styles.errorCardValue}>{filters.timeframe}m</p>
-                <p className={styles.errorCardLabel}>Time Window</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
 
       {/* Main Content Area */}
       <div className={styles.errorCardContainer}>
         {/* View Toggle */}
         <div className={styles.errorCardHeader}>
+          {/* Heading */}
           <h3 className={styles.errorListTitle}>
             {currentView === 'all' ? 'All Activities' : 
              currentView === 'errors' ? 'Error Details' : 'Success Details'} 
             ({currentView === 'errors' ? filteredErrors.length : 
               currentView === 'success' ? successfulJobs.length :
-              currentView === 'all' ? `${filteredErrors.length + successfulJobs.length} total` : '0'})
+              currentView === 'all' ? `${filteredErrors.length + successfulJobs.length} alert` : '0'})
           </h3>
-          
+
+          {/* Buttons: All, error, success, filter */}
           <div className={styles.errorViewToggle}>
             <div className={styles.errorViewToggleTabs}>
+              {/* All Tab */}
               <Button
                 variant="outline"
                 size="sm"
@@ -391,6 +428,8 @@ export function LogsTabContent({
                 <Database className="h-4 w-4" />
                 All
               </Button>
+
+              {/* Error Tab */}
               <Button
                 variant="outline"
                 size="sm"
@@ -402,6 +441,8 @@ export function LogsTabContent({
                 <AlertTriangle className="h-4 w-4" />
                 Errors
               </Button>
+
+              {/* Success Tab */}
               <Button
                 variant="outline"
                 size="sm"
@@ -415,6 +456,7 @@ export function LogsTabContent({
               </Button>
             </div>
             
+            {/* filter btn */}
             <div className={styles.errorViewToggleActions}>
               <Button
                 variant="outline"
@@ -431,360 +473,102 @@ export function LogsTabContent({
                 )}
               </Button>
             </div>
+
           </div>
         </div>
 
-        {currentView === 'all' ? (
-          // All Activities View (Errors + Success)
-          <>
-            {(isLoading || jobsLoading) ? (
-              <div className={styles.errorLoadingState}>
-                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600">Loading data...</p>
-              </div>
-            ) : filteredErrors.length === 0 && successfulJobs.length === 0 ? (
-              <div className={styles.errorEmptyState}>
-                <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Activity Found</h3>
-                <p className="text-gray-600">
-                  No scraping activity found in the selected timeframe.
-                </p>
-              </div>
-            ) : (
-              <div className={styles.errorListContainer}>
-                {/* Success Jobs First */}
-                {successfulJobs.map((job) => (
-                  <div key={`success-${job.id}`} className={`${styles.errorCard} ${styles.successCard}`}>
-                    <div className={styles.errorCardHeader}>
-                      <div className={styles.errorCardStatus}>
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        <span className="text-green-700 font-medium text-sm">SUCCESS</span>
-                      </div>
-                      <div className={styles.errorCardTimestamp}>
-                        <Clock className="h-3 w-3" />
-                        <span className="text-xs text-gray-500">
-                          {job.endTime ? new Date(job.endTime).toLocaleString() : new Date(job.updatedAt).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
+        {/* Bulk Actions Bar - For errors view with selections */}
+        {currentView !== 'success' && selectedErrors.size > 0 && (
+          <div className={styles.errorBulkActionBar}>
+            <div className={styles.errorBulkActionInfo}>
+              <span className={styles.errorBulkActionCount}>
+                {selectedErrors.size} error(s) selected
+              </span>
+            </div>
+            <div className={`${styles.errorBulkActionButtons} flex flex-row items-center gap-2 my-2 mb-4 `}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={selectAllErrors}
+                className={styles.errorBulkActionButton}
+              >
+                Select All ({filteredErrors.length})
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedErrors(new Set())}
+                className={styles.errorBulkActionButton}
+              >
+                Clear Selection
+              </Button>
+             
+            </div>
+          </div>
+        )}
 
-                    <div className={styles.errorCardContent}>
-                      <div className={styles.errorCardTitle}>
-                        <User className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium text-gray-900">{job.sellerName}</span>
-                        <span className={`${styles.errorSeverityBadge} ${styles.successBadge}`}>
-                          {job.mode.toUpperCase()}
-                        </span>
-                      </div>
+        {/* Bulk Actions Bar - For success jobs with selections */}
+        {currentView !== 'errors' && selectedJobs.size > 0 && (
+          <div className={styles.errorBulkActionBar}>
+            <div className={styles.errorBulkActionInfo}>
+              <span className={styles.errorBulkActionCount}>
+                {selectedJobs.size} job(s) selected
+              </span>
+            </div>
+            <div className={styles.errorBulkActionButtons}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={selectAllJobs}
+                className={styles.errorBulkActionButton}
+              >
+                Select All ({successfulJobs.length})
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedJobs(new Set())}
+                className={styles.errorBulkActionButton}
+              >
+                Clear Selection
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={isDeletingJob}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isDeletingJob ? (
+                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3 w-3 mr-1" />
+                )}
+                {isDeletingJob ? 'Deleting...' : `Delete Selected (${selectedJobs.size})`}
+              </Button>
+            </div>
+          </div>
+        )}
 
-                      <div className={styles.errorCardStats}>
-                        <div className={styles.errorStatItem}>
-                          <Database className="h-3 w-3 text-blue-500" />
-                          <span className="text-xs text-gray-600">
-                            Scraped: {job.productsScraped || 0}
-                          </span>
-                        </div>
-                        <div className={styles.errorStatItem}>
-                          <TrendingUp className="h-3 w-3 text-green-500" />
-                          <span className="text-xs text-gray-600">
-                            Saved: {job.productsSaved || 0}
-                          </span>
-                        </div>
-                        <div className={styles.errorStatItem}>
-                          <BarChart3 className="h-3 w-3 text-orange-500" />
-                          <span className="text-xs text-gray-600">
-                            Updated: {job.productsUpdated || 0}
-                          </span>
-                        </div>
-                        {job.duration && (
-                          <div className={styles.errorStatItem}>
-                            <Clock className="h-3 w-3 text-purple-500" />
-                            <span className="text-xs text-gray-600">
-                              Duration: {Math.round(job.duration / 1000)}s
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className={styles.errorCardActions}>
-                      <span className="text-xs text-gray-500">
-                        Job ID: {job.id.slice(-8)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Error Jobs */}
-                {filteredErrors.map((error) => (
-                  <div 
-                    key={`error-${error.id}`}
-                    className={`${styles.errorCard} ${
-                      selectedErrors.has(error.id) ? styles.errorCardSelected : ''
-                    }`}
-                    onClick={() => toggleErrorSelection(error.id)}
-                  >
-                    <div className={styles.errorCardHeader}>
-                      <div className={styles.errorCardInfo}>
-                        <div className={styles.errorCardType}>
-                          <AlertTriangle className="h-4 w-4 text-red-500 mr-2" />
-                          {ErrorProcessorService.classifyError(error.errorMessage).type}
-                        </div>
-                        <div className={styles.errorCardSeller}>
-                          <User className="h-3 w-3 mr-1" />
-                          {error.sellerName}
-                        </div>
-                      </div>
-                      
-                      <div className={`${styles.errorSeverityBadge} ${styles[`severity${ErrorProcessorService.classifyError(error.errorMessage).severity}`]}`}>
-                        {ErrorProcessorService.classifyError(error.errorMessage).severity}
-                      </div>
-                    </div>
-
-                    <div className={styles.errorCardMessage}>
-                      {error.errorMessage}
-                    </div>
-
-                    <div className={styles.errorCardMeta}>
-                      <div className={styles.errorMetaItem}>
-                        <Clock className="h-3 w-3" />
-                        <span>{new Date(error.timestamp).toLocaleString()}</span>
-                      </div>
-                      <div className={styles.errorMetaItem}>
-                        <Database className="h-3 w-3" />
-                        <span>Source: {error.errorSource}</span>
-                      </div>
-                    </div>
-
-                    <div className={styles.errorCardActions}>
-                      <Button
-                        variant="outline" 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRetryError(error);
-                        }}
-                        className={styles.errorActionButton}
-                      >
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        Retry
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        ) : currentView === 'errors' ? (
-          // Error List View Only
-          <>
-            {(isLoading || jobsLoading) ? (
-              <div className={styles.errorLoadingState}>
-                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600">Loading data...</p>
-              </div>
-            ) : filteredErrors.length === 0 ? (
-              <div className={styles.errorEmptyState}>
-                <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Errors Found</h3>
-                <p className="text-gray-600">
-                  {hasErrors 
-                    ? 'No errors match your current filters.' 
-                    : 'All scrapers are running smoothly! 🎉'
-                  }
-                </p>
-              </div>
-            ) : (
-              <div className={styles.errorList}>
-                {filteredErrors.map((error) => {
-                  const classification = ErrorProcessorService.classifyError(error.errorMessage);
-                  const isSelected = selectedErrors.has(error.id);
-
-                  return (
-                    <div 
-                      key={error.id}
-                      className={`${styles.errorListItem} ${
-                        isSelected ? styles.errorListItemSelected : ''
-                      }`}
-                    >
-                      <div className={styles.errorItemContent}>
-                        {/* Selection Checkbox */}
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleErrorSelection(error.id)}
-                          className={styles.errorCheckbox}
-                        />
-
-                        {/* Error Icon */}
-                        <div className={styles.errorIcon}>
-                          <AlertTriangle className={`h-5 w-5 ${
-                            classification.severity === 'CRITICAL' ? 'text-red-500' :
-                            classification.severity === 'HIGH' ? 'text-orange-500' :
-                            'text-yellow-500'
-                          }`} />
-                        </div>
-
-                        {/* Error Details */}
-                        <div className={styles.errorDetails}>
-                          <div className={styles.errorDetailsHeader}>
-                            <div className={styles.errorDetailsMain}>
-                              <div className={styles.errorTags}>
-                                <h4 className={styles.errorSellerName}>{error.sellerName}</h4>
-                                
-                                <span className={`${styles.errorBadge} ${
-                                  classification.severity === 'CRITICAL' ? styles.errorBadgeCritical :
-                                  classification.severity === 'HIGH' ? styles.errorBadgeHigh :
-                                  styles.errorBadgeMedium
-                                }`}>
-                                  {classification.severity}
-                                </span>
-
-                                <span className={styles.errorTypeTag}>
-                                  {classification.type.replace('_', ' ')}
-                                </span>
-
-                                <span className={styles.errorSourceTag}>
-                                  {error.errorSource}
-                                </span>
-                              </div>
-
-                              <p className={styles.errorMessage}>
-                                {error.errorMessage}
-                              </p>
-
-                              <div className={styles.errorMetadata}>
-                                <span className={styles.errorTimestamp}>
-                                  <Clock className="h-3 w-3" />
-                                  {formatTimestamp(error.timestamp)}
-                                </span>
-                                
-                                {error.jobId && (
-                                  <span>Job: {error.jobId}</span>
-                                )}
-
-                                {error.duration && (
-                                  <span>Duration: {error.duration}ms</span>
-                                )}
-                              </div>
-
-                              {classification.recommendation && (
-                                <div className={styles.errorRecommendation}>
-                                  <strong>💡 Recommendation:</strong> {classification.recommendation.action}
-                                  {classification.recommendation.estimatedFixTime && (
-                                    <span className={styles.errorRecommendationTime}>
-                                      (Est. fix time: {classification.recommendation.estimatedFixTime})
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Actions */}
-                            <div className={styles.errorActions}>
-                              {classification.recommendation.autoRetryable && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleRetryError(error)}
-                                  className={styles.errorRetryButton}
-                                >
-                                  <RefreshCw className="h-3 w-3 mr-1" />
-                                  Retry
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
+        {/* Main Content - Unified Activity Display */}
+        {(isLoading || jobsLoading) ? (
+          <div className={styles.errorLoadingState}>
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400" />
+            <p className="text-gray-600">Loading data...</p>
+          </div>
         ) : (
-          // Success List View
-          <>
-            {(isLoading || jobsLoading) ? (
-              <div className={styles.errorLoadingState}>
-                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600">Loading data...</p>
-              </div>
-            ) : successfulJobs.length === 0 ? (
-              <div className={styles.errorEmptyState}>
-                <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Successful Jobs Found</h3>
-                <p className="text-gray-600">
-                  No completed scraping jobs found in the selected timeframe.
-                </p>
-              </div>
-            ) : (
-              <div className={styles.errorListContainer}>
-                {successfulJobs.map((job) => (
-                  <div key={job.id} className={`${styles.errorCard} ${styles.successCard}`}>
-                    <div className={styles.errorCardHeader}>
-                      <div className={styles.errorCardStatus}>
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        <span className="text-green-700 font-medium text-sm">SUCCESS</span>
-                      </div>
-                      <div className={styles.errorCardTimestamp}>
-                        <Clock className="h-3 w-3" />
-                        <span className="text-xs text-gray-500">
-                          {job.endTime ? new Date(job.endTime).toLocaleString() : new Date(job.updatedAt).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className={styles.errorCardContent}>
-                      <div className={styles.errorCardTitle}>
-                        <User className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium text-gray-900">{job.sellerName}</span>
-                        <span className={`${styles.errorSeverityBadge} ${styles.successBadge}`}>
-                          {job.mode.toUpperCase()}
-                        </span>
-                      </div>
-
-                      <div className={styles.errorCardStats}>
-                        <div className={styles.errorStatItem}>
-                          <Database className="h-3 w-3 text-blue-500" />
-                          <span className="text-xs text-gray-600">
-                            Scraped: {job.productsScraped || 0}
-                          </span>
-                        </div>
-                        <div className={styles.errorStatItem}>
-                          <TrendingUp className="h-3 w-3 text-green-500" />
-                          <span className="text-xs text-gray-600">
-                            Saved: {job.productsSaved || 0}
-                          </span>
-                        </div>
-                        <div className={styles.errorStatItem}>
-                          <BarChart3 className="h-3 w-3 text-orange-500" />
-                          <span className="text-xs text-gray-600">
-                            Updated: {job.productsUpdated || 0}
-                          </span>
-                        </div>
-                        {job.duration && (
-                          <div className={styles.errorStatItem}>
-                            <Clock className="h-3 w-3 text-purple-500" />
-                            <span className="text-xs text-gray-600">
-                              Duration: {Math.round(job.duration / 1000)}s
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className={styles.errorCardActions}>
-                      <span className="text-xs text-gray-500">
-                        Job ID: {job.id.slice(-8)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
+          <ActivityList
+            errors={filteredErrors}
+            successJobs={successfulJobs}
+            view={currentView}
+            selectedErrors={selectedErrors}
+            selectedJobs={selectedJobs}
+            onToggleErrorSelection={toggleErrorSelection}
+            onToggleJobSelection={toggleJobSelection}
+            onRetryError={handleRetryActivity}
+            onDeleteJob={handleDeleteActivity}
+            isDeletingJob={isDeletingJob}
+          />
         )}
       </div>
 

@@ -981,7 +981,7 @@
   gap: 1.5rem;
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 3px solid #000000; /* Border đen để consistent với card border */
+  /* border-bottom: 3px solid #000000; Border đen để consistent với card border */
 }
 
 .errorCardInfo {
@@ -1639,4 +1639,723 @@
   background-color: var(--bg-secondary);
   transform: translate(3px, 3px);
   box-shadow: none;
+}
+
+/* ============================================================
+   ACTIVITY ITEM COMPONENTS (UNIFIED ERROR & SUCCESS DISPLAY)
+   ============================================================ */
+
+/* Base Activity Item */
+.activityItem {
+  /* background-color: var(--accent-cta); */
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 3px 3px 0 var(--border-color);
+  transition: all 0.2s ease;
+  position: relative;
+  width: 100%;
+}
+
+.activityItem:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--border-color);
+}
+
+/* Activity Item Variants */
+.activityItemSuccess {
+  border-left: 6px solid var(--brand-success);
+}
+
+.activityItemError {
+  border-left: 2px solid var(--border-color);
+}
+
+.activityItemSelectable {
+  cursor: pointer;
+  padding-left: 3rem; /* Make space for checkbox */
+}
+
+.activityItemSelected {
+  background-color: var(--bg-secondary);
+  border-color: var(--brand-primary);
+}
+
+/* Activity Item Selection */
+.activityItemSelection {
+  position: absolute;
+  left: 0.75rem;
+  top: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.activityCheckbox {
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid var(--border-color);
+  border-radius: 0;
+  background-color: var(--bg-main);
+  cursor: pointer;
+}
+
+.activityCheckbox:checked {
+  background-color: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+/* Activity Item Header */
+.activityItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.activityItemStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.activityItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.activityItemType {
+  display: flex;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.activityItemSeller {
+  display: flex;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.activityItemTimestamp {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Activity Item Content */
+.activityItemContent {
+  margin-bottom: 0.75rem;
+}
+
+.activityItemTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.activityItemMessage {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background-color: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+}
+
+/* Activity Item Stats */
+.activityItemStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.activityStatItem {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Activity Item Meta */
+.activityItemMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.activityMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Activity Item Recommendation */
+.activityItemRecommendation {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background-color: var(--bg-accent);
+  border: 2px solid var(--brand-warning);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.activityRecommendationTime {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Activity Item Footer */
+.activityItemFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Activity Badges */
+.activityBadge {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.5rem;
+  border: 2px solid;
+  border-radius: 0;
+  line-height: 1;
+}
+
+.activityBadgeSuccess {
+  background-color: var(--brand-success);
+  border-color: var(--brand-success);
+  color: white;
+}
+
+.activityBadgeCritical {
+  background-color: var(--brand-error);
+  border-color: var(--brand-error);
+  color: white;
+}
+
+.activityBadgeHigh {
+  background-color: var(--brand-warning);
+  border-color: var(--brand-warning);
+  color: var(--text-primary);
+}
+
+.activityBadgeMedium {
+  background-color: var(--bg-accent);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Activity Retry Button */
+.activityRetryButton {
+  background-color: var(--bg-main);
+  border: 2px solid var(--brand-primary);
+  color: var(--brand-primary);
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 2px 2px 0 var(--brand-primary);
+}
+
+.activityRetryButton:hover {
+  background-color: var(--brand-primary);
+  color: white;
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Activity List Container */
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.activityList::-webkit-scrollbar {
+  width: 8px;
+}
+
+.activityList::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+}
+
+.activityList::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border: 1px solid var(--border-color);
+}
+
+.activityList::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* ============================================================
+   DELETE BUTTON COMPONENT
+   ============================================================ */
+.activityDeleteButton {
+  padding: 0.5rem 1.25rem;
+  border: 3px solid var(--border-color);
+  background-color: var(--danger-color);
+  color: var(--bg-main);
+  font-size: 1rem;
+  line-height: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 0 var(--border-color);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: 20px;
+  height: 30px;
+}
+
+.activityDeleteButton:hover:not(:disabled) {
+  background-color: var(--danger-color-hover);
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+.activityDeleteButton:focus {
+  outline: none;
+  box-shadow: 3px 3px 0 var(--border-color), 0 0 0 2px var(--danger-color);
+}
+
+.activityDeleteButton:disabled {
+  background-color: var(--bg-section);
+  color: var(--text-primary-muted);
+  cursor: not-allowed;
+  box-shadow: 3px 3px 0 var(--border-color);
+  transform: none;
+}
+
+.activityDeleteButton:disabled:hover {
+  box-shadow: 3px 3px 0 var(--border-color);
+  transform: none;
+}
+
+/* ============================================================
+   ALERT TAB CONTENT (Simple Jobs Management)
+   ============================================================ */
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+/* Header Section */
+.alertHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.alertTitle {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  border-bottom: 3px solid var(--border-color);
+  margin-bottom: 1px;
+}
+
+.alertStats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: var(--bg-main);
+  border: 3px solid var(--border-color);
+  box-shadow: 3px 3px 0 var(--border-color);
+  min-width: 120px;
+}
+
+.statNumber {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.statLabel {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-primary-muted);
+  text-transform: uppercase;
+}
+
+/* Toolbar */
+.alertToolbar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background-color: var(--bg-secondary);
+  border: 3px solid var(--border-color);
+  box-shadow: 3px 3px 0 var(--border-color);
+}
+
+.searchGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 250px;
+}
+
+.searchIcon {
+  color: var(--text-primary-muted);
+  font-size: 0.875rem;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--border-color);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  border-radius: 0;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 2px 2px 0 var(--brand-primary);
+}
+
+.filterGroup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filterSelect {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--border-color);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+}
+
+.actionGroup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actionButton {
+  padding: 0.5rem 1rem;
+  border: 3px solid var(--border-color);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 0 var(--border-color);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.actionButton:hover:not(:disabled) {
+  background-color: var(--brand-primary);
+  color: var(--bg-main);
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+.actionButton:disabled {
+  background-color: var(--bg-section);
+  color: var(--text-primary-muted);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Bulk Toolbar */
+.bulkToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-section);
+  border: 2px solid var(--border-color);
+  border-style: dashed;
+}
+
+.bulkActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.bulkActionBtn {
+  padding: 0.25rem 0.5rem;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+  border: none;
+}
+
+.bulkActionBtn:hover {
+  color: var(--brand-primary);
+}
+
+/* Jobs List */
+.jobsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.jobsList::-webkit-scrollbar {
+  width: 8px;
+}
+
+.jobsList::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+}
+
+.jobsList::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border: 1px solid var(--border-color);
+}
+
+.jobsList::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Job Item */
+.jobItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--bg-main);
+  border: 3px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.jobItem:hover {
+  border-color: var(--brand-primary);
+  box-shadow: 2px 2px 0 var(--brand-primary);
+}
+
+.jobItemSelected {
+  background-color: var(--bg-section);
+  border-color: var(--brand-primary);
+  box-shadow: 2px 2px 0 var(--brand-primary);
+}
+
+.jobCheckbox {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand-primary);
+  cursor: pointer;
+}
+
+.jobInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.jobHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.jobStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.jobStatusText {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.jobSeller {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.jobTime {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-primary-muted);
+}
+
+.jobDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.jobStats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-primary-muted);
+  flex-wrap: wrap;
+}
+
+.jobStats span {
+  font-weight: 500;
+}
+
+.jobError {
+  font-size: 0.75rem;
+  color: var(--danger-color);
+  padding: 0.25rem 0.5rem;
+  background-color: var(--danger-color);
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid var(--danger-color);
+}
+
+.jobActions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* States */
+.loadingState,
+.errorState,
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-primary-muted);
+}
+
+.loadingState {
+  font-size: 0.875rem;
+}
+
+.errorState {
+  color: var(--danger-color);
+}
+
+.emptyState {
+  padding: 3rem;
+}
+
+/* Bulk Delete Button */
+.bulkDeleteButton {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 4px solid var(--border-color);
+  background-color: var(--danger-color);
+  color: var(--bg-main);
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 0 var(--border-color);
+  border-radius: 0;
+}
+
+.bulkDeleteButton:hover:not(:disabled) {
+  background-color: var(--danger-color-hover);
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+.bulkDeleteButton:disabled {
+  background-color: var(--bg-section);
+  color: var(--text-primary-muted);
+  cursor: not-allowed;
+  box-shadow: 3px 3px 0 var(--border-color);
+  transform: none;
 }

@@ -82,11 +82,13 @@ export async function createScheduleAutoScrapeJob({
         // IMPORTANT: Cleanup any existing auto jobs before scheduling new ones
         // This will cause old jobs to be marked as CANCELLED in database for clean state
         apiLogger.info('[Schedule Auto Job] Cleaning up existing auto jobs', { sellerId, sellerName });
+        
         await unscheduleAutoScrapeJob(sellerId);
 
         // Tạo job vào database cho bảng model Scrape phục vụ cho monitoring
         const jobId = `auto_${sellerId}_${Date.now()}_${randomUUID().substring(0, 8)}`;
 
+        // --> Khởi tạo scrapeJob với các giá trị mặc định hoặc được truyền vào
         await prisma.scrapeJob.create({
             data: {
                 jobId,
@@ -102,7 +104,7 @@ export async function createScheduleAutoScrapeJob({
                 errors: 0,
                 startPage: null, // Auto mode không giới hạn
                 endPage: null,
-                maxPages: null
+                maxPages: null,
             }
         });
 
@@ -141,7 +143,15 @@ export async function createScheduleAutoScrapeJob({
                 jobId: `auto_scrape_${sellerId}` // Bull Queue jobId (Queue Management jobId)
             }
         );
-      
+
+        // Cập nhật status cho scrapeJob
+        await prisma.scrapeJob.update({
+            where:{jobId},
+            data:{
+                status:ScrapeJobStatus.WAITING,
+                updatedAt: new Date()
+            }
+        })
 
         apiLogger.info('[Auto Scraper Helper] Scheduled auto scrape job', {
             sellerId,

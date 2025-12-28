@@ -165,6 +165,7 @@ model Seller {
 
   scrapingSources ScrapingSource[]
   seedCategories  SeedProductCategory[]
+  seedProducts    SeedProduct[] // Direct relation to all products
   scrapeLogs      ScrapeLog[]
   scrapeJobs      ScrapeJob[]
 
@@ -213,6 +214,7 @@ model SeedProductCategory {
 // VD: "Blue Dream Feminized", "Acapulco Gold Feminized"
 model SeedProduct {
   id         String @id @default(cuid())
+  sellerId   String // Direct relation to Seller for efficient queries
   categoryId String
 
   // Basic Info (từ category page)
@@ -242,12 +244,14 @@ model SeedProduct {
   updatedAt DateTime @updatedAt
 
   // Relations
+  seller        Seller              @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   category      SeedProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   productImages SeedProductImage[]
   pricings      Pricing[]
 
   @@unique([categoryId, slug])
   @@index([categoryId])
+  @@index([sellerId]) // Index for efficient seller-based queries
   @@index([seedType])
   @@index([cannabisType])
   @@index([thcMin, thcMax])
@@ -301,6 +305,7 @@ model SeedProductImage {
 }
 
 // ScrapeLog (Lịch sử scraping cho admin dashboard)
+//TODO: Cần quy hoạch lại bảng scrapeLog thành ScrapeJobLog để liên kết với scrapeJob thay vì seller để enhance hệ thống fix lỗi cho scrape system trong tương lai.
 model ScrapeLog {
   id            String   @id @default(cuid())
   sellerId      String

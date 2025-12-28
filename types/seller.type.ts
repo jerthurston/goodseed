@@ -1,3 +1,6 @@
+import { ScrapeJobStatus } from "@prisma/client"
+import { ScrapeJobRaw } from "./scrapeJob.type"
+
 // Keep legacy Seller interface for backward compatibility
 export interface SellerStats {
   successRate: number
@@ -34,11 +37,7 @@ export interface SellerRaw {
     id: string;
     timestamp: Date;
   }>;
-  scrapeJobs: Array<{
-    id: string;
-    status: string;
-    createdAt: Date;
-  }>;
+  scrapeJobs: Array<ScrapeJobRaw>;
   seedCategories: Array<{
     id: string;
     seedProducts: Array<{
@@ -61,6 +60,7 @@ export interface SellerUI {
     productsScraped: number;
     totalRuns: number;
   };
+  scrapeJobs: ScrapeJobRaw[];
 }
 
 // Simple response interfaces for update operations

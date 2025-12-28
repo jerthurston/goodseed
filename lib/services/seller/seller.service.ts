@@ -12,6 +12,7 @@ export class SellerService {
    * UI components should use SellerTransformer to transform this data as needed
    */
   public static async fetchSellers(): Promise<SellerRaw[]> {
+    
     const startTime = Date.now()
 
     try {

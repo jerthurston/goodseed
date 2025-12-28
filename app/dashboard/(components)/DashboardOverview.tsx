@@ -18,6 +18,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ sellers }) => {
         (sum, s) => sum + (s.stats?.productsScraped || 0),
         0
       )
+      //giải thích totalProducts : reduce là phương thức được sử dụng để tính tổng số sản phẩm đã được thu thập từ tất cả các seller. Nó lặp qua từng seller và cộng dồn số lượng sản phẩm đã thu thập được (productsScraped) vào biến sum. Nếu một seller không có thông tin về số sản phẩm đã thu thập, nó sẽ coi như là 0.
       const avgSuccessRate = Math.round(
         sellers.reduce((sum, s) => sum + (s.stats?.successRate || 0), 0) /
         sellers.length

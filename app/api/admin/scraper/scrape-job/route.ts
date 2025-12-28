@@ -97,6 +97,9 @@ export async function GET(request: NextRequest) {
       }
     };
 
+    // LOG response API
+    apiLogger.debug('[ScrapeJob API] Fetched jobs successfully', { scrapeJobs });
+
     return NextResponse.json(response);
 
   } catch (error) {

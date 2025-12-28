@@ -22,7 +22,7 @@ export function DashboardStatsCard({
   return (
     <div className={`${styles.statsCard} ${className}`}>
       <div className={styles.label}>{label}</div>
-      <div className={styles.content}>
+      <div className={`${styles.content} flex flex-row items-center gap-1 `}>
         <div className={styles.value}>{value}</div>
         {icon && <div className={styles.icon}>{icon}</div>}
       </div>

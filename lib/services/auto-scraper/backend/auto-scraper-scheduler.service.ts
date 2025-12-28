@@ -45,7 +45,7 @@ export class AutoScraperScheduler {
         .filter(seller => seller.scrapingSources.length > 0) // Chỉ sellers có scraping sources
         .map(seller => ({
           ...seller,
-          autoScrapeInterval: seller.autoScrapeInterval || 24 // Default 24h nếu null
+          autoScrapeInterval: seller.autoScrapeInterval || 8 // Default 8h nếu null
         }));
 
       apiLogger.info('[Auto Scheduler] Found eligible sellers after filtering', { 

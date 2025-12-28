@@ -4,27 +4,24 @@ import { useParams, useRouter } from "next/navigation"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faArrowLeft, faStore, faEdit, faTrash, faEye, faPlay, faStop, faRefresh, faAdd, faRobot } from '@fortawesome/free-solid-svg-icons'
 import {
-  DashboardLayout,
   DashboardCard,
   DashboardButton,
   DashboardToggle,
 } from "../../../(components)"
-import { SellerAutoScraperCard, AutoScraperSection } from "@/components/custom/auto-scraper"
+import { AutoScraperSection } from "@/components/custom/auto-scraper"
 import { useFetchSellerById } from "@/hooks/seller"
 import { useAutoScraper } from "@/hooks/admin/auto-scrape/useAutoScraper"
 import styles from "../../../(components)/dashboardAdmin.module.css"
 import Link from "next/link"
 import { Clock, PlayCircle } from "lucide-react"
-import { Play } from "next/font/google"
 import { toast } from "sonner"
 import { useScraperOperations } from "@/hooks/scraper-site/useScraperOperations"
 import { apiLogger } from "@/lib/helpers/api-logger"
 
 import style from '../../../(components)/dashboardAdmin.module.css'
-import { faAffiliatetheme } from "@fortawesome/free-brands-svg-icons"
 import ManageScrapingSourcesModal from "@/components/custom/modals/ManageScrapingSourcesModal"
-import { useState } from "react"
-import { en } from "zod/v4/locales"
+import { useEffect, useState } from "react"
+import { ScrapeJobStatus } from "@prisma/client"
 
 export default function AdminSellerDetailPage() {
   const params = useParams()
@@ -32,12 +29,14 @@ export default function AdminSellerDetailPage() {
   const sellerId = params.id as string
 
   // Separate loading states for different operations
-  const [isManualScrapeLoading, setIsManualScrapeLoading] = useState(false)
   const [isQuickTestLoading, setIsQuickTestLoading] = useState(false)
+  const [isManualStoppingJob, setIsStoppingJob] = useState(false)
 
   // ALL HOOKS MUST BE CALLED AT THE TOP - BEFORE ANY CONDITIONAL RETURNS
-  const { seller, isLoading, isError, error } = useFetchSellerById(sellerId)
-  
+  const { seller, isLoading, isError, error } = useFetchSellerById(sellerId);
+  const [activeScrapeJobId, setActiveScrapeJobId] = useState<string | undefined>();
+
+
   // Auto scraper hook for enhanced functionality
   const {
     startSellerAutoScraper,
@@ -55,100 +54,134 @@ export default function AdminSellerDetailPage() {
     triggerManualScrape,
     isTriggering,
     triggerError,
-    activeJobs
+    activeJobs,
+    //Stop
+    stopManualScrape,
+    isStoppingJob,
+    stopJobError,
+    removeActiveJob
   } = useScraperOperations(refetchScraperSites)
 
   // Modal states
   const [isManageSourcesModalOpen, setIsManageSourcesModalOpen] = useState(false)
 
-  // NOW WE CAN HAVE CONDITIONAL RETURNS AFTER ALL HOOKS ARE CALLED
-  if (isLoading) {
-    return (
-      <div className="max-w-[1440px] w-full min-h-screen bg-(--bg-main) p-6">
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-(--brand-primary) mx-auto"></div>
-            <p className="mt-4 font-['Poppins'] text-(--text-primary-muted)">
-              Loading seller details...
-            </p>
-          </div>
-        </div>
-      </div>
-    )
+
+  const getActiveJob = () => {
+    console.log("🔍 getActiveJob - seller:", seller);
+    console.log("🔍 getActiveJob - scrapeJobs:", seller?.scrapeJobs);
+    
+    if(!seller?.scrapeJobs) {
+      console.log("🔍 No scrapeJobs found");
+      return null;
+    }
+    
+    const activeJob = seller.scrapeJobs.find(job => {
+      console.log("🔍 Checking job:", job.jobId, "status:", job.status);
+      return ['CREATED', 'WAITING', 'DELAYED', 'ACTIVE'].includes(job.status);
+    });
+    
+    console.log("🔍 Found active job:", activeJob);
+    return activeJob;
   }
 
-  if (isError || (!isLoading && !seller)) {
-    return (
-      <div className="max-w-[1440px] w-full min-h-screen bg-(--bg-main) p-6">
-        <div className="text-center py-12">
-          <h1 className="font-['Archivo_Black'] text-3xl text-(--text-primary) mb-4">
-            {isError ? 'Error Loading Seller' : 'Seller Not Found'}
-          </h1>
-          <p className="text-(--text-primary-muted) mb-6">
-            {isError
-              ? `Error: ${error?.message || 'Failed to load seller data'}`
-              : `Seller with ID "${sellerId}" not found.`
-            }
-          </p>
-          <DashboardButton
-            onClick={() => router.push("/dashboard/admin")}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
-            Back to Dashboard
-          </DashboardButton>
-        </div>
-      </div>
-    )
+  useEffect(() => {
+    console.log("🔍 useEffect triggered - seller:", seller);
+    console.log("🔍 useEffect triggered - scrapeJobs:", seller?.scrapeJobs);
+    
+    const activeScrapeJob = getActiveJob();
+    const jobId = activeScrapeJob?.jobId; // ✅ Sửa từ .id thành .jobId
+    console.log("🔍 Active scrape job:", activeScrapeJob);
+    console.log("🔍 Active job ID:", jobId);
+    setActiveScrapeJobId(jobId);
+  }, [seller]) // ✅ Thêm seller vào dependency
+
+  //Function cancel Job
+  const handleStopJob = async (sellerId: string) => {
+    try {
+      console.log("🔍 handleStopJob - activeScrapeJobId:", activeScrapeJobId);
+      
+      if (!activeScrapeJobId) {
+        toast.error("No active job found for this seller.");
+        return;
+      }
+
+      // Show loading toast
+      toast.loading(`Stopping job ${activeScrapeJobId}...`, {
+        id: `stop-${sellerId}`
+      });
+
+      // Call stop job function
+      await stopManualScrape(sellerId, activeScrapeJobId);
+      
+      // Clear state sau khi stop thành công
+      setActiveScrapeJobId(undefined);
+      
+      toast.dismiss(`stop-${sellerId}`);
+      toast.success(`Stopped job for ${sellerId}`);
+    } catch (error) {
+      toast.dismiss(`stop-${sellerId}`);
+      toast.error(`Failed to stop job for ${sellerId}`);
+      apiLogger.logError("Failed to stop job:", error as Error, { sellerId });
+    }
   }
 
   const handleManualScrape = async (sellerId: string, sellerName: string) => {
     try {
-      setIsManualScrapeLoading(true)
-      
       // Show loading toast
       toast.loading(`Initiating scrape for ${sellerName}...`, {
         id: `scrape-${sellerId}`
       });
-      
+
       // Option 1: test manual trigger với fullsiteCrawl. Let schema defaults handle startPage/endPage
       const scrapingConfig = { fullSiteCrawl: true };
       // Option 2: test với số page cố định với startPage và endPage
       // const scrapingConfig = { startPage: 1, endPage: 30 };
       const result = await triggerManualScrape(sellerId, scrapingConfig);
-      
-      // Success toast is handled in the hook
+
+      // Success toast
       toast.dismiss(`scrape-${sellerId}`);
-      toast.success(`Manual scrape started for ${sellerName}!`);
+      toast.success(`Manual scrape started for ${sellerName}!`, {
+        description: "Check the jobs panel for progress updates"
+      });
+      
+      // Refetch seller data để update scrapeJobs
+      setTimeout(() => {
+        // Force refetch seller data to get updated job status
+        window.location.reload(); // Simple solution for now
+      }, 2000);
 
     } catch (error) {
       // Dismiss loading toast
       toast.dismiss(`scrape-${sellerId}`);
 
-      // Error is handled in the hook, but we can add fallback
-      console.error("Manual scrape failed:", error);
-    } finally {
-      setIsManualScrapeLoading(false)
+      // Error toast with specific message
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      toast.error(`Manual scrape failed for ${sellerName}`, {
+        description: errorMessage
+      });
+
+      apiLogger.logError("Manual scrape failed:", error as Error, { sellerId, sellerName });
     }
   }
 
   const handleQuickTest = async (sellerId: string, sellerName: string) => {
     try {
       setIsQuickTestLoading(true)
-      
+
       // Show loading toast
       toast.loading(`Starting quick test for ${sellerName} (2 pages)...`, {
         id: `test-${sellerId}`
       });
 
       // Quick test: only first 2 pages for fast testing
-      const scrapingConfig = { 
-        startPage: 1, 
+      const scrapingConfig = {
+        startPage: 1,
         endPage: 2,
-        mode: 'test' 
+        mode: 'test'
       };
-      
+
       const result = await triggerManualScrape(sellerId, scrapingConfig);
-      
+
       // Success toast
       toast.dismiss(`test-${sellerId}`);
       toast.success(`Quick test started for ${sellerName}!`, {
@@ -168,7 +201,7 @@ export default function AdminSellerDetailPage() {
       toast.error(`Quick test failed for ${sellerName}`, {
         description: error instanceof Error ? error.message : "Unknown error occurred"
       });
-      
+
       console.error("Quick test failed:", error);
       setIsQuickTestLoading(false)
     }
@@ -220,6 +253,46 @@ export default function AdminSellerDetailPage() {
   // Create a non-null reference for TypeScript
   const currentSeller = seller!
 
+  // NOW WE CAN HAVE CONDITIONAL RETURNS AFTER ALL HOOKS ARE CALLED
+  if (isLoading) {
+    return (
+      <div className="max-w-[1440px] w-full min-h-screen bg-(--bg-main) p-6">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-(--brand-primary) mx-auto"></div>
+            <p className="mt-4 font-['Poppins'] text-(--text-primary-muted)">
+              Loading seller details...
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (isError || (!isLoading && !seller)) {
+    return (
+      <div className="max-w-[1440px] w-full min-h-screen bg-(--bg-main) p-6">
+        <div className="text-center py-12">
+          <h1 className="font-['Archivo_Black'] text-3xl text-(--text-primary) mb-4">
+            {isError ? 'Error Loading Seller' : 'Seller Not Found'}
+          </h1>
+          <p className="text-(--text-primary-muted) mb-6">
+            {isError
+              ? `Error: ${error?.message || 'Failed to load seller data'}`
+              : `Seller with ID "${sellerId}" not found.`
+            }
+          </p>
+          <DashboardButton
+            onClick={() => router.push("/dashboard/admin")}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
+            Back to Dashboard
+          </DashboardButton>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-[1440px] mx-auto w-full min-h-screen bg-(--bg-main) p-6">
       {/* Header */}
@@ -259,56 +332,93 @@ export default function AdminSellerDetailPage() {
             </div>
             {/* Manual Scrape Button trigger */}
             <div className="flex flex-col gap-2">
-              <DashboardButton
-                variant="secondary"
-                onClick={() => handleManualScrape(currentSeller.id, currentSeller.name)}
-                disabled={isManualScrapeLoading}
-                className="flex items-center gap-2"
-              >
-                {isManualScrapeLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600" />
-                    Starting Manual...
-                  </>
-                ) : (
-                  <>
-                    <PlayCircle className="h-4 w-4" />
-                    Manual Scrape
-                  </>
-                )}
-              </DashboardButton>
+              {activeScrapeJobId ? (
+                // Stop button - khi có job đang chạy
+                <DashboardButton
+                  variant="danger"
+                  onClick={() => handleStopJob(currentSeller.id)}
+                  disabled={isStoppingJob}
+                  className="flex items-center gap-2"
+                >
+                  {isStoppingJob ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-red-600" />
+                      Stopping...
+                    </>
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faStop} className="h-4 w-4" />
+                      Stop Job ({activeScrapeJobId})
+                    </>
+                  )}
+                </DashboardButton>
 
-              {/* Quick Test Scrape with first page */}
-              <DashboardButton
-                variant="outline"
-                onClick={() => handleQuickTest(currentSeller.id, currentSeller.name)}
-                disabled={isQuickTestLoading}
-                className={`flex items-center gap-2 text-sm transition-all duration-200 ${
-                  isQuickTestLoading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-orange-50'
-                }`}
-              >
-                {isQuickTestLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-orange-300 border-t-orange-600" />
-                    Testing...
-                  </>
-                ) : (
-                  <>
-                    <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
-                    Quick Test (2 pages)
-                  </>
-                )}
-              </DashboardButton>
+              ) : (
+                <>
+                {/* // Start button - khi không có job đang chạy */}
+                  <DashboardButton
+                    variant="secondary"
+                    onClick={() => handleManualScrape(currentSeller.id, currentSeller.name)}
+                    disabled={isTriggering}
+                    className="flex items-center gap-2"
+                  >
+                    {isTriggering ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600" />
+                        Starting Manual...
+                      </>
+                    ) : (
+                      <>
+                        <PlayCircle className="h-4 w-4" />
+                        Manual Scrape
+                      </>
+                    )}
+                  </DashboardButton>
+                  {/* Quick Test Scrape with first page */}
+                  <DashboardButton
+                    variant="outline"
+                    onClick={() => handleQuickTest(currentSeller.id, currentSeller.name)}
+                    disabled={isQuickTestLoading}
+                    className={`flex items-center gap-2 text-sm transition-all duration-200 ${isQuickTestLoading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-orange-50'
+                      }`}
+                  >
+                    {isQuickTestLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-2 border-orange-300 border-t-orange-600" />
+                        Testing...
+                      </>
+                    ) : (
+                      <>
+                        <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
+                        Quick Test (2 pages)
+                      </>
+                    )}
+                  </DashboardButton>
+
+                </>
+
+              )}
 
 
-              {/* Show job status badge - only for manual scrape */}
-              {activeJobs.has(currentSeller.id) && isManualScrapeLoading && (
+
+              {/* Show job status badge - when active job exists */}
+              {activeScrapeJobId && (
                 <div className="flex items-center gap-2 text-sm text-blue-600">
                   <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
-                  Manual Job ID: {activeJobs.get(currentSeller.id)}
+                  Active Job ID: {activeScrapeJobId}
                 </div>
               )}
-              
+
+              {/* Show error message if triggerError exists */}
+              {triggerError && (
+                <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded border border-red-200">
+                  <div className="w-2 h-2 bg-red-600 rounded-full" />
+                  <span className="text-xs">
+                    Error: {triggerError.message || "Manual scrape failed"}
+                  </span>
+                </div>
+              )}
+
               {/* Quick test status */}
               {isQuickTestLoading && (
                 <div className="flex items-center gap-2 text-sm text-orange-600">
@@ -396,7 +506,7 @@ export default function AdminSellerDetailPage() {
         </DashboardCard>
 
         {/*--> AUTO SCRAPER SCHEDULE INFORMATION SECTION */}
-        <AutoScraperSection 
+        <AutoScraperSection
           seller={{
             id: currentSeller.id,
             name: currentSeller.name,
@@ -475,7 +585,7 @@ export default function AdminSellerDetailPage() {
                   Products Scraped
                 </label>
                 <p className="font-['Poppins'] text-(--text-primary) font-semibold">
-                  {currentSeller.stats.productsScraped.toLocaleString()}
+                  {currentSeller.stats.productsScraped?.toLocaleString()}
                 </p>
               </div>
             </div>

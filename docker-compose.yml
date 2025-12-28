@@ -66,7 +66,7 @@ services:
       - /app/node_modules
     depends_on:
       - redis
-    command: pnpm worker:scraper
+    command: sh -c "cd /app && npx tsx lib/workers/scraper-worker.ts"
     restart: unless-stopped
     networks:
       - goodseed-network
