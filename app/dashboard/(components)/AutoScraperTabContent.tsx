@@ -25,8 +25,8 @@ export default function AutoScraperTabContent({
   const {
     startAllAutoScraper,
     stopAllAutoScraper,
-    startSellerAutoScraper,
-    stopSellerAutoScraper,
+    // startSellerAutoScraper,
+    // stopSellerAutoScraper,
     updateSellerInterval,
     isLoading,
     isBulkOperationLoading,
@@ -45,6 +45,9 @@ export default function AutoScraperTabContent({
     isLoading: isJobStatsLoading,
     refreshJobStats 
   } = useJobStatistics();
+
+  // --> Log result jobstats
+  apiLogger.debug('[UI Component] Log result jobstats', { jobStats });
 
   // Calculate stats với real-time data or fallback to sellers data
   const autoScraperStats = {
@@ -78,8 +81,9 @@ export default function AutoScraperTabContent({
 
   const handleBulkAction = async (action: 'start' | 'stop') => {
     try {
-      // Check for eligible sellers before starting auto scraper
+      // Check for eligible sellers before starting auto scraper: chỉ với những seller đủ điều kiện có active và autoScrapeInterval > 0
       if (action === 'start') {
+
         const eligibleSellers = sellers.filter(s => s.isActive && s.autoScrapeInterval && s.autoScrapeInterval > 0);
         
         if (eligibleSellers.length === 0) {
@@ -210,6 +214,7 @@ export default function AutoScraperTabContent({
       
       {/* Bulk Control Panel */}
       <AutoScraperControlPanel
+        lastRun={autoScraperStats.lastRun}
         totalSellers={sellers.length}
         activeSellers={activeSellers}
         activeAutoScrapers={activeAutoScrapers}
@@ -225,7 +230,7 @@ export default function AutoScraperTabContent({
             className="text-lg font-semibold font-['Poppins']"
             style={{ color: 'var(--text-primary)' }}
           >
-            Individual Seller Management
+            Individual Seller Configuration
           </h3>
           <p 
             className="text-sm font-['Poppins']"

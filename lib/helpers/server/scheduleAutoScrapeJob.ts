@@ -25,8 +25,8 @@ interface CreateScheduleAutoScrapeJobProps {
  * Thay đổi các giá trị này để điều chỉnh lịch chạy auto scraper
  */
 const AUTO_SCRAPER_SCHEDULE = {
-    MINUTE: 45,     // Phút (0-59) - hiện tại: 45 phút
-    HOUR: 15,       // Giờ cho daily job (0-23) - hiện tại: 15 (3 PM Edmonton)
+    MINUTE: 0,     // Phút (0-59) - hiện tại: 0 phút
+    HOUR: 2,       // Giờ cho daily job (0-23) - hiện tại: 2 (2 AM Edmonton)
     HOURS: {
         MORNING: 3,     // 3 AM
         AFTERNOON: 15,  // 3 PM

@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faArrowLeft, faStore, faEdit, faTrash, faEye, faPlay, faStop, faRefresh, faAdd, faRobot } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faStore, faEdit, faTrash, faEye, faPlay, faStop, faRefresh, faAdd, faRobot, faToolbox, faWaveSquare } from '@fortawesome/free-solid-svg-icons'
 import {
   DashboardCard,
   DashboardButton,
@@ -22,6 +22,8 @@ import style from '../../../(components)/dashboardAdmin.module.css'
 import ManageScrapingSourcesModal from "@/components/custom/modals/ManageScrapingSourcesModal"
 import { useEffect, useState } from "react"
 import { ScrapeJobStatus } from "@prisma/client"
+import { getActiveJob } from "@/lib/helpers/client/get-active-job"
+import { faUpwork, faWpexplorer } from "@fortawesome/free-brands-svg-icons"
 
 export default function AdminSellerDetailPage() {
   const params = useParams()
@@ -66,56 +68,34 @@ export default function AdminSellerDetailPage() {
   const [isManageSourcesModalOpen, setIsManageSourcesModalOpen] = useState(false)
 
 
-  const getActiveJob = () => {
-    console.log("🔍 getActiveJob - seller:", seller);
-    console.log("🔍 getActiveJob - scrapeJobs:", seller?.scrapeJobs);
-    
-    if(!seller?.scrapeJobs) {
-      console.log("🔍 No scrapeJobs found");
-      return null;
-    }
-    
-    const activeJob = seller.scrapeJobs.find(job => {
-      console.log("🔍 Checking job:", job.jobId, "status:", job.status);
-      return ['CREATED', 'WAITING', 'DELAYED', 'ACTIVE'].includes(job.status);
-    });
-    
-    console.log("🔍 Found active job:", activeJob);
-    return activeJob;
-  }
 
   useEffect(() => {
-    console.log("🔍 useEffect triggered - seller:", seller);
-    console.log("🔍 useEffect triggered - scrapeJobs:", seller?.scrapeJobs);
-    
-    const activeScrapeJob = getActiveJob();
-    const jobId = activeScrapeJob?.jobId; // ✅ Sửa từ .id thành .jobId
-    console.log("🔍 Active scrape job:", activeScrapeJob);
-    console.log("🔍 Active job ID:", jobId);
+    // Lấy job đang được thêm vào (pending) từ thông tin của seller có được
+    const pendingScrapeJob = getActiveJob(seller);
+    const jobId = pendingScrapeJob?.jobId; // ✅ Lấy thông tin jobId trong queue bull để bỏ
+    // console.log("🔍 Active scrape job:", pendingScrapeJob);
+    // console.log("🔍 Active job ID:", jobId);
     setActiveScrapeJobId(jobId);
   }, [seller]) // ✅ Thêm seller vào dependency
 
-  //Function cancel Job
+  //Function cancel Job - chỉ xóa khỏi hàng chờ - không cancel được khi đã worker đã running
   const handleStopJob = async (sellerId: string) => {
     try {
-      console.log("🔍 handleStopJob - activeScrapeJobId:", activeScrapeJobId);
-      
+      // console.log("🔍 handleStopJob - activeScrapeJobId:", activeScrapeJobId);
       if (!activeScrapeJobId) {
         toast.error("No active job found for this seller.");
         return;
       }
-
       // Show loading toast
       toast.loading(`Stopping job ${activeScrapeJobId}...`, {
         id: `stop-${sellerId}`
       });
-
       // Call stop job function
       await stopManualScrape(sellerId, activeScrapeJobId);
-      
+
       // Clear state sau khi stop thành công
       setActiveScrapeJobId(undefined);
-      
+
       toast.dismiss(`stop-${sellerId}`);
       toast.success(`Stopped job for ${sellerId}`);
     } catch (error) {
@@ -143,7 +123,7 @@ export default function AdminSellerDetailPage() {
       toast.success(`Manual scrape started for ${sellerName}!`, {
         description: "Check the jobs panel for progress updates"
       });
-      
+
       // Refetch seller data để update scrapeJobs
       setTimeout(() => {
         // Force refetch seller data to get updated job status
@@ -239,8 +219,6 @@ export default function AdminSellerDetailPage() {
       toast.error("Failed to update scraping interval");
     }
   }
-
-
   const handleConfigSource = () => {
     setIsManageSourcesModalOpen(true)
   }
@@ -354,8 +332,8 @@ export default function AdminSellerDetailPage() {
                 </DashboardButton>
 
               ) : (
-                <>
-                {/* // Start button - khi không có job đang chạy */}
+                <div className="flex flex-row gap-2">
+                  {/* // Start button - khi không có job đang chạy */}
                   <DashboardButton
                     variant="secondary"
                     onClick={() => handleManualScrape(currentSeller.id, currentSeller.name)}
@@ -369,7 +347,7 @@ export default function AdminSellerDetailPage() {
                       </>
                     ) : (
                       <>
-                        <PlayCircle className="h-4 w-4" />
+                        <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
                         Manual Scrape
                       </>
                     )}
@@ -389,13 +367,13 @@ export default function AdminSellerDetailPage() {
                       </>
                     ) : (
                       <>
-                        <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
+                        <FontAwesomeIcon icon={faToolbox} className="h-3 w-3" />
                         Quick Test (2 pages)
                       </>
                     )}
                   </DashboardButton>
 
-                </>
+                </div>
 
               )}
 
@@ -443,18 +421,12 @@ export default function AdminSellerDetailPage() {
                   Interval:
                 </span>
                 <select
-                  value={currentSeller.autoScrapeInterval || 24}
+                  value={currentSeller.autoScrapeInterval || 6}
                   onChange={(e) => handleIntervalChange(currentSeller.id, Number(e.target.value))}
                   disabled={updateSellerInterval.isPending}
                   className={style.selectInterval}
                 >
-                  <option value={1}>Every 1 hour</option>
-                  <option value={2}>Every 2 hours</option>
-                  <option value={4}>Every 4 hours</option>
                   <option value={6}>Every 6 hours</option>
-                  <option value={8}>Every 8 hours</option>
-                  <option value={12}>Every 12 hours</option>
-                  <option value={24}>Every 24 hours</option>
                 </select>
               </div>
             )}

@@ -4,12 +4,12 @@ import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
 type ScrapeJobStatus = 'CREATED' | 'WAITING' | 'DELAYED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 interface AutoScraperStatusBadgeProps {
-  status: ScrapeJobStatus | 'SCHEDULED'; // Add SCHEDULED for auto sellers overview
+  status: ScrapeJobStatus | 'AVAILABLE'; // Add SCHEDULED for auto sellers overview
   nextRun?: Date;
   size?: 'sm' | 'md' | 'lg';
 }
 
-function getStatusConfig(status: ScrapeJobStatus | 'SCHEDULED'): {
+function getStatusConfig(status: ScrapeJobStatus | 'AVAILABLE'): {
   backgroundColor: string;
   textColor: string;
   borderColor: string;
@@ -50,12 +50,12 @@ function getStatusConfig(status: ScrapeJobStatus | 'SCHEDULED'): {
         shouldAnimate: false
       };
     case 'DELAYED':
-    case 'SCHEDULED':
+    case 'AVAILABLE':
       return {
         backgroundColor: 'var(--accent-cta)',
         textColor: 'var(--text-primary)',
         borderColor: 'var(--border-color)',
-        label: status === 'DELAYED' ? 'Delayed' : 'Scheduled',
+        label: status === 'DELAYED' ? 'Delayed' : 'Available',
         shouldAnimate: false
       };
     case 'WAITING':
@@ -111,8 +111,8 @@ export default function AutoScraperStatusBadge({
         }} 
       /> */}
       <div className='flex flex-row items-center gap-2'>
-        <div className={`${status === 'SCHEDULED' ? 'bg-green-500' : 'bg-white'} w-2 h-2 rounded-full relative`}>
-          <span className={`${status === 'SCHEDULED' ? "bg-green-500 animate-ping w-2 h-2 rounded-full":"hidden"} absolute top-0 left-0`}></span>
+        <div className={`${status === 'AVAILABLE' ? 'bg-green-500' : 'bg-white'} w-2 h-2 rounded-full relative`}>
+          <span className={`${status === 'AVAILABLE' ? "bg-green-500 animate-ping w-2 h-2 rounded-full":"hidden"} absolute top-0 left-0`}></span>
         </div>
         <span>
           {statusConfig.label}
@@ -120,7 +120,7 @@ export default function AutoScraperStatusBadge({
       </div>
 
       {/* Show next run time for scheduled/delayed jobs */}
-      {(status === 'SCHEDULED' || status === 'DELAYED') && nextRun && (
+      {(status === 'AVAILABLE' || status === 'DELAYED') && nextRun && (
         <span className="text-xs opacity-75">
           ({nextRun.toLocaleTimeString()})
         </span>

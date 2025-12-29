@@ -155,30 +155,6 @@ export default function AutoScraperOverview({ stats, isLoading = false, error }:
       description: 'Jobs manually cancelled or removed'
     }
   ];
-
-  // Summary stats configuration
-  const summaryStats = [
-    {
-      count: safeStats.totalSellers,
-      label: 'Total Sellers'
-    },
-    {
-      count: stats?.summary?.totalJobs || Object.values(jobCounts).reduce((sum, count) => sum + count, 0),
-      label: 'Total Jobs'
-    },
-    {
-      count: jobCounts.SCHEDULED || safeStats.activeSellers,
-      label: 'Active Auto-Scrapers'
-    },
-    {
-      count: stats?.summary?.successRate || (jobCounts.COMPLETED + jobCounts.FAILED > 0 
-        ? Math.round((jobCounts.COMPLETED / (jobCounts.COMPLETED + jobCounts.FAILED)) * 100)
-        : 0),
-      label: 'Success Rate',
-      suffix: '%'
-    }
-  ];
-
   // Show error state
   if (error) {
     return (
@@ -216,7 +192,6 @@ export default function AutoScraperOverview({ stats, isLoading = false, error }:
       </DashboardCard>
     );
   }
-
   // Show loading state
   if (isLoading) {
     return (
@@ -267,7 +242,7 @@ export default function AutoScraperOverview({ stats, isLoading = false, error }:
       
       <div className={styles.cardBody}>
         {/* Job Status Flow - Complete lifecycle progression */}
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
           {jobStatusesFlow.map((status, index) => (
             <JobStatusCard
               key={status.key}
@@ -276,20 +251,6 @@ export default function AutoScraperOverview({ stats, isLoading = false, error }:
               backgroundColor={status.backgroundColor}
               textColor={status.textColor}
               size="large"
-            />
-          ))}
-        </div>
-
-        {/* Summary Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          {summaryStats.map((stat, index) => (
-            <JobStatusCard
-              key={stat.label}
-              count={stat.count}
-              label={stat.label}
-              backgroundColor="var(--bg-section)"
-              textColor="var(--text-primary)"
-              size="small"
             />
           ))}
         </div>

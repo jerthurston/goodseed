@@ -173,8 +173,6 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
                 duration: 5000
             });
         },
-
-        
     })
 
     const removeActiveJob = (sellerId: string) => {
@@ -210,10 +208,6 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
 
         // Manual Stop job operation
         stopManualScrape: async (sellerId: string, jobId:string) => {
-            // const jobId = activeJobs.get(sellerId);
-            if(!jobId) {
-                throw new Error("No active job found for this seller")
-            }
             await stopManualJobMutation.mutateAsync({ sellerId, jobId });
         },
         isStoppingJob: stopManualJobMutation.isPending,

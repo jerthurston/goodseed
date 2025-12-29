@@ -58,7 +58,7 @@ export default function SellerAutoScraperCard({
             </span>
           </div>
           <AutoScraperStatusBadge 
-            status={isRunning ? 'ACTIVE' : (isScheduled ? 'SCHEDULED' : 'CANCELLED')}
+            status={isRunning ? 'ACTIVE' : (isScheduled ? 'AVAILABLE' : 'CANCELLED')}
             nextRun={nextRun}
           />
         </div>
@@ -74,28 +74,25 @@ export default function SellerAutoScraperCard({
             disabled={isLoading || isRunning}
           />
 
+{/* Adjust Interval is disabled temporarily */}
           {isAutoEnabled && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 cursor-not-allowed">
               <span className={styles.toggleLabel}>
                 Interval:
               </span>
               <select
-                value={autoScrapeInterval || 8}
+                value={autoScrapeInterval || 6}
                 onChange={(e) => {
                   if (onIntervalChange) {
                     onIntervalChange(sellerId, Number(e.target.value));
                   }
                 }}
-                disabled={isLoading || isRunning}
                 className={styles.selectInterval}
               >
-                {/* <option value={1}>Every 1 hour</option> */}
-                {/* <option value={2}>Every 2 hours</option> */}
-                {/* <option value={4}>Every 4 hours</option> */}
                 <option value={6}>Every 6 hours</option>
-                <option value={8}>Every 8 hours</option>
+                {/* <option value={8}>Every 8 hours</option>
                 <option value={12}>Every 12 hours</option>
-                <option value={24}>Every 24 hours</option>
+                <option value={24}>Every 24 hours</option> */}
               </select>
             </div>
           )}

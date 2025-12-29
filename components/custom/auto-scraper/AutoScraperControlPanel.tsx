@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faStop } from '@fortawesome/free-solid-svg-icons';
+import { faClock, faPlay, faRobot, faStop } from '@fortawesome/free-solid-svg-icons';
 import { DashboardButton } from '@/app/dashboard/(components)/DashboardButton';
 import { DashboardCard } from '@/app/dashboard/(components)/DashboardCard';
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
@@ -10,6 +10,7 @@ interface AutoScraperControlPanelProps {
   activeAutoScrapers: number; // Number of currently scheduled auto-scrapers
   onBulkAction: (action: 'start' | 'stop') => void;
   isLoading: boolean;
+  lastRun: Date | undefined;
 }
 
 export default function AutoScraperControlPanel({
@@ -17,7 +18,8 @@ export default function AutoScraperControlPanel({
   activeSellers,
   activeAutoScrapers,
   onBulkAction,
-  isLoading
+  isLoading,
+  lastRun,
 }: AutoScraperControlPanelProps) {
   // Logic for button states
   const hasScheduledJobs = activeAutoScrapers > 0;
@@ -26,57 +28,11 @@ export default function AutoScraperControlPanel({
   return (
     <DashboardCard className={styles.card}>
       <div className="space-y-6">
-        {/* Stats Overview - Theo theme design */}
-        {/* <div className="grid grid-cols-3 gap-4">
-          <div className="text-center">
-            <div 
-              className="text-2xl font-bold font-['Poppins']" 
-              style={{ color: 'var(--text-primary)' }}
-            >
-              {totalSellers}
-            </div>
-            <div 
-              className="text-sm font-['Poppins']" 
-              style={{ color: 'var(--text-primary-muted)' }}
-            >
-              Total Sellers
-            </div>
-          </div>
-          <div className="text-center">
-            <div 
-              className="text-2xl font-bold font-['Poppins']" 
-              style={{ color: 'var(--brand-primary)' }}
-            >
-              {activeSellers.length}
-            </div>
-            <div 
-              className="text-sm font-['Poppins']" 
-              style={{ color: 'var(--text-primary-muted)' }}
-            >
-              Auto Active
-            </div>
-          </div>
-          <div className="text-center">
-            <div 
-              className="text-2xl font-bold font-['Poppins']" 
-              style={{ color: 'var(--accent-cta)' }}
-            >
-              {totalSellers - activeSellers.length}
-            </div>
-            <div 
-              className="text-sm font-['Poppins']" 
-              style={{ color: 'var(--text-primary-muted)' }}
-            >
-              Manual Only
-            </div>
-          </div>
-        </div> */}
-
         {/* Status Info */}
         {hasScheduledJobs && (
-          <div 
+          <div
             className="text-center p-3 rounded-lg border-2"
-            style={{ 
+            style={{
               backgroundColor: 'var(--accent-cta)',
               borderColor: 'var(--border-color)',
               color: 'var(--text-primary)'
@@ -85,7 +41,7 @@ export default function AutoScraperControlPanel({
             <div className="font-['Poppins'] font-semibold">
               ✅ Auto-Scrapers Active ({activeAutoScrapers} running)
             </div>
-            <div 
+            <div
               className="text-sm mt-1 font-['Poppins']"
               style={{ color: 'var(--text-primary-muted)' }}
             >
@@ -100,12 +56,22 @@ export default function AutoScraperControlPanel({
             onClick={() => onBulkAction('start')}
             disabled={!canStartAll}
             variant="primary"
-            className={styles.button}
-            title={hasScheduledJobs 
-              ? `Auto-scrapers already running (${activeAutoScrapers}). Stop All first to reschedule.` 
+            className={`${styles.button} relative`}
+            title={hasScheduledJobs
+              ? `Auto-scrapers already running (${activeAutoScrapers}). Stop All first to reschedule.`
               : 'Start auto-scraping for all enabled sellers'
             }
           >
+            {
+              activeSellers.length > 0 && (
+                <div className='absolute -right-2 -top-3 bg-red-400 text-white p-1 rounded-full w-6 h-6 flex items-center justify-center z-10'>
+                  <span className='text-xs'>
+                    {activeSellers.length}
+                  </span>
+                </div>
+              )
+            }
+
             <FontAwesomeIcon icon={faPlay} className="mr-2" />
             RUN
             {hasScheduledJobs && (
@@ -114,14 +80,14 @@ export default function AutoScraperControlPanel({
               </span>
             )}
           </DashboardButton>
-          
+
           <DashboardButton
             onClick={() => onBulkAction('stop')}
             disabled={!canStopAll}
             variant="danger"
             className={styles.button}
-            title={hasScheduledJobs 
-              ? `Stop ${activeAutoScrapers} running auto-scrapers` 
+            title={hasScheduledJobs
+              ? `Stop ${activeAutoScrapers} running auto-scrapers`
               : 'No auto-scrapers currently running'
             }
           >
@@ -134,6 +100,20 @@ export default function AutoScraperControlPanel({
             )}
           </DashboardButton>
         </div>
+        {lastRun && (
+          <div className='text-center text-sm text-neutral-500 font-bold'>
+          <FontAwesomeIcon icon={faClock} size='lg' className="mr-1 text-green-600" />
+          <span>
+            Last run: {lastRun?.toLocaleDateString()} at {lastRun?.toLocaleTimeString()}
+            </span>
+        </div>)}
+
+       <div className='text-center text-sm text-neutral-500 font-bold'>
+        <FontAwesomeIcon icon={faRobot} size='lg' className="mr-1 text-green-600" />
+        <span>
+          Auto scraper activity will happen at <span className='text-yellow-600'> 2.AM - 8.AM - 2.PM - 8.PM </span> everyday when RUN button is activated.
+        </span>
+       </div>
       </div>
     </DashboardCard>
   )

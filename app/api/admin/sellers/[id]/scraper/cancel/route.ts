@@ -89,30 +89,15 @@ export async function POST(
     // Step 3: Cancel job in Bull Queue (if exists)
     try {
         const bullJob = await getJob(unfinishedJob.jobId);
-        apiLogger.info("[Debug] Bull job status", { 
-            jobId: unfinishedJob.jobId,
-            bullJobExists: !!bullJob,
-            bullJobData: bullJob ? {
-                id: bullJob.id,
-                processedOn: bullJob.processedOn,
-                finishedOn: bullJob.finishedOn,
-                failedReason: bullJob.failedReason
-            } : null
-        });
-        
         if(bullJob) {
             await bullJob.remove();
             queueCancelResult = 'removed_from_queue';
-            apiLogger.info("[Seller Cancel Job API] Bull job removed from queue", {
+            apiLogger.info("[Seller Cancel Job API] Bull job removed", {
                 jobId: unfinishedJob.jobId,
                 sellerId
             });
         } else {
-            queueCancelResult = 'not_found_in_queue_job_likely_processing';
-            apiLogger.warn("[Seller Cancel Job API] Job not in queue - likely being processed by worker", {
-                jobId: unfinishedJob.jobId,
-                sellerId
-            });
+            queueCancelResult = 'not_found_in_queue';
         }
 
     } catch (error) {

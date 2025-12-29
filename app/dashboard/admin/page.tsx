@@ -140,18 +140,8 @@ export default function AdminDashboard() {
         <div className="space-y-6">
           {/* Overview */}
           {activeTab === "overview" && (
-          // <>
-          //   <ErrorAlertBanner 
-          //     criticalOnly={false}
-          //     onRefresh={() => {
-          //       refetchSellers();
-          //       // Optionally refresh other data
-          //     }}
-          //   />
             <DashboardOverview sellers={sellers} />
-          // </>
         )}
-
         {/* Sellers Management */}
         {activeTab === "sellers" && (
           <DashboardSellersTabContent
@@ -159,7 +149,6 @@ export default function AdminDashboard() {
             refetchSellers={refetchSellers}
           />
         )}
-
         {/* Auto Scraper Management */}
         {activeTab === "auto-scraper" && (
           <AutoScraperTabContent
@@ -167,26 +156,13 @@ export default function AdminDashboard() {
             refetchSellers={refetchSellers}
           />
         )}
-
-        {/* Error Alert Management */}
-        {/* {activeTab === "alert" && (
-          <LogsTabContent
-            sellers={sellers.map(seller => ({ id: seller.id, name: seller.name }))}
-            onRefreshData={() => {
-              refetchSellers();
-            }}
-          />
-        )} */}
-
+        {/* Logs Alert */}
         {activeTab === "alert" && (
           <AlertTabContent
             sellers={sellers.map(seller => ({ id: seller.id, name: seller.name }))}
-            onRefreshData={() => {
-              refetchSellers();
-            }}
+            onRefreshData={() => refetchSellers()}
           />
         )}
-       
         </div>
       )}
     </DashboardLayout>
