@@ -175,7 +175,6 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
                 <p className='font-bold'>
                     {(!isLoading && !isError && pagination) && `${pagination.total} seeds found`}
                 </p>
-
             </div>
 
             {/* Loading State */}

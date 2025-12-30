@@ -133,6 +133,12 @@ export async function GET(req: NextRequest) {
         }
         //6. Xây dựng inClude realtions
         const inCludeClause: Prisma.SeedProductInclude = {
+            seller:{
+                select:{
+                    id: true,
+                    affiliateTag:true
+                }
+            },
             category: {
                 include: {
                     seller: {
@@ -231,6 +237,9 @@ export async function GET(req: NextRequest) {
             limit,
         }
         )
+
+        // apiLogger.debug("[API /seed] Final results (after pagination):", seeds[0]);
+        console.dir("check raw seed" + JSON.stringify(seeds[0]), { depth: 1 });
 
         //11. Trả về dữ liệu dưới dạng JSON response nếu thành công
         return NextResponse.json(

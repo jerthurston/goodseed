@@ -25,6 +25,10 @@ export interface SeedUI {
     packs: PackUI[]
     imageUrl: string
     stockStatus: string;
+    seller:{
+        ids:string;
+        affiliateTags:string | null;
+    }
 }
 
 export interface SeedPaginationUI {
@@ -101,6 +105,10 @@ export interface SeedProductRaw {
     cbdText: string | null;
     createdAt: string;
     updatedAt: string;
+    seller:{
+        id:string;
+        affiliateTag:string | null;
+    };
     category: {
         id: string;
         sellerId: string;

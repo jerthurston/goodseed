@@ -46,7 +46,7 @@ const SeedCardItem = ({
         >
             <div className="card-img-container">
                 <Link
-                    href={seed.vendorUrl}
+                    href={`${seed.vendorUrl}+${seed.seller.affiliateTags}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`View ${seed.name} details on vendor site`}
