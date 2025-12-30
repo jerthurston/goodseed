@@ -14,10 +14,11 @@
  */
 
 import type { CategoryMetadataFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { PrismaClient, Seller, StockStatus } from '@prisma/client';
+import { PrismaClient, ScrapeJobStatus, Seller, StockStatus } from '@prisma/client';
 import { parseCannabisType, parseSeedType } from '../utils/data-mappers';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { ISaveDbService } from '@/lib/factories/scraper-factory';
+import { prisma } from '@/lib/prisma';
 
 export class SaveDbService implements ISaveDbService {
     private seller: Seller | null = null;
@@ -41,28 +42,54 @@ export class SaveDbService implements ISaveDbService {
                     status: true,
                     affiliateTag: true,
                     autoScrapeInterval: true,
+                    scrapingSources:{
+                        select:{
+                            scrapingSourceName: true,
+                            scrapingSourceUrl: true,
+                        }
+                    },
+                    scrapeJobs:{
+                        select:{
+                            id: true,
+                            jobId: true,
+                            errorMessage: true
+                        }
+                    },
                     lastScraped: true,
                     createdAt: true,
                     updatedAt: true
                     // Exclude scrapingSourceUrl to avoid type mismatch
                 }
             });
-            
-            if (!seller) {
-                throw new Error(`Seller with Id ${sellerId} not found`);
+
+            // Check eligible seller : kiểm tra tính đủ điều kiện của seller để chạy scrape
+            if (!seller || !seller.isActive || !seller.scrapingSources || seller.scrapingSources.length === 0) {
+                let errorMessage = ''
+                if (!seller) {
+                    errorMessage = `Seller with Id ${sellerId} not found`;
+                } else if (!seller.isActive) {
+                    errorMessage = `Seller with Id ${sellerId} is not active`;
+                } else if (!seller.scrapingSources || seller.scrapingSources.length === 0) {
+                    errorMessage = `Seller with Id ${sellerId} has no scraping sources`;
+                }
+
+                // cải thiện bằng cách update scrapejob status với errorMessage
+                if(seller && seller.scrapeJobs && seller.scrapeJobs.length > 0) { 
+                    await prisma.scrapeJob.update({
+                        where: { jobId:seller.scrapeJobs[0].jobId },
+                        data: {
+                            status: ScrapeJobStatus.ACTIVE,
+                            errorMessage
+                        }
+                    });
+                }
             }
-            if (!seller.isActive) {
-                throw new Error(`Seller with Id ${sellerId} is not active`);
-            }
-            
+            // Đảm bảo eligible seller: seller đã tồn tại, đã active, đã có scraping sources
             this.seller = seller;
-            
         } catch (error) {
             apiLogger.logError('[SunWest SaveDbService] Error initializing seller:', { error });
             throw error;
         }
-
-        apiLogger.info('[SunWest SaveDbService] Seller initialized:', this.seller);
     }
 
     // Get Current seller info (must call initialize with seller first)

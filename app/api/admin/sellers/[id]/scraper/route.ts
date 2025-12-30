@@ -17,8 +17,9 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 const ManualScrapeSchema = z.object({
   scrapingConfig: z.object({
     fullSiteCrawl: z.boolean().default(true),
-    startPage: z.number().min(1).default(1),
-    endPage: z.number().min(1).default(30)
+    startPage: z.number().min(1).optional(),
+    endPage: z.number().min(1).optional(),
+    mode: z.enum(['manual', 'auto', 'test']).default('manual')
   })
 });
 
@@ -41,16 +42,16 @@ export async function POST(
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Invalid request parameters',
-            details: validation.error.flatten()
+            details: z.treeifyError(validation.error)
           }
         },
         { status: 400 }
       );
     }
     // extract maxPage - TODO: Cần viết logic sử dụng với scrapingConfig
-    const { fullSiteCrawl, startPage, endPage } = validation.data.scrapingConfig;
+    const { fullSiteCrawl, startPage, endPage, mode } = validation.data.scrapingConfig;
 
-    apiLogger.debug("Scraping config nhận được ở route", {fullSiteCrawl, startPage, endPage});
+    apiLogger.debug("Scraping config nhận được ở route", { fullSiteCrawl, startPage, endPage, mode });
     // Find seller
     const seller = await getSellerById(sellerId);
 
@@ -105,21 +106,22 @@ export async function POST(
       );
     }
 
-     // Get scraper source from seller name
+     // Lấy tất cả các sources từ seller để đi crawling
      const { scrapingSources } = seller;
 /**
  * Create a manual scrape job for the seller.
  * @param seller là object bao gồm id:string và scrapingSourceUrl:string[]
  * @param scraperSource The scraper source
  */
-    apiLogger.debug("Check scraping Config before transfer into createManualScrapeJob", { fullSiteCrawl, startPage, endPage });
+    apiLogger.debug("Check scraping Config before transfer into createManualScrapeJob", { fullSiteCrawl, startPage, endPage, mode });
     const jobResult = await createManualScrapeJob({
       sellerId,
       scrapingSources: scrapingSources,
       scrapingConfig:{
         fullSiteCrawl,
         startPage,
-        endPage
+        endPage,
+        mode
       },
     });
 

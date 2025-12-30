@@ -56,13 +56,17 @@ async function processScraperJob(job: Job<ScraperJobData>) {
     jobId,
     sellerId,
     scrapingSources,
-    mode,
     config } = job.data;
+
+  // Extract mode từ config object
+  const mode = config.mode;
 
   apiLogger.info('[Scraper Worker] Processing job', {
     jobId,
+    sellerId,
     scrapingSources,
-    mode,
+    mode,  // Now shows extracted mode
+    config,
     fullJobData: job.data
   });
 
@@ -70,6 +74,7 @@ async function processScraperJob(job: Job<ScraperJobData>) {
   const scraperSourceName = scrapingSources[0].scrapingSourceName;
 
   let dbService = {} as ISaveDbService
+
   try {
     // 1. Update job status to IN_PROGRESS
     apiLogger.debug(`[DEBUG WORKER] About to update job ${jobId} to IN_PROGRESS`);
@@ -80,20 +85,17 @@ async function processScraperJob(job: Job<ScraperJobData>) {
         startedAt: new Date(),
       },
     });
-    apiLogger.debug(`[DEBUG WORKER] Successfully updated job ${jobId} status`);
+    apiLogger.debug(`[DEBUG WORKER] Successfully updated scrapeJob ${jobId} status`);
 
     // Update Bull job progress
     await job.progress(5);
 
+    //-----> 2. Khởi tạo database service 
     // tạo một instance của ScraperFactory với PrismaClient để tương tác với cơ sở dữ liệu.
     const scraperFactory = new ScraperFactory(prisma);
-    //--> factory tạo job cho worker thực hiện: cụ thể ở đây là
-
-    // dbService để save dữ liệu vào database. TODO: Cần làm rõ logic của dbService đã xử lý như thế nào
     dbService = scraperFactory.createSaveDbService(scraperSourceName as SupportedScraperSourceName);
 
-    //!!!!!! WARNING! TODO: hàm initializeSeller chưa được thiết lập. Cần làm rõ mục đích của hàm. 
-    // Theo flow thực tế thì seller đã được khởi tạo trước khi chạy từ trình quản lý của dashboard/admin
+    //-----> 1. Dùng initializeSeller để kiểm tra tính hợp lệ của seller. Nếu hợp lệ thì tiếp tục, không hợp lệ thì ném lỗi
     await dbService.initializeSeller(sellerId);
 
     apiLogger.debug('[DEBUG WORKER] Services initialized', { jobId, scraperSourceName });
@@ -101,13 +103,7 @@ async function processScraperJob(job: Job<ScraperJobData>) {
     await job.progress(20);
 
     // 3. Real scraping using ScraperFactory and Crawlee
-    apiLogger.info('[INFO WORKER] Starting real scraping process...', {
-      jobId,
-      scraperSourceName,
-      mode,
-      scrapingSourceUrl: scrapingSources[0].scrapingSourceUrl,
-      fullSiteCrawl: config.fullSiteCrawl,
-    });
+    apiLogger.info('[INFO WORKER] Starting real scraping process...');
 
     const scrapeStartTime = Date.now();
 
@@ -118,28 +114,45 @@ async function processScraperJob(job: Job<ScraperJobData>) {
       errors: 0,
       duration: 0,
     };
+
+    //--------------> IMPORTANT: Logic for support array scrapingSource which passing from Job thông qua api hoặc cron.
+
     //Đếm số lượng scrapingSource
     const scrapingSourceCount = scrapingSources.length;
+    apiLogger.info('[SCRAPER WORKER] Found scraping sources', { jobId, scrapingSourceCount });
     // start from 10%
     let currentProgress = 10;
     // Tính tiến độ trên mỗi source 80% for scraping (10% init, 10% save)
     const progressPerSource = 80 / scrapingSourceCount;
-
+    // Dùng vòng lặp for để loop qua các scrapingSources
     for (const [index, source] of scrapingSources.entries()) {
       try {
         // Debug logging to understand the condition
         apiLogger.info('[INFO WORKER] Processing source', {
           jobId,
           sourceIndex: index + 1,
-          scrapingSourceName: source.scrapingSourceName,
           scrapingSourceUrl: source.scrapingSourceUrl,
-          maxPage: source.maxPage,
-          fullSiteCrawl: config.fullSiteCrawl,
         });
 
-        // Phát hiện lỗi ở đây!!!!!!!!!!!!!!!!!!!!!!!
         // scraper để đi crawl dữ liệu - createProductListScraper return Promise luôn
+        // Tất cả mode dùng chung createProductListScraper, sử dụng các params truyền vào để viết logic cho từng trường hợp.
+        // const pageResult = await scraperFactory.createProductListScraper(
+        //   scraperSourceName as SupportedScraperSourceName,
+        //   source.maxPage,
+        //   config.startPage || 1,
+        //   config.endPage,
+        //   config.fullSiteCrawl,
+        //   config.mode
+        // )
+
         let pageResult;
+
+        // Prepare sourceContext for dynamic source URL handling
+        const sourceContext = {
+          scrapingSourceUrl: source.scrapingSourceUrl,
+          sourceName: source.scrapingSourceName,
+          dbMaxPage: source.maxPage
+        };
 
         if (mode === 'manual') {
           // Với thiết kế hiện tại, createProductListScraper đã gọi function với siteConfig sẵn rồi
@@ -147,34 +160,40 @@ async function processScraperJob(job: Job<ScraperJobData>) {
           pageResult = await scraperFactory.createProductListScraper(
             scraperSourceName as SupportedScraperSourceName, 
             source.maxPage,
-            config.startPage || 1,
-            config.endPage
+            null,
+            null,
+            config.fullSiteCrawl,
+            sourceContext
           );
         } 
+        else if (mode === 'test') {
+          // Test mode with limited pages - sử dụng config startPage/endPage
+          pageResult = await scraperFactory.createProductListScraper(
+            scraperSourceName as SupportedScraperSourceName, 
+            source.maxPage,
+            config.startPage || 1,  // Use config.startPage or default 1
+            config.endPage || 2,    // Use config.endPage or default 2
+            null,
+            sourceContext
+          );
+        }
+        // có thể gộp chung với mode === 'manual' nếu không có gì thay đổi.
         else if (mode === 'auto') {
           // TODO: Implement auto mode logic
           pageResult = await scraperFactory.createProductListScraper(
             scraperSourceName as SupportedScraperSourceName, 
             source.maxPage,
-            config.startPage || 1,
-            config.endPage
+            null,
+            null,
+            config.fullSiteCrawl,
+            sourceContext
           );
         } 
-        else if (mode === 'batch') {
-          // TODO: Implement batch mode logic  
-        } 
-        else if (mode === 'test') {
-          // Test mode with limited pages
-          pageResult = await scraperFactory.createProductListScraper(
-            scraperSourceName as SupportedScraperSourceName, 
-            source.maxPage,
-            config.startPage || 1,
-            config.endPage || 2 // Default to 2 pages for test
-          );
-        } else {
-          throw new Error(`Unsupported mode: ${mode}`);
-        }
-
+        else {
+         apiLogger.logError(`[DEBUG WORKER] Unsupported mode: ${mode}`, new Error(`Unsupported mode: ${mode}`));
+         throw new Error(`Unsupported mode: ${mode}`);
+       }
+        
         //maxPage chỉ được sử dụng trong mode === 'test' | 'manual'. Ở mode auto, maxPage sẽ được crawl từ firstPage và viết logic xử lý trong scraperProductList
         // TODO: Tiếp tục thực hiện logic với các mode khác.
 
@@ -195,7 +214,7 @@ async function processScraperJob(job: Job<ScraperJobData>) {
 
       } catch (scrapeError) {
         aggregatedResult.errors += 1;
-        
+
         // Enhanced error logging with classification
         const errorClassification = ErrorProcessorService.classifyError(scrapeError as Error, {
           jobId,
@@ -211,11 +230,11 @@ async function processScraperJob(job: Job<ScraperJobData>) {
         });
         // Viết tiếp logic update trạng thái và cập nhật lỗi cho scrapeJob
         await prisma.scrapeJob.update({
-          where:{jobId},
-          data:{
-            status:ScrapeJobStatus.FAILED,
+          where: { jobId },
+          data: {
+            status: ScrapeJobStatus.FAILED,
             updatedAt: new Date(),
-            errorMessage:"Worker crawled failed",
+            errorMessage: "Worker crawled failed",
           }
         })
       }
@@ -225,7 +244,8 @@ async function processScraperJob(job: Job<ScraperJobData>) {
 
     await job.progress(90);
 
-    // 4. Save products to database
+    //----->  4. Lấy hoặc tạo mới category chứa mảng products
+    //TODO: Cần cải thiện logic để xử lý category tốt hơn
     const categoryId = await dbService.getOrCreateCategory(
       {
         name: 'All Products',
@@ -245,6 +265,7 @@ async function processScraperJob(job: Job<ScraperJobData>) {
 
     // await job.progress(70);
 
+    // -----> 5. Lưu sản phẩm vào database
     const saveResult = await dbService.saveProductsToDatabase(aggregatedResult.products);
 
     await job.progress(95);
@@ -301,7 +322,7 @@ async function processScraperJob(job: Job<ScraperJobData>) {
     apiLogger.logError(
       '[Scraper Worker] Job failed',
       error instanceof Error ? error : new Error(String(error)),
-      { 
+      {
         jobId,
         sellerId,
         errorType: errorClassification.type,
@@ -364,7 +385,7 @@ scraperQueue.on('error', (error) => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   apiLogger.info('[Scraper Worker] Received SIGTERM, shutting down gracefully...');
-  
+
   await cleanupWorkerSync();
   await scraperQueue.close();
   process.exit(0);
@@ -372,7 +393,7 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   apiLogger.info('[Scraper Worker] Received SIGINT, shutting down gracefully...');
-  
+
   await cleanupWorkerSync();
   await scraperQueue.close();
   process.exit(0);

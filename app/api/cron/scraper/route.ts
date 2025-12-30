@@ -152,11 +152,11 @@ export async function GET(req: NextRequest): Promise<NextResponse<CronResponse>>
                 jobId,
                 sellerId: seller.id,
                 scrapingSources: seller.scrapingSources, // Convert seller name to source
-                mode: 'auto',
                 config: {
                     fullSiteCrawl: true,
                     startPage: 0,
                     endPage: 0,
+                    mode: 'auto'
                 }
             });
 

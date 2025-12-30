@@ -65,25 +65,26 @@ export class ScraperOperationService {
      * @param options - Scrape options (maxPages, etc.)
      */
 
-    public static async triggerManualScrape(
+    public static async triggerScrape(
         sellerId: string,
         scrapingConfig: {
             fullSiteCrawl?: boolean;
             startPage?: number;
             endPage?: number;
+            mode?: 'manual' | 'auto' | 'test';
         } = {}
     ): Promise<ManualScrapeResponse> {
         try {
-            apiLogger.debug("Đã vào được service triggerManualScrape")
+            apiLogger.debug("Đã vào được service triggerScrape", { mode: scrapingConfig.mode });
 
             const response = await api.post(`/admin/sellers/${sellerId}/scraper`, { scrapingConfig });
 
-            apiLogger.logResponse("SellerService.triggerManualScrape", { response })
+            apiLogger.logResponse("SellerService.triggerScrape", { response })
 
             return {
                 success: true,
                 data: response.data,
-                message: 'Manual scrape triggered successfully.'
+                message: 'scrape triggered successfully.'
             }
 
         } catch (error: any) {

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 export interface UseScraperOperationsResult {
     // Manual scrape operation
-    triggerManualScrape: (id: string, scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number }) => Promise<void>
+    useTriggerScrape: (id: string, scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number, mode?: 'manual' | 'auto' | 'test' }) => Promise<void>
     isTriggering: boolean;
     triggerError: Error | null;
     activeJobs: Map<string, string>;
@@ -18,21 +18,23 @@ export interface UseScraperOperationsResult {
 //   clearCompletedJobs: () => void;
 
     //Job stop operation
-    stopManualScrape:(sellerId:string, jobId:string)=>Promise<void>
+    useStopManualScrape:(sellerId:string, jobId:string)=>Promise<void>
     isStoppingJob:boolean;
     stopJobError:Error | null;
     removeActiveJob: (sellerId:string) => void;
 
 
     // Automatic scrape operations
-    toggleAutoScrape: (id: string, currentState: boolean) => Promise<void>;
+    useToggleAutoScrape: (id: string, currentState: boolean) => Promise<void>;
     isToggling: boolean;
     toggleError: Error | null;
     // Interval update operation
-    updateInterval: (id: string, settings: { isAutoEnabled: boolean; autoScrapeInterval: number }) => Promise<void>;
+    useUpdateInterval: (id: string, settings: { isAutoEnabled: boolean; autoScrapeInterval: number }) => Promise<void>;
     isUpdatingInterval: boolean;
     updateIntervalError: Error | null;
 }
+
+
 
 export function useScraperOperations(refetchScraperSites: () => void): UseScraperOperationsResult {
 
@@ -40,10 +42,10 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
     const [activeJobs, setActiveJobs] = useState<Map<string, string>>(new Map())
     // Manual scrape operation
     const triggerMutation = useMutation({
-        mutationFn: async ({ id, scrapingConfig }: { id: string; scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number } }) => {
+        mutationFn: async ({ id, scrapingConfig }: { id: string; scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number ; mode?:'manual' | 'auto' | 'test' } }) => {
             try {
                 apiLogger.debug("[Params truyền vào hook triggerMutation từ việc bấm manual scrape]", { id, scrapingConfig });
-                const data = await ScraperOperationService.triggerManualScrape(id, scrapingConfig);
+                const data = await ScraperOperationService.triggerScrape(id, scrapingConfig);
                 apiLogger.debug("useScraperOperation.triggerManualScrape successfully", { data });
                 return {
                     sellerId: id,
@@ -185,7 +187,7 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
 
     return {
         //Manual scrape operation
-        triggerManualScrape: async (id: string, scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number }) => {
+        useTriggerScrape: async (id: string, scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number; mode?: 'manual' | 'auto' | 'test' }) => {
             await triggerMutation.mutateAsync({ id, scrapingConfig });
         },
         isTriggering: triggerMutation.isPending,
@@ -193,21 +195,21 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
         activeJobs: activeJobs,
 
         // Automatic scrape operations
-        toggleAutoScrape: async (id: string, currentState: boolean) => {
+        useToggleAutoScrape: async (id: string, currentState: boolean) => {
             await toggleMutation.mutateAsync({ id, currentState });
         },
         isToggling: toggleMutation.isPending,
         toggleError: toggleMutation.error,
 
         // Interval update operation
-        updateInterval: async (id: string, settings: { isAutoEnabled: boolean; autoScrapeInterval: number }) => {
+        useUpdateInterval: async (id: string, settings: { isAutoEnabled: boolean; autoScrapeInterval: number }) => {
             await updateIntervalMutation.mutateAsync({ id, settings });
         },
         isUpdatingInterval: updateIntervalMutation.isPending,
         updateIntervalError: updateIntervalMutation.error,
 
         // Manual Stop job operation
-        stopManualScrape: async (sellerId: string, jobId:string) => {
+        useStopManualScrape: async (sellerId: string, jobId:string) => {
             await stopManualJobMutation.mutateAsync({ sellerId, jobId });
         },
         isStoppingJob: stopManualJobMutation.isPending,

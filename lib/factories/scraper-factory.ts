@@ -10,15 +10,18 @@ import { PrismaClient } from '@prisma/client';
 // Database services (retained for data persistence)
 import { SaveDbService as VancouverSaveDbService } from '@/scrapers/vancouverseedbank/core/save-db-service';
 import { SaveDbService as SunWestSaveDbService } from '@/scrapers/sunwestgenetics/core/save-db-service';
+import { SaveDbService as SonomaSeedsDbService } from '@/scrapers/sonomaseeds/core/save-db-service';
 
 // Product List Scrapers (core implementations)
 
 import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
 import { SUNWESTGENETICS_SELECTORS } from '@/scrapers/sunwestgenetics/core/selectors';
+import { SONOMASEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/sonomaseeds/core/selectors';
 
 
 import { vancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/vancouver-product-list-scraper';
 import { sunwestgeneticsProductListScraper } from '@/scrapers/sunwestgenetics/core/sunwestgenetics-scrape-product-list';
+import { sonomaSeedsProductListScraper } from '@/scrapers/sonomaseeds/core/sonomaseeds-product-list-scraper';
 
 
 
@@ -168,6 +171,12 @@ export class ScraperFactory {
         selectors: SUNWESTGENETICS_SELECTORS,
         isImplemented: true
       },
+      'sonomaseeds': {
+        name: 'Sonoma Seeds',
+        baseUrl: 'https://www.sonomaseeds.com',
+        selectors: SONOMASEEDS_PRODUCT_CARD_SELECTORS,
+        isImplemented: true
+      },
       'cropkingseeds': {
         name: 'Crop King Seeds',
         baseUrl: 'https://www.cropkingseeds.ca',
@@ -195,12 +204,6 @@ export class ScraperFactory {
       'mjseedscanada': {
         name: 'MJ Seeds Canada',
         baseUrl: 'https://www.mjseedscanada.ca',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
-      },
-      'sonomaseeds': {
-        name: 'Sonoma Seeds',
-        baseUrl: 'https://www.sonomaseeds.com',
         selectors: {} as ManualSelectors,
         isImplemented: false
       },
@@ -235,8 +238,14 @@ export class ScraperFactory {
   createProductListScraper(
     scraperSourceName: SupportedScraperSourceName, 
     dbMaxPage?: number,
-    startPage: number = 1,
-    endPage?: number
+    startPage?: number | null,
+    endPage?: number | null,
+    fullSiteCrawl?: boolean | null,
+    sourceContext?:{
+      scrapingSourceUrl:string;
+      sourceName:string;
+      dbMaxPage:number;
+    }
   ) {
     // Lấy cấu hình trang từ siteConfig,
     const siteConfig = this.getSiteConfig(scraperSourceName);
@@ -244,14 +253,15 @@ export class ScraperFactory {
     if (!siteConfig.isImplemented) {
       throw new Error(`Scraper for ${siteConfig.name} is not yet implemented. Please implement selectors first.`);
     }
-    const selectors = siteConfig.selectors;
+    // const selectors = siteConfig.selectors;
     // Tạo instance của product list scraper tương ứng với source
     switch (scraperSourceName) {
       case 'vancouverseedbank':
-        return vancouverProductListScraper(siteConfig, dbMaxPage); // Vancouver doesn't support startPage/endPage yet
+        return vancouverProductListScraper(siteConfig ,startPage, endPage, fullSiteCrawl,sourceContext); // Support startPage/endPage and fullSiteCrawl
       case 'sunwestgenetics':
         return sunwestgeneticsProductListScraper(siteConfig, dbMaxPage, startPage, endPage);
-
+      case 'sonomaseeds':
+        return sonomaSeedsProductListScraper(siteConfig, dbMaxPage); // Sonoma Seeds doesn't support startPage/endPage yet
       //TODO: Thêm các scraper khác ở đây sau khi thiết lập xong
       default:
         throw new Error(`Product list scraper implementation not found for: ${scraperSourceName}`);
@@ -270,6 +280,9 @@ export class ScraperFactory {
       
       case 'sunwestgenetics':
         return new SunWestSaveDbService(this.prisma);
+      
+      case 'sonomaseeds':
+        return new SonomaSeedsDbService(this.prisma);
       
       // case 'cropkingseeds':
       //   return new CropKingSaveDbService(this.prisma);

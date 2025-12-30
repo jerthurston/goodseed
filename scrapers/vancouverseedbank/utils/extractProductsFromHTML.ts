@@ -1,4 +1,4 @@
-import { ManualSelectors } from '@/lib/factories/scraper-factory';
+import { ManualSelectors, SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
 import { ProductCardDataFromCrawling } from '@/types/crawl.type';
@@ -9,8 +9,13 @@ import { ProductCardDataFromCrawling } from '@/types/crawl.type';
  * Nhiệm vụ:
  * - Nhận vào HTML đã load sẵn (Cheerio $ object)
  * - Parse và extract dữ liệu từ các product cards
- * - Extract thông tin pagination (maxPages)
+ * - Extract thông tin pagination (maxPages) với logic ưu tiên startPage/endPage
  * - Trả về object chứa products và maxPages
+ * 
+ * LOGIC ƯU TIÊN:
+ * 1. Nếu startPage & endPage được truyền → sử dụng range này (highest priority)
+ * 2. Nếu không có startPage/endPage → fallback về fullSiteCrawl logic
+ * 3. Ultimate fallback → sử dụng dbMaxPage
  * 
  * Khác với ProductListScraper:
  * - Function này KHÔNG crawl web (không fetch HTML)
@@ -24,13 +29,20 @@ import { ProductCardDataFromCrawling } from '@/types/crawl.type';
  * - Có thể dùng riêng khi đã có HTML sẵn
  * 
  * @param $ - Cheerio loaded HTML object
+ * @param siteConfig - Site configuration với selectors và baseUrl
+ * @param dbMaxPage - Database max page fallback
+ * @param startPage - Start page number (có thể null)
+ * @param endPage - End page number (có thể null) 
+ * @param fullSiteCrawl - Full site crawl flag (fallback khi không có startPage/endPage)
  * @returns Object với products array và maxPages number
  */
 export function extractProductsFromHTML(
     $: ReturnType<typeof import('cheerio').load>, 
-    selectors: ManualSelectors,
-    baseUrl:string,
-    dbMaxPage?: number
+    siteConfig: SiteConfig,
+    dbMaxPage?: number,
+    startPage?: number | null,
+    endPage?: number | null,
+    fullSiteCrawl?: boolean | null,
 ): {
     products: ProductCardDataFromCrawling[];
     maxPages: number | null;
@@ -38,6 +50,7 @@ export function extractProductsFromHTML(
 } {
     const products: ProductCardDataFromCrawling[] = [];
     const seenUrls = new Set<string>();
+    const { selectors, baseUrl } = siteConfig;
 
     $(selectors.productCard).each((_, element) => {
         try {
@@ -178,63 +191,79 @@ export function extractProductsFromHTML(
 
     // Extract maximum page number from pagination using selectors
     let maxPages: number | null = null;
-    try {
-        let maxPageFound = 0;
+    
+    // 🎯 CASE 1: Test Mode - startPage và endPage được truyền vào (mode === 'test')
+    if (startPage !== null && startPage !== undefined && 
+        endPage !== null && endPage !== undefined) {
         
-        // Check if pagination container exists (WooCommerce standard)
-        const $paginationContainer = $(selectors.paginationContainer);
-        if ($paginationContainer.length > 0) {
-            console.log('[DEBUG] WooCommerce pagination found, analyzing pages...');
+        // Validate range logic
+        if (endPage >= startPage) {
+            maxPages = endPage;
+            apiLogger.info(`[Extract Pagination] TEST MODE: Using custom range startPage=${startPage}, endPage=${endPage} → maxPages=${maxPages}`);
+        } else {
+            apiLogger.warn(`[Extract Pagination] Invalid range: endPage (${endPage}) < startPage (${startPage}), falling back to auto-detection`);
+        }
+    } 
+    // � CASE 2: Auto/Manual Mode - fullSiteCrawl với auto-detection như logic cũ
+    else {
+        try {
+            let maxPageFound = 0;
             
-            // Find all page links with /page/ in href
-            $(selectors.paginationItems).each((_, element) => {
-                const $item = $(element);
-                const href = $item.attr('href');
+            // Check if pagination container exists (WooCommerce standard)
+            const $paginationContainer = $(selectors.paginationContainer);
+            if ($paginationContainer.length > 0) {
+                console.log('[DEBUG] WooCommerce pagination found, analyzing pages...');
                 
-                if (href && href.includes('/page/')) {
-                    // Extract page number from href like "/shop/page/154/"
-                    const match = href.match(/\/page\/(\d+)\//);
-                    if (match) {
-                        const pageNumber = parseInt(match[1]);
+                // Find all page links with /page/ in href
+                $(selectors.paginationItems).each((_, element) => {
+                    const $item = $(element);
+                    const href = $item.attr('href');
+                    
+                    if (href && href.includes('/page/')) {
+                        // Extract page number from href like "/shop/page/154/"
+                        const match = href.match(/\/page\/(\d+)\//);
+                        if (match) {
+                            const pageNumber = parseInt(match[1]);
+                            if (pageNumber > maxPageFound) {
+                                maxPageFound = pageNumber;
+                            }
+                            console.log(`[DEBUG] Found page link: ${pageNumber} (href: ${href})`);
+                        }
+                    }
+                });
+                
+                // Also check text content of .page-numbers for numeric values  
+                $('.page-numbers').each((_, element) => {
+                    const $item = $(element);
+                    const text = $item.text().trim();
+                    
+                    if (/^\d+$/.test(text)) {
+                        const pageNumber = parseInt(text);
                         if (pageNumber > maxPageFound) {
                             maxPageFound = pageNumber;
                         }
-                        console.log(`[DEBUG] Found page link: ${pageNumber} (href: ${href})`);
                     }
-                }
-            });
-            
-            // Also check text content of .page-numbers for numeric values  
-            $('.page-numbers').each((_, element) => {
-                const $item = $(element);
-                const text = $item.text().trim();
+                });
                 
-                if (/^\d+$/.test(text)) {
-                    const pageNumber = parseInt(text);
-                    if (pageNumber > maxPageFound) {
-                        maxPageFound = pageNumber;
-                    }
+                console.log('[DEBUG] Max page detected:', maxPageFound);
+                
+                maxPages = maxPageFound > 0 ? maxPageFound : null;
+                
+                if (maxPages) {
+                    apiLogger.debug(`[Extract Pagination] AUTO-DETECTED: ${maxPages} total pages from WooCommerce pagination`);
                 }
-            });
-            
-            console.log('[DEBUG] Max page detected:', maxPageFound);
-            
-            maxPages = maxPageFound > 0 ? maxPageFound : null;
-            
-            if (maxPages) {
-                apiLogger.debug(`[Extract Pagination] Detected ${maxPages} total pages from WooCommerce pagination`);
+            } else {
+                apiLogger.warn('[Extract Pagination] No WooCommerce pagination container found on this page');
             }
-        } else {
-            apiLogger.warn('[Extract Pagination] No WooCommerce pagination container found on this page');
+        } catch (error) {
+            apiLogger.logError('[Extract Max Pages] Error parsing pagination:', {error});
         }
-    } catch (error) {
-        apiLogger.logError('[Extract Max Pages] Error parsing pagination:', {error});
-    }
 
-    // Ultimate fallback: use database maxPage value if no pagination detected
-    if (!maxPages && dbMaxPage && dbMaxPage > 0) {
-        maxPages = dbMaxPage;
-        apiLogger.info(`[Extract Pagination] Using database fallback: maxPages = ${dbMaxPage}`);
+        // Ultimate fallback: use database maxPage value if no pagination detected
+        if (maxPages === null && dbMaxPage && dbMaxPage > 0) {
+            maxPages = dbMaxPage;
+            apiLogger.info(`[Extract Pagination] AUTO/MANUAL MODE FALLBACK: maxPages = ${dbMaxPage}`);
+        }
     }
 
     return {
@@ -242,4 +271,23 @@ export function extractProductsFromHTML(
         maxPages
     };
 }
+
+/**
+ * 📋 SIMPLIFIED LOGIC CHO maxPages DETERMINATION (2 Cases Only):
+ * 
+ * 🧪 CASE 1: TEST MODE - Custom Range (mode === 'test')
+ *    - Khi startPage & endPage được truyền vào → maxPages = endPage  
+ *    - Validate: endPage >= startPage
+ *    - Use case: Test mode với crawling giới hạn pages 1-2
+ * 
+ * 🚀 CASE 2: AUTO/MANUAL MODE - Full Site Crawl (mode === 'auto' | 'manual')
+ *    - Auto-detect từ HTML pagination như logic cũ
+ *    - Parse pagination container và extract max page number
+ *    - Fallback về dbMaxPage nếu không detect được
+ *    - Use case: Production auto-crawling hoặc manual full-site crawl
+ * 
+ * 🎯 EXPECTED BEHAVIOR:
+ * - Test: startPage=1, endPage=2 → maxPages=2 (custom range)
+ * - Auto/Manual: → maxPages=auto-detected từ HTML hoặc dbMaxPage fallback
+ */
 

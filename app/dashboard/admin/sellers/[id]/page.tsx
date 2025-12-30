@@ -53,12 +53,12 @@ export default function AdminSellerDetailPage() {
   }
 
   const {
-    triggerManualScrape,
+    useTriggerScrape,
     isTriggering,
     triggerError,
     activeJobs,
     //Stop
-    stopManualScrape,
+    useStopManualScrape,
     isStoppingJob,
     stopJobError,
     removeActiveJob
@@ -91,7 +91,7 @@ export default function AdminSellerDetailPage() {
         id: `stop-${sellerId}`
       });
       // Call stop job function
-      await stopManualScrape(sellerId, activeScrapeJobId);
+      await useStopManualScrape(sellerId, activeScrapeJobId);
 
       // Clear state sau khi stop thành công
       setActiveScrapeJobId(undefined);
@@ -116,7 +116,7 @@ export default function AdminSellerDetailPage() {
       const scrapingConfig = { fullSiteCrawl: true };
       // Option 2: test với số page cố định với startPage và endPage
       // const scrapingConfig = { startPage: 1, endPage: 30 };
-      const result = await triggerManualScrape(sellerId, scrapingConfig);
+      const result = await useTriggerScrape(sellerId, scrapingConfig);
 
       // Success toast
       toast.dismiss(`scrape-${sellerId}`);
@@ -152,26 +152,23 @@ export default function AdminSellerDetailPage() {
       toast.loading(`Starting quick test for ${sellerName} (2 pages)...`, {
         id: `test-${sellerId}`
       });
-
-      // Quick test: only first 2 pages for fast testing
-      const scrapingConfig = {
-        startPage: 1,
-        endPage: 2,
-        mode: 'test'
-      };
-
-      const result = await triggerManualScrape(sellerId, scrapingConfig);
-
+      // Quick test with 2 pages
+      const result = await useTriggerScrape(
+        sellerId,
+        {
+          startPage: 1,
+          endPage: 2,
+          fullSiteCrawl: false,
+          mode: 'test'
+        }
+      );
       // Success toast
       toast.dismiss(`test-${sellerId}`);
       toast.success(`Quick test started for ${sellerName}!`, {
         description: "Testing first 2 pages only - check results in ~30 seconds"
       });
 
-      // Auto-clear loading state after 3 seconds (since quick test is fast)
-      setTimeout(() => {
-        setIsQuickTestLoading(false)
-      }, 3000);
+      setIsQuickTestLoading(false);
 
     } catch (error) {
       // Dismiss loading toast
@@ -199,7 +196,7 @@ export default function AdminSellerDetailPage() {
         // Enable: set autoScrapeInterval to default 24 hours
         await updateSellerInterval.mutateAsync({
           sellerId,
-          interval: 24
+          interval: 6
         });
       }
     } catch (error) {

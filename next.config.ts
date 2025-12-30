@@ -52,7 +52,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'leafly.com',
+        hostname: 'www.sonomaseeds.com',
         pathname: '/**',
       },
       {

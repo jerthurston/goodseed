@@ -22,26 +22,21 @@ interface CreateManualScrapeJobProps {
 export async function createManualScrapeJob({
     sellerId,
     scrapingSources,
-    scrapingConfig: {
-        // Use for mode === auto | manual in production environment
-        fullSiteCrawl, 
-        // {startpage, endPage} use for mode === manual or quick testing
-        startPage,
-        endPage
-    },
+    scrapingConfig,
     targetCategoryId
 }: CreateManualScrapeJobProps) {
 
 
+    apiLogger.debug("Check scraping config before create new record scrapejob in database", { scrapingConfig });
     // Tạo một job mới với tên ngẫu nhiên
-    const jobId = `manual_${Date.now()}_${randomUUID().substring(0, 8)}`
+    const jobId = `${scrapingConfig.mode}_${Date.now()}_${randomUUID().substring(0, 8)}`
     // Khởi tạo job vào database cho bảng model ScrapeJob phục vụ cho Monitoring
     await prisma.scrapeJob.create({
         data: {
             jobId,
             sellerId,
             status: ScrapeJobStatus.CREATED, // Job được tạo trong database, chưa vào queue
-            mode: 'manual',
+            mode: scrapingConfig.mode || 'manual',
             targetCategoryId,
             currentPage: 0,
             totalPages: 0,
@@ -49,34 +44,31 @@ export async function createManualScrapeJob({
             productsSaved: 0,
             productsUpdated: 0,
             errors: 0,
-            startPage: null, // No page limits for manual scrape
-            endPage: null, // Crawl all available pages
-            maxPages: null  // No maximum page restriction
+            startPage: scrapingConfig.startPage || null,
+            endPage: scrapingConfig.endPage || null,
+            maxPages: scrapingConfig.mode === 'test' && scrapingConfig.endPage 
+                ? scrapingConfig.endPage 
+                : null  // maxPages only for test mode, otherwise unlimited  // Use endPage as maxPages for test mode
         }
     });
 
     // Thêm Job cần làm vào hàng đợi queue bull
-    apiLogger.debug("Check all params before adding to queue", { 
+    apiLogger.debug("Check all params before adding to queue bull", { 
         jobId, 
         sellerId, 
         scrapingSources, 
-        mode: 'manual', 
-        config: { fullSiteCrawl, startPage, endPage } });
-
-        
+        mode: scrapingConfig.mode || 'manual', 
+        config: scrapingConfig
+    })
+        // No providing repeat options for manual and test scrape
     await addScraperJob({
         jobId,
         sellerId,
         scrapingSources,
-        mode: 'manual', // Manual mode for full site crawl
-        config: {
-            fullSiteCrawl,
-            endPage,
-            startPage,
-        },
+        config: scrapingConfig,
     });
 
-    apiLogger.info(`[INFO] Created job with config successfully`,)
+    apiLogger.info(`[INFO] Created job with config successfully`, { jobId, mode: scrapingConfig.mode });
 
     return jobId;
     

@@ -7,9 +7,9 @@ Bull, //Đây là hàm tạo của hàng đợi (Queue). Nó tạo ra một hàn
   QueueOptions
 } from 'bull';
 import { apiLogger } from '../helpers/api-logger';
-import { ScrapingSource } from '@prisma/client';
 import { ScrapeJobConfig } from '@/types/scrapeJob.type';
-import { config } from 'process';
+import { prisma } from '../prisma';
+import { ScrapeJobStatus } from '@prisma/client';
 
 // Redis connection configuration
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
@@ -37,7 +37,7 @@ export interface ScraperJobData {
     scrapingSourceName: string;
     maxPage: number;
   }>;
-  mode: 'batch' | 'auto' | 'manual' | 'test';
+  // mode: 'auto' | 'manual' | 'test';
   config: ScrapeJobConfig;
 }
 
@@ -92,7 +92,7 @@ const queueOptions: QueueOptions = {
 export const scraperQueue: Queue<ScraperJobData> = new Bull('scraper-queue', queueOptions);
 
 // Event handlers - Queue event listeners
-// Giải thích các handler?: Các handler này sẽ xử lý các sự kiện xảy ra trong hàng đợi, chẳng hạn như khi có lỗi, khi một công việc thất bại hoặc khi một công việc hoàn thành.
+// Các handler này sẽ xử lý các sự kiện xảy ra trong hàng đợi :chẳng hạn như khi có lỗi, khi một công việc thất bại hoặc khi một công việc hoàn thành.
 scraperQueue.on('error', (error) => {
   apiLogger.logError('[Scraper Queue] Error:', { error });
 });
@@ -127,7 +127,11 @@ export async function addScraperJob(
   // Validate and sanitize all config values
   if (!Array.isArray(data.scrapingSources) || data.scrapingSources.length === 0) {
     // apiLogger.logError(`[Scraper Queue] Invalid scrapingSourceUrl: ${typeof data.config.scrapingSourceUrl}`, {})
-    throw new Error('scrapingSourceUrl must be a non-empty array of URLs');
+    await prisma.scrapeJob.update({
+      where: { jobId: data.jobId },
+      data: { status: ScrapeJobStatus.WAITING, errorMessage: 'Warning: ScrapingSource is not array' }
+    })
+    // throw new Error('scrapingSourceUrl must be a non-empty array of URLs');
   }
 
   // Sanitize & normalize input: Để đảm bảo rằng tất cả các giá trị cấu hình đều hợp lệ và đã được làm sạch trước khi thêm vào hàng đợi.
@@ -139,36 +143,38 @@ export async function addScraperJob(
       scrapingSourceName: String(source.scrapingSourceName).trim(),
       maxPage: Number(source.maxPage)
     })),
-    mode: data.mode,
     config: {
       startPage: data.config.startPage ? Number(data.config.startPage) : undefined,
       endPage: data.config.endPage ? Number(data.config.endPage) : undefined,
       fullSiteCrawl: Boolean(data.config.fullSiteCrawl),
+      mode: data.config.mode,
     }
   };
 
   // Prepare job options
   let jobOptions = {
     jobId: data.jobId,
-    priority: data.mode === 'manual' ? 10 : 5,
+    priority: data.config.mode === 'manual' ? 10 : 5,
   };
+
   // Add repeat options if provided (for auto scraper)
   if (repeatOptions) {
     jobOptions = { ...jobOptions, ...repeatOptions };
     // LOG repeat job creation
     apiLogger.info(`[Scraper Queue] Created repeat job ${data.jobId}`, {
       sellerId: cleanData.sellerId,
-      mode: cleanData.mode,
+      mode: cleanData.config.mode, // sure mode === auto to use repeatOptions
       repeatOptions: repeatOptions.repeat
     });
   }
+
   // Create job with jobOptions
   const job = await scraperQueue.add(cleanData, jobOptions);
   // LOG job creation
   const logMessage = repeatOptions ? 'Created repeat job' : 'Added job';
   apiLogger.info(`[Scraper Queue] ${logMessage} ${job.id}`, {
     sellerId: cleanData.sellerId,
-    mode: cleanData.mode,
+    mode: cleanData.config.mode,
     urlsCount: cleanData.scrapingSources.length,
     config: cleanData.config,
     isRepeat: !!repeatOptions
