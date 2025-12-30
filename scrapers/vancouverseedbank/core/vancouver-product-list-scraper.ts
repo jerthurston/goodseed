@@ -10,9 +10,10 @@
 
 import { extractProductsFromHTML } from '@/scrapers/vancouverseedbank/utils/extractProductsFromHTML';
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { CheerioCrawler, Dataset, RequestQueue } from 'crawlee';
+import { CheerioCrawler, Dataset, RequestQueue, RobotsTxtFile } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
+import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
 
 /**
  * ProductListScraper - LUỒNG XỬ LÝ CHÍNH
@@ -68,6 +69,32 @@ import { apiLogger } from '@/lib/helpers/api-logger';
      * RETURN: ProductsDataResultFromCrawling với complete metadata
      */
 
+        /**
+         * Polite crawling should be happen like that:
+         * 1. Trình tự tổng thể (High-level flow)
+        Start
+        ↓
+        Check Legal / ToS / robots.txt
+        ↓
+        Decide Crawl Scope
+        ↓
+        Request Scheduling (Rate limit)
+        ↓
+        Fetch Page (with headers)
+        ↓
+        Respect Response (status / retry / backoff)
+        ↓
+        Parse & Extract Data
+        ↓
+        Normalize & Store
+        ↓
+        Cache / Fingerprint
+        ↓
+        Schedule Next Crawl
+        ↓
+        End
+        */
+
 export async function vancouverProductListScraper(
     siteConfig: SiteConfig,
     // dbMaxPage?: number,
@@ -97,15 +124,33 @@ export async function vancouverProductListScraper(
     const dataset = await Dataset.open(datasetName);
     const requestQueue = await RequestQueue.open(`vsb-queue-${runId}`);
 
+    // Initialize polite crawler
+    const politeCrawler = new SimplePoliteCrawler({
+        userAgent: 'GoodSeed-Bot/1.0 (+https://goodseed.ca/contact) Commercial Cannabis Research',
+        acceptLanguage: 'en-US,en;q=0.9',
+        minDelay: 2000,
+        maxDelay: 5000
+    });
+
     let actualPages = 0;
     const emptyPages = new Set<string>();
 
+    // Xử lý load robots.txt
+    // const robots = await RobotsTxtFile.find('https://vancouverseedbank.ca/robots.txt')
+    // apiLogger.info('[Product List] Loaded robots.txt', { robots });
 
 
     const crawler = new CheerioCrawler({
         requestQueue,
         async requestHandler({ $, request, log }) {
             log.info(`[Product List] Scraping: ${request.url}`);
+
+            // POLITE CRAWLING: Check robots.txt compliance
+            const isAllowed = await politeCrawler.isAllowed(request.url);
+            if (!isAllowed) {
+                log.error(`[Product List] BLOCKED by robots.txt: ${request.url}`);
+                throw new Error(`robots.txt blocked access to ${request.url}`);
+            }
 
             // Extract products and pagination from current page
             const extractResult = extractProductsFromHTML($, siteConfig, sourceContext?.dbMaxPage, startPage, endPage, fullSiteCrawl);
@@ -133,15 +178,42 @@ export async function vancouverProductListScraper(
                 maxPages: maxPages // Include maxPages in dataset
             });
 
-            // PROJECT REQUIREMENT: Wait 2-5 seconds between requests to same site
-            const delayMs = Math.floor(Math.random() * 3000) + 2000; // Random 2000-5000ms
-            log.info(`[Product List] Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
+            // POLITE CRAWLING: Use polite crawler for delays and robots.txt compliance
+            const delayMs = await politeCrawler.getCrawlDelay(request.url);
+            log.info(`[Product List] Using polite crawl delay: ${delayMs}ms for ${request.url}`);
             await new Promise(resolve => setTimeout(resolve, delayMs));
         },
-
         maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
         maxConcurrency: 1, // Sequential requests within same site (project requirement)
         maxRequestRetries: 3,
+        preNavigationHooks: [
+            async (crawlingContext, requestAsBrowserOptions) => {
+                // Add polite crawler headers
+                const headers = politeCrawler.getHeaders();
+                Object.assign(requestAsBrowserOptions.headers || {}, headers);
+            }
+        ],
+        errorHandler: async ({ request, error, log }) => {
+            // POLITE CRAWLING: Handle HTTP status codes properly
+            const httpError = error as any;
+            if (httpError?.response?.status) {
+                const statusCode = httpError.response.status;
+                const shouldRetry = politeCrawler.shouldRetryOnStatus(statusCode);
+                
+                if (shouldRetry) {
+                    const backoffDelay = await politeCrawler.handleHttpStatus(statusCode, request.url);
+                    log.info(`[Product List] HTTP ${statusCode} for ${request.url}, backing off for ${backoffDelay}ms`);
+                    await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                    throw error; // Re-throw to trigger retry
+                } else {
+                    log.error(`[Product List] Non-retryable HTTP ${statusCode} for ${request.url}`);
+                    throw error;
+                }
+            } else {
+                log.error(`[Product List] Non-HTTP error for ${request.url}`);
+                throw error;
+            }
+        },
     });
 
     // Auto-crawl mode: Start với page 1 để detect maxPages, sau đó crawl remaining pages
@@ -149,18 +221,18 @@ export async function vancouverProductListScraper(
 
     // Extract path from source URL - handle both /shop and /product-category/* patterns
     let sourcePath = '/shop'; // default fallback
-    
+
     if (sourceContext?.scrapingSourceUrl) {
         try {
             const url = new URL(sourceContext.scrapingSourceUrl);
             sourcePath = url.pathname;
-            
+
             // Ensure path doesn't end with slash for consistent URL building
             sourcePath = sourcePath.replace(/\/$/, '');
-            
+
             apiLogger.info(`[Product List] Using dynamic source path: ${sourcePath}`);
         } catch (error) {
-            apiLogger.warn('[Product List] Invalid sourceContext URL, using default /shop', { 
+            apiLogger.warn('[Product List] Invalid sourceContext URL, using default /shop', {
                 url: sourceContext.scrapingSourceUrl,
                 error: error instanceof Error ? error.message : 'Unknown error'
             });
