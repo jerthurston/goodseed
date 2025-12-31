@@ -18,11 +18,13 @@ import { SaveDbService as CommonSaveDbService } from '@/scrapers/(common)/save-d
 import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
 import { SUNWESTGENETICS_SELECTORS } from '@/scrapers/sunwestgenetics/core/selectors';
 import { SONOMASEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/sonomaseeds/core/selectors';
+import { BEAVERSEED_PRODUCT_CARD_SELECTORS } from '@/scrapers/beaverseed/core/selector';
 
 
 import { vancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/vancouver-product-list-scraper';
 import { sunwestgeneticsProductListScraper } from '@/scrapers/sunwestgenetics/core/sunwestgenetics-scrape-product-list';
 import { sonomaSeedsProductListScraper } from '@/scrapers/sonomaseeds/core/sonomaseeds-product-list-scraper';
+import { BeaverSeedProductListScraper } from '@/scrapers/beaverseed/core/beaver-product-list-scraper';
 import { BCBUDDEPOT_PRODUCT_CARD_SELECTORS, BCBUDDEPOT_PRODUCT_DETAIL_SELECTORS } from '@/scrapers/bcbuddepot/core/selector';
 import { BcbuddepotScraper } from '@/scrapers/bcbuddepot/core/bcbuddepot-scraper';
 
@@ -204,8 +206,8 @@ export class ScraperFactory {
       'beaverseed': {
         name: 'Beaver Seeds',
         baseUrl: 'https://beaverseed.com',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
+        selectors: BEAVERSEED_PRODUCT_CARD_SELECTORS,
+        isImplemented: true
       },
       'maryjanesgarden': {
         name: "Mary Jane's Garden",
@@ -274,6 +276,8 @@ export class ScraperFactory {
         return sunwestgeneticsProductListScraper(siteConfig, dbMaxPage, startPage || undefined, endPage || undefined);
       case 'sonomaseeds':
         return sonomaSeedsProductListScraper(siteConfig, dbMaxPage); // Sonoma Seeds doesn't support startPage/endPage yet
+      case 'beaverseed':
+        return BeaverSeedProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
       case 'bcbuddepot':
         return BcbuddepotScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
       //TODO: Thêm các scraper khác ở đây sau khi thiết lập xong
@@ -297,6 +301,9 @@ export class ScraperFactory {
       
       case 'sonomaseeds':
         return new SonomaSeedsDbService(this.prisma);
+      
+      case 'beaverseed':
+        return new CommonSaveDbService(this.prisma);
       
       case 'bcbuddepot':
         return new CommonSaveDbService(this.prisma);

@@ -47,7 +47,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'www.leafly.com',
+        hostname: 'beaverseed.com',
         pathname: '/**',
       },
       {
