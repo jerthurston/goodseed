@@ -15,7 +15,7 @@
 
 import type { CategoryMetadataFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { PrismaClient, Seller, StockStatus } from '@prisma/client';
-import { parseCannabisType, parseSeedType } from '../utils/data-mappers';
+import { parseCannabisType, parseSeedType } from '../vancouverseedbank/utils/data-mappers';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
 export class SaveDbService {

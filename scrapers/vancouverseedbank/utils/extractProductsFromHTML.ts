@@ -1,6 +1,5 @@
-import { ManualSelectors, SiteConfig } from '@/lib/factories/scraper-factory';
+import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
-import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
 import { ProductCardDataFromCrawling } from '@/types/crawl.type';
 
 /**

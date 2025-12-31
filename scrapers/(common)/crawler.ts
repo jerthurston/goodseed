@@ -109,6 +109,7 @@ export async function vancouverProductListScraper(
     }
 ): Promise<ProductsDataResultFromCrawling> {
     const startTime = Date.now();
+
     const { baseUrl, selectors } = siteConfig
 
 

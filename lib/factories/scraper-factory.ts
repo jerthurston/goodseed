@@ -11,6 +11,7 @@ import { PrismaClient } from '@prisma/client';
 import { SaveDbService as VancouverSaveDbService } from '@/scrapers/vancouverseedbank/core/save-db-service';
 import { SaveDbService as SunWestSaveDbService } from '@/scrapers/sunwestgenetics/core/save-db-service';
 import { SaveDbService as SonomaSeedsDbService } from '@/scrapers/sonomaseeds/core/save-db-service';
+import { SaveDbService as CommonSaveDbService } from '@/scrapers/(common)/save-db-service';
 
 // Product List Scrapers (core implementations)
 
@@ -22,6 +23,8 @@ import { SONOMASEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/sonomaseeds/core/
 import { vancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/vancouver-product-list-scraper';
 import { sunwestgeneticsProductListScraper } from '@/scrapers/sunwestgenetics/core/sunwestgenetics-scrape-product-list';
 import { sonomaSeedsProductListScraper } from '@/scrapers/sonomaseeds/core/sonomaseeds-product-list-scraper';
+import { BCBUDDEPOT_PRODUCT_CARD_SELECTORS, BCBUDDEPOT_PRODUCT_DETAIL_SELECTORS } from '@/scrapers/bcbuddepot/core/selector';
+import { BcbuddepotScraper } from '@/scrapers/bcbuddepot/core/bcbuddepot-scraper';
 
 
 
@@ -66,12 +69,16 @@ export interface ISaveDbService {
 export interface ManualSelectors {
   // Core product information (required)
   productName: string;
-  priceDisplay: string;
+  priceDisplay?: string;
   
   // Product structure
   productCard?: string;
   productLink?: string;
   productImage?: string;
+  
+  // BC Bud Depot specific selectors
+  productCards?: string;
+  productCardLink?: string;
   
   // Cannabis-specific selectors (match VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS)
   strainType?: string;
@@ -115,6 +122,11 @@ export interface ManualSelectors {
   effects?: string;
   aroma?: string;
   flavor?: string;
+  tagsLinks?: string;
+  
+  versionsRows?: string;
+  packSizeCell?: string;
+  priceCell?: string;
 }
 /**
  * scraper configuration interface
@@ -186,8 +198,8 @@ export class ScraperFactory {
       'bcbuddepot': {
         name: 'BC Bud Depot',
         baseUrl: 'https://bcbuddepot.com',
-        selectors: {} as ManualSelectors, // To be implemented
-        isImplemented: false
+        selectors: BCBUDDEPOT_PRODUCT_DETAIL_SELECTORS,
+        isImplemented: true
       },
       'beaverseed': {
         name: 'Beaver Seeds',
@@ -259,9 +271,11 @@ export class ScraperFactory {
       case 'vancouverseedbank':
         return vancouverProductListScraper(siteConfig ,startPage, endPage, fullSiteCrawl,sourceContext); // Support startPage/endPage and fullSiteCrawl
       case 'sunwestgenetics':
-        return sunwestgeneticsProductListScraper(siteConfig, dbMaxPage, startPage, endPage);
+        return sunwestgeneticsProductListScraper(siteConfig, dbMaxPage, startPage || undefined, endPage || undefined);
       case 'sonomaseeds':
         return sonomaSeedsProductListScraper(siteConfig, dbMaxPage); // Sonoma Seeds doesn't support startPage/endPage yet
+      case 'bcbuddepot':
+        return BcbuddepotScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
       //TODO: Thêm các scraper khác ở đây sau khi thiết lập xong
       default:
         throw new Error(`Product list scraper implementation not found for: ${scraperSourceName}`);
@@ -283,6 +297,9 @@ export class ScraperFactory {
       
       case 'sonomaseeds':
         return new SonomaSeedsDbService(this.prisma);
+      
+      case 'bcbuddepot':
+        return new CommonSaveDbService(this.prisma);
       
       // case 'cropkingseeds':
       //   return new CropKingSaveDbService(this.prisma);

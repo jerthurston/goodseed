@@ -39,16 +39,16 @@ const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentP
   console.log("Rendering DashboardScraperSitesTabContent with sites:", scraperSites);
 
   const {
-    triggerManualScrape,
+    useTriggerScrape,
     isTriggering,
     triggerError,
     activeJobs,
 
-    toggleAutoScrape,
+    useToggleAutoScrape,
     isToggling,
     toggleError,
 
-    updateInterval,
+    useUpdateInterval,
     isUpdatingInterval,
     updateIntervalError
 
@@ -63,7 +63,7 @@ const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentP
       },
     );
 
-      await triggerManualScrape(
+      await useTriggerScrape(
         sellerId,
         { endPage: 30 }
       );
@@ -82,7 +82,7 @@ const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentP
 
   const handleToggleAutoScrape = async (id: string, currentState: boolean) => {
     try {
-      await toggleAutoScrape(id, currentState);
+      await useToggleAutoScrape(id, currentState);
       toast.success(`Auto scrape ${!currentState ? 'enabled' : 'disabled'}`);
     } catch (error) {
       apiLogger.logError("Error toggling auto scrape:", { error });
@@ -92,7 +92,7 @@ const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentP
 
   const handleUpdateInterval = async (id: string, currentSettings: { isAutoEnabled: boolean; autoScrapeInterval: number }) => {
     try {
-      await updateInterval(id, currentSettings)
+      await useUpdateInterval(id, currentSettings)
     } catch (error) {
       console.error("Error updating interval:", error)
     }
@@ -166,20 +166,20 @@ const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentP
                   <select
                     value={site.autoScrapeInterval || 6}
                     onChange={(e) =>
-                      updateInterval(site.id, {
+                      useUpdateInterval(site.id, {
                         isAutoEnabled: site.isAutoEnabled,
                         autoScrapeInterval: Number(e.target.value)
                       })
                     }
                     className={style.selectInterval}
                   >
-                    <option value={1}>Every 1 hour</option>
+                    {/* <option value={1}>Every 1 hour</option>
                     <option value={2}>Every 2 hours</option>
-                    <option value={4}>Every 4 hours</option>
+                    <option value={4}>Every 4 hours</option> */}
                     <option value={6}>Every 6 hours</option>
-                    <option value={8}>Every 8 hours</option>
+                    {/* <option value={8}>Every 8 hours</option>
                     <option value={12}>Every 12 hours</option>
-                    <option value={24}>Every 24 hours</option>
+                    <option value={24}>Every 24 hours</option> */}
                   </select>
                 </div>
               )}

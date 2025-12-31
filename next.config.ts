@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'sunwestgenetics.com',
+        hostname: 'bcbuddepot.com',
         pathname: '/**',
       },
       // Add more common seed vendor domains

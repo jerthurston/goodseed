@@ -66,7 +66,7 @@ export default function AutoScraperSection({ seller, onRefresh }: AutoScraperSec
           </p>
         </div>
         <AutoScraperStatusBadge 
-          status={seller.isAutoEnabled ? 'SCHEDULED' : 'CANCELLED'}
+          status={seller.isAutoEnabled ? 'AVAILABLE' : 'CANCELLED'}
           size="lg"
         />
       </div>

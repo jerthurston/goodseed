@@ -130,9 +130,9 @@ export async function createScheduleAutoScrapeJob({
                 jobId, //Job Data jobId (Database jobId)
                 sellerId,
                 scrapingSources,
-                mode: 'auto', // Auto mode for full site crawl
                 config: {
                     fullSiteCrawl: true,
+                    mode: 'auto', // Auto mode for full site crawl
                 },
             },
             // repeat options cho mode === auto

@@ -64,7 +64,7 @@ export function useFetchSellerById(sellerId: string | undefined): UseFetchSeller
   })
 
   const result: UseFetchSellerByIdResult = {
-    seller: query.data ? SellerTransformer.toUI(query.data) : null,
+    seller: query.data || null,
     rawSeller: query.data || null,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
