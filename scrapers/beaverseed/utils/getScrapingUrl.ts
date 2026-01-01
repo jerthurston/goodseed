@@ -1,18 +1,18 @@
 /**
  * Helper function to build pagination URL for Beaver Seed
  * 
- * Beaver Seed uses jet-smart-filters pagination which works differently
- * They typically use ?_page=N or similar query parameter format
+ * Beaver Seed uses standard WordPress pagination format: /page/N/
+ * Examples:
+ * - https://beaverseed.com/feminized-cannabis/page/2/
+ * - https://beaverseed.com/regular/page/3/
  */
 export function getScrapingUrl(baseUrl: string, page: number = 1): string {
     if (page === 1) {
         return baseUrl;
     }
 
-    // Beaver Seed jet-smart-filters pagination format
-    // Add page parameter to existing URL
-    const url = new URL(baseUrl);
-    url.searchParams.set('_page', page.toString());
-    
-    return url.toString();
+    // Beaver Seed pagination format: /page/N/
+    // Remove trailing slash and add page path
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    return `${cleanBaseUrl}/page/${page}/`;
 }

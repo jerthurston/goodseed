@@ -36,20 +36,20 @@ export const BEAVERSEED_PRODUCT_CARD_SELECTORS = {
     priceAmount: '.product_price_dfn .woocommerce-Price-amount',
     variationInputs: 'input.product_variation_radio',
 
-    // Beaver Seed uses jet-smart-filters-pagination (different from Vancouver)
-    nextPage: '.jet-filters-pagination__item.prev-next.next', 
-    pageLinks: '.jet-filters-pagination__item[data-value]:not(.prev-next)', 
-    currentPage: '.jet-filters-pagination__item.jet-filters-pagination__current',
+    // Beaver Seed uses standard WordPress pagination (different from Vancouver)
+    nextPage: '.page-numbers.next', 
+    pageLinks: '.page-numbers:not(.prev):not(.next):not(.current)', 
+    currentPage: '.page-numbers.current',
 
     // Pagination container and items for max page detection
-    paginationContainer: '.jet-smart-filters-pagination', 
-    paginationItems: '.jet-filters-pagination__item[data-value]:not(.prev-next)', // Page links with data-value
+    paginationContainer: '.page-numbers', 
+    paginationItems: '.page-numbers:not(.prev):not(.next):not(.current)', // Page number links
 } as const;
 
 export const MAXPAGE_PAGINATION = {
-    // Beaver Seed uses jet-smart-filters-pagination
-    paginationContainer: '.jet-smart-filters-pagination',
-    paginationItems: '.jet-filters-pagination__item[data-value]:not(.prev-next)',
+    // Beaver Seed uses WordPress pagination with .page-numbers
+    paginationContainer: '.page-numbers',
+    paginationItems: '.page-numbers:not(.prev):not(.next):not(.current)',
     maxPageFromText: (text: string) => {
         // Extract max page from pagination items
         const matches = text.match(/(\d+)/g);
@@ -69,12 +69,12 @@ export const MAXPAGE_PAGINATION = {
  * - Same custom ACF fields structure (.custom-acf-prod)
  * 
  * ❗ KEY DIFFERENCES:
- * - Uses jet-smart-filters-pagination instead of WooCommerce pagination
- * - Different pagination data attributes (data-value vs href)
+ * - Uses WordPress pagination with .page-numbers instead of WooCommerce pagination
+ * - Different URL format: /page/N/ vs ?page=N
  * - Same rating/review structure
  * 
  * 🎯 EXTRACTION STRATEGY:
  * 1. Extract products from product card list
- * 2. Handle jet-smart-filters pagination for page navigation
+ * 2. Handle WordPress pagination for page navigation
  * 3. Use WooCommerce structure for product data extraction
  */

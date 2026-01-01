@@ -24,9 +24,11 @@ import { BEAVERSEED_PRODUCT_CARD_SELECTORS } from '@/scrapers/beaverseed/core/se
 import { vancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/vancouver-product-list-scraper';
 import { sunwestgeneticsProductListScraper } from '@/scrapers/sunwestgenetics/core/sunwestgenetics-scrape-product-list';
 import { sonomaSeedsProductListScraper } from '@/scrapers/sonomaseeds/core/sonomaseeds-product-list-scraper';
-import { BeaverSeedProductListScraper } from '@/scrapers/beaverseed/core/beaver-product-list-scraper';
+import { BeaverseedScraper } from '@/scrapers/beaverseed/core/beaverseed-scraper';
 import { BCBUDDEPOT_PRODUCT_CARD_SELECTORS, BCBUDDEPOT_PRODUCT_DETAIL_SELECTORS } from '@/scrapers/bcbuddepot/core/selector';
 import { BcbuddepotScraper } from '@/scrapers/bcbuddepot/core/bcbuddepot-scraper';
+import { MARYJANESGARDEN_PRODUCT_CARD_SELECTORS } from '@/scrapers/maryjanesgarden/core/selector';
+import { MaryJanesGardenScraper } from '@/scrapers/maryjanesgarden/core/maryjanesgarden-scraper';
 
 
 
@@ -212,8 +214,8 @@ export class ScraperFactory {
       'maryjanesgarden': {
         name: "Mary Jane's Garden",
         baseUrl: 'https://www.maryjanesgarden.com',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
+        selectors: MARYJANESGARDEN_PRODUCT_CARD_SELECTORS,
+        isImplemented: true
       },
       'mjseedscanada': {
         name: 'MJ Seeds Canada',
@@ -277,10 +279,12 @@ export class ScraperFactory {
       case 'sonomaseeds':
         return sonomaSeedsProductListScraper(siteConfig, dbMaxPage); // Sonoma Seeds doesn't support startPage/endPage yet
       case 'beaverseed':
-        return BeaverSeedProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
+        return BeaverseedScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
+      case 'maryjanesgarden':
+        return MaryJanesGardenScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
       case 'bcbuddepot':
         return BcbuddepotScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
-      //TODO: Thêm các scraper khác ở đây sau khi thiết lập xong
+
       default:
         throw new Error(`Product list scraper implementation not found for: ${scraperSourceName}`);
     }
@@ -303,6 +307,9 @@ export class ScraperFactory {
         return new SonomaSeedsDbService(this.prisma);
       
       case 'beaverseed':
+        return new CommonSaveDbService(this.prisma);
+      
+      case 'maryjanesgarden':
         return new CommonSaveDbService(this.prisma);
       
       case 'bcbuddepot':

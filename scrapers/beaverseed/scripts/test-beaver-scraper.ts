@@ -4,7 +4,7 @@
  * Test the complete scraper with jet-smart-filters pagination
  */
 
-import { BeaverSeedProductListScraper } from '../core/beaver-product-list-scraper';
+import { BeaverseedScraper } from '../core/beaverseed-scraper';
 import { BEAVERSEED_PRODUCT_CARD_SELECTORS } from '../core/selector';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 
@@ -32,7 +32,7 @@ async function testBeaverSeedScraper() {
         console.log('📊 Testing with first 2 pages...');
         
         // Test mode: only crawl first 2 pages
-        const result = await BeaverSeedProductListScraper(
+        const result = await BeaverseedScraper(
             siteConfig,
             1,  // startPage
             2,  // endPage

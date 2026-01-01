@@ -23,7 +23,7 @@ import { BEAVERSEED_PRODUCT_CARD_SELECTORS, MAXPAGE_PAGINATION } from '../core/s
  * @returns Object với products array và maxPages number
  */
 export function extractProductsFromHTML(
-    $: ReturnType<typeof import('cheerio').load>, 
+    $: ReturnType<typeof import('cheerio').load>,
     siteConfig: SiteConfig,
     dbMaxPage?: number,
     startPage?: number | null,
@@ -32,7 +32,7 @@ export function extractProductsFromHTML(
 ): {
     products: ProductCardDataFromCrawling[];
     maxPages: number | null;
-    
+
 } {
     const products: ProductCardDataFromCrawling[] = [];
     const seenUrls = new Set<string>();
@@ -117,7 +117,7 @@ export function extractProductsFromHTML(
             }
 
             // Extract flowering time - get text after the colon
-                const floweringTimeRaw = $card.find(selectors.floweringTime).first().text().trim() || undefined;
+            const floweringTimeRaw = $card.find(selectors.floweringTime).first().text().trim() || undefined;
             const floweringTime = floweringTimeRaw?.replace(/^Flowering\s*:\s*/, '').trim() || undefined;            // Extract growing level - get text after the colon
             const growingLevelRaw = $card.find(selectors.growingLevel).first().text().trim() || undefined;
             const growingLevel = growingLevelRaw?.replace(/^Growing Level\s*:\s*/, '').trim() || undefined;
@@ -173,17 +173,17 @@ export function extractProductsFromHTML(
             });
 
         } catch (error) {
-            console.error('[Beaver Seed] Error parsing product card:', error);
+            apiLogger.logError('[Beaver Seed] Error parsing product card:', error as Error);
         }
     });
 
     // Extract maximum page number from jet-smart-filters pagination
     let maxPages: number | null = null;
-    
+
     // 🎯 CASE 1: Test Mode - startPage và endPage được truyền vào
-    if (startPage !== null && startPage !== undefined && 
+    if (startPage !== null && startPage !== undefined &&
         endPage !== null && endPage !== undefined) {
-        
+
         // Validate range logic
         if (endPage >= startPage) {
             maxPages = endPage;
@@ -191,43 +191,44 @@ export function extractProductsFromHTML(
         } else {
             apiLogger.warn(`[Beaver Seed Pagination] Invalid range: endPage (${endPage}) < startPage (${startPage}), falling back to auto-detection`);
         }
-    } 
+    }
     // 🚀 CASE 2: Auto/Manual Mode - jet-smart-filters pagination detection
     else {
         try {
             let maxPageFound = 0;
-            
-            // Check if jet-smart-filters pagination container exists
+
+            // Check if WordPress pagination container exists
             const $paginationContainer = $(MAXPAGE_PAGINATION.paginationContainer);
             if ($paginationContainer.length > 0) {
-                console.log('[DEBUG] Jet-smart-filters pagination found, analyzing pages...');
-                
-                // Find all page items with data-value attribute
+                console.log('[DEBUG] WordPress pagination found, analyzing pages...');
+
+                // Find all page number links
                 $(MAXPAGE_PAGINATION.paginationItems).each((_, element) => {
                     const $item = $(element);
-                    const dataValue = $item.attr('data-value');
-                    
-                    if (dataValue && /^\d+$/.test(dataValue)) {
-                        const pageNumber = parseInt(dataValue);
+                    const pageText = $item.text().trim();
+
+                    // Extract page number from text content
+                    if (/^\d+$/.test(pageText)) {
+                        const pageNumber = parseInt(pageText);
                         if (pageNumber > maxPageFound) {
                             maxPageFound = pageNumber;
                         }
-                        console.log(`[DEBUG] Found page item: ${pageNumber} (data-value: ${dataValue})`);
+                        console.log(`[DEBUG] Found page item: ${pageNumber} (text: ${pageText})`);
                     }
                 });
-                
-                console.log('[DEBUG] Max page detected from jet-smart-filters:', maxPageFound);
-                
+
+                console.log('[DEBUG] Max page detected from WordPress pagination:', maxPageFound);
+
                 maxPages = maxPageFound > 0 ? maxPageFound : null;
-                
+
                 if (maxPages) {
-                    apiLogger.debug(`[Beaver Seed Pagination] AUTO-DETECTED: ${maxPages} total pages from jet-smart-filters pagination`);
+                    apiLogger.debug(`[Beaver Seed Pagination] AUTO-DETECTED: ${maxPages} total pages from WordPress pagination`);
                 }
             } else {
-                apiLogger.warn('[Beaver Seed Pagination] No jet-smart-filters pagination container found on this page');
+                apiLogger.warn('[Beaver Seed Pagination] No WordPress pagination container found on this page');
             }
         } catch (error) {
-            apiLogger.logError('[Beaver Seed Max Pages] Error parsing pagination:', {error});
+            apiLogger.logError('[Beaver Seed Max Pages] Error parsing pagination:', { error });
         }
 
         // Ultimate fallback: use database maxPage value if no pagination detected
@@ -257,7 +258,7 @@ export function extractProductsFromHTML(
  * 3. FALLBACK: Use dbMaxPage if no pagination detected
  * 
  * 📊 EXPECTED STRUCTURE:
- * - .jet-filters-pagination__item[data-value="1"]
- * - .jet-filters-pagination__item[data-value="2"] 
- * - .jet-filters-pagination__item[data-value="48"] (max page)
+ * - .page-numbers:not(.prev):not(.next):not(.current) for page links
+ * - Text content contains page numbers (1, 2, 3, ..., 48)
+ * - /page/N/ URL format for navigation
  */
