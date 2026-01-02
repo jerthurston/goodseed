@@ -1,10 +1,10 @@
 import { apiLogger } from "@/lib/helpers/api-logger";
 import { SimplePoliteCrawler } from "@/lib/utils/polite-crawler";
 import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, ErrorHandler, Log, RequestQueue } from "crawlee";
-import { extractProductFromDetailHTML } from "../utils/extractProductFromDetailHTML";
-import { extractProductUrlsFromSitemap } from "../utils/extractProductUrlsFromSitemap";
 import { SiteConfig } from "@/lib/factories/scraper-factory";
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from "@/types/crawl.type";
+import { extractProductFromDetailHTML,extractProductUrlsFromSitemap } from "../utils/index";
+import { ACCEPTLANGUAGE, USERAGENT } from "@/scrapers/(common)/constants";
 
 
 export async function BcbuddepotScraper(
@@ -42,8 +42,8 @@ export async function BcbuddepotScraper(
 
     // Initialize polite crawler
     const politeCrawler = new SimplePoliteCrawler({
-        userAgent: 'GoodSeed-Bot/1.0 (+https://goodseed.ca/contact) Commercial Cannabis Research',
-        acceptLanguage: 'en-US,en;q=0.9',
+        userAgent: USERAGENT,
+        acceptLanguage: ACCEPTLANGUAGE,
         minDelay: 2000,
         maxDelay: 5000
     });
@@ -195,7 +195,7 @@ export async function BcbuddepotScraper(
         totalPages: actualPages,
         products: allProducts,
         timestamp: new Date(),
-        duration: Date.now() - startTime,
+        duration,
     };
 }
 

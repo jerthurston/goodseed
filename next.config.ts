@@ -65,6 +65,11 @@ const nextConfig: NextConfig = {
         hostname: 'maryjanesgarden.com',
         pathname: '/**',
       },
+      {
+       protocol: 'https',
+       hostname: 'www.mjseedscanada.ca',
+       pathname: '/**',
+      },
       // Add wildcard for common image CDNs
       {
         protocol: 'https',

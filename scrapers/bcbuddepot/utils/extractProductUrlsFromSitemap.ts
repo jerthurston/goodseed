@@ -18,13 +18,14 @@ export async function extractProductUrlsFromSitemap(
         
         // Filter for BC Bud Depot product URLs
         const productUrls = urls.filter(url => {            
-            // Filter for product URLs (BC Bud Depot product URLs contain '/marijuana-seeds/')
+            // Filter for product URLs (BC Bud Depot product URLs contain '/marijuana-seeds/'). Mục đích để filter các url sản phẩm, không phải url danh mục và page trong danh sách sitemap.
             return url.includes('/marijuana-seeds/') && 
                    url.includes('bcbuddepot.com') &&
                    !url.includes('/page/') && // Exclude pagination URLs
                    !url.includes('/category/') && // Exclude category URLs
                    url.match(/\/marijuana-seeds\/[^\/]+\/[^\/]+\/?$/); // Match product detail pattern
         });
+       
         
         apiLogger.info(`[BC Bud Depot Sitemap] Extracted ${productUrls.length} product URLs from ${sitemapUrl}`);
         
