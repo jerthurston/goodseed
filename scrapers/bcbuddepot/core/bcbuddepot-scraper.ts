@@ -11,7 +11,6 @@ export async function BcbuddepotScraper(
     siteConfig: SiteConfig,
     startPage?: number | null,
     endPage?: number | null,
-    fullSiteCrawl?: boolean | null,
     sourceContext?: {
         scrapingSourceUrl: string;
         sourceName: string;
@@ -50,6 +49,7 @@ export async function BcbuddepotScraper(
 
     let actualPages = 0;
     let productUrls: string[] = [];
+    let urlsToProcess: string[] = [];
 
     // Step 1: Extract product URLs from sitemap using Crawlee utility
     apiLogger.info('[BC Bud Depot Scraper] Step 1: Loading sitemap to extract product URLs...');
@@ -58,8 +58,23 @@ export async function BcbuddepotScraper(
         productUrls = await extractProductUrlsFromSitemap(sourceContext.scrapingSourceUrl);
         apiLogger.info(`[BC Bud Depot Scraper] Extracted ${productUrls.length} product URLs from sitemap`);
         
-        // Add all product URLs to queue for crawling
-        for (const productUrl of productUrls) {
+
+         // Calculate number of products to process based on startPage and endPage
+         // Chỉ áp dụng cho mode = test. Chỉ test 5 productUrl (startPage = 1, và endPage =6. số lượng 5 url)
+        endPage = 6
+        urlsToProcess = productUrls;
+        if (startPage !== null && startPage !== undefined && endPage !== null && endPage !== undefined) {
+            const pageRange = endPage - startPage;
+            const limitedCount = Math.max(1, pageRange); // Ensure at least 1 product
+            urlsToProcess = productUrls.slice(0, limitedCount);
+            
+            apiLogger.info(`[MJ Seed Canada Scraper] Limited processing to ${limitedCount} products (startPage: ${startPage}, endPage: ${endPage}, range: ${pageRange})`);
+        }
+        //==== Code này dành cho Quick testing scraper.
+        /**
+         * / Add product URLs to queue for crawling. Nếu không truyền vào startPage hoặc endPage tức là manual hoặc auto mode sẽ lần lượt for qua tất cả url thay vì 5 url như trên
+         */
+        for (const productUrl of urlsToProcess) {
             await requestQueue.addRequest({
                 url: productUrl,
                 userData: { type: 'product' }

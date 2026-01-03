@@ -6,7 +6,9 @@
  * Updated: 2025-12-31
  */
 
-export const MARYJANESGARDEN_PRODUCT_CARD_SELECTORS = {
+import { ManualSelectors } from "@/lib/factories/scraper-factory";
+
+export const MARYJANESGARDEN_PRODUCT_CARD_SELECTORS: ManualSelectors = {
     // Product Cards - Real structure
     productCard: 'li.product.type-product',
     productLink: '.prod_titles a',

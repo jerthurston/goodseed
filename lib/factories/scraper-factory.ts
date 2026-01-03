@@ -31,6 +31,8 @@ import { MARYJANESGARDEN_PRODUCT_CARD_SELECTORS } from '@/scrapers/maryjanesgard
 import { MaryJanesGardenScraper } from '@/scrapers/maryjanesgarden/core/maryjanesgarden-scraper';
 import { MJSEEDSCANADA_PRODUCT_CARD_SELECTORS } from '@/scrapers/mjseedscanada/core/selector';
 import MJSeedCanadaScraper from '@/scrapers/mjseedscanada/core/mJSeedScanadaScraper';
+import { ROCKETSEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/rocketseeds/core/selector';
+import RocketSeedsScraper from '@/scrapers/rocketseeds/core/rockerSeedScraper';
 
 
 
@@ -228,8 +230,8 @@ export class ScraperFactory {
       'rocketseeds': {
         name: 'Rocket Seeds',
         baseUrl: 'https://rocketseeds.com',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
+        selectors: ROCKETSEEDS_PRODUCT_CARD_SELECTORS,
+        isImplemented: true
       },
       'canukseeds': {
         name: 'Canuk Seeds',
@@ -274,6 +276,7 @@ export class ScraperFactory {
     // const selectors = siteConfig.selectors;
     // Tạo instance của product list scraper tương ứng với source
     switch (scraperSourceName) {
+      // Crawling card product with pagination page
       case 'vancouverseedbank':
         return vancouverProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext); // Support startPage/endPage and fullSiteCrawl
       case 'sunwestgenetics':
@@ -285,11 +288,13 @@ export class ScraperFactory {
       case 'maryjanesgarden':
         return MaryJanesGardenScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
 
-      // sitemap scraper strategy
+      // Crawling sitemap first and product urls array
+      case 'rocketseeds':
+        return RocketSeedsScraper(siteConfig, startPage, endPage, sourceContext);
       case 'mjseedscanada':
         return MJSeedCanadaScraper(siteConfig, startPage, endPage, sourceContext);
       case 'bcbuddepot':
-        return BcbuddepotScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
+        return BcbuddepotScraper(siteConfig, startPage, endPage, sourceContext);
 
       default:
         throw new Error(`Product list scraper implementation not found for: ${scraperSourceName}`);
@@ -322,6 +327,8 @@ export class ScraperFactory {
         return new CommonSaveDbService(this.prisma);
 
       case 'mjseedscanada':
+        return new CommonSaveDbService(this.prisma);
+      case 'rocketseeds':
         return new CommonSaveDbService(this.prisma);
 
       // case 'cropkingseeds':
