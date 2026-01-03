@@ -18,11 +18,11 @@ export function extractProductFromDetailHTML(
     productUrl: string,
 ): ProductCardDataFromCrawling | null {
 
-    const {  baseUrl } = siteConfig;
+    const { selectors, baseUrl } = siteConfig;
 
-    const selectors = ROCKETSEEDS_PRODUCT_CARD_SELECTORS;
+    // const selectors = ROCKETSEEDS_PRODUCT_CARD_SELECTORS;
 
-    const testingProductUrl = "https://rocketseeds.com/product/green-crack-feminized-marijuana-seeds/";
+    // const testingProductUrl = "https://rocketseeds.com/product/green-crack-feminized-marijuana-seeds/";
 
     try {
         // Extract product name using h1.product_title.entry-title

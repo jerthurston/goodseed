@@ -8,8 +8,8 @@ This group will all share the same affiliate tag:
 5. https://www.mjseedscanada.ca/         YES      
 6. https://www.sunwestgenetics.com/      YES    
 7. https://www.sonomaseeds.com/            YES                
-8. https://rocketseeds.com/                  PENDING          
-9. https://www.cropkingseeds.ca/                  
+8. https://rocketseeds.com/                  YES          
+9. https://www.cropkingseeds.ca/         YES         
 
 And these two will share an affiliate tag
 https://www.canukseeds.com/

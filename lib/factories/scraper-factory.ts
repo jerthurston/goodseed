@@ -33,6 +33,8 @@ import { MJSEEDSCANADA_PRODUCT_CARD_SELECTORS } from '@/scrapers/mjseedscanada/c
 import MJSeedCanadaScraper from '@/scrapers/mjseedscanada/core/mJSeedScanadaScraper';
 import { ROCKETSEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/rocketseeds/core/selector';
 import RocketSeedsScraper from '@/scrapers/rocketseeds/core/rockerSeedScraper';
+import CropKingSeedsScraper from '@/scrapers/cropkingseeds/core/cropkingSeedScraper';
+import { CROPKINGSEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/cropkingseeds/core/selectors';
 
 
 
@@ -200,7 +202,7 @@ export class ScraperFactory {
       'cropkingseeds': {
         name: 'Crop King Seeds',
         baseUrl: 'https://www.cropkingseeds.ca',
-        selectors: {} as ManualSelectors,
+        selectors: CROPKINGSEEDS_PRODUCT_CARD_SELECTORS,
         isImplemented: true
       },
       'bcbuddepot': {
@@ -287,7 +289,8 @@ export class ScraperFactory {
         return BeaverseedScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
       case 'maryjanesgarden':
         return MaryJanesGardenScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
-
+      case 'cropkingseeds':
+        return CropKingSeedsScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
       // Crawling sitemap first and product urls array
       case 'rocketseeds':
         return RocketSeedsScraper(siteConfig, startPage, endPage, sourceContext);
@@ -329,6 +332,8 @@ export class ScraperFactory {
       case 'mjseedscanada':
         return new CommonSaveDbService(this.prisma);
       case 'rocketseeds':
+        return new CommonSaveDbService(this.prisma);
+      case 'cropkingseeds':
         return new CommonSaveDbService(this.prisma);
 
       // case 'cropkingseeds':

@@ -21,7 +21,7 @@
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { MARYJANESGARDEN_PRODUCT_CARD_SELECTORS, MAXPAGE_PAGINATION } from '../core/selector';
+import { MAXPAGE_PAGINATION } from '../core/selector';
 
 export function extractProductsFromHTML(
     $: ReturnType<typeof import('cheerio').load>, 
@@ -36,8 +36,8 @@ export function extractProductsFromHTML(
 } {
     const products: ProductCardDataFromCrawling[] = [];
     const seenUrls = new Set<string>();
-    const selectors = MARYJANESGARDEN_PRODUCT_CARD_SELECTORS;
-    const { baseUrl } = siteConfig;
+    // const selectors = MARYJANESGARDEN_PRODUCT_CARD_SELECTORS;
+    const { selectors ,baseUrl } = siteConfig;
 
     $(selectors.productCard).each((_, element) => {
         try {

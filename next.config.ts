@@ -75,6 +75,51 @@ const nextConfig: NextConfig = {
         hostname: 'rocketseeds.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.cropkingseeds.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cropkingseeds.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'beaverseed.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.sonomaseeds.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'mjseedscanada.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'maryjanesgarden.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.mjseedscanada.ca',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'rocketseeds.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.cropkingseeds.ca',
+        pathname: '/**',
+      },
       // Add wildcard for common image CDNs
       {
         protocol: 'https',
