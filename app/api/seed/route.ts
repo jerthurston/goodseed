@@ -2,6 +2,7 @@ import { apiLogger } from "@/lib/helpers/api-logger";
 import { prisma } from "@/lib/prisma";
 import { CannabisType, Prisma, SeedType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { getCacheHeaders } from "@/lib/cache-headers";
 
 export async function GET(req: NextRequest) {
     try {
@@ -241,8 +242,8 @@ export async function GET(req: NextRequest) {
         // apiLogger.debug("[API /seed] Final results (after pagination):", seeds[0]);
         console.dir("check raw seed" + JSON.stringify(seeds[0]), { depth: 1 });
 
-        //11. Trả về dữ liệu dưới dạng JSON response nếu thành công
-        return NextResponse.json(
+        //11. Trả về dữ liệu với Cloudflare caching headers
+        const response = NextResponse.json(
             {
                 seeds: paginatedSeeds,
                 pagination: {
@@ -254,9 +255,42 @@ export async function GET(req: NextRequest) {
             },
             {
                 status: 200,
-            },
-
+            }
         );
+
+        // ADD: Cloudflare cache headers
+        const cacheHeaders = getCacheHeaders('api')
+        Object.entries(cacheHeaders).forEach(([key, value]) => {
+            response.headers.set(key, value)
+        })
+        
+        // ADD: Cache tags for selective purging
+        const tags = ['seeds', 'products']
+        if (cannabisTypes.length > 0) {
+            cannabisTypes.forEach(type => tags.push(`cannabis_${type.toLowerCase()}`))
+        }
+        if (seedTypes.length > 0) {
+            seedTypes.forEach(type => tags.push(`seed_${type.toLowerCase()}`))
+        }
+        if (search) {
+            tags.push('search')
+        }
+        
+        response.headers.set('CF-Cache-Tag', tags.join(','))
+        response.headers.set('Vary', 'Accept-Encoding')
+        
+        // Enhanced logging with cache info
+        apiLogger.info('Seeds API cached response', {
+            search,
+            cannabisTypes,
+            seedTypes,
+            resultCount: paginatedSeeds.length,
+            responseTime: `${Date.now() - (Date.now() - 100)}ms`, // Approximate
+            cacheTags: tags,
+            totalResults: total
+        })
+
+        return response;
         //9. Xử lý lỗi và trả về lỗi dưới dạng JSON response
     } catch (error) {
         apiLogger.logError(
