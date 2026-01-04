@@ -13,7 +13,7 @@ import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/t
 import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, ErrorHandler, Log, RequestQueue, RobotsTxtFile } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
-import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
+import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler.bk';
 
 /**
  * ProductListScraper - LUỒNG XỬ LÝ CHÍNH

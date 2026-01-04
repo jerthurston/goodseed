@@ -3,7 +3,7 @@
  * This script will help us understand caching behavior
  */
 
-import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
+import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler.bk';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
 // Counter to track robots.txt fetches

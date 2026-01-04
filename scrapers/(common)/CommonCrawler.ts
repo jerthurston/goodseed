@@ -20,6 +20,7 @@ import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, ErrorHandl
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
+import { ACCEPTLANGUAGE, MAX_DELAY_DEFAULT, MIN_DELAY_DEFAULT, USERAGENT } from './constants';
 
 /**
  * Common context interface for all scrapers
@@ -87,10 +88,10 @@ export class CommonCrawler {
      */
     private createPoliteCrawler(): SimplePoliteCrawler {
         return new SimplePoliteCrawler({
-            userAgent: 'GoodSeed-Bot/1.0 (+https://goodseed.ca/contact) Commercial Cannabis Research',
-            acceptLanguage: 'en-US,en;q=0.9',
-            minDelay: 2000,
-            maxDelay: 5000
+            userAgent: USERAGENT,
+            acceptLanguage: ACCEPTLANGUAGE,
+            minDelay: MIN_DELAY_DEFAULT,
+            maxDelay: MAX_DELAY_DEFAULT
         });
     }
 

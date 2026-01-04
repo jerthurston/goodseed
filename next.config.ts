@@ -120,6 +120,11 @@ const nextConfig: NextConfig = {
         hostname: 'www.cropkingseeds.ca',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.canukseeds.com',
+        pathname: '/**',
+      },
       // Add wildcard for common image CDNs
       {
         protocol: 'https',

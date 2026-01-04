@@ -35,6 +35,8 @@ import { ROCKETSEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/rocketseeds/core/
 import RocketSeedsScraper from '@/scrapers/rocketseeds/core/rockerSeedScraper';
 import CropKingSeedsScraper from '@/scrapers/cropkingseeds/core/cropkingSeedScraper';
 import { CROPKINGSEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/cropkingseeds/core/selectors';
+import CANUK_SEEDS_PRODUCT_SELECTORS from '@/scrapers/canukseeds/core/selectors';
+import { canukSeedScraper } from '@/scrapers/canukseeds/core/canukseedsScraper';
 
 
 
@@ -238,8 +240,8 @@ export class ScraperFactory {
       'canukseeds': {
         name: 'Canuk Seeds',
         baseUrl: 'https://www.canukseeds.com',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
+        selectors: CANUK_SEEDS_PRODUCT_SELECTORS,
+        isImplemented: true
       },
       'truenorthseedbank': {
         name: 'True North Seed Bank',
@@ -299,6 +301,10 @@ export class ScraperFactory {
       case 'bcbuddepot':
         return BcbuddepotScraper(siteConfig, startPage, endPage, sourceContext);
 
+      // Crawling Header first - get category link from header - get product links from category page - get product details from each product link
+      case 'canukseeds':
+        return canukSeedScraper(siteConfig, startPage, endPage, sourceContext);
+
       default:
         throw new Error(`Product list scraper implementation not found for: ${scraperSourceName}`);
     }
@@ -334,6 +340,8 @@ export class ScraperFactory {
       case 'rocketseeds':
         return new CommonSaveDbService(this.prisma);
       case 'cropkingseeds':
+        return new CommonSaveDbService(this.prisma);
+      case 'canukseeds':
         return new CommonSaveDbService(this.prisma);
 
       // case 'cropkingseeds':

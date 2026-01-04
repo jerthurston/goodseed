@@ -19,7 +19,7 @@ import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, CheerioErrorHandler
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { CommonCrawler, CommonScrapingContext, SiteSpecificRequestHandler } from '@/scrapers/(common)/CommonCrawler';
 import { apiLogger } from '@/lib/helpers/api-logger';
-import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
+import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler.bk';
 import { BeaverseedScraper } from '@/scrapers/beaverseed/core/beaverseed-scraper';
 import { ACCEPTLANGUAGE, USERAGENT } from '@/scrapers/(common)/constants';
 import { timeStamp } from 'console';
