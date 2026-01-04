@@ -54,6 +54,10 @@ export class SeedTransformer {
             packs,
             imageUrl: primaryImage?.image.url || '/images/placeholder-seed.png',
             stockStatus: raw.stockStatus,
+            seller: {
+                ids: raw.seller.id,
+                affiliateTags: raw.seller.affiliateTag
+            }
         };
 
         apiLogger.logResponse('SeedTransformer.toUI', {}, {

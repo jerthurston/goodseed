@@ -111,7 +111,7 @@ export function LogsTabContent({
   });
 
   // Scraper operations for retry functionality
-  const { triggerManualScrape } = useScraperOperations(refreshErrors);
+  const { useTriggerScrape } = useScraperOperations(refreshErrors);
 
   // Delete job functionality
   const { deleteJob, isDeletingJob, deleteError, reset: resetDeleteError } = useDeleteScrapeJob();
@@ -195,7 +195,7 @@ export function LogsTabContent({
    */
   const handleRetryActivity = async (activity: ActivityData) => {
     try {
-      await triggerManualScrape(activity.sellerId, {});
+      await useTriggerScrape(activity.sellerId, {});
       toast.success(`Retry initiated for ${activity.sellerName}`);
       
       // Remove from selection if it was selected (for errors)

@@ -11,28 +11,45 @@ import { PrismaClient } from '@prisma/client';
 import { SaveDbService as VancouverSaveDbService } from '@/scrapers/vancouverseedbank/core/save-db-service';
 import { SaveDbService as SunWestSaveDbService } from '@/scrapers/sunwestgenetics/core/save-db-service';
 import { SaveDbService as SonomaSeedsDbService } from '@/scrapers/sonomaseeds/core/save-db-service';
+import { SaveDbService as CommonSaveDbService } from '@/scrapers/(common)/save-db-service';
 
 // Product List Scrapers (core implementations)
 
 import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
 import { SUNWESTGENETICS_SELECTORS } from '@/scrapers/sunwestgenetics/core/selectors';
 import { SONOMASEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/sonomaseeds/core/selectors';
+import { BEAVERSEED_PRODUCT_CARD_SELECTORS } from '@/scrapers/beaverseed/core/selector';
 
 
 import { vancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/vancouver-product-list-scraper';
 import { sunwestgeneticsProductListScraper } from '@/scrapers/sunwestgenetics/core/sunwestgenetics-scrape-product-list';
 import { sonomaSeedsProductListScraper } from '@/scrapers/sonomaseeds/core/sonomaseeds-product-list-scraper';
+import { BeaverseedScraper } from '@/scrapers/beaverseed/core/beaverseed-scraper';
+import { BCBUDDEPOT_PRODUCT_CARD_SELECTORS, BCBUDDEPOT_PRODUCT_DETAIL_SELECTORS } from '@/scrapers/bcbuddepot/core/selector';
+import { BcbuddepotScraper } from '@/scrapers/bcbuddepot/core/bcbuddepot-scraper';
+import { MARYJANESGARDEN_PRODUCT_CARD_SELECTORS } from '@/scrapers/maryjanesgarden/core/selector';
+import { MaryJanesGardenScraper } from '@/scrapers/maryjanesgarden/core/maryjanesgarden-scraper';
+import { MJSEEDSCANADA_PRODUCT_CARD_SELECTORS } from '@/scrapers/mjseedscanada/core/selector';
+import MJSeedCanadaScraper from '@/scrapers/mjseedscanada/core/mJSeedScanadaScraper';
+import { ROCKETSEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/rocketseeds/core/selector';
+import RocketSeedsScraper from '@/scrapers/rocketseeds/core/rockerSeedScraper';
+import CropKingSeedsScraper from '@/scrapers/cropkingseeds/core/cropkingSeedScraper';
+import { CROPKINGSEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/cropkingseeds/core/selectors';
+import CANUK_SEEDS_PRODUCT_SELECTORS from '@/scrapers/canukseeds/core/selectors';
+import { canukSeedScraper } from '@/scrapers/canukseeds/core/canukseedsScraper';
+import TRUENORTH_SEEDBANK_PRODUCT_SELECTORS from '@/scrapers/truenorthseedbank/core/selectors';
+import { truenorthSeedScraper } from '@/scrapers/truenorthseedbank/core/truenorthSeedScraper';
 
 
 
 /**
  * Supported scraper sources - easily extensible for new sites
  */
-export type SupportedScraperSourceName = 
-  | 'vancouverseedbank' 
+export type SupportedScraperSourceName =
+  | 'vancouverseedbank'
   | 'sunwestgenetics'
   | 'bcbuddepot'
-  | 'beaverseed' 
+  | 'beaverseed'
   | 'maryjanesgarden'
   | 'mjseedscanada'
   | 'sonomaseeds'
@@ -66,44 +83,48 @@ export interface ISaveDbService {
 export interface ManualSelectors {
   // Core product information (required)
   productName: string;
-  priceDisplay: string;
-  
+  priceDisplay?: string;
+
   // Product structure
   productCard?: string;
   productLink?: string;
   productImage?: string;
-  
+
+  // BC Bud Depot specific selectors
+  productCards?: string;
+  productCardLink?: string;
+
   // Cannabis-specific selectors (match VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS)
   strainType?: string;
   badge?: string;
-  
+
   // Rating & Reviews
   rating?: string;
   ratingAriaLabel?: string;
   reviewCount?: string;
-  
+
   // THC & CBD (match existing selectors)
   thcLevel?: string;
   cbdLevel?: string;
-  
+
   // Additional Info
   floweringTime?: string;
   growingLevel?: string;
-  
+
   // Price related
   priceAmount?: string;
   variationInputs?: string;
-  
+
   // Pagination selectors (match existing selectors)
   nextPage?: string;
-  
+
   // WooCommerce result count for calculating total pages
   resultCount?: string;
   pageLinks?: string;
   currentPage?: string;
   paginationContainer?: string;
   paginationItems?: string;
-  
+
   // Optional fields for extensibility
   currency?: string;
   description?: string;
@@ -115,6 +136,11 @@ export interface ManualSelectors {
   effects?: string;
   aroma?: string;
   flavor?: string;
+  tagsLinks?: string;
+
+  versionsRows?: string;
+  packSizeCell?: string;
+  priceCell?: string;
 }
 /**
  * scraper configuration interface
@@ -166,7 +192,7 @@ export class ScraperFactory {
         isImplemented: true
       },
       'sunwestgenetics': {
-        name: 'SunWest Genetics', 
+        name: 'SunWest Genetics',
         baseUrl: 'https://www.sunwestgenetics.com',
         selectors: SUNWESTGENETICS_SELECTORS,
         isImplemented: true
@@ -180,50 +206,50 @@ export class ScraperFactory {
       'cropkingseeds': {
         name: 'Crop King Seeds',
         baseUrl: 'https://www.cropkingseeds.ca',
-        selectors: {} as ManualSelectors,
+        selectors: CROPKINGSEEDS_PRODUCT_CARD_SELECTORS,
         isImplemented: true
       },
       'bcbuddepot': {
         name: 'BC Bud Depot',
         baseUrl: 'https://bcbuddepot.com',
-        selectors: {} as ManualSelectors, // To be implemented
-        isImplemented: false
+        selectors: BCBUDDEPOT_PRODUCT_DETAIL_SELECTORS,
+        isImplemented: true
       },
       'beaverseed': {
         name: 'Beaver Seeds',
         baseUrl: 'https://beaverseed.com',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
+        selectors: BEAVERSEED_PRODUCT_CARD_SELECTORS,
+        isImplemented: true
       },
       'maryjanesgarden': {
         name: "Mary Jane's Garden",
         baseUrl: 'https://www.maryjanesgarden.com',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
+        selectors: MARYJANESGARDEN_PRODUCT_CARD_SELECTORS,
+        isImplemented: true
       },
       'mjseedscanada': {
         name: 'MJ Seeds Canada',
         baseUrl: 'https://www.mjseedscanada.ca',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
+        selectors: MJSEEDSCANADA_PRODUCT_CARD_SELECTORS,
+        isImplemented: true
       },
       'rocketseeds': {
         name: 'Rocket Seeds',
         baseUrl: 'https://rocketseeds.com',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
+        selectors: ROCKETSEEDS_PRODUCT_CARD_SELECTORS,
+        isImplemented: true
       },
       'canukseeds': {
         name: 'Canuk Seeds',
         baseUrl: 'https://www.canukseeds.com',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
+        selectors: CANUK_SEEDS_PRODUCT_SELECTORS,
+        isImplemented: true
       },
       'truenorthseedbank': {
         name: 'True North Seed Bank',
         baseUrl: 'https://www.truenorthseedbank.com',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
+        selectors: TRUENORTH_SEEDBANK_PRODUCT_SELECTORS,
+        isImplemented: true
       }
     };
 
@@ -236,15 +262,15 @@ export class ScraperFactory {
    * Kết quả: Trả về một instance của product list scraper
    */
   createProductListScraper(
-    scraperSourceName: SupportedScraperSourceName, 
+    scraperSourceName: SupportedScraperSourceName,
     dbMaxPage?: number,
     startPage?: number | null,
     endPage?: number | null,
     fullSiteCrawl?: boolean | null,
-    sourceContext?:{
-      scrapingSourceUrl:string;
-      sourceName:string;
-      dbMaxPage:number;
+    sourceContext?: {
+      scrapingSourceUrl: string;
+      sourceName: string;
+      dbMaxPage: number;
     }
   ) {
     // Lấy cấu hình trang từ siteConfig,
@@ -256,13 +282,33 @@ export class ScraperFactory {
     // const selectors = siteConfig.selectors;
     // Tạo instance của product list scraper tương ứng với source
     switch (scraperSourceName) {
+      // Crawling card product with pagination page
       case 'vancouverseedbank':
-        return vancouverProductListScraper(siteConfig ,startPage, endPage, fullSiteCrawl,sourceContext); // Support startPage/endPage and fullSiteCrawl
+        return vancouverProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext); // Support startPage/endPage and fullSiteCrawl
       case 'sunwestgenetics':
-        return sunwestgeneticsProductListScraper(siteConfig, dbMaxPage, startPage, endPage);
+        return sunwestgeneticsProductListScraper(siteConfig, dbMaxPage, startPage || undefined, endPage || undefined);
       case 'sonomaseeds':
         return sonomaSeedsProductListScraper(siteConfig, dbMaxPage); // Sonoma Seeds doesn't support startPage/endPage yet
-      //TODO: Thêm các scraper khác ở đây sau khi thiết lập xong
+      case 'beaverseed':
+        return BeaverseedScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
+      case 'maryjanesgarden':
+        return MaryJanesGardenScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
+      case 'cropkingseeds':
+        return CropKingSeedsScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
+      // Crawling sitemap first and product urls array
+      case 'rocketseeds':
+        return RocketSeedsScraper(siteConfig, startPage, endPage, sourceContext);
+      case 'mjseedscanada':
+        return MJSeedCanadaScraper(siteConfig, startPage, endPage, sourceContext);
+      case 'bcbuddepot':
+        return BcbuddepotScraper(siteConfig, startPage, endPage, sourceContext);
+
+      // Crawling Header first - get category link from header - get product links from category page - get product details from each product link
+      case 'canukseeds':
+        return canukSeedScraper(siteConfig, startPage, endPage, sourceContext);
+      case 'truenorthseedbank':
+        return truenorthSeedScraper(siteConfig, startPage, endPage, sourceContext);
+
       default:
         throw new Error(`Product list scraper implementation not found for: ${scraperSourceName}`);
     }
@@ -277,16 +323,36 @@ export class ScraperFactory {
     switch (scraperSourceName) {
       case 'vancouverseedbank':
         return new VancouverSaveDbService(this.prisma);
-      
+
       case 'sunwestgenetics':
         return new SunWestSaveDbService(this.prisma);
-      
+
       case 'sonomaseeds':
         return new SonomaSeedsDbService(this.prisma);
-      
+
+      case 'beaverseed':
+        return new CommonSaveDbService(this.prisma);
+
+      case 'maryjanesgarden':
+        return new CommonSaveDbService(this.prisma);
+
+      case 'bcbuddepot':
+        return new CommonSaveDbService(this.prisma);
+
+      case 'mjseedscanada':
+        return new CommonSaveDbService(this.prisma);
+      case 'rocketseeds':
+        return new CommonSaveDbService(this.prisma);
+      case 'cropkingseeds':
+        return new CommonSaveDbService(this.prisma);
+      case 'canukseeds':
+        return new CommonSaveDbService(this.prisma);
+      case 'truenorthseedbank':
+        return new CommonSaveDbService(this.prisma);
+
       // case 'cropkingseeds':
       //   return new CropKingSaveDbService(this.prisma);
-      
+
       default:
         const siteConfig = this.getSiteConfig(scraperSourceName);
         throw new Error(`Database service for ${siteConfig.name} is not yet implemented.`);
@@ -320,7 +386,7 @@ export class ScraperFactory {
   static getSupportedSources(): SupportedScraperSourceName[] {
     return [
       'vancouverseedbank',
-      'sunwestgenetics', 
+      'sunwestgenetics',
       'bcbuddepot',
       'beaverseed',
       'maryjanesgarden',
@@ -337,7 +403,7 @@ export class ScraperFactory {
    * Get only implemented sources (ready for production)
    */
   static getImplementedSources(): SupportedScraperSourceName[] {
-    return ['vancouverseedbank', 'sunwestgenetics', 'cropkingseeds'];
+    return ['vancouverseedbank', 'sunwestgenetics', 'cropkingseeds', 'canukseeds', 'truenorthseedbank'];
   }
 
   /**
@@ -346,13 +412,11 @@ export class ScraperFactory {
   static getPlannedSources(): SupportedScraperSourceName[] {
     return [
       'bcbuddepot',
-      'beaverseed', 
+      'beaverseed',
       'maryjanesgarden',
       'mjseedscanada',
       'sonomaseeds',
-      'rocketseeds',
-      'canukseeds',
-      'truenorthseedbank'
+      'rocketseeds'
     ];
   }
 
@@ -382,7 +446,7 @@ export class ScraperFactory {
     const total = this.getSupportedSources().length;
     const implemented = this.getImplementedSources().length;
     const planned = this.getPlannedSources().length;
-    
+
     return {
       total,
       implemented,

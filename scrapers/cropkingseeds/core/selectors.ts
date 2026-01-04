@@ -1,118 +1,94 @@
+import { ManualSelectors } from "@/lib/factories/scraper-factory";
+
+export const CROPKINGSEEDS_PRODUCT_CARD_SELECTORS: ManualSelectors = {
+    // Product Cards - Main container structure
+    productCard: '.product-item, .product, .woocommerce-product',  // Common WooCommerce product container
+    productLink: '.prod_titles a',                                  // Link in product title h3
+    productName: '.prod_titles a',                                  // Product name from h3 link text
+    productImage: '.main_img img.wp-post-image',                    // Main product image
+
+    // Cannabis Type / Strain - extract from .itype div
+    strainType: '.itype .elementor-icon-list-text',                 // Cannabis type from .itype div (Sativa Dominant Hybrid)
+
+    // Badge / Tag - may not be present in current structure
+    badge: '.product-tag, .product-badge',                          // Generic product badge selectors
+
+    // Rating & Reviews - may not exist in Crop King structure
+    rating: '.star-rating, .rating',
+    ratingAriaLabel: '.star-rating',
+    reviewCount: '.review-count, .woocommerce-review-link',
+
+    // THC & CBD levels - specific Crop King structure
+    thcLevel: '.thc-lvl',                                           // THC level in dedicated div
+    cbdLevel: '.custom-acf-prod .elementor-icon-list-text:contains("CBD")', // CBD from custom ACF list
+
+    // Growing information from custom-acf-prod list
+    floweringTime: '.custom-acf-prod .elementor-icon-list-text:contains("Flowering")', // Flowering time
+    growingLevel: '.custom-acf-prod .elementor-icon-list-text:contains("Growing Level")', // Growing level
+
+    // Price and variations - Crop King specific structure
+    priceDisplay: '.pack_listed_prod .product_variation_radio',     // Radio inputs with price data
+    priceAmount: '.product_variation_radio[item-price]',           // Specific price attribute
+    variationInputs: '.product_variation_radio',                   // All variation radio inputs
+
+    // Pagination - Support both Jet Smart Filters AND WooCommerce standard pagination
+    nextPage: '.jet-filters-pagination__item.next .jet-filters-pagination__link, .page-numbers.next', // Both Jet Smart & WooCommerce next
+    pageLinks: '.jet-filters-pagination__item:not(.jet-filters-pagination__current) .jet-filters-pagination__link, .page-numbers:not(.current)', // All page links
+    currentPage: '.jet-filters-pagination__item.jet-filters-pagination__current .jet-filters-pagination__link, .page-numbers.current', // Current page
+
+    // Pagination container and items for max page detection  
+    paginationContainer: '.jet-smart-filters-pagination, .jet-filters-pagination, .woocommerce-pagination', // Support all pagination types
+    paginationItems: '.jet-filters-pagination__item, .page-numbers',                                         // All pagination items
+} as const;
+
 /**
- * Selectors for Crop King Seeds scraper
- * Following Vancouver Seed Bank organizational pattern
+ * 📋 CROP KING SEEDS SELECTOR NOTES:
  * 
- * Crop King Seeds uses WooCommerce + ACF (Advanced Custom Fields)
- * Structure: .custom-acf-prod containing various cannabis data fields
+ * ✅ UNIQUE STRUCTURE ELEMENTS:
+ * - .main_img: Product image container
+ * - .prod_titles: Product name in h3 with link
+ * - .thc-lvl: Dedicated THC level display (e.g., "THC 18-25%")
+ * - .custom-acf-prod: Custom ACF field container with icon list
+ * - .pack_listed_prod: Package selection with radio inputs
+ * - .product_variation_radio: Radio inputs with item-price attribute
+ * 
+ * 🎯 KEY EXTRACTION POINTS:
+ * 1. Product Name: .prod_titles a (text content)
+ * 2. Product Image: .main_img img.wp-post-image (src attribute)
+ * 3. Product URL: .prod_titles a (href attribute)
+ * 4. THC Level: .thc-lvl (text content, format: "THC 18-25%")
+ * 5. CBD Level: .custom-acf-prod list item containing "CBD" (text parsing)
+ * 6. Cannabis Type: .itype .elementor-icon-list-text (format: "Sativa Dominant Hybrid")
+ * 7. Flowering Time: .custom-acf-prod list item containing "Flowering" (text parsing)
+ * 8. Growing Level: .custom-acf-prod list item containing "Growing Level" (text parsing)
+ * 9. Pricing: .product_variation_radio inputs with item-price attribute
+ * 10. Pagination: Jet Smart Filters pagination system
+ * 
+ * 📄 PAGINATION STRUCTURE (Jet Smart Filters):
+ * - Container: .jet-smart-filters-pagination, .jet-filters-pagination
+ * - Page Items: .jet-filters-pagination__item with data-value attributes
+ * - Current Page: .jet-filters-pagination__current class
+ * - Page Numbers: .jet-filters-pagination__link (text content)
+ * - Next Button: .jet-filters-pagination__item.next data-value="next"
+ * - Max Page: Highest numbered .jet-filters-pagination__link before dots/next
+ * 
+ * 📊 PRICING STRUCTURE:
+ * - Radio inputs with data attributes: data-variation-id, item-price, value
+ * - Pack sizes in .variation_val_num: 5, 10, 25 seeds
+ * - Prices in item-price attribute: 65, 120, 240 (dollars)
+ * 
+ * 🌿 CANNABIS DATA EXTRACTION:
+ * - Seed Type: Extract from product name (Autoflower, Feminized, Regular)
+ * - THC: Direct from .thc-lvl (range format: "18-25%")
+ * - CBD: Parse from icon list text (format: "0.5-1%")
+ * - Cannabis Type: Direct from .itype (format: "Sativa Dominant Hybrid")
+ * - Flowering: Parse from icon list text (format: "8-10 weeks")
+ * 
+ * 🔧 TECHNICAL CONSIDERATIONS:
+ * - Uses WooCommerce variation system with radio inputs
+ * - Custom ACF fields in icon list format
+ * - Image lazy loading with data-src attributes
+ * - Jet Smart Filters for AJAX pagination (data-value attributes)
+ * - Standard WordPress pagination expected
+ * - Price stored as item-price attribute on radio inputs
  */
-
-export const PRODUCT_CARD_SELECTORS = {
-    // Basic product info (from JSON-LD)
-    name: 'h1.product_title, .product-title h1',
-    price: '.woocommerce-Price-amount',
-    image: '.woocommerce-product-gallery__image img',
-    description: '.woocommerce-product-details__short-description, .product-summary',
-    
-    // Cannabis-specific fields from ACF structure (targeting main product area)
-    strainType: '.single-product .itype .elementor-icon-list-text:first, .product-summary .itype .elementor-icon-list-text:first, article.product .itype .elementor-icon-list-text:first',
-    thcLevel: '.single-product .thc-lvl:first, .product-summary .thc-lvl:first, article.product .thc-lvl:first',
-    cbdLevel: '.single-product .custom-acf-prod li:contains("CBD") .elementor-icon-list-text:first, .product-summary .custom-acf-prod li:contains("CBD") .elementor-icon-list-text:first',
-    
-    // Additional ACF cannabis fields (targeting main product area)
-    genetics: '.single-product .custom-acf-prod li:contains("Genetics") .elementor-icon-list-text:first, .product-summary .custom-acf-prod li:contains("Genetics") .elementor-icon-list-text:first',
-    floweringTime: '.single-product .custom-acf-prod li:contains("Flowering") .elementor-icon-list-text:first, .product-summary .custom-acf-prod li:contains("Flowering") .elementor-icon-list-text:first',
-    yieldIndoor: '.single-product .custom-acf-prod li:contains("Indoor") .elementor-icon-list-text:first, .product-summary .custom-acf-prod li:contains("Indoor") .elementor-icon-list-text:first',
-    yieldOutdoor: '.single-product .custom-acf-prod li:contains("Outdoor") .elementor-icon-list-text:first, .product-summary .custom-acf-prod li:contains("Outdoor") .elementor-icon-list-text:first',
-    height: '.single-product .custom-acf-prod li:contains("Height") .elementor-icon-list-text:first, .product-summary .custom-acf-prod li:contains("Height") .elementor-icon-list-text:first',
-    
-    // Effects and characteristics (targeting main product area)
-    effects: '.single-product .custom-acf-prod li:contains("Effects") .elementor-icon-list-text:first, .product-summary .custom-acf-prod li:contains("Effects") .elementor-icon-list-text:first',
-    medicalUse: '.single-product .custom-acf-prod li:contains("Medical") .elementor-icon-list-text:first, .product-summary .custom-acf-prod li:contains("Medical") .elementor-icon-list-text:first',
-    difficulty: '.single-product .custom-acf-prod li:contains("Difficulty") .elementor-icon-list-text:first, .single-product .custom-acf-prod li:contains("Growing Level") .elementor-icon-list-text:first',
-    
-    // Product variants and stock
-    variants: '.woocommerce-product-attributes tr',
-    stockStatus: '.stock, .in-stock, .out-of-stock',
-    
-    // Category and tags
-    categories: '.product_meta .posted_in a',
-    tags: '.product_meta .tagged_as a',
-    
-    // Reviews and ratings
-    rating: '.woocommerce-product-rating .star-rating',
-    reviewCount: '.woocommerce-review-link',
-    
-    // Additional product details
-    sku: '.product_meta .sku_wrapper .sku',
-    availability: '.product_meta .availability',
-    
-    // Fallback selectors for manual extraction
-    fallbackSelectors: {
-        cannabisData: '.custom-acf-prod, .woocommerce-product-attributes, .product-details',
-        allText: '.product-summary, .product-description, .woocommerce-tabs',
-        attributesTable: '.woocommerce-product-attributes tr'
-    }
-};
-
-/**
- * Navigation selectors for category and pagination
- */
-export const NAVIGATION_SELECTORS = {
-    productLinks: 'a[href*="/product/"]',
-    nextPage: '.next.page-numbers',
-    pagination: '.page-numbers',
-    categoryLinks: '.product-category a'
-};
-
-/**
- * Category URL patterns for Crop King Seeds
- */
-export const CATEGORY_PATTERNS = {
-    feminizedSeeds: '/product-category/feminized-seeds/',
-    autoflowerSeeds: '/product-category/autoflower-seeds/',
-    regularSeeds: '/product-category/regular-seeds/',
-    cbdSeeds: '/product-category/cbd-seeds/',
-    fastSeeds: '/product-category/fast-seeds/'
-};
-
-/**
- * Generate category URL with pagination for Crop King Seeds
- */
-export function getCategoryUrl(baseUrl: string, page: number = 1): string {
-    if (page === 1) {
-        return baseUrl;
-    }
-
-    // Crop King Seeds pagination format: /page/2/
-    // Remove trailing slash if exists
-    const cleanUrl = baseUrl.replace(/\/$/, '');
-
-    return `${cleanUrl}/page/${page}/`;
-}
-
-/**
- * Base URL for Crop King Seeds
- */
-export const BASE_URL = 'https://www.cropkingseeds.com';
-
-/**
- * Test URLs for development and validation
- */
-export const TEST_URLS = {
-    autoflower: 'https://www.cropkingseeds.com/autoflowering-seeds/',
-    feminized: 'https://www.cropkingseeds.com/feminized-seeds/',
-    regular: 'https://www.cropkingseeds.com/regular-marijuana-seeds/',
-};
-
-/**
- * Cannabis data field mappings for transformation
- */
-export const CANNABIS_FIELD_MAPPINGS = {
-    thc: ['thc', 'thc level', 'thc content', 'thc %'],
-    cbd: ['cbd', 'cbd level', 'cbd content', 'cbd %'],
-    strainType: ['strain type', 'type', 'indica/sativa', 'strain'],
-    genetics: ['genetics', 'lineage', 'parent strains'],
-    floweringTime: ['flowering time', 'flowering period', 'flower time'],
-    effects: ['effects', 'high', 'feeling'],
-    medicalUse: ['medical use', 'medical benefits', 'therapeutic']
-};

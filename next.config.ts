@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'sunwestgenetics.com',
+        hostname: 'bcbuddepot.com',
         pathname: '/**',
       },
       // Add more common seed vendor domains
@@ -47,7 +47,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'www.leafly.com',
+        hostname: 'beaverseed.com',
         pathname: '/**',
       },
       {
@@ -62,7 +62,72 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'www.mjseedscanada.com',
+        hostname: 'maryjanesgarden.com',
+        pathname: '/**',
+      },
+      {
+       protocol: 'https',
+       hostname: 'www.mjseedscanada.ca',
+       pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'rocketseeds.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.cropkingseeds.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cropkingseeds.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'beaverseed.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.sonomaseeds.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'mjseedscanada.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'maryjanesgarden.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.mjseedscanada.ca',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'rocketseeds.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.cropkingseeds.ca',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.canukseeds.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.truenorthseedbank.com',
         pathname: '/**',
       },
       // Add wildcard for common image CDNs
