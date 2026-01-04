@@ -37,6 +37,8 @@ import CropKingSeedsScraper from '@/scrapers/cropkingseeds/core/cropkingSeedScra
 import { CROPKINGSEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/cropkingseeds/core/selectors';
 import CANUK_SEEDS_PRODUCT_SELECTORS from '@/scrapers/canukseeds/core/selectors';
 import { canukSeedScraper } from '@/scrapers/canukseeds/core/canukseedsScraper';
+import TRUENORTH_SEEDBANK_PRODUCT_SELECTORS from '@/scrapers/truenorthseedbank/core/selectors';
+import { truenorthSeedScraper } from '@/scrapers/truenorthseedbank/core/truenorthSeedScraper';
 
 
 
@@ -246,8 +248,8 @@ export class ScraperFactory {
       'truenorthseedbank': {
         name: 'True North Seed Bank',
         baseUrl: 'https://www.truenorthseedbank.com',
-        selectors: {} as ManualSelectors,
-        isImplemented: false
+        selectors: TRUENORTH_SEEDBANK_PRODUCT_SELECTORS,
+        isImplemented: true
       }
     };
 
@@ -304,6 +306,8 @@ export class ScraperFactory {
       // Crawling Header first - get category link from header - get product links from category page - get product details from each product link
       case 'canukseeds':
         return canukSeedScraper(siteConfig, startPage, endPage, sourceContext);
+      case 'truenorthseedbank':
+        return truenorthSeedScraper(siteConfig, startPage, endPage, sourceContext);
 
       default:
         throw new Error(`Product list scraper implementation not found for: ${scraperSourceName}`);
@@ -342,6 +346,8 @@ export class ScraperFactory {
       case 'cropkingseeds':
         return new CommonSaveDbService(this.prisma);
       case 'canukseeds':
+        return new CommonSaveDbService(this.prisma);
+      case 'truenorthseedbank':
         return new CommonSaveDbService(this.prisma);
 
       // case 'cropkingseeds':
@@ -397,7 +403,7 @@ export class ScraperFactory {
    * Get only implemented sources (ready for production)
    */
   static getImplementedSources(): SupportedScraperSourceName[] {
-    return ['vancouverseedbank', 'sunwestgenetics', 'cropkingseeds'];
+    return ['vancouverseedbank', 'sunwestgenetics', 'cropkingseeds', 'canukseeds', 'truenorthseedbank'];
   }
 
   /**
@@ -410,9 +416,7 @@ export class ScraperFactory {
       'maryjanesgarden',
       'mjseedscanada',
       'sonomaseeds',
-      'rocketseeds',
-      'canukseeds',
-      'truenorthseedbank'
+      'rocketseeds'
     ];
   }
 

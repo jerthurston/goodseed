@@ -125,6 +125,11 @@ const nextConfig: NextConfig = {
         hostname: 'www.canukseeds.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.truenorthseedbank.com',
+        pathname: '/**',
+      },
       // Add wildcard for common image CDNs
       {
         protocol: 'https',
