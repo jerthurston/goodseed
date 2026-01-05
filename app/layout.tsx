@@ -4,6 +4,7 @@ import CookieBanner from "@/components/custom/CookieBanner";
 import Footer from "@/components/custom/footer";
 import Header from "@/components/custom/header";
 import AgeVerificationModal from "@/components/custom/modals/AgeVerificationModal";
+import DemoPasswordModal from "@/components/custom/modals/DemoPasswordModal";
 import { archivoBlack, poppins } from "@/lib/fonts";
 import { ReactQueryProvider } from "@/lib/providers/react-query-provider";
 import type { Metadata } from "next";
@@ -27,6 +28,8 @@ export default function RootLayout({
         className={`${poppins.variable} ${archivoBlack.variable} antialiased`}
       >
         <ReactQueryProvider>
+          {/* Demo Password Protection - Must be first */}
+          <DemoPasswordModal />
           <AgeVerificationModal />
           <CookieBanner />
           <Header />
