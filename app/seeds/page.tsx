@@ -3,7 +3,7 @@ import { LoadingSpinner } from "@/components/custom/loading"
 import { Suspense } from "react"
 
 //ISR Cache Configuration
-export const revalidate = 3600 // Revalidate every hour
+export const revalidate = 1800 // Revalidate every 30 minutes
 const SeedsPage = () => {
     return (
         <Suspense fallback={<LoadingSpinner />}>

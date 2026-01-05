@@ -15,8 +15,6 @@ import DashboardSellersTabContent from "../(components)/DashboardSellersTabConte
 import { useFetchScraperSites, useFetchSellers } from "@/hooks/seller"
 import { useRouter } from "next/navigation"
 import styles from "../(components)/dashboardAdmin.module.css"
-import ErrorAlertBanner from "@/components/custom/admin/ErrorAlertBanner"
-import { LogsTabContent } from "../(components)/LogsTabContent"
 
 import { AlertTriangle } from "lucide-react"
 import { faChartLine, faUser, faStore, faRobot } from '@fortawesome/free-solid-svg-icons'

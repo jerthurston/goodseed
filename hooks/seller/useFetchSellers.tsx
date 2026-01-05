@@ -35,9 +35,10 @@ export function useFetchSellers(): UseFetchSellersResult {
         throw error
       }
     },
-    // Disable cache for admin dashboard - always fetch fresh data
-    staleTime: 0,
-    gcTime: 0,
+    // Cannabis seller data caching strategy
+    staleTime: 5 * 60 * 1000,  // 5min - stable business data (seller info changes rarely)
+    gcTime: 30 * 60 * 1000,    // 30min retention for sellers
+    retry: 2,                  // Fewer retries for seller data
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   })

@@ -9,24 +9,43 @@ interface AutoScraperSystemOverviewProps {
 }
 
 export default function AutoScraperSystemOverview({ sellersCount }: AutoScraperSystemOverviewProps) {
-  const { status: bulkStatus, isLoading } = useBulkAutoScraperStatus();
+  const { status: bulkStatus, isLoading, error } = useBulkAutoScraperStatus();
+
+  // Debug logging
+  console.log('AutoScraperSystemOverview - Hook data:', { 
+    bulkStatus, 
+    isLoading, 
+    error,
+    sellersCount 
+  });
 
   const getSystemHealthColor = () => {
     if (!bulkStatus) return 'var(--text-primary-muted)';
     
-    const errorRate = bulkStatus.totalErrors / Math.max(bulkStatus.totalJobs, 1);
-    if (errorRate > 0.2) return 'var(--status-danger)';
-    if (errorRate > 0.1) return 'var(--status-warning)';
+    // Use coverage percentage for health determination
+    const coverage = bulkStatus.coverage || 0;
+    if (coverage < 50) return 'var(--status-danger)';
+    if (coverage < 90) return 'var(--status-warning)';
     return 'var(--status-success)';
   };
 
   const getSystemHealthText = () => {
     if (!bulkStatus) return 'Unknown';
     
-    const errorRate = bulkStatus.totalErrors / Math.max(bulkStatus.totalJobs, 1);
-    if (errorRate > 0.2) return 'Critical';
-    if (errorRate > 0.1) return 'Warning';
-    return 'Healthy';
+    // Use the health status from API
+    const status = bulkStatus.status;
+    switch (status) {
+      case 'healthy':
+        return 'Healthy';
+      case 'degraded':
+        return 'Degraded';
+      case 'unhealthy':
+        return 'Unhealthy';
+      case 'error':
+        return 'Error';
+      default:
+        return 'Updating...';
+    }
   };
 
   if (isLoading) {

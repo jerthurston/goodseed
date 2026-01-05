@@ -10,20 +10,21 @@ import {
 } from "../../../(components)"
 import { AutoScraperSection } from "@/components/custom/auto-scraper"
 import { useFetchSellerById } from "@/hooks/seller"
+import { useSellerOperations } from "@/hooks/seller"
 import { useAutoScraper } from "@/hooks/admin/auto-scrape/useAutoScraper"
 import styles from "../../../(components)/dashboardAdmin.module.css"
 import Link from "next/link"
-import { Clock, PlayCircle } from "lucide-react"
 import { toast } from "sonner"
 import { useScraperOperations } from "@/hooks/scraper-site/useScraperOperations"
 import { apiLogger } from "@/lib/helpers/api-logger"
 
 import style from '../../../(components)/dashboardAdmin.module.css'
 import ManageScrapingSourcesModal from "@/components/custom/modals/ManageScrapingSourcesModal"
+import ActionConfirmModal from "@/components/custom/modals/ActionConfirmModal"
+import UpdateSellerModal from "@/components/custom/modals/UpdateSellerModal"
 import { useEffect, useState } from "react"
-import { ScrapeJobStatus } from "@prisma/client"
 import { getActiveJob } from "@/lib/helpers/client/get-active-job"
-import { faUpwork, faWpexplorer } from "@fortawesome/free-brands-svg-icons"
+import { Clock} from "lucide-react"
 
 export default function AdminSellerDetailPage() {
   const params = useParams()
@@ -32,11 +33,15 @@ export default function AdminSellerDetailPage() {
 
   // Separate loading states for different operations
   const [isQuickTestLoading, setIsQuickTestLoading] = useState(false)
-  const [isManualStoppingJob, setIsStoppingJob] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
 
   // ALL HOOKS MUST BE CALLED AT THE TOP - BEFORE ANY CONDITIONAL RETURNS
-  const { seller, isLoading, isError, error } = useFetchSellerById(sellerId);
+  const { seller, isLoading, isError, error, refetch: refetchSeller } = useFetchSellerById(sellerId);
   const [activeScrapeJobId, setActiveScrapeJobId] = useState<string | undefined>();
+
+  // Use seller operations hook for toggle status
+  const { toggleSellerStatus, isUpdating, updateError } = useSellerOperations(refetchSeller);
 
 
   // Auto scraper hook for enhanced functionality
@@ -220,9 +225,41 @@ export default function AdminSellerDetailPage() {
     setIsManageSourcesModalOpen(true)
   }
 
-  const handleToggleStatus = async () => {
-    // TODO:
-  }
+  const handleConfirmToggle = async () => {
+    if (!seller) return;
+    
+    try {
+      await toggleSellerStatus(seller.id, seller.isActive);
+      setShowConfirmModal(false);
+      toast.success(`Seller ${seller.isActive ? 'deactivated' : 'activated'} successfully!`);
+    } catch (error) {
+      console.error("Error toggling seller:", error);
+      toast.error(`Error: ${updateError?.message || 'Failed to toggle seller status'}`);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowConfirmModal(false);
+  };
+
+  const handleEditSeller = (sellerId: string) => {
+    setIsUpdateModalOpen(true);
+  };
+
+  const handleUpdateSellerSuccess = () => {
+    // Refetch seller data after successful update
+    refetchSeller();
+    
+    // Show success toast
+    toast.success('Seller Updated', {
+      description: 'The seller has been updated successfully',
+      duration: 3000,
+    });
+  };
+
+  const handleToggleStatus = () => {
+    setShowConfirmModal(true);
+  };
 
   // At this point, seller is guaranteed to exist due to the checks above
   // Create a non-null reference for TypeScript
@@ -290,7 +327,7 @@ export default function AdminSellerDetailPage() {
       </div>
 
       <div className="space-y-6">
-        {/* Actions Card */}
+        {/* Scraper Actions */}
         <DashboardCard key={currentSeller.id}>
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -430,13 +467,13 @@ export default function AdminSellerDetailPage() {
           </div>
         </DashboardCard>
 
-        {/*--> ACTIONS SECTION */}
+        {/*--> Seller Configuration */}
         <DashboardCard>
           <div className={styles.cardHeader}>
             <div className="flex items-center gap-3">
               <FontAwesomeIcon icon={faPlay} className="text-xl text-(--brand-primary)" />
               <h2 className="font-['Archivo_Black'] text-xl uppercase text-(--text-primary)">
-                Actions
+                Configuration
               </h2>
             </div>
           </div>
@@ -445,28 +482,21 @@ export default function AdminSellerDetailPage() {
               onClick={handleConfigSource}
             >
               <FontAwesomeIcon icon={faAdd} className="mr-2" />
-              Sources Configuration
+              Scraping Sources
             </DashboardButton>
 
             <DashboardButton
+              variant="outline"
               onClick={handleToggleStatus}
+              disabled={isUpdating}
+              className="text-sm px-4 py-2"
             >
               <FontAwesomeIcon icon={currentSeller.isActive ? faStop : faPlay} className="mr-2" />
               {currentSeller.isActive ? 'Deactivate' : 'Activate'}
             </DashboardButton>
 
             <DashboardButton
-              onClick={() => window.open(currentSeller.url, '_blank')}
-            >
-              <FontAwesomeIcon icon={faEye} className="mr-2" />
-              View Website
-            </DashboardButton>
-
-            <DashboardButton
-              onClick={() => {
-                // TODO: Navigate to edit page
-                console.log("Edit seller:", currentSeller.id)
-              }}
+              onClick={() => handleEditSeller(currentSeller.id)}
             >
               <FontAwesomeIcon icon={faEdit} className="mr-2" />
               Edit Seller
@@ -609,6 +639,22 @@ export default function AdminSellerDetailPage() {
       />
 
       {/* Active/Deactivate confirmation Modal */}
+      <ActionConfirmModal
+        isOpen={showConfirmModal}
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmToggle}
+        actionType={currentSeller.isActive ? 'deactivate' : 'activate'}
+        sellerName={currentSeller.name}
+        isLoading={isUpdating}
+      />
+
+      {/* Update Seller Modal */}
+      <UpdateSellerModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+        onUpdateSuccess={handleUpdateSellerSuccess}
+        sellerId={currentSeller.id}
+      />
 
 
       {/* Update Basic Seller Information Modal */}

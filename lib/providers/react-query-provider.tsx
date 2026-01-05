@@ -18,13 +18,13 @@ interface ReactQueryProviderProps {
     defaultOptions?: DefaultOptions;
 }
 
-//--> define default config for react query
+//--> define default config for react query with cannabis-specific coordination
 const defaultQueryConfig: DefaultOptions = {
     queries: {
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        gcTime: 30 * 60 * 1000, // 30 minutes
-        refetchOnWindowFocus: false,
-        retry: 1
+        staleTime: 30 * 1000,       // 30s - coordinate with Cloudflare 60s TTL
+        gcTime: 5 * 60 * 1000,      // 5min browser memory retention
+        refetchOnWindowFocus: false, // Avoid unnecessary refetches
+        retry: 3                     // More retries for cannabis compliance reliability
     }
 }
 

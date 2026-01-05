@@ -56,9 +56,10 @@ export function useFetchSellerById(sellerId: string | undefined): UseFetchSeller
       }
     },
     enabled: !!sellerId, // Only run query if sellerId is provided
-    // Disable cache for admin dashboard - always fetch fresh data
-    staleTime: 0,
-    gcTime: 0,
+    // Cannabis seller data caching strategy  
+    staleTime: 5 * 60 * 1000,  // 5min - individual seller data stable
+    gcTime: 30 * 60 * 1000,    // 30min retention
+    retry: 2,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   })

@@ -5,4 +5,4 @@ export { default as AutoScraperOverview } from './AutoScraperOverview';
 export { default as AutoScraperSection } from './AutoScraperSection';
 export { default as AutoScraperSystemOverview } from './AutoScraperSystemOverview';
 export { default as AutoScraperRecentActivity } from './AutoScraperRecentActivity';
-export { default as AutoScraperPerformanceMetrics } from './AutoScraperPerformanceMetrics';
+export { default as AutoScraperPerformanceMetrics } from './ScraperPerformanceMetrics';
