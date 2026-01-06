@@ -86,6 +86,16 @@ export async function extractProductUrlsFromCatLink(
                                         ? href 
                                         : `https://www.canukseeds.com${href.startsWith('/') ? href : '/' + href}`;
                                     
+                                    // Filter out invalid URLs
+                                    if (absoluteUrl === 'https://www.canukseeds.com/#' || 
+                                        absoluteUrl.endsWith('#') ||
+                                        absoluteUrl.includes('#reviews') ||
+                                        absoluteUrl.includes('#tab-') ||
+                                        !absoluteUrl.includes('-seeds')) {
+                                        apiLogger.debug(`🚫 [URL Filter] Skipping invalid/fragment URL: ${absoluteUrl}`);
+                                        return; // Skip this URL
+                                    }
+                                    
                                     // Check if product URL is allowed by robots.txt
                                     const isProductAllowed = checkUrlAgainstRobots(absoluteUrl, robotsRules);
                                     if (!isProductAllowed) {
@@ -105,8 +115,17 @@ export async function extractProductUrlsFromCatLink(
                         }
                     }
                 
-                // Log results for this page  
-                if (pageProductUrls.length === 0) {
+                // Check for "no products found" message before logging results.
+                // Phân trang không có product nếu được phát hiện sẽ là trang cuối cùng của 1 category link, có thể dừng và chuyển sang trang khác
+                // Cấu trúc html của trang no product: #amasty-shopby-product-list .message.info.empty
+                const noProductsMessage = $('#amasty-shopby-product-list .message.info.empty');
+                const hasNoProductsMessage = noProductsMessage.length > 0;
+                
+                if (hasNoProductsMessage) {
+                    const messageText = noProductsMessage.text().trim();
+                    apiLogger.info(`🚫 [End of Catalog] Found "no products" message: "${messageText}"`);
+                    pageProductUrls.push('__NO_PRODUCTS_FOUND__'); // Special marker to indicate end of catalog
+                } else if (pageProductUrls.length === 0) {
                     apiLogger.warn(`⚠️ No product URLs found on page: ${request.url}`);
                     
                     // Debug: Log available links for troubleshooting
@@ -133,7 +152,7 @@ export async function extractProductUrlsFromCatLink(
                 }
                 
             } catch (error) {
-                console.error(`❌ Error processing category ${request.url}:`, error);
+                apiLogger.logError(`❌ Error processing category ${request.url}:`, error as Error);
             }
         },
         maxRequestRetries: 2,
@@ -148,8 +167,15 @@ export async function extractProductUrlsFromCatLink(
             // Process the current page
             await crawler.run([pageUrl]);
             
-            // Add unique URLs to the overall collection
+            // Add unique URLs to the overall collection (excluding special markers)
             for (const url of pageProductUrls) {
+                if (url === '__NO_PRODUCTS_FOUND__') {
+                    // Special marker indicates end of catalog - stop pagination
+                    apiLogger.info(`🔚 [End of Catalog] Detected "no products" message on page ${currentPage}. Stopping pagination.`);
+                    apiLogger.info(`💡 This saved ${maxPages - currentPage} unnecessary page requests!`);
+                    return allProductUrls; // Early return - no need to continue
+                }
+                
                 if (!allProductUrls.includes(url)) {
                     allProductUrls.push(url);
                 }
@@ -187,8 +213,9 @@ export async function extractProductUrlsFromCatLink(
 
 📋 MỤC ĐÍCH:
    - Trích xuất tất cả URL sản phẩm từ một category page của Canuk Seeds
-   - Hỗ trợ pagination (crawl qua nhiều trang)
+   - Hỗ trợ pagination (crawl qua nhiều trang) với smart early termination
    - Tuân thủ robots.txt để crawling một cách đạo đức
+   - Phát hiện chính xác khi hết sản phẩm thông qua "no products" message
 
 🔧 INPUT PARAMETERS:
    ✅ categoryUrl: URL của trang category (VD: /product-category/cannabis-seeds/)
@@ -225,6 +252,10 @@ export async function extractProductUrlsFromCatLink(
 │     │
 │     ├─ Sub-step 2.4: XỬ LÝ TRONG REQUEST HANDLER
 │     │  ├─ Apply robots.txt crawl delay (nếu có)
+│     │  ├─ 🔍 [NEW] Kiểm tra "no products" message:
+│     │  │  • Check selector: '#amasty-shopby-product-list .message.info.empty'
+│     │  │  • Nếu tìm thấy → add special marker '__NO_PRODUCTS_FOUND__'
+│     │  │  • Message: "We can't find products matching the selection"
 │     │  ├─ Tìm product links bằng multiple selectors:
 │     │  │  • 'a[href*="/product/"]'
 │     │  │  • '.product-item a'
@@ -242,21 +273,37 @@ export async function extractProductUrlsFromCatLink(
 │     ├─ Sub-step 2.5: CHẠY CRAWLER
 │     │  └─ await crawler.run([pageUrl])
 │     │
-│     ├─ Sub-step 2.6: MERGE KẾT QUẢ
+│     ├─ Sub-step 2.6: MERGE KẾT QUẢ VÀ SMART TERMINATION
+│     │  ├─ 🧠 [NEW] Check special marker '__NO_PRODUCTS_FOUND__':
+│     │  │  • Nếu có marker → return allProductUrls immediately (end of catalog)
+│     │  │  • Log số trang đã save được
 │     │  ├─ Add pageProductUrls vào allProductUrls
 │     │  ├─ Remove duplicates
 │     │  └─ Log progress
 │     │
-│     ├─ Sub-step 2.7: KIỂM TRA DỪNG SỚM
-│     │  ├─ Nếu pageProductUrls.length === 0
-│     │  └─ → break (không có sản phẩm → hết trang)
+│     ├─ Sub-step 2.7: FALLBACK KIỂM TRA DỪNG SỚM
+│     │  ├─ Nếu pageProductUrls.length === 0 (và không có marker)
+│     │  └─ → break (không có sản phẩm → có thể hết trang)
 │     │
 │     └─ Sub-step 2.8: POLITE DELAY
 │        └─ await sleep(2000ms) giữa các trang
 │
 └─ BƯỚC 3: TRẢ VỀ KẾT QUẢ
-   ├─ Log tổng kết
+   ├─ Log tổng kết với actual pages processed
    └─ return allProductUrls
+
+🔍 SMART EARLY TERMINATION:
+
+┌─ Primary Method (Most Reliable):
+│  ├─ Detect "no products found" message
+│  ├─ Selector: '#amasty-shopby-product-list .message.info.empty'
+│  ├─ Message: "We can't find products matching the selection"
+│  └─ Action: Immediate return (100% accurate)
+│
+└─ Fallback Method:
+   ├─ No product links found on page
+   ├─ Could be parsing error or actual end
+   └─ Action: Break loop (less reliable)
 
 🛡️ ROBOTS.TXT COMPLIANCE:
 

@@ -116,8 +116,17 @@ export async function extractProductUrlsFromCatLink(
                         }
                     }
                 
-                // Log results for this page  
-                if (pageProductUrls.length === 0) {
+                // Check for "no products found" message before logging results
+                 // Phân trang không có product nếu được phát hiện sẽ là trang cuối cùng của 1 category link, có thể dừng và chuyển sang trang khác
+                // Cấu trúc html của trang no product: #amasty-shopby-product-list .message.info.empty
+                const noProductsMessage = $('#amasty-shopby-product-list .message.info.empty');
+                const hasNoProductsMessage = noProductsMessage.length > 0;
+                
+                if (hasNoProductsMessage) {
+                    const messageText = noProductsMessage.text().trim();
+                    apiLogger.info(`🚫 [End of Catalog] Found "no products" message: "${messageText}"`);
+                    pageProductUrls.push('__NO_PRODUCTS_FOUND__'); // Special marker to indicate end of catalog
+                } else if (pageProductUrls.length === 0) {
                     apiLogger.warn(`⚠️ No product URLs found on page: ${request.url}`);
                     
                     // Debug: Log available links for troubleshooting
@@ -159,8 +168,15 @@ export async function extractProductUrlsFromCatLink(
             // Process the current page
             await crawler.run([pageUrl]);
             
-            // Add unique URLs to the overall collection
+            // Add unique URLs to the overall collection (excluding special markers)
             for (const url of pageProductUrls) {
+                if (url === '__NO_PRODUCTS_FOUND__') {
+                    // Special marker indicates end of catalog - stop pagination
+                    apiLogger.info(`🔚 [End of Catalog] Detected "no products" message on page ${currentPage}. Stopping pagination.`);
+                    apiLogger.info(`💡 This saved ${maxPages - currentPage} unnecessary page requests!`);
+                    return allProductUrls; // Early return - no need to continue
+                }
+                
                 if (!allProductUrls.includes(url)) {
                     allProductUrls.push(url);
                 }
@@ -200,6 +216,7 @@ export async function extractProductUrlsFromCatLink(
    - Trích xuất tất cả URL sản phẩm từ một category page của True North Seed Bank
    - Hỗ trợ pagination (crawl qua nhiều trang)
    - Tuân thủ robots.txt để crawling một cách đạo đức
+   - Phát hiện chính xác khi hết sản phẩm thông qua "no products" message
 
 🔧 INPUT PARAMETERS:
    ✅ categoryUrl: URL của trang category (VD: /cannabis-seeds/feminized/)

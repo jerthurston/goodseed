@@ -17,6 +17,7 @@
 
 import { RobotsTxtFile } from "crawlee";
 import { apiLogger } from "../helpers/api-logger";
+import { MAX_DELAY_DEFAULT, MIN_DELAY_DEFAULT } from "@/scrapers/(common)/constants";
 
 /**
  * Các tùy chọn cấu hình cho SimplePoliteCrawler
@@ -65,8 +66,8 @@ export class SimplePoliteCrawler {
     constructor(options: PoliteCrawlerOptions) {
         this.userAgent = options.userAgent;
         this.acceptLanguage = options.acceptLanguage || 'en-US,en;q=0.9';
-        this.minDelay = options.minDelay || 2000;
-        this.maxDelay = options.maxDelay || 5000;
+        this.minDelay = options.minDelay || MIN_DELAY_DEFAULT;
+        this.maxDelay = options.maxDelay || MAX_DELAY_DEFAULT;
     }
 
     /**
