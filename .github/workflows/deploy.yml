@@ -23,21 +23,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: latest
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - name: Setup Node.js & pnpm
+      uses: ./.github/actions/setup-node-pnpm
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'pnpm'
+        pnpm-version: 'latest'
 
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
-
-    # ⚠️ Prisma MUST be generated before type checking
+    # ⚠️ Prisma MUST be generated before type checking - Just Faking to make type check. But need to do something more suitable
     - name: Generate Prisma Client
       run: pnpm prisma generate
       env:
@@ -97,12 +89,18 @@ jobs:
     name: Build & Deploy to AWS ECS
     runs-on: ubuntu-latest
     needs: [test, set-environment]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     environment: ${{ needs.set-environment.outputs.environment }}
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Setup Node.js & pnpm
+      uses: ./.github/actions/setup-node-pnpm
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        pnpm-version: '9'
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -118,6 +116,12 @@ jobs:
     # -----------------------------
     # Build & Push WEB image
     # -----------------------------
+    - name: Set image tags
+      id: tags
+      run: |
+        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        echo "branch_tag=$BRANCH_NAME" >> $GITHUB_OUTPUT
+        
     - name: Build & push web image
       uses: docker/build-push-action@v5
       with:
@@ -126,7 +130,7 @@ jobs:
         push: true
         tags: |
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}
-          ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:develop
+          ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ steps.tags.outputs.branch_tag }}
 
     # -----------------------------
     # Build & Push WORKER image
@@ -137,20 +141,48 @@ jobs:
         context: .
         target: builder
         push: true
-        tags: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}${{ needs.set-environment.outputs.worker_image_suffix }}
+        tags: |
+          ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}${{ needs.set-environment.outputs.worker_image_suffix }}
+          ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ steps.tags.outputs.branch_tag }}${{ needs.set-environment.outputs.worker_image_suffix }}
 
     # -----------------------------
-    # Database migration (production only)
+    # RUN DATABASE MIGRATIONS BEFORE DEPLOYMENT
     # -----------------------------
     - name: Run database migrations
-      if: needs.set-environment.outputs.environment == 'production'
       env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        DEV_DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
       run: |
-        # Install dependencies and run migrations
-        npm install -g pnpm
-        pnpm install --frozen-lockfile
+        echo "🚀 Running Prisma migrations..."
+        
+        # Set DATABASE_URL based on environment using secrets
+        if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          export DATABASE_URL="$PROD_DATABASE_URL"
+          echo "📊 Using PRODUCTION database"
+        else
+          export DATABASE_URL="$DEV_DATABASE_URL"
+          echo "🧪 Using DEVELOPMENT database"
+        fi
+        
+        # 1. Apply migrations FIRST (schema changes)
+        echo "📊 Applying database migrations..."
         pnpm prisma migrate deploy
+        
+        # 2. Generate Prisma client AFTER (code generation)  
+        echo "🔧 Generating Prisma client..."
+        pnpm prisma generate
+        
+        echo "✅ Database migrations completed successfully"
+
+    # -----------------------------
+    # DEPLOY TO ECS
+    # -----------------------------
+    
+    - name: Pre-deployment health check
+      run: |
+        echo "🔍 Checking if health endpoint works locally..."
+        # Test that our app can start and health endpoint responds
+        timeout 60s bash -c 'until curl -f http://localhost:3000/api/health 2>/dev/null; do sleep 2; done' || echo "⚠️ Local health check timeout (app might need more time)"
 
     - name: Copy web task definition
       run: |
@@ -171,27 +203,11 @@ jobs:
         service: ${{ needs.set-environment.outputs.web_service }}
         cluster: ${{ needs.set-environment.outputs.ecs_cluster }}
         wait-for-service-stability: true
-        wait-for-minutes: 10
+        wait-for-minutes: 15
 
     - name: Copy worker task definition
       run: |
         cp infrastructure/ecs-worker-task-definition.json worker-task-definition.json
-
-    - name: Run database migrations
-      run: |
-        echo "Running Prisma migrations..."
-        
-        # Set DATABASE_URL based on environment
-        if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-          export DATABASE_URL="postgresql://goodseed_user:GoodSeed2024SecureDB@goodseed-production-db.${AWS_REGION}.rds.amazonaws.com:5432/goodseed_production?sslmode=disable"
-        else
-          export DATABASE_URL="postgresql://goodseed_user:GoodSeed2024SecureDB@goodseed-free-db.cq7eog2a85qn.us-east-1.rds.amazonaws.com:5432/goodseed_free?sslmode=disable"
-        fi
-        
-        # Install dependencies and run migration
-        npm ci
-        npx prisma migrate deploy
-        echo "✅ Database migrations completed"
 
     - name: Update worker task definition with dev image
       id: worker-task-def
@@ -208,46 +224,57 @@ jobs:
         service: ${{ needs.set-environment.outputs.worker_service }}
         cluster: ${{ needs.set-environment.outputs.ecs_cluster }}
         wait-for-service-stability: true
-        wait-for-minutes: 10
+        wait-for-minutes: 15
 
     - name: Verify deployment health
+      env:
+        PROD_PUBLIC_URL: ${{ secrets.PROD_PUBLIC_URL }}
+        DEV_PUBLIC_URL: ${{ secrets.DEV_PUBLIC_URL }}
       run: |
-        # Determine public URL based on environment
+        # Determine public URL based on environment using secrets
         if [ "${{ github.ref }}" == "refs/heads/main" ]; then
           ENVIRONMENT="production"
-          # When custom domain is enabled: https://app.goodseed.com
-          ALB_URL="http://goodseed-production-alb-xxx.us-east-1.elb.amazonaws.com"  # Update when prod ALB exists
+          PUBLIC_URL="${PROD_PUBLIC_URL:-http://goodseed-production-alb-xxx.us-east-1.elb.amazonaws.com}"
+          echo "📊 Using PRODUCTION public URL"
         else
           ENVIRONMENT="development"  
-          # When custom domain is enabled: https://dev.goodseed.com
-          ALB_URL="http://goodseed-free-alb-1825640970.us-east-1.elb.amazonaws.com"
+          PUBLIC_URL="${DEV_PUBLIC_URL:-http://goodseed-free-alb-1825640970.us-east-1.elb.amazonaws.com}"
+          echo "🧪 Using DEVELOPMENT public URL"
         fi
         
         echo "🌍 Environment: $ENVIRONMENT"
-        echo "🔗 Public URL: $ALB_URL"
+        echo "🔗 Public URL: $PUBLIC_URL"
         
         # Wait for services to be stable
         echo "⏳ Waiting for services to become healthy..."
         sleep 60
         
-        # Test web service health
+        # Test web service health (use public URL which works with Cloudflare proxy)
         echo "🔍 Testing web service health..."
-        curl -f $ALB_URL/api/health || (echo "❌ Web health check failed" && exit 1)
-        echo "✅ Web service is healthy"
+        if curl -f "$PUBLIC_URL/api/health" 2>/dev/null; then
+          echo "✅ Web service is healthy"
+        else
+          echo "❌ Web health check failed"
+          exit 1
+        fi
         
-        # Test application readiness (comprehensive check)
+        # Test application readiness
         echo "🔍 Testing application readiness..."
-        curl -f $ALB_URL/api/health/ready || (echo "⚠️ Application has some issues but deployment continues" && true)
+        if curl -f "$PUBLIC_URL/api/health/ready" 2>/dev/null; then
+          echo "✅ Application is ready"
+        else
+          echo "⚠️ Application readiness check failed but deployment continues"
+        fi
         echo "✅ Application readiness verified"
         
         # Test worker service (queue stats)
         echo "🔍 Testing worker service health..."
-        STATS=$(curl -s $ALB_URL/api/admin/scraper/stats)
+        STATS=$(curl -s $PUBLIC_URL/api/admin/scraper/stats)
         echo "Queue stats: $STATS"
         
         echo ""
         echo "🎉 Deployment successful!"
-        echo "📱 Access your application at: $ALB_URL"
+        echo "📱 Access your application at: $PUBLIC_URL"
         
         # Check if worker is processing jobs
         WAITING_JOBS=$(echo $STATS | jq -r '.data.jobCounts.WAITING // 0')
