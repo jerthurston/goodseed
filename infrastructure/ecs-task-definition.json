@@ -2,8 +2,8 @@
   "family": "goodseed-free-app",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
+  "cpu": "512",
+  "memory": "1024",
   "executionRoleArn": "arn:aws:iam::396260462264:role/goodseed-free-ecs-task-execution-role",
   "taskRoleArn": "arn:aws:iam::396260462264:role/goodseed-free-ecs-task-role",
   "containerDefinitions": [
@@ -61,9 +61,9 @@
           "curl -f http://localhost:3000/api/health || exit 1"
         ],
         "interval": 30,
-        "timeout": 5,
+        "timeout": 10,
         "retries": 3,
-        "startPeriod": 60
+        "startPeriod": 120
       }
     }
   ]
