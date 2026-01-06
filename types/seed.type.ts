@@ -13,8 +13,8 @@ export interface SeedUI {
     seedType: string
     cannabisType: string
     price: number
-    thc: number
-    cbd: number
+    thc?: number | { min: number; max: number } // Support both single value and range, optional if no data
+    cbd?: number | { min: number; max: number } // Support both single value and range, optional if no data
     popularity: number
     date: string
     vendorName: string

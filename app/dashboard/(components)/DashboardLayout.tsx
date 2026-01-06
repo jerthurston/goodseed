@@ -17,7 +17,7 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
   return (
     <div className="max-w-[1440px] w-full min-h-screen bg-(--bg-main)">
-      <div className="px-4 py-6">
+      <div className="px-1 lg:px-4 py-6">
         {/* Page Header */}
         {/* <div className="mb-8">
           <h1 className="font-['Archivo_Black'] text-5xl uppercase text-(--brand-primary) tracking-tight mb-2">
@@ -31,10 +31,9 @@ export function DashboardLayout({
         </div> */}
 
         {/* Layout Grid */}
-        <div className="flex gap-6">
-          {/* Sidebar */}
-          <aside className="w-[350px] shrink-0">{sidebar}</aside>
-
+        <div className="flex gap-0 lg:gap-5">
+          {/* Sidebar - visible on desktop only */}
+          <aside className="w-0 lg:w-[350px] shrink-0 overflow-hidden lg:overflow-visible">{sidebar}</aside>
           {/* Main Content */}
           <main className="flex-1">{children}</main>
         </div>

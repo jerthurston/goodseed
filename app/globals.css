@@ -124,3 +124,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Dashboard-specific styles - Hide header and footer on mobile */
+@media (max-width: 1023px) {
+  body[data-page="dashboard"] .goodseed-nav,
+  body[data-page="dashboard"] .main-footer,
+  body[data-page="dashboard"] .header-wrapper,
+  body[data-page="dashboard"] .footer-wrapper {
+    display: none !important;
+  }
+}
+
+/* Alternative approach - more specific selectors */
+@media (max-width: 1023px) {
+  .dashboard-page .goodseed-nav,
+  .dashboard-page .main-footer,
+  .dashboard-page .header-wrapper,
+  .dashboard-page .footer-wrapper,
+  [data-dashboard="true"] .goodseed-nav,
+  [data-dashboard="true"] .main-footer,
+  [data-dashboard="true"] .header-wrapper,
+  [data-dashboard="true"] .footer-wrapper {
+    display: none !important;
+  }
+}

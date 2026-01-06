@@ -8,6 +8,7 @@ import Pagination from '../Pagination'
 import SeedCardItem from './SeedCardItem'
 
 import type { SeedPaginationUI, SeedUI } from '@/types/seed.type'
+import { apiLogger } from '@/lib/helpers/api-logger'
 
 interface CardGridContainerProps {
     seeds: SeedUI[];
@@ -28,6 +29,9 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
     const [isAddToListModalOpen, setIsAddToListModalOpen] = useState(false)
     const [activeModalSeedId, setActiveModalSeedId] = useState<string | null>(null)
     const [activeModalSeedName, setActiveModalSeedName] = useState<string>('')
+
+    // LOG DEBUG
+    apiLogger.debug("CardGridContainer rendered", { seeds, pagination, isLoading, isError })
 
     // User lists management - Mock data, replace with actual API
     const [userLists, setUserLists] = useState<UserList[]>([

@@ -1,9 +1,10 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClipboardList, faClock, faCheckCircle, faTimesCircle, faSpinner, faRobot, faUser, faSearch, faSave, faEdit } from '@fortawesome/free-solid-svg-icons';
+import { faClipboardList, faClock, faCheckCircle, faTimesCircle, faSpinner, faRobot, faUser, faSearch, faSave, faEdit, faTimesRectangle, faUserTimes, faToolbox, faTools } from '@fortawesome/free-solid-svg-icons';
 import { DashboardCard, DashboardCardHeader } from '@/app/dashboard/(components)/DashboardCard';
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
 import { useFetchScrapeJobs, type ScrapeJob } from '@/hooks/admin/scrape-job/useFetchScrapeJobs';
 import { apiLogger } from '@/lib/helpers/api-logger';
+import { faAlarmClock } from '@fortawesome/free-regular-svg-icons';
 
 interface SellerScrapeJobLogsProps {
   sellerId: string;
@@ -59,7 +60,7 @@ export default function SellerScrapeJobLogs({ sellerId }: SellerScrapeJobLogsPro
         return <FontAwesomeIcon icon={faRobot} className="text-blue-500" />;
       case 'manual':
       case 'test':
-        return <FontAwesomeIcon icon={faUser} className="text-purple-500" />;
+        return <FontAwesomeIcon icon={faTools} className="text-gray-400" />;
       default:
         return <FontAwesomeIcon icon={faUser} className="text-gray-400" />;
     }
@@ -68,25 +69,22 @@ export default function SellerScrapeJobLogs({ sellerId }: SellerScrapeJobLogsPro
   return (
     <DashboardCard>
       <DashboardCardHeader className={styles.cardHeader}>
-        <div className="flex items-center justify-between w-full">
+        <div className='flex flex-col items-center'>
+          <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
             <FontAwesomeIcon icon={faClipboardList} className="text-xl text-(--brand-primary)" />
             <h2 className="font-['Archivo_Black'] text-xl uppercase text-(--text-primary)">
               Recent Scrape Jobs
             </h2>
-            {!isLoading && sortedJobs && (
-              <span className="bg-(--brand-primary) text-white px-2 py-1 rounded-full text-xs font-medium">
-                {sortedJobs.length}/5
-              </span>
-            )}
           </div>
         </div>
         <div className="text-sm font-['Poppins'] text-(--text-primary-muted)">
           Showing up to 5 most recent scraping activities and their status
         </div>
+        </div>
       </DashboardCardHeader>
 
-      <div className="p-4">
+      <div className="p-0 lg:p-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="flex items-center gap-3">
@@ -123,35 +121,42 @@ export default function SellerScrapeJobLogs({ sellerId }: SellerScrapeJobLogsPro
               >
                 <div className='flex lg:flex-row lg:justify-between flex-col'>
                 {/* Job Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(job.status)}
+                <div className="flex flex-row gap-2 items-start justify-center lg:items-center lg:justify-between mb-3">
                     <div>
+                      {getStatusIcon(job.status)}
+                      </div>
+                  <div className="flex flex-col items-start gap-3">
+                    <div>
+                      {/* startus */}
                       <div className="flex items-center gap-2">
                         <span className={`font-['Poppins'] font-semibold ${getStatusColor(job.status)}`}>
                           {job.status}
                         </span>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 text-xs">
                           {getModeIcon(job.mode)}
+                           mode:
                           <span className="text-xs bg-(--bg-section) px-2 py-1 rounded font-['Poppins'] text-(--text-primary-muted) uppercase">
-                            {job.mode}
+                           {job.mode}
                           </span>
                         </div>
                       </div>
+                      {/* jobid */}
                       <div className="text-xs text-(--text-primary-muted) mt-1">
                         Job ID: {job.id}
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
+                  <div className="flex items-center gap-3">
                     <div className="text-sm text-(--text-primary-muted)">
+                      <FontAwesomeIcon icon={faClock} />
                       {new Date(job.createdAt).toLocaleDateString()} {new Date(job.createdAt).toLocaleTimeString()}
                     </div>
                     {job.duration && (
-                      <div className="text-xs text-(--text-primary-muted) mt-1">
+                      <div className="text-xs text-(--text-primary-muted) ">
+                        <FontAwesomeIcon icon={faAlarmClock} />
                         Duration: {Math.round(job.duration / 60)}min
                       </div>
                     )}
+                  </div>
                   </div>
                 </div>
 

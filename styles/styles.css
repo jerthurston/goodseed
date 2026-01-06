@@ -3643,3 +3643,79 @@ Keyframe Animations
         width: 100%;
     }
 }
+
+/* ==========================================================================
+   Enhanced Potency Ranges for THC/CBD Display
+   ========================================================================== */
+
+/* Enhanced potency display for better UX */
+.spec-item.thc-value-text,
+.spec-item.cbd-value-text {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 600;
+}
+
+.potency-label {
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.potency-range {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1rem;
+    font-weight: 500;
+}
+
+.potency-min,
+.potency-max {
+    color: var(--brand-primary);
+    font-weight: 500;
+}
+
+.potency-separator {
+    color: var(--text-primary-muted);
+    font-weight: 400;
+    margin: 0 0.1rem;
+}
+
+.potency-unit {
+    color: var(--text-primary);
+    opacity: 0.8;
+    font-weight: 400;
+    margin-left: 0.1rem;
+}
+
+/* Special styling for THC specifically */
+.spec-item.thc-value-text .potency-min,
+.spec-item.thc-value-text .potency-max {
+    color: var(--text-primary); /* Orange color for THC */
+}
+
+/* Special styling for CBD specifically */  
+.spec-item.cbd-value-text .potency-min,
+.spec-item.cbd-value-text .potency-max {
+    color: var(--text-primary); /* Green color for CBD */
+}
+
+/* Mobile optimizations for potency display */
+@media (max-width: 480px) {
+    .spec-item.thc-value-text,
+    .spec-item.cbd-value-text {
+        gap: 0.15rem;
+    }
+    
+    .potency-range {
+        gap: 0.05rem;
+    }
+    
+    .potency-separator {
+        margin: 0 0.05rem;
+    }
+    
+    .potency-unit {
+        margin-left: 0.05rem;
+    }
+}

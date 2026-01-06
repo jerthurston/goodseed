@@ -11,6 +11,87 @@ import Link from 'next/link'
 import { apiLogger } from '@/lib/helpers/api-logger'
 import type { SeedUI } from '@/types/seed.type'
 
+// Helper functions for THC/CBD display
+const formatPotencyValue = (value?: number | { min: number; max: number }): string => {
+    if (value === undefined || value === null) {
+        return 'N/A';
+    }
+    
+    if (typeof value === 'number') {
+        return `${value}%`;
+    }
+    
+    if (value.min === value.max) {
+        return `${value.min}%`;
+    }
+    
+    return `${value.min}-${value.max}%`;
+};
+
+const formatPotencyRange = (label: string, value?: number | { min: number; max: number }): string => {
+    if (value === undefined || value === null) {
+        return `${label} N/A`;
+    }
+    
+    if (typeof value === 'number') {
+        return `${label} ${value}%`;
+    }
+    
+    if (value.min === value.max) {
+        return `${label} ${value.min}%`;
+    }
+    
+    return `${label} ${value.min}-${value.max}%`;
+};
+
+// Component for enhanced potency display with better styling
+const PotencyBadge = ({ 
+    value, 
+    label, 
+    className 
+}: { 
+    value?: number | { min: number; max: number }; 
+    label: string;
+    className: string;
+}) => {
+    // Handle undefined/null values
+    if (value === undefined || value === null) {
+        return (
+            <span className={`spec-item ${className}`}>
+                {label} low
+            </span>
+        );
+    }
+    
+    if (typeof value === 'number') {
+        return (
+            <span className={`spec-item ${className}`}>
+                {label} {value}%
+            </span>
+        );
+    }
+    
+    if (value.min === value.max) {
+        return (
+            <span className={`spec-item ${className}`}>
+                {label} {value.min}%
+            </span>
+        );
+    }
+    
+    return (
+        <span className={`spec-item ${className}`}>
+            <span className="potency-label">{label}</span>
+            <span className="potency-range">
+                <span className="potency-min">{value.min}</span>
+                <span className="potency-separator">-</span>
+                <span className="potency-max">{value.max}</span>
+                <span className="potency-unit">%</span>
+            </span>
+        </span>
+    );
+};
+
 interface SeedCardItemProps {
     seed: SeedUI
     isFavorite: boolean
@@ -129,8 +210,8 @@ const SeedCardItem = ({
                 </div>
                 <div className="card-secondary-specs">
                     <span className="spec-item strain-category-text">{seed.cannabisType}</span>
-                    <span className="spec-item thc-value-text">THC {seed.thc}%</span>
-                    <span className="spec-item cbd-value-text">CBD {seed.cbd}%</span>
+                    <PotencyBadge value={seed.thc} label="THC" className="thc-value-text" />
+                    <PotencyBadge value={seed.cbd} label="CBD" className="cbd-value-text" />
                 </div>
             </div>
 

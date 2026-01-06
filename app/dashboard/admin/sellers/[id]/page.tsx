@@ -343,11 +343,11 @@ export default function AdminSellerDetailPage() {
   }
 
   return (
-    <div className="max-w-[1440px] mx-auto w-full min-h-screen bg-(--bg-main) p-6">
+    <div className="max-w-[1440px] mx-auto w-full min-h-screen bg-(--bg-main) p-1 lg:p-6">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col-reverse gap-4 lg:flex-row items-start lg:items-center justify-between">
         <div>
-          <h1 className="font-['Archivo_Black'] text-4xl uppercase text-(--brand-primary) tracking-tight mb-2">
+          <h1 className="font-['Archivo_Black'] sm:text-3xl lg:text-4xl uppercase text-(--brand-primary) tracking-tight mb-2">
             {currentSeller.name}
           </h1>
           <p className="font-['Poppins'] text-(--text-primary-muted)">
@@ -382,9 +382,9 @@ export default function AdminSellerDetailPage() {
 
         {/* Scraper Actions */}
         <DashboardCard key={currentSeller.id}>
-          <div className="flex items-start justify-between mb-4">
+          <div className="flex flex-col lg:flex-row items-start justify-between gap-2 mb-4">
             <div>
-              <h3 className="font-['Poppins'] font-bold text-lg text-(--text-primary) mb-1">
+              <h3 className="font-['Poppins'] font-bold lg:text-lg text-(--text-primary) mb-1">
                 {currentSeller.name}
               </h3>
               <p className="font-['Poppins'] text-sm text-(--text-primary-muted)">
@@ -411,10 +411,12 @@ export default function AdminSellerDetailPage() {
                       Stopping...
                     </>
                   ) : (
-                    <>
+                    <div className="flex flex-col lg:flex-row gap-1">
                       <FontAwesomeIcon icon={faStop} className="h-4 w-4" />
-                      Stop Job ({activeScrapeJobId})
-                    </>
+                      <span>
+                        Stop Job ({activeScrapeJobId})
+                        </span>
+                    </div>
                   )}
                 </DashboardButton>
 
@@ -433,15 +435,19 @@ export default function AdminSellerDetailPage() {
                         Starting Manual...
                       </>
                     ) : hasActiveJob ? (
-                      <>
+                      <div className="flex flex-col lg:flex-row gap-1">
                         <FontAwesomeIcon icon={faRobot} className="h-3 w-3 opacity-50" />
-                        Manual Scrape (Job Running)
-                      </>
+                        <span>
+                          Manual Scrape (Job Running)
+                          </span>
+                      </div>
                     ) : (
-                      <>
+                       <div className="flex flex-col lg:flex-row gap-1 items-center">
                         <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
-                        Manual Scrape
-                      </>
+                        <span>
+                          Manual Scrape
+                          </span>
+                      </div>
                     )}
                   </DashboardButton>
                   {/* Quick Test Scrape with first page */}
@@ -459,15 +465,17 @@ export default function AdminSellerDetailPage() {
                         Testing...
                       </>
                     ) : hasActiveJob ? (
-                      <>
+                      <div className="flex flex-col lg:flex-row gap-1 items-center flex-1/2">
                         <FontAwesomeIcon icon={faToolbox} className="h-3 w-3 opacity-50" />
-                        Quick Test (Job Running)
-                      </>
+                        <span>
+                          Quick Test (Job Running)
+                          </span>
+                      </div>
                     ) : (
-                      <>
+                     <div className="flex flex-col lg:flex-row gap-1 items-center w-[70px] lg:w-full">
                         <FontAwesomeIcon icon={faToolbox} className="h-3 w-3" />
-                        Quick Test (2 pages)
-                      </>
+                        Quick Test <span className="hidden lg:block">2 pages</span>
+                      </div>
                     )}
                   </DashboardButton>
 
@@ -505,7 +513,7 @@ export default function AdminSellerDetailPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-6 pt-4 border-t-[3px] border-(--border-color)">
+          <div className="flex flex-col lg:flex-row items-start justify-start gap-6 pt-4 border-t-[3px] border-(--border-color)  overflow-hidden w-full">
             <DashboardToggle
               label="Auto Scrape"
               isActive={currentSeller.isAutoEnabled}
@@ -514,7 +522,7 @@ export default function AdminSellerDetailPage() {
             />
 
             {currentSeller.isAutoEnabled && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full">
                 <span className={style.toggleLabel}>
                   Interval:
                 </span>

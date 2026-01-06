@@ -17,7 +17,9 @@ export function DashboardToggle({
 }: DashboardToggleProps) {
   return (
     <div className={styles.toggleContainer}>
-      {label && <span className={styles.toggleLabel}>{label}</span>}
+      {label && <span className={styles.toggleLabel}>
+        {label}
+        </span>}
       <button
         onClick={() => !disabled && onChange(!isActive)}
         disabled={disabled}

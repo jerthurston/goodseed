@@ -64,7 +64,7 @@ export default function SellerAutoScraperCard({
         </div>
 
         {/* Auto Scraper Controls - New toggle-based style */}
-        <div className="flex items-center gap-6 pt-4" 
+        <div className="flex items-start lg:items-center flex-col lg:flex-row gap-6 pt-4 overflow-hidden" 
              style={{ borderColor: 'var(--border-color)' }}
              >
           <DashboardToggle
@@ -75,8 +75,9 @@ export default function SellerAutoScraperCard({
           />
 
 {/* Adjust Interval is disabled temporarily */}
+        </div>
           {isAutoEnabled && (
-            <div className="flex items-center gap-2 cursor-not-allowed">
+            <div className="flex items-center gap-2 cursor-not-allowed w-full">
               <span className={styles.toggleLabel}>
                 Interval:
               </span>
@@ -90,13 +91,9 @@ export default function SellerAutoScraperCard({
                 className={styles.selectInterval}
               >
                 <option value={6}>Every 6 hours</option>
-                {/* <option value={8}>Every 8 hours</option>
-                <option value={12}>Every 12 hours</option>
-                <option value={24}>Every 24 hours</option> */}
               </select>
             </div>
           )}
-        </div>
 
         {/* Warning for no interval configured */}
         {isAutoEnabled && (!autoScrapeInterval || autoScrapeInterval <= 0) && (

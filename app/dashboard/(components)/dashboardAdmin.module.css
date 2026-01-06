@@ -459,8 +459,8 @@
 
 .toggleLabel {
   font-family: 'Poppins', sans-serif;
-  font-weight: 500;
-  font-size: 0.875rem;
+  font-weight: 700;
+  font-size: 1rem;
   color: var(--text-primary);
 }
 
@@ -486,12 +486,19 @@
 .toggleThumb {
   position: absolute;
   top: 0.15rem;
-  left: 0.125rem;
+  left: 0.15rem;
   height: 1.25rem;
   width: 1.25rem;
   background-color: var(--bg-main);
   border: 2px solid var(--border-color);
   transition: transform 0.2s ease;
+}
+
+/* Mobile responsive for toggle thumb */
+@media (max-width: 1023px) {
+  .toggleThumb {
+    left: 0;
+  }
 }
 
 .toggleThumbActive {
@@ -574,7 +581,7 @@
 
 .modalTitle {
   font-family: 'Archivo Black', sans-serif;
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: 900;
   color: var(--text-primary);
   text-transform: uppercase;
@@ -2359,3 +2366,5 @@
   box-shadow: 3px 3px 0 var(--border-color);
   transform: none;
 }
+
+

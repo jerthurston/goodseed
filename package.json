@@ -8,7 +8,6 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
-    
     "# Production Scripts": "",
     "cron:start": "tsx scripts/cron/cron-server.ts",
     "db:seed:dispensaries": "tsx scripts/seed-dispensaries.ts",
@@ -22,6 +21,7 @@
     "@fortawesome/react-fontawesome": "^3.1.1",
     "@prisma/adapter-pg": "^7.0.1",
     "@prisma/client": "^7.0.1",
+    "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",
     "@tanstack/react-query": "^5.90.12",
@@ -44,6 +44,7 @@
     "react-spinners": "^0.17.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
+    "vaul": "^1.1.2",
     "zod": "^4.1.13"
   },
   "devDependencies": {

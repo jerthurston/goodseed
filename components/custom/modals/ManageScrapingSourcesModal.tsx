@@ -13,6 +13,7 @@ import { transformScrapingSourceForAPI } from '@/lib/transfomers/scraping-source
 import { extractScrapingSourceName } from '@/lib/utils/scraping-source.utils'
 import type { ScrapingSource, CreateScrapingSourceData } from '@/lib/services/scraping-sources/scraping-source.service'
 import DeleteListConfirmModal from './DeleteListConfirmModal'
+import { apiLogger } from '@/lib/helpers/api-logger'
 
 interface ManageScrapingSourcesModalProps {
     isOpen: boolean
@@ -197,7 +198,7 @@ const ManageScrapingSourcesModal: React.FC<ManageScrapingSourcesModalProps> = ({
 
     // Debug logging
     useEffect(() => {
-        console.log('[ManageScrapingSourcesModal] Debug info:', {
+        apiLogger.debug('[ManageScrapingSourcesModal] Debug info:', {
             sellerId,
             scrapingSources,
             scrapingSourcesLength: scrapingSources?.length || 0,
@@ -404,7 +405,7 @@ const ManageScrapingSourcesModal: React.FC<ManageScrapingSourcesModalProps> = ({
                 <div className={styles.modalHeader}>
                     <h2 className={styles.modalTitle}>
                         <FontAwesomeIcon icon={faGlobe} className="mr-3" />
-                        Manage Scraping Sources - {sellerName}
+                        Manage Scraping Sources
                     </h2>
                     <button
                         onClick={onClose}

@@ -1,5 +1,4 @@
 
-
 import CookieBanner from "@/components/custom/CookieBanner";
 import Footer from "@/components/custom/footer";
 import Header from "@/components/custom/header";
@@ -32,9 +31,13 @@ export default function RootLayout({
           <DemoPasswordModal />
           <AgeVerificationModal />
           <CookieBanner />
-          <Header />
+          <div className="header-wrapper">
+            <Header />
+          </div>
           {children}
-          <Footer />
+          <div className="footer-wrapper">
+            <Footer />
+          </div>
           <Toaster />
         </ReactQueryProvider>
       </body>
