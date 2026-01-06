@@ -2,7 +2,7 @@
 # Run with: terraform apply -var-file="production.tfvars"
 
 environment = "production"
-project_name = "goodseed"
+project_name = "goodseed-production"  # Separate from free tier
 
 # Domain configuration (enable when you have a custom domain)
 enable_custom_domain = false  # Will setup later with proper domain

@@ -177,6 +177,22 @@ jobs:
       run: |
         cp infrastructure/ecs-worker-task-definition.json worker-task-definition.json
 
+    - name: Run database migrations
+      run: |
+        echo "Running Prisma migrations..."
+        
+        # Set DATABASE_URL based on environment
+        if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          export DATABASE_URL="postgresql://goodseed_user:GoodSeed2024SecureDB@goodseed-production-db.${AWS_REGION}.rds.amazonaws.com:5432/goodseed_production?sslmode=disable"
+        else
+          export DATABASE_URL="postgresql://goodseed_user:GoodSeed2024SecureDB@goodseed-free-db.cq7eog2a85qn.us-east-1.rds.amazonaws.com:5432/goodseed_free?sslmode=disable"
+        fi
+        
+        # Install dependencies and run migration
+        npm ci
+        npx prisma migrate deploy
+        echo "✅ Database migrations completed"
+
     - name: Update worker task definition with dev image
       id: worker-task-def
       uses: aws-actions/amazon-ecs-render-task-definition@v1
