@@ -6,16 +6,22 @@ export class CloudflareCache {
   private apiToken: string
   
   constructor() {
-    this.zoneId = process.env.CLOUDFLARE_ZONE_ID!
-    this.apiToken = process.env.CLOUDFLARE_API_TOKEN!
+    this.zoneId = process.env.CLOUDFLARE_ZONE_ID || ''
+    this.apiToken = process.env.CLOUDFLARE_API_TOKEN || ''
     
     if (!this.zoneId || !this.apiToken) {
-      throw new Error('Cloudflare configuration missing: CLOUDFLARE_ZONE_ID and CLOUDFLARE_API_TOKEN required')
+      apiLogger.warn('Cloudflare configuration missing: CLOUDFLARE_ZONE_ID and CLOUDFLARE_API_TOKEN not set. Cache invalidation will be disabled.')
     }
   }
   
   async purgeByTag(tags: string[]): Promise<boolean> {
     try {
+      // Check if Cloudflare is configured
+      if (!this.zoneId || !this.apiToken) {
+        apiLogger.warn('Cloudflare not configured, skipping cache purge', { tags })
+        return false
+      }
+      
       const response = await fetch(
         `https://api.cloudflare.com/client/v4/zones/${this.zoneId}/purge_cache`,
         {
@@ -45,6 +51,12 @@ export class CloudflareCache {
   
   async purgeAll(): Promise<boolean> {
     try {
+      // Check if Cloudflare is configured
+      if (!this.zoneId || !this.apiToken) {
+        apiLogger.warn('Cloudflare not configured, skipping cache purge all')
+        return false
+      }
+      
       const response = await fetch(
         `https://api.cloudflare.com/client/v4/zones/${this.zoneId}/purge_cache`,
         {
