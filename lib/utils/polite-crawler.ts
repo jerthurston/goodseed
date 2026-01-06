@@ -208,7 +208,7 @@ export class SimplePoliteCrawler {
      * @param url - URL cần kiểm tra
      * @returns true nếu được phép, false nếu bị cấm
      */
-    async isAllowed(url: string): Promise<Boolean> {
+    async isAllowed(url: string): Promise<boolean> {
         try {
             const origin = new URL(url).origin;
             

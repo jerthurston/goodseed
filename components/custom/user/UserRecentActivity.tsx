@@ -28,7 +28,7 @@ interface UserActivity {
 }
 
 interface UserRecentActivityProps {
-  // No props needed for MVP - uses mock data
+  className?: string;
 }
 
 export default function UserRecentActivity({}: UserRecentActivityProps) {

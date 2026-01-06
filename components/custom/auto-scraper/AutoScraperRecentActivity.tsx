@@ -16,7 +16,7 @@ interface AutoScraperActivityItem {
 }
 
 interface AutoScraperRecentActivityProps {
-  // No props needed - component fetches its own data
+  className?: string;
 }
 
 export default function AutoScraperRecentActivity() {

@@ -48,7 +48,7 @@ export class SimplePoliteCrawler {
         }
     }
 
-    async isAllowed(url: string): Promise<Boolean> {
+    async isAllowed(url: string): Promise<boolean> {
         try {
             const origin = new URL(url).origin;
             const robotsTxt = await this.getRobotsTxt(origin);

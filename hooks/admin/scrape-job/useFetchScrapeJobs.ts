@@ -11,7 +11,9 @@ import {
 // Re-export types for convenience
 export type { ScrapeJob };
 
-interface UseScrapJobsParams extends FetchScrapeJobsParams {}
+interface UseScrapJobsParams extends FetchScrapeJobsParams {
+  enablePolling?: boolean;
+}
 
 interface UseScrapJobsResult {
   jobs: ScrapeJob[];
