@@ -1,5 +1,5 @@
 import { apiLogger } from "@/lib/helpers/api-logger";
-import { SimplePoliteCrawler } from "@/lib/utils/polite-crawler.bk";
+import { SimplePoliteCrawler } from "@/lib/utils/polite-crawler";
 import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, ErrorHandler, Log, RequestQueue } from "crawlee";
 import { SiteConfig } from "@/lib/factories/scraper-factory";
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from "@/types/crawl.type";

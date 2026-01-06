@@ -13,16 +13,14 @@
  */
 
 import { extractProductFromDetailHTML, extractProductUrlsFromSitemap } from '@/scrapers/mjseedscanada/utils/index';
-import { getScrapingUrl } from '@/scrapers/beaverseed/utils/getScrapingUrl';
 import { ProductCardDataFromCrawling, ProductsDataResultFromCrawling } from '@/types/crawl.type';
-import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, CheerioErrorHandler, Dataset, Dictionary, ErrorHandler, Log, RequestQueue } from 'crawlee';
+import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, Dictionary, ErrorHandler, Log, RequestQueue } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
-import { CommonCrawler, CommonScrapingContext, SiteSpecificRequestHandler } from '@/scrapers/(common)/CommonCrawler';
 import { apiLogger } from '@/lib/helpers/api-logger';
-import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler.bk';
-import { BeaverseedScraper } from '@/scrapers/beaverseed/core/beaverseed-scraper';
+import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
 import { ACCEPTLANGUAGE, USERAGENT } from '@/scrapers/(common)/constants';
-import { timeStamp } from 'console';
+
+
 
 /**
  * BeaverSeedProductListScraper - Site-specific implementation using CommonCrawler

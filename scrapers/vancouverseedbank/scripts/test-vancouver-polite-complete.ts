@@ -11,7 +11,7 @@
  * Usage: npx tsx scripts/test-vancouver-polite-complete.ts
  */
 
-import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler.bk';
+import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
 import { vancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/vancouver-product-list-scraper';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';

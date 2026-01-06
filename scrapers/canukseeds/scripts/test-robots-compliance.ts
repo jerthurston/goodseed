@@ -1,5 +1,4 @@
-import CANUK_SEEDS_PRODUCT_SELECTORS from '../core/selectors';
-import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler.bk';
+import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
 import { ACCEPTLANGUAGE, USERAGENT } from '@/scrapers/(common)/constants';
 
 /**
