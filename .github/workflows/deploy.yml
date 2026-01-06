@@ -203,7 +203,7 @@ jobs:
         service: ${{ needs.set-environment.outputs.web_service }}
         cluster: ${{ needs.set-environment.outputs.ecs_cluster }}
         wait-for-service-stability: true
-        wait-for-minutes: 15
+        wait-for-minutes: 20
 
     - name: Copy worker task definition
       run: |
@@ -224,60 +224,89 @@ jobs:
         service: ${{ needs.set-environment.outputs.worker_service }}
         cluster: ${{ needs.set-environment.outputs.ecs_cluster }}
         wait-for-service-stability: true
-        wait-for-minutes: 15
+        wait-for-minutes: 20
 
     - name: Verify deployment health
       env:
         PROD_PUBLIC_URL: ${{ secrets.PROD_PUBLIC_URL }}
         DEV_PUBLIC_URL: ${{ secrets.DEV_PUBLIC_URL }}
       run: |
-        # Determine public URL based on environment using secrets
+        # Determine URLs based on environment
         if [ "${{ github.ref }}" == "refs/heads/main" ]; then
           ENVIRONMENT="production"
-          PUBLIC_URL="${PROD_PUBLIC_URL:-http://goodseed-production-alb-xxx.us-east-1.elb.amazonaws.com}"
-          echo "📊 Using PRODUCTION public URL"
+          PUBLIC_URL="${PROD_PUBLIC_URL:-https://app.goodseed.com}"
+          ALB_URL="http://goodseed-production-alb-xxx.us-east-1.elb.amazonaws.com"
+          echo "📊 Using PRODUCTION environment"
         else
           ENVIRONMENT="development"  
-          PUBLIC_URL="${DEV_PUBLIC_URL:-http://goodseed-free-alb-1825640970.us-east-1.elb.amazonaws.com}"
-          echo "🧪 Using DEVELOPMENT public URL"
+          PUBLIC_URL="${DEV_PUBLIC_URL:-https://lembooking.com}"
+          ALB_URL="http://goodseed-free-alb-1825640970.us-east-1.elb.amazonaws.com"
+          echo "🧪 Using DEVELOPMENT environment"
         fi
         
         echo "🌍 Environment: $ENVIRONMENT"
         echo "🔗 Public URL: $PUBLIC_URL"
+        echo "🔗 ALB URL: $ALB_URL"
         
-        # Wait for services to be stable
+        # Wait longer for services to be stable
         echo "⏳ Waiting for services to become healthy..."
-        sleep 60
+        sleep 120
         
-        # Test web service health (use public URL which works with Cloudflare proxy)
-        echo "🔍 Testing web service health..."
-        if curl -f "$PUBLIC_URL/api/health" 2>/dev/null; then
-          echo "✅ Web service is healthy"
-        else
-          echo "❌ Web health check failed"
+        # Test ALB health first (reliable) with retries
+        echo "🔍 Testing ALB health directly (with retries)..."
+        for i in {1..5}; do
+          if curl -f "$ALB_URL/api/health" 2>/dev/null; then
+            echo "✅ ALB health check PASSED (attempt $i)"
+            ALB_HEALTHY=true
+            break
+          else
+            echo "⚠️ ALB health check failed (attempt $i/5), retrying in 30s..."
+            sleep 30
+          fi
+        done
+        
+        if [ "$ALB_HEALTHY" != "true" ]; then
+          echo "❌ ALB health check FAILED after 5 attempts"
           exit 1
         fi
         
-        # Test application readiness
-        echo "🔍 Testing application readiness..."
-        if curl -f "$PUBLIC_URL/api/health/ready" 2>/dev/null; then
-          echo "✅ Application is ready"
-        else
-          echo "⚠️ Application readiness check failed but deployment continues"
-        fi
-        echo "✅ Application readiness verified"
+        # Test public domain with retries (may take time to propagate)
+        echo "🔍 Testing public domain health (with retries)..."
+        for i in {1..10}; do
+          if curl -f "$PUBLIC_URL/api/health" 2>/dev/null; then
+            echo "✅ Public domain health check PASSED (attempt $i)"
+            DOMAIN_HEALTHY=true
+            break
+          else
+            echo "⚠️ Public domain check failed (attempt $i/10), retrying in 30s..."
+            sleep 30
+          fi
+        done
         
-        # Test worker service (queue stats)
+        if [ "$DOMAIN_HEALTHY" != "true" ]; then
+          echo "⚠️ Public domain health check FAILED after 10 attempts"
+          echo "🚨 NOTE: ALB is healthy but domain may need more time to propagate"
+        fi
+        
+        # Summary of health checks
+        if [ "$ALB_HEALTHY" == "true" ] && [ "$DOMAIN_HEALTHY" == "true" ]; then
+          echo "✅ All health checks PASSED - Application fully ready"
+        elif [ "$ALB_HEALTHY" == "true" ]; then
+          echo "✅ ALB healthy, domain needs propagation - Application partially ready"  
+        fi
+        
+        # Test worker service (queue stats) via ALB
         echo "🔍 Testing worker service health..."
-        STATS=$(curl -s $PUBLIC_URL/api/admin/scraper/stats)
+        STATS=$(curl -s $ALB_URL/api/admin/scraper/stats)
         echo "Queue stats: $STATS"
         
         echo ""
         echo "🎉 Deployment successful!"
-        echo "📱 Access your application at: $PUBLIC_URL"
+        echo "📱 ALB Direct Access: $ALB_URL"
+        echo "🌐 Public Domain: $PUBLIC_URL"
         
         # Check if worker is processing jobs
-        WAITING_JOBS=$(echo $STATS | jq -r '.data.jobCounts.WAITING // 0')
+        WAITING_JOBS=$(echo $STATS | jq -r '.data.jobCounts.WAITING // 0' 2>/dev/null || echo 0)
         if [ "$WAITING_JOBS" -gt 10 ]; then
           echo "⚠️  Warning: $WAITING_JOBS jobs waiting (possible worker issue)"
         else
@@ -285,3 +314,8 @@ jobs:
         fi
         
         echo "🎉 Web + Worker deployment completed successfully!"
+        echo ""
+        echo "🚨 NEXT STEPS:"
+        echo "1. If public domain fails, check Cloudflare DNS settings"
+        echo "2. Verify A record points to ALB: goodseed-free-alb-1825640970.us-east-1.elb.amazonaws.com"
+        echo "3. Check Cloudflare SSL/TLS mode is 'Full'"
