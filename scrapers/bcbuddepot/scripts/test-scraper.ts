@@ -44,7 +44,6 @@ async function testBCBudDepotScraper() {
             siteConfig,
             null, // startPage - not used in sitemap mode
             null, // endPage - not used in sitemap mode  
-            true, // fullSiteCrawl
             sourceContext
         );
 
