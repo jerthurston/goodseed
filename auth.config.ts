@@ -26,13 +26,19 @@ export default {
         },
       },
     }),
+    
     Facebook({
       clientId: process.env.AUTH_FACEBOOK_ID,
       clientSecret: process.env.AUTH_FACEBOOK_SECRET,
+      authorization: {
+        params: {
+          scope: "public_profile",
+        },
+      },
     }),
-    Resend({
-        apiKey: process.env.AUTH_RESEND_API_KEY,
-    })
+    // Resend({
+    //     apiKey: process.env.AUTH_RESEND_API_KEY,
+    // })
     // add more providers here such as: facebook, x...
 
     // Credentials({

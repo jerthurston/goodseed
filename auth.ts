@@ -28,7 +28,7 @@ export const {
       console.log("Linking account:", { user, account });
       await prisma.user.update({
         where: { id: user.id },
-        data: { email_verified: new Date() }
+        data: { emailVerified: new Date() }
       });
       // Verify Account record is created
       const existingAccount = await prisma.account.findUnique({
@@ -83,7 +83,7 @@ export const {
               data: {
                 email: user.email!,
                 name: user.name!,
-                email_verified: new Date(), // không cần verify email của provide google
+                emailVerified: new Date(), // không cần verify email của provide google
                 image: user.image,
                 role: "USER", // Role mặc định, có thể thay đổi sau trong admin panel
               }
@@ -118,7 +118,7 @@ export const {
               }
             })
           }
-          if (existingUser && !existingUser.email_verified) {
+          if (existingUser && !existingUser.emailVerified) {
             // bắt buộc người dùng phải xác minh email nếu đã đăng ký qua credentials trước đó, tránh trường hợp chưa xác minh nhưng được duyệt 
             return "/auth/verify"; //điều hướng dến trang new-verification và thực hiện thông báo kiểm tra email nếu token không đúng 
           }
@@ -149,7 +149,7 @@ export const {
                   session_state: account.session_state ? String(account.session_state) : null,
                 }
               });
-              console.log(`[AUTH] Created Google account link for existing user: ${existingUser.email}`);
+              apiLogger.info(`[AUTH] Created Google account link for existing user: ${existingUser.email}`);
             }
           }
 
@@ -168,7 +168,7 @@ Nếu bạn đã xử lý toàn bộ logic xác thực (email, 2FA, trạng thá
         return true;
 
       } catch (error) {
-        console.error("Sign-in error:", error);
+        apiLogger.logError("Sign-in error:", error as Error);
         // Pass error message to error page
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         throw new Error(`signInError=${encodeURIComponent(errorMessage)}`);

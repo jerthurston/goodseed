@@ -39,19 +39,19 @@ const AccountDropdown = ({ onLogout, user }: AccountDropdownProps) => {
         setIsOpen(false)
     }
 
-    useEffect(()=>{
+    useEffect(() => {
         apiLogger.debug('🔍 Account dropdown debug:', {
             userRole: user?.role,
             userEmail: user?.email,
             userName: user?.name,
             fullUserObject: user
         });
-    },[])
+    }, [])
 
     return (
-        <div 
-        className="account-dropdown" 
-        ref={dropdownRef}>
+        <div
+            className="account-dropdown"
+            ref={dropdownRef}>
             <Link
                 href="#"
                 className="account-btn"
@@ -77,7 +77,7 @@ const AccountDropdown = ({ onLogout, user }: AccountDropdownProps) => {
             {
                 user?.role === 'ADMIN' ? (
                     <>
-                    {/* -->Admin Menu */}
+                        {/* -->Admin Menu */}
                         <div
                             className={`dropdown-menu ${isOpen ? 'active' : ''}`}
                             id="accountDropdownMenu"
@@ -88,19 +88,13 @@ const AccountDropdown = ({ onLogout, user }: AccountDropdownProps) => {
                             {/* <Link href="/dashboard/dashboard/admin/settings" className="dropdown-item">
                                 <FontAwesomeIcon icon={faCog} /> Settings
                             </Link> */}
-                            <Link
-                                href="#"
-                                id="logout-btn"
-                                className="dropdown-item"
-                                onClick={handleLogout}
-                            >
-                                <FontAwesomeIcon icon={faSignOutAlt} /> Logout
-                            </Link>
+                            <SignOutBtn />
+
                         </div>
                     </>
                 ) : (
                     <>
-                    {/* -->User Menu */}
+                        {/* -->User Menu */}
                         <div
                             className={`dropdown-menu ${isOpen ? 'active' : ''}`}
                             id="accountDropdownMenu"

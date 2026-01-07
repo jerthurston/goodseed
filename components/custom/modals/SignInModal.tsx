@@ -17,6 +17,7 @@ interface SignInModalProps {
 const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
     const [email, setEmail] = useState('')
     const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+    const [isFacebookLoading, setIsFacebookLoading] = useState(false)
 
     const handleGoogleSignIn = async () => {
         setIsGoogleLoading(true)
@@ -45,12 +46,21 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
         }
     }
 
-    const handleFacebookLogin = () => {
-        // TODO: Implement Facebook OAuth logic
-        console.log('Facebook login')
-        // Simulate successful login
-        if (onLoginSuccess) {
-            onLoginSuccess()
+    const handleFacebookLogin = async () => {
+        setIsFacebookLoading(true)
+        try {
+            const result = await signIn(
+                "facebook",
+                {
+                    redirect: true,
+                    redirectTo: "/"
+                }
+            )
+            apiLogger.info("Facebook sign-in initiated", result as any);
+        } catch (error) {
+            apiLogger.logError("Facebook sign-in failed", error as Error);
+            toast.error("Facebook sign-in failed");
+            setIsFacebookLoading(false)
         }
     }
 
@@ -110,12 +120,21 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
                         <button
                             className="social-login-btn facebook"
                             onClick={handleFacebookLogin}
+                            disabled={isFacebookLoading}
                             type="button"
                         >
-                            <FontAwesomeIcon icon={faFacebook} />
-                            <span className='ml-1'>
-                                Continue with Facebook
-                            </span>
+                            {
+                                isFacebookLoading ? (
+                                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        <FontAwesomeIcon icon={faFacebook} />
+                                        <span className='ml-1'>
+                                            Continue with Facebook
+                                        </span>
+                                    </>
+                                )
+                            }
                         </button>
 
                         <div className="divider-or">
