@@ -1,9 +1,12 @@
 'use client'
-
+import { signIn } from "next-auth/react"
+import { apiLogger } from '@/lib/helpers/api-logger'
 import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
 import React, { useState } from 'react'
+import { toast } from 'sonner'
+import { Icons } from "@/components/ui/icons"
 
 interface SignInModalProps {
     isOpen: boolean
@@ -13,19 +16,27 @@ interface SignInModalProps {
 
 const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
     const [email, setEmail] = useState('')
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-    const handleEmailSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        // TODO: Implement email login logic
-        console.log('Email login:', email)
-        setEmail('')
-        // Simulate successful login
-        if (onLoginSuccess) {
-            onLoginSuccess()
+    const handleGoogleSignIn = async () => {
+        setIsGoogleLoading(true)
+        try {
+            const result = await signIn(
+                "google",
+                {
+                    redirect: true,
+                    redirectTo: "/"
+                }
+            )
+            apiLogger.info("Sign-in initiated", result as any);
+        } catch (error) {
+            apiLogger.logError("Sign-in failed", error as Error);
+            toast.error("Sign-in failed");
+            setIsGoogleLoading(false)
         }
     }
 
-    const handleGoogleLogin = () => {
+    const handleEmailSubmit = () => {
         // TODO: Implement Google OAuth logic
         console.log('Google login')
         // Simulate successful login
@@ -77,10 +88,23 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
                     <div className="login-options">
                         <button
                             className="social-login-btn google"
-                            onClick={handleGoogleLogin}
+                            onClick={handleGoogleSignIn}
+                            disabled={isGoogleLoading}
                             type="button"
                         >
-                            <FontAwesomeIcon icon={faGoogle} /> Continue with Google
+                            {
+                                isGoogleLoading ? (
+                                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        <FontAwesomeIcon icon={faGoogle} />
+                                        <span className='ml-1'>
+                                            Continue with Google
+                                        </span>
+                                    </>
+                                )
+                            }
+
                         </button>
 
                         <button
@@ -88,7 +112,10 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
                             onClick={handleFacebookLogin}
                             type="button"
                         >
-                            <FontAwesomeIcon icon={faFacebook} /> Continue with Facebook
+                            <FontAwesomeIcon icon={faFacebook} />
+                            <span className='ml-1'>
+                                Continue with Facebook
+                            </span>
                         </button>
 
                         <div className="divider-or">

@@ -665,6 +665,7 @@ nav.goodseed-nav {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    height: 3.15rem;
 }
 .account-btn:hover {
     background-color: var(--brand-primary);

@@ -10,6 +10,7 @@ import type { Metadata } from "next";
 import "../styles/styles.css";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   title: "Goodseed - Plant Seed Marketplace",
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} ${archivoBlack.variable} antialiased`}
       >
+        <SessionProvider>
         <ReactQueryProvider>
           {/* Demo Password Protection - Must be first */}
           <DemoPasswordModal />
@@ -40,6 +42,7 @@ export default function RootLayout({
           </div>
           <Toaster />
         </ReactQueryProvider>
+        </SessionProvider>
       </body>
     </html>
   );

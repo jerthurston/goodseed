@@ -4,17 +4,28 @@ import SignInModal from "@/components/custom/modals/SignInModal";
 import { archivoBlack, poppins } from "@/lib/fonts";
 import { faHeart } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const Header = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login state
 
+  const { data: session, status } = useSession();
+  const currentUser = session?.user;
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      setIsLoggedIn(true);
+    }
+  }, [status]);
+
   const handleLogout = () => {
     setIsLoggedIn(false);
     // Add additional logout logic here (clear tokens, redirect, etc.)
   };
+
 
   return (
     <>
@@ -30,10 +41,14 @@ const Header = () => {
           >
             <FontAwesomeIcon icon={faHeart} />
           </Link>
-
           {isLoggedIn ? (
-            <AccountDropdown onLogout={handleLogout} />
+            // --> Render after user login
+            <AccountDropdown
+              onLogout={handleLogout}
+              user={currentUser}
+            />
           ) : (
+            // --> Default when not logged in
             <button
               onClick={() => setIsModalOpen(true)}
               className="login-btn"

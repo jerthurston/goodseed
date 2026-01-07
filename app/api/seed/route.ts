@@ -6,6 +6,13 @@ import { getCacheHeaders } from "@/lib/cache-headers";
 
 export async function GET(req: NextRequest) {
     try {
+        // DEBUG: Log environment and request info
+        apiLogger.debug('[API /seed] Request received:', {
+            url: req.url,
+            environment: process.env.NODE_ENV,
+            databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT_SET'
+        });
+        
         //--> 1. Lấy search params từ req.url - Test pass
         const { searchParams } = new URL(req.url);
         //--> 2. Parse các search params thành các biến tương ứng
@@ -172,6 +179,16 @@ export async function GET(req: NextRequest) {
                 }
             }
         };
+        
+        // DEBUG: Log query details before execution
+        apiLogger.debug('[API /seed] About to execute query:', {
+            whereClause: JSON.stringify(whereClause, null, 2),
+            orderBy: JSON.stringify(orderBy, null, 2),
+            page,
+            limit,
+            skip
+        });
+        
         //7. Query seeds từ database (without price filter)
         let seeds = await prisma.seedProduct.findMany({
             where: whereClause,
@@ -180,6 +197,17 @@ export async function GET(req: NextRequest) {
         });
 
         const totalBeforeFilter = seeds.length;
+        
+        // DEBUG: Log raw query results
+        apiLogger.debug('[API /seed] Raw query results:', {
+            totalSeeds: totalBeforeFilter,
+            sampleSeed: totalBeforeFilter > 0 ? {
+                id: seeds[0].id,
+                name: seeds[0].name,
+                sellerId: seeds[0].sellerId,
+                categoryId: seeds[0].categoryId
+            } : null
+        });
 
         apiLogger.debug('[API /seed] Query results after active sellers filter:', {
             totalSeeds: totalBeforeFilter,
