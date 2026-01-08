@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { auth } from "@/auth/auth";
 import { prisma } from "@/lib/prisma";
 import { apiLogger } from "@/lib/helpers/api-logger";
 import { NextRequest, NextResponse } from "next/server";

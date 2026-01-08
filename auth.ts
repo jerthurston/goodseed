@@ -1,14 +1,15 @@
 import NextAuth from 'next-auth';
 import { UserRole } from '@prisma/client';
 import { prisma } from './lib/prisma';
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import { CustomPrismaAdapter } from './auth/adapters/prisma-adapter-custom';
 
 import { getUserById } from './lib/helpers/server/user';
 import {getAccountByUserId} from './lib/helpers/server/account'
 import { getTwoFactorConfirmationByUserId } from './lib/helpers/server/2fa';
 import { refreshAccessToken } from './lib/helpers/server/token';
-import authConfig from './auth.config';
+import authConfig from './auth/auth.config';
 import { apiLogger } from './lib/helpers/api-logger';
+import { getAccountByProvider } from './lib/helpers/server/account/getAccountByProvider';
 
 export const {
   handlers,
@@ -16,7 +17,7 @@ export const {
   signOut,
   auth,
 } = NextAuth({
-  adapter: PrismaAdapter(prisma), //kết nối nextauth với prisma 
+  adapter: CustomPrismaAdapter(), //kết nối nextauth với prisma (custom adapter không dùng WebAuthn) 
   pages: {
     signIn: '/auth/login',
     error: '/auth/error',
@@ -25,20 +26,14 @@ export const {
   }, //pages: định nghĩa custom page cho đăng nhập và trả lỗi 
   events: {
     async linkAccount({ user, account }) {
-      console.log("Linking account:", { user, account });
+      apiLogger.info("Linking account:", { user, account });
       await prisma.user.update({
         where: { id: user.id },
         data: { emailVerified: new Date() }
       });
       // Verify Account record is created
-      const existingAccount = await prisma.account.findUnique({
-        where: {
-          provider_providerAccountId: {
-            provider: account.provider,
-            providerAccountId: account.providerAccountId,
-          },
-        },
-      });
+      const existingAccount = await getAccountByProvider(account.provider, account.providerAccountId);
+
       if (!existingAccount && user.id) {
         await prisma.account.create({
           data: {
@@ -157,6 +152,85 @@ export const {
           return true;
 
         }
+
+        // FACEBOOK OAUTH HANDLING
+        if (account.provider === "facebook") {
+          // Facebook might not provide email without approval
+          const userEmail = user.email || `facebook_${account.providerAccountId}@temp.local`;
+          
+          const existingUser = await prisma.user.findUnique({
+            where: { 
+              email: userEmail 
+            }
+          });
+
+          // Create new user for first-time Facebook sign-in
+          if (!existingUser) {
+            const newUser = await prisma.user.create({
+              data: {
+                email: userEmail,
+                name: user.name!,
+                emailVerified: user.email ? new Date() : null, // Only verify if real email
+                image: user.image,
+                role: "USER", // Default role
+                acquisitionSource: "facebook_oauth", // Track acquisition source
+              }
+            });
+
+            // Create Facebook account link
+            await prisma.account.create({
+              data: {
+                userId: newUser.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token,
+                refresh_token: account.refresh_token || null, // Facebook might not provide refresh_token
+                expires_at: account.expires_at,
+                token_type: account.token_type || "bearer",
+                scope: account.scope || "public_profile",
+                id_token: account.id_token || null, // Facebook doesn't provide id_token
+                session_state: account.session_state ? String(account.session_state) : null,
+              }
+            });
+
+            apiLogger.info(`[AUTH] Created new user from Facebook: ${newUser.email}`);
+            return true;
+          }
+
+          // Handle existing user + Facebook linking
+          if (existingUser) {
+            const existingFacebookAccount = await prisma.account.findFirst({
+              where: {
+                userId: existingUser.id,
+                provider: "facebook"
+              }
+            });
+
+            // Link Facebook account if not already linked
+            if (!existingFacebookAccount) {
+              await prisma.account.create({
+                data: {
+                  userId: existingUser.id,
+                  type: account.type,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  access_token: account.access_token,
+                  refresh_token: account.refresh_token || null, // Facebook might not provide refresh_token
+                  expires_at: account.expires_at,
+                  token_type: account.token_type || "bearer",
+                  scope: account.scope || "public_profile",
+                  id_token: account.id_token || null, // Facebook doesn't provide id_token
+                  session_state: account.session_state ? String(account.session_state) : null,
+                }
+              });
+              apiLogger.info(`[AUTH] Linked Facebook account for existing user: ${existingUser.email}`);
+            }
+          }
+
+          return true;
+        }
+
         /* CREDENTIALS PROVIDER
         Callback signIn của NextAuth chỉ nên dùng để kiểm tra cuối cùng (ví dụ: user đã xác thực email, đã xác thực 2FA, v.v.), hoặc để reject đăng nhập nếu cần.
 Nếu bạn đã xử lý toàn bộ logic xác thực (email, 2FA, trạng thái user...) trong loginUser (ví dụ: khi submit form login), thì ở callback signIn chỉ cần return true là đủ.
@@ -164,7 +238,7 @@ Nếu bạn đã xử lý toàn bộ logic xác thực (email, 2FA, trạng thá
         if (account.provider === "credentials") {
           return true;
         }
-        //Các provider khác google thì không xử lý ở đây, giao quyền cho loginUser và chỉ return true để tiếp tục 
+        //Các provider khác thì không xử lý ở đây, return true để tiếp tục
         return true;
 
       } catch (error) {
@@ -233,7 +307,7 @@ Nếu bạn đã xử lý toàn bộ logic xác thực (email, 2FA, trạng thá
       // Xử lý dữ liệu người dùng TRƯỚC KHI check token expiry
       if (token.sub) {
         const existingUser = await getUserById(token.sub);
-        console.log('🔍 JWT Callback Debug:', {
+        apiLogger.info('🔍 JWT Callback Debug:', {
           tokenSub: token.sub,
           existingUser: existingUser ? {
             id: existingUser.id,
@@ -259,7 +333,7 @@ Nếu bạn đã xử lý toàn bộ logic xác thực (email, 2FA, trạng thá
           token.isTwoFactorEnabled = existingUser.isTwoFactorEnabled;
           token.is2FAVerified = !!twoFactorConfirmation;
           
-          console.log('🔍 JWT Token Updated:', {
+          apiLogger.info('🔍 JWT Token Updated:', {
             newTokenRole: token.role,
             userDbRole: existingUser.role,
             roleMatch: token.role === existingUser.role
@@ -272,8 +346,9 @@ Nếu bạn đã xử lý toàn bộ logic xác thực (email, 2FA, trạng thá
         Date.now() < token.expiresAt * 1000 - 60000) {
         // Token còn hạn, trả về token hiện tại (ĐÃ POPULATE USER DATA)
         // 60000ms = 1 phút, refresh trước khi hết hạn 1 phút
-        console.log("Access token còn hiệu lực, thời gian còn lại:",
-          Math.round((token.expiresAt * 1000 - Date.now()) / 1000 / 60), "phút");
+        apiLogger.info("Access token còn hiệu lực, thời gian còn lại", {
+          minutesLeft: Math.round((token.expiresAt * 1000 - Date.now()) / 1000 / 60)
+        });
 
         return token;
       } else if (token.refreshToken) {
@@ -286,7 +361,7 @@ Nếu bạn đã xử lý toàn bộ logic xác thực (email, 2FA, trạng thá
             expiresAt: Math.floor(Date.now() / 1000 + refreshedTokens.expires_in),
           };
         } catch (error) {
-          console.error("Detailed error context:", {
+          apiLogger.logError("Detailed error context:", {
             userId: token.sub,
             errorMessage: error instanceof Error ? error.message : String(error)
           });

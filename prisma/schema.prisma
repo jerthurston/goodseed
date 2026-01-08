@@ -20,7 +20,7 @@ enum UserRole {
 model User {
   id                    String                 @id @default(cuid())
   name                  String?
-  email                 String?                @unique
+  email                 String                @unique
   emailVerified         DateTime?
   image                 String?
   password              String?
@@ -76,12 +76,14 @@ model Session {
 }
 
 model VerificationToken {
-  id      String   @id @default(cuid())
-  email   String
+  // id      String   @id @default(cuid())
+  // email   String
+  identifier String
   token   String   @unique
   expires DateTime
 
-  @@unique([email, token])
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 
 model TwoFactorConfirmation {
