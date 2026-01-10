@@ -65,7 +65,7 @@ const FavouritePage = () => {
                 { size: 5, totalPrice: 22.45, pricePerSeed: 4.49 },
                 { size: 10, totalPrice: 39.90, pricePerSeed: 3.99 }
             ],
-            imageUrl: 'https://via.placeholder.com/300x200/F8C8DC/3b4a3f?text=Blue%20Dream'
+            imageUrl: '/images/placeholder-seed.svg'
         },
         {
             id: 'P004',
@@ -87,7 +87,7 @@ const FavouritePage = () => {
                 { size: 3, totalPrice: 20.97, pricePerSeed: 6.99 },
                 { size: 5, totalPrice: 32.50, pricePerSeed: 6.50 }
             ],
-            imageUrl: 'https://via.placeholder.com/300x200/F8C8DC/3b4a3f?text=Girl%20Scout%20Cookies'
+            imageUrl: '/images/placeholder-seed.svg'
         },
         {
             id: 'P005',
@@ -109,7 +109,7 @@ const FavouritePage = () => {
                 { size: 10, totalPrice: 49.90, pricePerSeed: 4.99 },
                 { size: 20, totalPrice: 89.80, pricePerSeed: 4.49 }
             ],
-            imageUrl: 'https://via.placeholder.com/300x200/AFEEEE/3b4a3f?text=White%20Widow'
+            imageUrl: '/images/placeholder-seed.svg'
         }
     ])
 

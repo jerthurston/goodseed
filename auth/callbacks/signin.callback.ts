@@ -1,6 +1,7 @@
 import { prisma } from '../../lib/prisma';
 import { apiLogger } from '../../lib/helpers/api-logger';
 import type { Account, User, Profile } from 'next-auth';
+import { getUserByEmail } from '@/lib/helpers/server/user';
 
 /**
  * SignIn Callback Handler
@@ -35,6 +36,11 @@ export async function signInCallback(params: {
       return await handleFacebookSignIn(user, account);
     }
 
+    // RESEND HANDLING
+    if (account.provider === "resend") {
+      return await handleEmailSignIn(user, account);
+    } 
+    
     // CREDENTIALS PROVIDER
     if (account.provider === "credentials") {
       return true;
@@ -52,7 +58,7 @@ export async function signInCallback(params: {
 }
 
 /**
- * Xử lý Google OAuth Sign-in
+ * Xử lý Google OAuth Sign-in. handleGoogleSignIn() dùng ở server action
  */
 async function handleGoogleSignIn(user: User, account: Account) {
   const existingUser = await prisma.user.findUnique({
@@ -148,11 +154,16 @@ async function handleGoogleSignIn(user: User, account: Account) {
  */
 async function handleFacebookSignIn(user: User, account: Account) {
   // Facebook có thể không cung cấp email nếu chưa được duyệt
-  const userEmail = user.email || `facebook_${account.providerAccountId}@temp.local`;
+  const userEmail = user.email 
+  
+  if(!userEmail) {
+    apiLogger.logError('[AUTH] Facebook signin failed', new Error('No email provided'));
+    return false;
+  }
 
   const existingUser = await prisma.user.findUnique({
     where: {
-      email: userEmail
+      email: userEmail // giải thích: userEmail! 
     }
   });
 
@@ -221,4 +232,57 @@ async function handleFacebookSignIn(user: User, account: Account) {
   }
 
   return true;
+}
+
+/**
+ * Xử lý Magic Link Sign-in (Resend API)
+ * 
+ * Magic Link Authentication Flow:
+ * 1. User nhập email → NextAuth tạo token + gửi magic link (sendVerificationRequest)
+ * 2. User click link → NextAuth verify token tự động
+ * 3. signIn callback (đây):
+ *    - Nếu user chưa tồn tại → NextAuth sẽ tạo user mới sau callback
+ *    - Nếu user đã tồn tại → Check banned status
+ *    - Return true/false để cho phép hoặc block login
+ * 4. NextAuth tự động set emailVerified = new Date()
+ * 
+ * Note: Magic link và token được NextAuth xử lý tự động
+ * Callback này chỉ validate trước khi cho phép đăng nhập
+ */
+async function handleEmailSignIn(user: User, account: Account | null) {
+  try {
+    // Validate email
+    if (!user.email) {
+      apiLogger.logError('[AUTH] Magic link signin failed', new Error('No email provided'));
+      throw new Error('Email is required for magic link authentication');
+    }
+
+    // Kiểm tra user đã tồn tại chưa
+    const existingUser = await getUserByEmail(user.email);
+
+    if (existingUser) {
+      // User đã tồn tại → Check banned status
+      // TODO: Thêm field isBanned vào Prisma schema nếu cần
+      // if (existingUser.isBanned) {
+      //   apiLogger.warn(`[AUTH] Banned user blocked from magic link login: ${existingUser.email}`);
+      //   return false; // Block login
+      // }
+
+      // Nếu user tồn tại với email
+
+      apiLogger.info(`[AUTH] Existing user logging in via magic link: ${existingUser.email}`);
+    } else {
+      // User chưa tồn tại → NextAuth sẽ tạo mới sau khi return true
+      // User mới sẽ có: email, emailVerified = new Date(), role = USER
+      apiLogger.info(`[AUTH] New user will be created via magic link: ${user.email}`);
+    }
+
+    // Cho phép đăng nhập
+    return true;
+
+  } catch (error) {
+    apiLogger.logError('[AUTH] Magic link signin error:', error as Error);
+    const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+    throw new Error(`emailSignInError=${encodeURIComponent(errorMessage)}`);
+  }
 }

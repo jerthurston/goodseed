@@ -12,7 +12,7 @@ export const facebookProvider = Facebook({
       clientSecret: process.env.AUTH_FACEBOOK_SECRET,
       authorization: {
         params: {
-          scope: "public_profile", // Remove email scope temporarily
+          scope: "email public_profile", // Remove email scope temporarily
         },
       },
       // Custom profile mapping for consistency

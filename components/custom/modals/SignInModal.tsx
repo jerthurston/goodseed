@@ -1,12 +1,12 @@
 'use client'
-import { signIn } from "next-auth/react"
-import { apiLogger } from '@/lib/helpers/api-logger'
 import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
-import React, { useState } from 'react'
-import { toast } from 'sonner'
+import React from 'react'
 import { Icons } from "@/components/ui/icons"
+import { useGoogleSignIn } from "@/hooks/auth/useGoogleSignIn"
+import { useFacebookSignIn } from "@/hooks/auth/useFacebookSignIn"
+import { EmailVerificationForm } from "@/components/custom/forms/EmailVerificationForm"
 
 interface SignInModalProps {
     isOpen: boolean
@@ -15,56 +15,10 @@ interface SignInModalProps {
 }
 
 const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
-    const [email, setEmail] = useState('')
-    const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-    const [isFacebookLoading, setIsFacebookLoading] = useState(false)
-
-    const handleGoogleSignIn = async () => {
-        setIsGoogleLoading(true)
-        try {
-            const result = await signIn(
-                "google",
-                {
-                    redirect: true,
-                    redirectTo: "/"
-                }
-            )
-            apiLogger.info("Sign-in initiated", result as any);
-        } catch (error) {
-            apiLogger.logError("Sign-in failed", error as Error);
-            toast.error("Sign-in failed");
-            setIsGoogleLoading(false)
-        }
-    }
-
-    const handleEmailSubmit = () => {
-        // TODO: Implement Google OAuth logic
-        console.log('Google login')
-        // Simulate successful login
-        if (onLoginSuccess) {
-            onLoginSuccess()
-        }
-    }
-
-    const handleFacebookLogin = async () => {
-        setIsFacebookLoading(true)
-        try {
-            const result = await signIn(
-                "facebook",
-                {
-                    redirect: true,
-                    redirectTo: "/"
-                }
-            )
-            apiLogger.info("Facebook sign-in initiated", result as any);
-        } catch (error) {
-            apiLogger.logError("Facebook sign-in failed", error as Error);
-            toast.error("Facebook sign-in failed");
-            setIsFacebookLoading(false)
-        }
-    }
-
-    const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { googleSignIn, isLoading: isGoogleLoading } = useGoogleSignIn();
+    const { facebookSignIn, isLoading: isFacebookLoading } = useFacebookSignIn();
+    
+     const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
             onClose()
         }
@@ -72,6 +26,50 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
 
     if (!isOpen) return null
 
+    
+    // const handleGoogleSignInClient = async () => {
+    //     setIsGoogleLoading(true)
+    //     try {
+    //         const result = await signIn(
+    //             "google",
+    //             {
+    //                 redirect: true,
+    //                 redirectTo: "/"
+    //             }
+    //         )
+    //         apiLogger.info("Sign-in initiated", result as any);
+    //     } catch (error) {
+    //         apiLogger.logError("Sign-in failed", error as Error);
+    //         toast.error("Sign-in failed");
+    //         setIsGoogleLoading(false)
+    //     }
+    // }
+
+
+
+    
+
+    
+
+    // const handleFacebookLogin = async () => {
+    //     setIsFacebookLoading(true)
+    //     try {
+    //         const result = await signIn(
+    //             "facebook",
+    //             {
+    //                 redirect: true,
+    //                 redirectTo: "/"
+    //             }
+    //         )
+    //         apiLogger.info("Facebook sign-in initiated", result as any);
+    //     } catch (error) {
+    //         apiLogger.logError("Facebook sign-in failed", error as Error);
+    //         toast.error("Facebook sign-in failed");
+    //         setIsFacebookLoading(false)
+    //     }
+    // }
+
+   
     return (
         <div
             className={`login-modal-overlay 
@@ -96,9 +94,10 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
                     </p>
 
                     <div className="login-options">
+                        {/* Google Authentication */}
                         <button
                             className="social-login-btn google"
-                            onClick={handleGoogleSignIn}
+                            onClick={() => googleSignIn('/dashboard/user/settings')}
                             disabled={isGoogleLoading}
                             type="button"
                         >
@@ -117,9 +116,10 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
 
                         </button>
 
+                        {/* Facebook Authentication */}
                         <button
                             className="social-login-btn facebook"
-                            onClick={handleFacebookLogin}
+                            onClick={() => facebookSignIn('/dashboard/user/settings')}
                             disabled={isFacebookLoading}
                             type="button"
                         >
@@ -140,21 +140,11 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
                         <div className="divider-or">
                             <span>OR</span>
                         </div>
-
-                        <form className="email-form" onSubmit={handleEmailSubmit}>
-                            <input
-                                type="email"
-                                placeholder="Enter your email"
-                                required
-                                className="email-input"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                aria-label="Email address"
-                            />
-                            <button type="submit" className="email-submit-btn">
-                                Continue with Email
-                            </button>
-                        </form>
+                        
+                        {/* Email Authentication */}
+                        <EmailVerificationForm
+                            redirectTo="/dashboard/user/settings"
+                        />
                     </div>
 
                     <p className="login-modal-footer">

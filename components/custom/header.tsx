@@ -59,6 +59,7 @@ const Header = () => {
           )}
         </div>
       </nav>
+      {/* Modal open for Login / Register */}
       <SignInModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

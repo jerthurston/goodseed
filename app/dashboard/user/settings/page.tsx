@@ -1,40 +1,147 @@
 'use client'
 
 import DeleteAccountModal from '@/components/custom/modals/DeleteAccountModal';
+import VerifyEmailModal from '@/components/custom/modals/VerifyEmailModal';
+import { Icons } from '@/components/ui/icons';
 import { Archivo_Black, Poppins } from 'next/font/google';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { apiLogger } from '@/lib/helpers/api-logger';
+import { useFetchCurrentUser, useUpdateNotificationPreference, useDeleteAccount } from '@/hooks/client-user';
+import { signIn, signOut } from 'next-auth/react';
+import { ScrapingSourceService } from '@/lib/services/scraping-sources/scraping-source.service';
+import SignOutBtnInUserDashboard from '@/components/custom/auth/SignOutBtnInUserDashboard';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faWarning } from '@fortawesome/free-solid-svg-icons';
+import { toast } from 'sonner';
 
-const getPoppins = Poppins({ subsets: ['latin'], weight: ['400', '700', '800'], variable: '--font-poppins' })
 export const getArchivoBlack = Archivo_Black({ subsets: ['latin'], weight: ['400'], variable: '--font-archivo-black' })
 
 const SettingsPage = () => {
     const router = useRouter()
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-    const [userEmail] = useState('youremail@example.com') // Replace with actual user email
+    const [isVerifyEmailModalOpen, setIsVerifyEmailModalOpen] = useState(false)
 
-    // Notification preferences state
-    const [specialOffers, setSpecialOffers] = useState(true)
+    const [email, setEmail] = useState('')
+    const [isEmailLoading, setIsEmailLoading] = useState(false)
+    const [emailSent, setEmailSent] = useState(false)
+
+
+    // Fetch user data with Tanstack Query
+    const { data: user, isLoading, error } = useFetchCurrentUser();
+
+    // Update notification preferences mutation
+    const { mutate: updatePreference, isPending: isUpdating } = useUpdateNotificationPreference();
+
+    // Delete account mutation
+    const { mutate: deleteAccount, isPending: isDeleting } = useDeleteAccount();
+
+    apiLogger.debug('Fetched user data:', { user });
+
+    // Notification preferences state - sync with fetched data
+    const [specialOffers, setSpecialOffers] = useState(false)
     const [priceAlerts, setPriceAlerts] = useState(false)
+    const [backInStockAlerts, setBackInStockAlerts] = useState(false)
 
-    const handleSignOut = () => {
-        console.log('Signing out from account page...')
-        // TODO: Clear user session/token
-        alert('You have been signed out.')
-        router.push('/')
+    // Update notification preferences when user data loads
+    useEffect(() => {
+        if (user?.notificationPreference) {
+            setSpecialOffers(user.notificationPreference.receiveSpecialOffers ?? false);
+            setPriceAlerts(user.notificationPreference.receivePriceAlerts ?? false);
+            setBackInStockAlerts(user.notificationPreference.receiveBackInStock ?? false);
+        }
+    }, [user]);
+
+    const handleSignOut = async () => {
+        apiLogger.info('Signing out from account page...')
+        await signOut({ redirect: false });
+        router.push('/');
     }
 
     const handleDeleteAccount = () => {
-        console.log('PERMANENTLY DELETING ACCOUNT...')
-        // TODO: Make API call to delete account
-        alert('Your account has been permanently deleted. You will be redirected to the homepage.')
-        setIsDeleteModalOpen(false)
-        router.push('/')
+        apiLogger.info('PERMANENTLY DELETING ACCOUNT...')
+        // Call delete account mutation
+        deleteAccount();
+        setIsDeleteModalOpen(false);
     }
 
-    const handleToggleChange = (preference: string, enabled: boolean) => {
-        console.log(`Notification preference '${preference}' is now ${enabled ? 'ON' : 'OFF'}.`)
-        // TODO: Save preference to server
+    const handleToggleChange = (preference: 'receiveSpecialOffers' | 'receivePriceAlerts' | 'receiveBackInStock', enabled: boolean) => {
+        apiLogger.info(`Notification preference '${preference}' is now ${enabled ? 'ON' : 'OFF'}.`)
+
+        // Call API to update preference
+        updatePreference({
+            [preference]: enabled,
+        });
+    }
+
+    const handleEmailSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!email || !email.includes('@')) {
+            toast.error('Please enter a valid email');
+            return;
+        }
+
+        setIsEmailLoading(true);
+
+        try {
+            const result = await signIn('resend', {
+                email,
+                redirect: false,
+                callbackUrl: '/',
+            });
+
+            if (result?.error) {
+                toast.error('Failed to send magic link');
+                apiLogger.logError('email.signIn', new Error(result.error), { email });
+            } else {
+                setEmailSent(true);
+                toast.success('Check your email for the magic link!');
+                apiLogger.info('Magic link requested', { email });
+            }
+
+        } catch (error) {
+            toast.error('An error occurred');
+            apiLogger.logError('email.signIn', error as Error, { email });
+        } finally {
+            setIsEmailLoading(false);
+        }
+
+    };
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <main className="account-page-main">
+                <div className="account-content-wrapper">
+                    <div className="account-container flex items-center justify-center py-12">
+                        <Icons.spinner className="h-8 w-8 animate-spin mr-3" />
+                        <span>Loading account settings...</span>
+                    </div>
+                </div>
+            </main>
+        );
+    }
+
+    // Error state
+    if (error || !user) {
+        return (
+            <main className="account-page-main">
+                <div className="account-content-wrapper">
+                    <div className="account-container py-12 text-center">
+                        <p className="text-red-500 mb-4">
+                            {error?.message || 'Failed to load account settings'}
+                        </p>
+                        <button
+                            className="btn-styled ghost"
+                            onClick={() => router.push('/signin')}
+                        >
+                            Sign In
+                        </button>
+                    </div>
+                </div>
+            </main>
+        );
     }
 
     return (
@@ -47,11 +154,35 @@ const SettingsPage = () => {
                         <section className="account-section">
                             <h1 className={getArchivoBlack.variable}>Account Settings</h1>
                             <p className="email-display">
-                                Signed in as: <strong id="user-email">{userEmail}</strong>
+                                Signed in as: <strong id="user-email">{user.email}</strong>
                             </p>
-                            <p className="subtle-note">
-                                To use a different email, sign out and log in with a new one.
-                            </p>
+                            {
+                                !user.emailVerified || user.emailVerified === null ? (
+                                    <div>
+                                        <div className="flex items-center gap-2 mt-3 p-3 bg-yellow-50 border border-yellow-200">
+                                            <FontAwesomeIcon icon={faWarning} className="text-yellow-600" />
+                                            <span className='text-sm text-yellow-800'>
+                                                You're signed in with an unverified email address. Please{' '}
+                                                <span
+                                                    onClick={() => setIsVerifyEmailModalOpen(true)} 
+                                                    className='underline cursor-pointer text-red-700 font-bold hover:text-red-800'
+                                                >
+                                                    verify your email
+                                                </span>
+                                                {' '}to ensure account security.
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <p className="subtle-note">
+                                            To use a different email, sign out and log in with a new one.
+                                        </p>
+                                    </>
+                                )
+                            }
+                            
+
                         </section>
 
                         <hr className="account-divider" />
@@ -72,9 +203,10 @@ const SettingsPage = () => {
                                         type="checkbox"
                                         id="special-offers"
                                         checked={specialOffers}
+                                        disabled={isUpdating}
                                         onChange={(e) => {
                                             setSpecialOffers(e.target.checked)
-                                            handleToggleChange('special-offers', e.target.checked)
+                                            handleToggleChange('receiveSpecialOffers', e.target.checked)
                                         }}
                                     />
                                     <label htmlFor="special-offers" className="toggle-label"></label>
@@ -93,12 +225,35 @@ const SettingsPage = () => {
                                         type="checkbox"
                                         id="price-alerts"
                                         checked={priceAlerts}
+                                        disabled={isUpdating}
                                         onChange={(e) => {
                                             setPriceAlerts(e.target.checked)
-                                            handleToggleChange('price-alerts', e.target.checked)
+                                            handleToggleChange('receivePriceAlerts', e.target.checked)
                                         }}
                                     />
                                     <label htmlFor="price-alerts" className="toggle-label"></label>
+                                </div>
+                            </div>
+
+                            <div className="setting-item">
+                                <div className="setting-text">
+                                    <label htmlFor="back-in-stock" style={{ fontFamily: "Poppins, sans-serif" }}>
+                                        Receive Back in Stock Alerts
+                                    </label>
+                                    <p>Get notified when out-of-stock seeds become available again.</p>
+                                </div>
+                                <div className="toggle-switch">
+                                    <input
+                                        type="checkbox"
+                                        id="back-in-stock"
+                                        checked={backInStockAlerts}
+                                        disabled={isUpdating}
+                                        onChange={(e) => {
+                                            setBackInStockAlerts(e.target.checked)
+                                            handleToggleChange('receiveBackInStock', e.target.checked)
+                                        }}
+                                    />
+                                    <label htmlFor="back-in-stock" className="toggle-label"></label>
                                 </div>
                             </div>
                         </section>
@@ -118,9 +273,17 @@ const SettingsPage = () => {
                                     id="delete-account-btn"
                                     className="btn-styled danger"
                                     onClick={() => setIsDeleteModalOpen(true)}
+                                    disabled={isDeleting}
                                     type="button"
                                 >
-                                    Delete Account
+                                    {isDeleting ? (
+                                        <span className="flex items-center gap-2">
+                                            <Icons.spinner className="h-4 w-4 animate-spin" />
+                                            Deleting...
+                                        </span>
+                                    ) : (
+                                        'Delete Account'
+                                    )}
                                 </button>
                             </div>
 
@@ -129,14 +292,7 @@ const SettingsPage = () => {
                                     <h3 style={{ fontFamily: "Poppins, sans-serif" }}>Sign Out</h3>
                                     <p>Sign out of your account and return to the homepage.</p>
                                 </div>
-                                <button
-                                    id="sign-out-btn"
-                                    className="btn-styled ghost"
-                                    onClick={handleSignOut}
-                                    type="button"
-                                >
-                                    Sign Out
-                                </button>
+                                <SignOutBtnInUserDashboard />
                             </div>
                         </section>
 
@@ -149,6 +305,13 @@ const SettingsPage = () => {
                 isOpen={isDeleteModalOpen}
                 onCancel={() => setIsDeleteModalOpen(false)}
                 onConfirm={handleDeleteAccount}
+            />
+
+            {/* Verify Email Modal */}
+            <VerifyEmailModal
+                isOpen={isVerifyEmailModalOpen}
+                onClose={() => setIsVerifyEmailModalOpen(false)}
+                currentEmail={user?.email}
             />
         </>
     )
