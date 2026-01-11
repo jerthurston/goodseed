@@ -10,7 +10,10 @@ import {
 } from './callbacks/index';
 
 // Import events
-import { linkAccountEvent } from './events/index';
+import { 
+  linkAccountEvent,
+  createUserEvent 
+} from './events/index';
 export const {
   handlers,
   signIn,
@@ -23,6 +26,7 @@ export const {
   // Events: Các handler được fired sau khi action hoàn thành
   events: {
     linkAccount: linkAccountEvent,
+    createUser: createUserEvent, // Tạo wishlist folder mặc định khi user mới được tạo (magic link)
   },
 
   // Callbacks: Các hàm xử lý logic tùy chỉnh (signIn, session, jwt)

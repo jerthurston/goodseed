@@ -17,8 +17,10 @@ export async function signInCallback(params: {
   profile?: Profile;
   email?: { verificationRequest?: boolean };
   credentials?: Record<string, any>;
+  // 
+  // isNewUser: boolean;
 }) {
-  const { user, account } = params;
+  const { user, account, profile } = params;
   
   try {
     // Kiểm tra xem account có tồn tại hay không
@@ -75,7 +77,14 @@ async function handleGoogleSignIn(user: User, account: Account) {
         name: user.name!,
         emailVerified: new Date(), // Không cần verify email của Google
         image: user.image,
-        role: "USER", // Role mặc định
+        role: "USER", // Role mặc định,
+        acquisitionSource: "google_oauth",
+        wishlistFolder: { // tạo wishlist mặc định khi user được tạo mới.
+          create: {
+            name: "Uncategorized",
+            order: 0,
+          }
+        }
       }
     });
 
@@ -154,7 +163,7 @@ async function handleGoogleSignIn(user: User, account: Account) {
  */
 async function handleFacebookSignIn(user: User, account: Account) {
   // Facebook có thể không cung cấp email nếu chưa được duyệt
-  const userEmail = user.email 
+  const userEmail = user.email;
   
   if(!userEmail) {
     apiLogger.logError('[AUTH] Facebook signin failed', new Error('No email provided'));
@@ -177,6 +186,13 @@ async function handleFacebookSignIn(user: User, account: Account) {
         image: user.image,
         role: "USER",
         acquisitionSource: "facebook_oauth", // Track nguồn acquisition
+
+        wishlistFolder: { // tạo wishlist mặc định khi user được tạo mới.
+          create: {
+            name: "Uncategorized",
+            order: 0,
+          }
+        }
       }
     });
 
@@ -268,15 +284,12 @@ async function handleEmailSignIn(user: User, account: Account | null) {
       //   return false; // Block login
       // }
 
-      // Nếu user tồn tại với email
-
       apiLogger.info(`[AUTH] Existing user logging in via magic link: ${existingUser.email}`);
     } else {
       // User chưa tồn tại → NextAuth sẽ tạo mới sau khi return true
-      // User mới sẽ có: email, emailVerified = new Date(), role = USER
+      // createUserEvent sẽ tự động tạo wishlistFolder "Uncategorized"
       apiLogger.info(`[AUTH] New user will be created via magic link: ${user.email}`);
     }
-
     // Cho phép đăng nhập
     return true;
 

@@ -6,29 +6,29 @@ import { useEffect, useState } from 'react'
 
 type ModalView = 'main' | 'rename' | 'clearConfirm'
 
-interface ManageListModalProps {
+interface ManageFolderModalProps {
     isOpen: boolean
-    listName: string
+    folderName: string
     onClose: () => void
     onRename: (newName: string) => void
     onDuplicate: () => void
     onClear: () => void
 }
 
-const ManageListModal = ({
+const ManageFolderModal = ({
     isOpen,
-    listName,
+    folderName,
     onClose,
     onRename,
     onDuplicate,
     onClear
-}: ManageListModalProps) => {
-    const [currentView, setCurrentView] = useState<ModalView>('main')
-    const [newListName, setNewListName] = useState(listName)
+}: ManageFolderModalProps) => {
+    const [currentView, setCurrentView] = useState<ModalView>('main');
+    const [newFolderName, setNewFolderName] = useState(folderName);
 
-    // Update newListName when listName prop changes
-    if (listName !== newListName && !isOpen) {
-        setNewListName(listName)
+    // Update newFolderName when folderName prop changes
+    if (folderName !== newFolderName && !isOpen) {
+        setNewFolderName(folderName)
     }
 
     // Reset to main view when closed
@@ -37,7 +37,7 @@ const ManageListModal = ({
     }
 
     const handleSaveRename = () => {
-        const trimmedName = newListName.trim()
+        const trimmedName = newFolderName.trim()
         if (trimmedName) {
             onRename(trimmedName)
             onClose()
@@ -55,7 +55,7 @@ const ManageListModal = ({
         const handleEnterKey = (e: KeyboardEvent) => {
             if (e.key === 'Enter' && currentView === 'rename') {
                 e.preventDefault()
-                const trimmedName = newListName.trim()
+                const trimmedName = newFolderName.trim()
                 if (trimmedName) {
                     onRename(trimmedName)
                     onClose()
@@ -69,7 +69,7 @@ const ManageListModal = ({
 
         document.addEventListener('keydown', handleEnterKey)
         return () => document.removeEventListener('keydown', handleEnterKey)
-    }, [isOpen, currentView, newListName, onRename, onClear, onClose])
+    }, [isOpen, currentView, newFolderName, onRename, onClear, onClose])
 
     if (!isOpen) return null
 
@@ -82,11 +82,11 @@ const ManageListModal = ({
     const getTitle = () => {
         switch (currentView) {
             case 'rename':
-                return 'RENAME LIST'
+                return 'RENAME FOLDER'
             case 'clearConfirm':
-                return 'CLEAR LIST'
+                return 'CLEAR FOLDER'
             default:
-                return `MANAGE "${listName}"`
+                return `MANAGE "${folderName}"`
         }
     }
 
@@ -102,14 +102,14 @@ const ManageListModal = ({
                 {currentView === 'rename' && (
                     <div id="renameListSection">
                         <p className="modal-form-prompt" style={{ color: 'var(--text-primary)', opacity: 0.9 }}>
-                            Enter new name for this list:
+                            Enter new name for this folder:
                         </p>
                         <input
                             type="text"
                             id="manageListNewNameInput"
-                            placeholder="New list name"
-                            value={newListName}
-                            onChange={(e) => setNewListName(e.target.value)}
+                            placeholder="New folder name"
+                            value={newFolderName}
+                            onChange={(e) => setNewFolderName(e.target.value)}
                             autoFocus
                         />
                         <div id="renameListActions" className="modal-actions">
@@ -137,7 +137,7 @@ const ManageListModal = ({
                             id="clearListConfirmMessage"
                             style={{ color: 'var(--text-primary)', lineHeight: 1.6 }}
                             dangerouslySetInnerHTML={{
-                                __html: `Are you sure you want to clear all seeds from "<strong>${listName}</strong>"?`
+                                __html: `Are you sure you want to clear all seeds from "<strong>${folderName}</strong>"?`
                             }}
                         />
                         <div id="clearListConfirmActions" className="modal-actions">
@@ -167,7 +167,7 @@ const ManageListModal = ({
                                 onClick={() => setCurrentView('rename')}
                                 type="button"
                             >
-                                <FontAwesomeIcon icon={faPencilAlt} /> Rename List
+                                <FontAwesomeIcon icon={faPencilAlt} /> Rename Folder
                             </button>
                             <button
                                 className="btn-styled ghost"
@@ -177,7 +177,7 @@ const ManageListModal = ({
                                 }}
                                 type="button"
                             >
-                                <FontAwesomeIcon icon={faCopy} /> Duplicate List
+                                <FontAwesomeIcon icon={faCopy} /> Duplicate Folder
                             </button>
                             <button
                                 className="btn-styled ghost"
@@ -204,4 +204,4 @@ const ManageListModal = ({
     )
 }
 
-export default ManageListModal
+export default ManageFolderModal

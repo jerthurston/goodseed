@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react'
 
-interface DeleteListConfirmModalProps {
+interface DeleteFolderConfirmModalProps {
     isOpen: boolean
-    listName: string
+    folderName: string
     onCancel: () => void
     onConfirm: () => void
     title?: string
@@ -12,15 +12,15 @@ interface DeleteListConfirmModalProps {
     isDeleting?: boolean
 }
 
-const DeleteListConfirmModal = ({
+const DeleteFolderConfirmModal = ({
     isOpen,
-    listName,
+    folderName,
     onCancel,
     onConfirm,
-    title = "DELETE LIST",
+    title = "DELETE FOLDER",
     customMessage,
     isDeleting = false
-}: DeleteListConfirmModalProps) => {
+}: DeleteFolderConfirmModalProps) => {
     useEffect(() => {
         if (!isOpen) return
 
@@ -54,7 +54,7 @@ const DeleteListConfirmModal = ({
     }
 
     // Generate message
-    const defaultMessage = `Are you sure you want to permanently delete the list "<strong>${listName}</strong>"? This also removes all seeds from it. This action cannot be undone.`
+    const defaultMessage = `Are you sure you want to permanently delete the folder "<strong>${folderName}</strong>"? This action cannot be undone.`
     const displayMessage = customMessage || defaultMessage
 
     return (
@@ -97,4 +97,4 @@ const DeleteListConfirmModal = ({
     )
 }
 
-export default DeleteListConfirmModal
+export default DeleteFolderConfirmModal

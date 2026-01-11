@@ -59,7 +59,8 @@ export async function linkAccountEvent({
 
       apiLogger.info('User emailVerified updated successfully', {
         userId: user.id,
-      });
+      }
+    );
     } else {
       apiLogger.warn('Skipped emailVerified update for temp email', {
         userId: user.id,

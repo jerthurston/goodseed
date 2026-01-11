@@ -9,22 +9,23 @@ import { SeedFilter } from '@/types/seed.type'
 import { faSeedling, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useCreateWishlistFolder, useFetchWishlistFolders, useUpdateWishlistFolder, useDuplicateWishlistFolder, useDeleteWishlistFolder } from '@/hooks/client-user/wishlist-folder'
+import { apiLogger } from '@/lib/helpers/api-logger'
+import { WishlistFolderUI } from '@/types/wishlist-folder.type'
+import DeleteFolderConfirmModal from '@/components/custom/modals/DeleteListConfirmModal'
 
 const FavouritePage = () => {
-    const [selectedListId, setSelectedListId] = useState('defaultFavorites')
-    const [userLists, setUserLists] = useState<UserList[]>([
-        { id: 'defaultFavorites', name: 'Favorites (Default)' },
-        { id: 'myNextGrow', name: 'My Next Grow' },
-        { id: 'researchingStrains', name: 'Researching Strains' }
-    ])
-    const [newListName, setNewListName] = useState('')
-
+    const [currentWishlistFolder, setCurrentWishlistFolder] = useState<WishlistFolderUI>();
+    const [newFolderName, setNewFolderName] = useState('');
+    const [isCustomFolder, setIsCustomFolder] = useState(false);
+    
     // Modal states
-    const [isManageListModalOpen, setIsManageListModalOpen] = useState(false)
-    const [isDeleteListModalOpen, setIsDeleteListModalOpen] = useState(false)
-    const [isAddToListModalOpen, setIsAddToListModalOpen] = useState(false)
-    const [isUnfavoriteModalOpen, setIsUnfavoriteModalOpen] = useState(false)
+    const [isManageListModalOpen, setIsManageListModalOpen] = useState(false);
+    const [isDeleteFolderModalOpen, setIsDeleteFolderModalOpen] = useState(false);
+
+    const [isAddToListModalOpen, setIsAddToListModalOpen] = useState(false);
+    const [isUnfavoriteModalOpen, setIsUnfavoriteModalOpen] = useState(false);
 
     // Active states
     const [activeOverlaySeedId, setActiveOverlaySeedId] = useState<string | null>(null)
@@ -36,12 +37,53 @@ const FavouritePage = () => {
     // Favorites tracking
     const [favorites, setFavorites] = useState<Set<string>>(new Set(['P001', 'P004', 'P005']))
 
-    // Product list memberships
-    const [productListMemberships, setProductListMemberships] = useState<Record<string, string[]>>({
-        'P001': ['defaultFavorites'],
-        'P004': ['defaultFavorites', 'myNextGrow'],
-        'P005': ['researchingStrains']
-    })
+    // Wishlist Folder Hooks
+    const { folders, isLoading: isFoldersLoading } = useFetchWishlistFolders();
+    const { createFolder, isPending: isCreatingFolder } = useCreateWishlistFolder({
+        existingFolders: folders,
+        onSuccess:(newFolder) => {
+            // After creating, switch to the new folder
+            setCurrentWishlistFolder(newFolder);
+            setIsManageListModalOpen(false);
+            // Reset input field về empty
+            setNewFolderName('');
+        }
+    });
+    const { updateFolder, isPending: isUpdatingFolder } = useUpdateWishlistFolder({
+        onSuccess: (updatedFolder) => {
+            // Update local state với folder đã được rename
+            setCurrentWishlistFolder(updatedFolder);
+            setIsManageListModalOpen(false);
+        }
+    });
+    const { duplicateFolder, isPending: isDuplicatingFolder } = useDuplicateWishlistFolder({
+        onSuccess: (duplicatedFolder) => {
+            // Switch to duplicated folder sau khi duplicate thành công
+            setCurrentWishlistFolder(duplicatedFolder);
+            setIsManageListModalOpen(false);
+        }
+    });
+    const { deleteFolder, isPending: isDeletingFolder } = useDeleteWishlistFolder({
+        onSuccess: () => {
+            // After delete, switch to first folder (usually Uncategorized)
+            setCurrentWishlistFolder(folders[0]);
+            setIsDeleteFolderModalOpen(false);
+        }
+    });
+
+    // DEBUG LOG:
+    useEffect(() => {
+        apiLogger.debug('[FavoritePage] folders', { folders });
+    }, [folders]);
+
+    // // Product list memberships
+    // const [productListMemberships, setProductListMemberships] = useState<Record<string, string[]>>({
+    //     'P001': ['defaultFavorites'],
+    //     'P004': ['defaultFavorites', 'myNextGrow'],
+    //     'P005': ['researchingStrains']
+    // })
+
+    // Fetch wishlistFolder của user thay productListMemberships
 
     // Mock seeds data - without listId, will be filtered by memberships
     const [allSeeds] = useState<any[]>([
@@ -113,169 +155,190 @@ const FavouritePage = () => {
         }
     ])
 
-    // Filter seeds based on selected list and memberships
-    const visibleSeeds = allSeeds.filter(seed => {
-        const memberships = productListMemberships[seed.id] || []
-        return memberships.includes(selectedListId)
-    })
-
-    const selectedList = userLists.find(list => list.id === selectedListId)
-    const isCustomList = selectedListId !== 'defaultFavorites'
-
-    const handleCreateNewList = () => {
-        const trimmedName = newListName.trim()
-        if (trimmedName) {
-            const newListId = `list-${Date.now()}`
-            const newList: UserList = {
-                id: newListId,
-                name: trimmedName
-            }
-            setUserLists(prev => [...prev, newList])
-            setSelectedListId(newListId)
-            setNewListName('')
-        }
+    const handleFolderSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedFolder = folders.find(folder => folder.id === e.target.value);
+        setCurrentWishlistFolder(selectedFolder);
+        apiLogger.debug('[handleFolderSelectChange]', { selectedFolder });
     }
 
-    const handleListSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedListId(e.target.value)
+    const handleRenameFolder = (newName: string) => {
+        if (!currentWishlistFolder) return;
+        
+        // Use hook để update folder name trong database và đồng bộ local state
+        updateFolder({
+            folderId: currentWishlistFolder.id,
+            data: { name: newName }
+        });
     }
 
-    const handleRenameList = (newName: string) => {
-        setUserLists(prev =>
-            prev.map(list =>
-                list.id === selectedListId ? { ...list, name: newName } : list
-            )
-        )
+    const handleDuplicateFolder = () => {
+        if (!currentWishlistFolder) return;
+        
+        // Use hook để duplicate folder trong database
+        duplicateFolder(currentWishlistFolder.id);
     }
 
-    const handleDuplicateList = () => {
-        if (!selectedList) return
-
-        const newListId = `list-${Date.now()}`
-        const newListName = `${selectedList.name} (Copy)`
-
-        setUserLists(prev => [...prev, { id: newListId, name: newListName }])
-        setSelectedListId(newListId)
+    const handleClearFolder = () => {
+        if (!currentWishlistFolder) return;
+        
+        // TODO: Implement clear folder logic (remove all seeds from folder)
+        apiLogger.info('[handleClearFolder] Not implemented yet', { 
+            folderId: currentWishlistFolder.id 
+        });
     }
 
-    const handleClearList = () => {
-        // In real app, this would remove seeds from backend
-        // For now, we'll just filter out seeds from this list
+    const handleDeleteFolder = () => {
+        if (!currentWishlistFolder || currentWishlistFolder.name === 'Uncategorized') return;
+        
+        // Use hook để delete folder trong database
+        deleteFolder(currentWishlistFolder.id);
     }
 
-    const handleDeleteList = () => {
-        if (selectedListId === 'defaultFavorites') return
+    // const handleDuplicateList = () => {
+    //     if (!selectedList) return
 
-        setUserLists(prev => prev.filter(list => list.id !== selectedListId))
-        setSelectedListId('defaultFavorites')
-        setIsDeleteListModalOpen(false)
-    }
+    //     const newListId = `list-${Date.now()}`
+    //     const newListName = `${selectedList.name} (Copy)`
 
-    const toggleFavorite = (seedId: string) => {
-        const isCurrentlyFavorite = favorites.has(seedId)
+    //     setCurrentWishlistFolder(prev => [...prev, { id: newListId, name: newListName }])
+    //     setSelectedListId(newListId)
+    // }
 
-        if (isCurrentlyFavorite) {
-            const seed = allSeeds.find(s => s.id === seedId)
-            setUnfavoriteMessage(`Do you want to remove "${seed?.name}" from your favorites?`)
-            setPendingUnfavoriteSeedId(seedId)
-            setIsUnfavoriteModalOpen(true)
-        } else {
-            setFavorites(prev => {
-                const newFavorites = new Set(prev)
-                newFavorites.add(seedId)
-                return newFavorites
-            })
-        }
-    }
+    // const handleClearList = () => {
+    //     // In real app, this would remove seeds from backend
+    //     // For now, we'll just filter out seeds from this list
+    // }
 
-    const handleConfirmUnfavorite = () => {
-        if (pendingUnfavoriteSeedId) {
-            // Remove from favorites
-            setFavorites(prev => {
-                const newFavorites = new Set(prev)
-                newFavorites.delete(pendingUnfavoriteSeedId)
-                return newFavorites
-            })
+    // const handleDeleteList = () => {
+    //     if (selectedListId === 'defaultFavorites') return
 
-            // Remove from all lists
-            setProductListMemberships(prev => {
-                const updated = { ...prev }
-                delete updated[pendingUnfavoriteSeedId]
-                return updated
-            })
-        }
-        setIsUnfavoriteModalOpen(false)
-        setPendingUnfavoriteSeedId(null)
-        setUnfavoriteMessage('')
-    }
+    //     setCurrentWishlistFolder(prev => prev.filter(folder => folder.id !== selectedListId))
+    //     setSelectedListId('defaultFavorites')
+    //     setIsDeleteListModalOpen(false)
+    // }
 
-    const handleOpenAddToList = (seedId: string, seedName: string) => {
-        setActiveModalSeedId(seedId)
-        setActiveModalSeedName(seedName)
-        setIsAddToListModalOpen(true)
-    }
+    // const toggleFavorite = (seedId: string) => {
+    //     const isCurrentlyFavorite = favorites.has(seedId)
 
-    const handleListMembershipChange = (listId: string, isChecked: boolean) => {
-        if (!activeModalSeedId) return
+    //     if (isCurrentlyFavorite) {
+    //         const seed = allSeeds.find(s => s.id === seedId)
+    //         setUnfavoriteMessage(`Do you want to remove "${seed?.name}" from your favorites?`)
+    //         setPendingUnfavoriteSeedId(seedId)
+    //         setIsUnfavoriteModalOpen(true)
+    //     } else {
+    //         setFavorites(prev => {
+    //             const newFavorites = new Set(prev)
+    //             newFavorites.add(seedId)
+    //             return newFavorites
+    //         })
+    //     }
+    // }
 
-        setProductListMemberships(prev => {
-            const currentMemberships = prev[activeModalSeedId] || []
-            let updatedMemberships: string[]
+    // const handleConfirmUnfavorite = () => {
+    //     if (pendingUnfavoriteSeedId) {
+    //         // Remove from favorites
+    //         setFavorites(prev => {
+    //             const newFavorites = new Set(prev)
+    //             newFavorites.delete(pendingUnfavoriteSeedId)
+    //             return newFavorites
+    //         })
 
-            if (isChecked) {
-                updatedMemberships = currentMemberships.includes(listId)
-                    ? currentMemberships
-                    : [...currentMemberships, listId]
-            } else {
-                updatedMemberships = currentMemberships.filter(id => id !== listId)
+    //         // Remove from all lists
+    //         setProductListMemberships(prev => {
+    //             const updated = { ...prev }
+    //             delete updated[pendingUnfavoriteSeedId]
+    //             return updated
+    //         })
+    //     }
+    //     setIsUnfavoriteModalOpen(false)
+    //     setPendingUnfavoriteSeedId(null)
+    //     setUnfavoriteMessage('')
+    // }
 
-                if (listId === 'defaultFavorites') {
-                    setFavorites(prevFavorites => {
-                        const newFavorites = new Set(prevFavorites)
-                        newFavorites.delete(activeModalSeedId)
-                        return newFavorites
-                    })
-                }
-            }
+    // const handleOpenAddToList = (seedId: string, seedName: string) => {
+    //     setActiveModalSeedId(seedId)
+    //     setActiveModalSeedName(seedName)
+    //     setIsAddToListModalOpen(true)
+    // }
 
-            return {
-                ...prev,
-                [activeModalSeedId]: updatedMemberships
-            }
-        })
+    // const handleListMembershipChange = (listId: string, isChecked: boolean) => {
+    //     if (!activeModalSeedId) return
 
-        if (listId === 'defaultFavorites' && isChecked) {
-            setFavorites(prev => {
-                const newFavorites = new Set(prev)
-                newFavorites.add(activeModalSeedId)
-                return newFavorites
-            })
-        }
-    }
+    //     setProductListMemberships(prev => {
+    //         const currentMemberships = prev[activeModalSeedId] || []
+    //         let updatedMemberships: string[]
 
-    const handleCreateListFromModal = (listName: string) => {
-        const newListId = `list-${Date.now()}`
-        const newList: UserList = {
-            id: newListId,
-            name: listName
-        }
+    //         if (isChecked) {
+    //             updatedMemberships = currentMemberships.includes(listId)
+    //                 ? currentMemberships
+    //                 : [...currentMemberships, listId]
+    //         } else {
+    //             updatedMemberships = currentMemberships.filter(id => id !== listId)
 
-        setUserLists(prev => [...prev, newList])
+    //             if (listId === 'defaultFavorites') {
+    //                 setFavorites(prevFavorites => {
+    //                     const newFavorites = new Set(prevFavorites)
+    //                     newFavorites.delete(activeModalSeedId)
+    //                     return newFavorites
+    //                 })
+    //             }
+    //         }
 
-        if (activeModalSeedId) {
-            setProductListMemberships(prev => ({
-                ...prev,
-                [activeModalSeedId]: [...(prev[activeModalSeedId] || []), newListId]
-            }))
-        }
-    }
+    //         return {
+    //             ...prev,
+    //             [activeModalSeedId]: updatedMemberships
+    //         }
+    //     })
 
+    //     if (listId === 'defaultFavorites' && isChecked) {
+    //         setFavorites(prev => {
+    //             const newFavorites = new Set(prev)
+    //             newFavorites.add(activeModalSeedId)
+    //             return newFavorites
+    //         })
+    //     }
+    // }
+
+    // const handleCreateListFromModal = (name: string) => {
+    //     const newFolderId = `list-${Date.now()}`
+    //     const newFolder: UserList = {
+    //         id: newFolderId,
+    //         name,
+    //     }
+
+    //     setCurrentWishlistFolder(prev => [...prev, newFolder])
+
+    //     if (activeModalSeedId) {
+    //         setProductListMemberships(prev => ({
+    //             ...prev,
+    //             [activeModalSeedId]: [...(prev[activeModalSeedId] || []), newFolderId]
+    //         }))
+    //     }
+    // }
+
+    // Action for creating folder with "Enter" key
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault()
-            handleCreateNewList()
+            createFolder(newFolderName)
         }
-    }
+    };
+    // Check if current folder is custom (not default "Uncategorized")
+    useEffect(() => {
+       if(currentWishlistFolder?.name === 'Uncategorized' || currentWishlistFolder?.name === undefined) {
+           setIsCustomFolder(false); // Default folder - không cho phép xóa/edit
+       } else {
+           setIsCustomFolder(true); // Custom folder - cho phép xóa/edit
+       }
+    }, [currentWishlistFolder]);
+
+    // Set default folder when folders are loaded
+    useEffect(() => {
+        if (folders.length > 0 && !currentWishlistFolder) {
+            // Set first folder (usually Uncategorized) as default
+            setCurrentWishlistFolder(folders[0]);
+        }
+    }, [folders, currentWishlistFolder]);
 
     return (
         <main className="favorites-page-main">
@@ -288,6 +351,7 @@ const FavouritePage = () => {
 
             <section className="favorites-list-management">
                 <div className="list-management__controls">
+                    {/* -->Danh sách Wishlist Folder */}
                     <div className="list-management__selector-group">
                         <label htmlFor="favoriteListSelect" className="list-management-label">
                             Current List:
@@ -296,19 +360,19 @@ const FavouritePage = () => {
                             <select
                                 id="favoriteListSelect"
                                 className="inline-select"
-                                value={selectedListId}
-                                onChange={handleListSelectChange}
+                                value={currentWishlistFolder?.id}
+                                onChange={handleFolderSelectChange}
                             >
-                                {userLists.map(list => (
-                                    <option key={list.id} value={list.id}>
-                                        {list.name}
+                                {folders.map(folder => (
+                                    <option key={folder.id} value={folder.id}>
+                                        {folder.name}
                                     </option>
                                 ))}
                             </select>
                             <div id="currentListActionsGroup" className="list-management__action-buttons">
                                 <button
                                     id="listOptionsBtn"
-                                    className={`list-create-btn ${!isCustomList ? 'disabled' : ''}`}
+                                    className={`list-create-btn ${!isCustomFolder ? 'disabled' : ''}`}
                                     style={{
                                         backgroundColor: 'var(--accent-cta)',
                                         color: 'var(--text-primary)',
@@ -316,7 +380,7 @@ const FavouritePage = () => {
                                     }}
                                     title="View more options for this list"
                                     onClick={() => setIsManageListModalOpen(true)}
-                                    disabled={!isCustomList}
+                                    disabled={!isCustomFolder}
                                     type="button"
                                 >
                                     Options
@@ -325,8 +389,8 @@ const FavouritePage = () => {
                                     id="deleteCurrentListBtn"
                                     className="list-delete-btn"
                                     title="Delete the currently selected list"
-                                    style={{ display: isCustomList ? 'inline-flex' : 'none' }}
-                                    onClick={() => setIsDeleteListModalOpen(true)}
+                                    style={{ display: isCustomFolder ? 'inline-flex' : 'none' }}
+                                    onClick={() => setIsDeleteFolderModalOpen(true)}
                                     type="button"
                                 >
                                     <FontAwesomeIcon icon={faTrashAlt} />
@@ -334,35 +398,37 @@ const FavouritePage = () => {
                             </div>
                         </div>
                     </div>
-
+                    {/* Tạo mới danh sách Wishlist Folder */}
                     <div className="list-management__create-group create-list-container">
                         <label htmlFor="newListName" className="list-management-label">
-                            Create New List:
+                            Create Wishlist Folder:
                         </label>
                         <div className="list-management__create-form">
                             <input
                                 type="text"
                                 id="newListName"
-                                placeholder="New list name"
+                                placeholder="New Folder name"
                                 className="list-create-input"
-                                value={newListName}
-                                onChange={(e) => setNewListName(e.target.value)}
-                                onKeyPress={handleKeyPress}
+                                value={newFolderName}
+                                onChange={(e) => setNewFolderName(e.target.value)}
+                                onKeyDown={handleKeyPress}
+                                disabled={isCreatingFolder}
                             />
                             <button
                                 id="createNewListBtn"
                                 className="list-create-btn"
-                                onClick={handleCreateNewList}
+                                onClick={() => createFolder(newFolderName)}
                                 type="button"
+                                disabled={isCreatingFolder || !newFolderName.trim()}
                             >
-                                Create
+                                {isCreatingFolder ? 'Creating...' : 'Create'}
                             </button>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <div className="favorites-grid" id="plantCardGrid">
+            {/* <div className="favorites-grid" id="plantCardGrid">
                 {visibleSeeds.map((seed) => (
                     <SeedCardItem
                         key={seed.id}
@@ -375,9 +441,9 @@ const FavouritePage = () => {
                         onOpenAddToList={handleOpenAddToList}
                     />
                 ))}
-            </div>
+            </div> */}
 
-            <div id="noFavoritesMessage"
+            {/* <div id="noFavoritesMessage"
                 className={`
             ${visibleSeeds.length === 0 ? 'visible' : ''} 
             flex flex-col justify-center items-center gap-6
@@ -395,30 +461,30 @@ const FavouritePage = () => {
                 <Link href="/seeds" className="login-btn no-favorites__cta w-full md:w-3/12 lg:w2/12" style={{ fontWeight: 800 }}>
                     Browse Seed Collection
                 </Link>
-            </div>
+            </div> */}
 
             {/* Modals */}
             <ManageListModal
                 isOpen={isManageListModalOpen}
-                listName={selectedList?.name || ''}
+                folderName={currentWishlistFolder?.name || ''}
                 onClose={() => setIsManageListModalOpen(false)}
-                onRename={handleRenameList}
-                onDuplicate={handleDuplicateList}
-                onClear={handleClearList}
+                onRename={handleRenameFolder}
+                onDuplicate={handleDuplicateFolder}
+                onClear={handleClearFolder}
             />
 
-            <DeleteListConfirmModal
-                isOpen={isDeleteListModalOpen}
-                listName={selectedList?.name || ''}
-                onCancel={() => setIsDeleteListModalOpen(false)}
-                onConfirm={handleDeleteList}
+            <DeleteFolderConfirmModal
+                isOpen={isDeleteFolderModalOpen}
+                folderName={currentWishlistFolder?.name || ''}
+                onCancel={() => setIsDeleteFolderModalOpen(false)}
+                onConfirm={handleDeleteFolder}
             />
 
-            <AddToListModal
+            {/* <AddToListModal
                 isOpen={isAddToListModalOpen}
                 strainName={activeModalSeedName}
                 productId={activeModalSeedId || ''}
-                userLists={userLists}
+                userLists={currentWishlistFolder}
                 productListMemberships={activeModalSeedId ? (productListMemberships[activeModalSeedId] || []) : []}
                 onClose={() => {
                     setIsAddToListModalOpen(false)
@@ -427,9 +493,9 @@ const FavouritePage = () => {
                 }}
                 onMembershipChange={handleListMembershipChange}
                 onCreateNewList={handleCreateListFromModal}
-            />
+            /> */}
 
-            <UnfavoriteConfirmModal
+            {/* <UnfavoriteConfirmModal
                 isOpen={isUnfavoriteModalOpen}
                 message={unfavoriteMessage}
                 onCancel={() => {
@@ -438,7 +504,7 @@ const FavouritePage = () => {
                     setUnfavoriteMessage('')
                 }}
                 onConfirm={handleConfirmUnfavorite}
-            />
+            /> */}
         </main>
     )
 }
