@@ -1245,7 +1245,7 @@ Results Page
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding: 2rem 1rem; /* Replicates py-8 and px-4 */
+    padding: 1rem 1rem; /* Replicates py-8 and px-4 */
 }
 
 @media (min-width: 640px) {
@@ -1927,7 +1927,7 @@ Results Page
     /* Corrected to be full-width with padding, matching the original design */
     /* Replicates Tailwind's: w-full px-4 sm:px-6 lg:px-8 py-8 */
     width: 100%;
-    padding: 2rem 2.5rem; /* Increased side padding for the full-width look */
+    padding: 1rem 1rem; /* Increased side padding for the full-width look */
 }
 
 /* Optional: Adjust padding for smaller screens if needed */
@@ -1939,7 +1939,7 @@ Results Page
 
 @media (max-width: 480px) {
     .favorites-page-main {
-        padding: 2rem 1rem;
+        padding: 2rem 0rem;
     }
 }
 

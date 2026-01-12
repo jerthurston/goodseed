@@ -4,15 +4,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { apiLogger } from '@/lib/helpers/api-logger';
-import type { 
-  CreateWishlistFolderInput, 
-  WishlistFolderResponse 
-} from '@/schemas/wishlist-folder.schema';
-import { WishlistFolderUI } from '@/types/wishlist-folder.type';
+
+import type { WishlistFolderRaw, WishlistFolderUI } from '@/types/wishlist-folder.type';
 
 interface UseCreateWishlistFolderOptions {
   existingFolders?: WishlistFolderUI[];
-  onSuccess?: (folder: WishlistFolderResponse) => void;
+  onSuccess?: (folder: WishlistFolderRaw) => void;
 }
 
 /**
@@ -35,7 +32,7 @@ export function useCreateWishlistFolder(options?: UseCreateWishlistFolderOptions
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (name: string): Promise<WishlistFolderResponse> => {
+    mutationFn: async (name: string): Promise<WishlistFolderRaw> => {
       // 1. Trim và validate empty
       const trimmedName = name.trim();
       
@@ -57,7 +54,7 @@ export function useCreateWishlistFolder(options?: UseCreateWishlistFolderOptions
       }
 
       // 3. Gọi API
-      const response = await api.post<WishlistFolderResponse>(
+      const response = await api.post<WishlistFolderRaw>(
         '/me/wishlist-folder',
         { name: trimmedName }
       );

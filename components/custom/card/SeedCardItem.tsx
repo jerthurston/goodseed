@@ -99,7 +99,7 @@ interface SeedCardItemProps {
     onToggleFavorite: (seedId: string) => void
     onOpenOverlay: (seedId: string) => void
     onCloseOverlay: () => void
-    onOpenAddToList: (seedId: string, seedName: string) => void
+    onOpenAddToFolder: (seedId: string, seedName: string) => void
 }
 
 const SeedCardItem = ({
@@ -109,8 +109,9 @@ const SeedCardItem = ({
     onToggleFavorite,
     onOpenOverlay,
     onCloseOverlay,
-    onOpenAddToList
+    onOpenAddToFolder
 }: SeedCardItemProps) => {
+
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
 
     const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -118,9 +119,8 @@ const SeedCardItem = ({
             onCloseOverlay()
         }
     }
-
+    //LOG DEBUG:
     apiLogger.debug('SeedCardItem.render', { seed })
-
     return (
         <div
             className="plant-card"
@@ -140,7 +140,6 @@ const SeedCardItem = ({
                             className="card-img object-cover w-full h-full"
                             width={800}
                             height={800}
-                            // unoptimized
                         />
                         {/* {' '} */}
                     </div>
@@ -153,7 +152,7 @@ const SeedCardItem = ({
                     className={`list-icon-btn js-add-to-list-btn ${isFavorite ? 'is-animating' : ''}`}
                     aria-label="Add to list"
                     type="button"
-                    onClick={() => onOpenAddToList(seed.id, seed.name)}
+                    onClick={() => onOpenAddToFolder(seed.id, seed.name)}
                 >
                     <svg
                         className="list-icon-svg"
@@ -275,12 +274,12 @@ const SeedCardItem = ({
                                 )}
                             </div>
                             <Link
-                                href={seed.vendorUrl}
+                                href={seed?.vendorUrl || "#"}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="overlay-buy-on-vendor-btn"
                             >
-                                Buy on {seed.vendorName}
+                                Buy on {seed?.vendorName}
                             </Link>
                             <table className="overlay-pricing-table">
                                 <thead>

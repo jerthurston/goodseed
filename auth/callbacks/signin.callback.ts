@@ -79,12 +79,6 @@ async function handleGoogleSignIn(user: User, account: Account) {
         image: user.image,
         role: "USER", // Role mặc định,
         acquisitionSource: "google_oauth",
-        wishlistFolder: { // tạo wishlist mặc định khi user được tạo mới.
-          create: {
-            name: "Uncategorized",
-            order: 0,
-          }
-        }
       }
     });
 
@@ -186,13 +180,6 @@ async function handleFacebookSignIn(user: User, account: Account) {
         image: user.image,
         role: "USER",
         acquisitionSource: "facebook_oauth", // Track nguồn acquisition
-
-        wishlistFolder: { // tạo wishlist mặc định khi user được tạo mới.
-          create: {
-            name: "Uncategorized",
-            order: 0,
-          }
-        }
       }
     });
 

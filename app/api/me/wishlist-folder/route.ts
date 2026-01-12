@@ -3,8 +3,6 @@ import { auth } from '@/auth/auth';
 import { prisma } from '@/lib/prisma';
 import { createWishlistFolderSchema } from '@/schemas/wishlist-folder.schema';
 import { apiLogger } from '@/lib/helpers/api-logger';
-import { WishlistFolderRaw } from '@/types/wishlist-folder.type';
-
 /**
  * GET /api/me/wishlist-folder
  * 

@@ -195,7 +195,33 @@ export async function DELETE(
       );
     }
 
-    // Xóa folder (CASCADE sẽ xóa các wishlist items liên quan nếu có)
+    // Find Uncategorized folder to move wishlist items
+    const uncategorizedFolder = await prisma.wishlistFolder.findFirst({
+      where: {
+        userId: user.id,
+        name: 'Uncategorized'
+      }
+    });
+
+    if (!uncategorizedFolder) {
+      return NextResponse.json(
+        { error: 'Uncategorized folder not found' },
+        { status: 404 }
+      );
+    }
+
+    // Move all wishlist items from this folder to Uncategorized before deleting
+    const moveResult = await prisma.wishlist.updateMany({
+      where: {
+        folderId: folderId,
+        userId: user.id
+      },
+      data: {
+        folderId: uncategorizedFolder.id
+      }
+    });
+
+    // Now delete the folder
     await prisma.wishlistFolder.delete({
       where: { id: folderId }
     });
@@ -203,7 +229,8 @@ export async function DELETE(
     apiLogger.info('[DELETE /api/me/wishlist-folder/:id] Folder deleted', {
       userId: user.id,
       folderId: folderId,
-      folderName: existingFolder.name
+      folderName: existingFolder.name,
+      movedItems: moveResult.count
     });
 
     return NextResponse.json(

@@ -26,7 +26,7 @@ export const {
   // Events: Các handler được fired sau khi action hoàn thành
   events: {
     linkAccount: linkAccountEvent,
-    createUser: createUserEvent, // Tạo wishlist folder mặc định khi user mới được tạo (magic link)
+    // createUser: createUserEvent, // Tạo wishlist folder mặc định khi user mới được tạo (magic link)
   },
 
   // Callbacks: Các hàm xử lý logic tùy chỉnh (signIn, session, jwt)

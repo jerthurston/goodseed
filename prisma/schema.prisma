@@ -442,6 +442,7 @@ model Wishlist {
   createdAt   DateTime        @default(now())
   // Relations
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // 1 wishlist sẽ chứa thông tin của 1 seedProduct
   seedProduct SeedProduct     @relation(fields: [seedId], references: [id], onDelete: Cascade)
   folder      WishlistFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
   // folder onDelete:SetNull và folderId:String? để khi xóa folder wishlist được chuyển về uncategoried
