@@ -3,17 +3,27 @@
 import FilterBtnForHomepage from '@/components/custom/filter/FilterBtnForHomepage'
 import SearchForHomepage from '@/components/custom/search/SearchForHomepage'
 
-const HeroSection = () => {
+
+interface HeroSectionProps {
+    title:string;
+    description:string;
+}
+
+const HeroSection = ({ title, description }: HeroSectionProps) => {
 
     return (
         <>
             <section className="hero">
-                <h1>Find the best cannabis seeds at the best price</h1>
+                <div>
+                    <h1>{title}</h1>
+                </div>
                 <div className="hero-search-container">
                     <SearchForHomepage />
                     <FilterBtnForHomepage />
                 </div>
-                <p>Search top seed banks, compare strains, and find the best prices.</p>
+                <div>
+                    <p>{description}</p>
+                </div>
             </section>
 
 

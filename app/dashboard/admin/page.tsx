@@ -6,25 +6,28 @@ import {
   DashboardSidebar,
   DashboardSidebarItem,
   AutoScraperTabContent,
+  ContentManagementTabContent,
 } from "../(components)"
 
 import DashboardOverview from "../(components)/DashboardOverview"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { SellerTransformer } from "@/lib/transfomers/seller.transformer"
 import DashboardSellersTabContent from "../(components)/DashboardSellersTabContent"
+import UserManagementTabContent from "../(components)/UserManagementTabContent"
 import { useFetchScraperSites, useFetchSellers } from "@/hooks/seller"
 import { useRouter } from "next/navigation"
 import styles from "../(components)/dashboardAdmin.module.css"
 
-import { AlertTriangle, Menu, X } from "lucide-react"
+import { AlertTriangle, Menu, User, X, FileText } from "lucide-react"
 import { faChartLine, faUser, faStore, faRobot } from '@fortawesome/free-solid-svg-icons'
 import { AlertTabContent } from "../(components)/AlertTabContent"
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"sellers" | "scraper" | "overview" | "auto-scraper" | "alert">(
+  const [activeTab, setActiveTab] = useState<"sellers" | "scraper" | "overview" | "auto-scraper" | "alert" | "user-management" | "content-management" | "cms-homepage" | "cms-faq">(
     "overview"
   )
   const [isSellersExpanded, setIsSellersExpanded] = useState(false)
+  const [isContentExpanded, setIsContentExpanded] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const router = useRouter()
 
@@ -52,6 +55,7 @@ export default function AdminDashboard() {
   const handleSellerTabClick = () => {
     setActiveTab("sellers")
     setIsSellersExpanded(!isSellersExpanded)
+    setIsContentExpanded(false) // Close content dropdown when sellers open
     setIsMobileSidebarOpen(false) // Close mobile sidebar
   }
 
@@ -60,8 +64,25 @@ export default function AdminDashboard() {
     router.push(`/dashboard/admin/sellers/${sellerId}`)
   }
 
-  const handleTabChange = (tab: "sellers" | "scraper" | "overview" | "auto-scraper" | "alert") => {
+  const handleContentTabClick = () => {
+    setActiveTab("content-management")
+    setIsContentExpanded(!isContentExpanded)
+    setIsSellersExpanded(false) // Close sellers dropdown when content open
+    setIsMobileSidebarOpen(false) // Close mobile sidebar
+  }
+
+  const handleContentItemClick = (contentType: "cms-homepage" | "cms-faq") => {
+    setActiveTab(contentType)
+    setIsMobileSidebarOpen(false) // Close mobile sidebar
+  }
+
+  const handleTabChange = (tab: "sellers" | "scraper" | "overview" | "auto-scraper" | "alert" | "user-management" | "content-management" | "cms-homepage" | "cms-faq") => {
     setActiveTab(tab)
+    // Close both dropdowns when switching to non-dropdown tabs
+    if (!["sellers", "content-management", "cms-homepage", "cms-faq"].includes(tab)) {
+      setIsSellersExpanded(false)
+      setIsContentExpanded(false)
+    }
     setIsMobileSidebarOpen(false) // Close mobile sidebar
   }
   
@@ -165,6 +186,49 @@ export default function AdminDashboard() {
                   >
                     Error & Success Alerts
                   </DashboardSidebarItem>
+
+                  {/* User Management */}
+                  <DashboardSidebarItem
+                    icon={<AlertTriangle className="text-lg"/>}
+                    isActive={activeTab === "user-management"}
+                    onClick={() => handleTabChange("user-management")}
+                  >
+                    User Management
+                  </DashboardSidebarItem>
+
+                  {/* Content Management */}
+                  <div className="space-y-1">
+                    <DashboardSidebarItem
+                      icon={<FileText className="text-lg"/>}
+                      isActive={activeTab === "content-management" || activeTab === "cms-homepage" || activeTab === "cms-faq"}
+                      onClick={handleContentTabClick}
+                      className={styles.sidebarItem}
+                    >
+                      <div className={styles.sidebarItemWithDropdown}>
+                        <span>Content Management</span>
+                      </div>
+                    </DashboardSidebarItem>
+
+                    {/* Content dropdown */}
+                    {isContentExpanded && (
+                      <div className={styles.sidebarDropdown}>
+                        <div
+                          onClick={() => handleContentItemClick("cms-homepage")}
+                          className={`${styles.sidebarDropdownItem} ${activeTab === "cms-homepage" ? styles.sidebarDropdownItemActive : ''}`}
+                        >
+                          <FileText className="text-xs" />
+                          <span className="truncate">Homepage Content</span>
+                        </div>
+                        <div
+                          onClick={() => handleContentItemClick("cms-faq")}
+                          className={`${styles.sidebarDropdownItem} ${activeTab === "cms-faq" ? styles.sidebarDropdownItemActive : ''}`}
+                        >
+                          <FileText className="text-xs" />
+                          <span className="truncate">FAQ Page</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </nav>
               </div>
             </div>
@@ -195,10 +259,6 @@ export default function AdminDashboard() {
               >
                 <div className={styles.sidebarItemWithDropdown}>
                   <span>Sellers</span>
-                  {/* <FontAwesomeIcon 
-                    icon={isSellersExpanded ? faChevronUp : faChevronRight} 
-                    className={`${styles.sidebarDropdownIcon} ${isSellersExpanded ? styles.sidebarDropdownIconExpanded : ''}`}
-                  /> */}
                 </div>
               </DashboardSidebarItem>
               
@@ -236,6 +296,48 @@ export default function AdminDashboard() {
             >
               Error & Success Alerts
             </DashboardSidebarItem>
+            {/* User Management */}
+            <DashboardSidebarItem
+              icon={<User className="text-lg"/>}
+              isActive={activeTab === "user-management"}
+              onClick={() => handleTabChange("user-management")}
+            >
+              User Management
+            </DashboardSidebarItem>
+            {/* Content Management */}
+            <div className="space-y-1">
+              <DashboardSidebarItem
+                icon={<FileText className="text-lg"/>}
+                isActive={activeTab === "content-management" || activeTab === "cms-homepage" || activeTab === "cms-faq"}
+                onClick={handleContentTabClick}
+                className={styles.sidebarItem}
+              >
+                <div className={styles.sidebarItemWithDropdown}>
+                  <span>Content Management</span>
+                </div>
+              </DashboardSidebarItem>
+
+              {/* Content dropdown */}
+              {isContentExpanded && (
+                <div className={styles.sidebarDropdown}>
+                  <div
+                    onClick={() => handleContentItemClick("cms-homepage")}
+                    className={`${styles.sidebarDropdownItem} ${activeTab === "cms-homepage" ? styles.sidebarDropdownItemActive : ''}`}
+                  >
+                    <FileText className="text-xs" />
+                    <span className="truncate">Homepage Content</span>
+                  </div>
+                  <div
+                    onClick={() => handleContentItemClick("cms-faq")}
+                    className={`${styles.sidebarDropdownItem} ${activeTab === "cms-faq" ? styles.sidebarDropdownItemActive : ''}`}
+                  >
+                    <FileText className="text-xs" />
+                    <span className="truncate">FAQ Page</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
           </DashboardSidebar>
         }
     >
@@ -274,6 +376,18 @@ export default function AdminDashboard() {
             sellers={sellers.map(seller => ({ id: seller.id, name: seller.name }))}
             onRefreshData={() => refetchSellers()}
           />
+        )}
+        {/* User Management */}
+        {activeTab === "user-management" && (
+          <UserManagementTabContent />
+        )}
+        {/* Content Management - Homepage */}
+        {activeTab === "cms-homepage" && (
+          <ContentManagementTabContent activeContentTab="homepage" />
+        )}
+        {/* Content Management - FAQ */}
+        {activeTab === "cms-faq" && (
+          <ContentManagementTabContent activeContentTab="faq" />
         )}
         </div>
       )}

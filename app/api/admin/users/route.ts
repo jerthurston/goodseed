@@ -1,13 +1,18 @@
-import { auth } from "@/auth/auth";
+/**
+ * Admin Users List API
+ * GET /api/admin/users - List all users with filters and pagination
+ */
+
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { apiLogger } from "@/lib/helpers/api-logger";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET: List all users (for admin only)
 export async function GET(req: NextRequest) {
   try {
-    // Check authentication
     const session = await auth();
+
+    // Check authentication
     if (!session?.user?.email) {
       apiLogger.warn("Unauthorized access attempt to admin users endpoint", {
         endpoint: "/api/admin/users",
@@ -20,7 +25,7 @@ export async function GET(req: NextRequest) {
     // Check if user has admin role
     const currentUser = await prisma.user.findUnique({
       where: { email: session.user.email },
-      select: { role: true, email: true }
+      select: { role: true, email: true, id: true }
     });
 
     if (!currentUser || currentUser.role !== 'ADMIN') {
@@ -35,71 +40,97 @@ export async function GET(req: NextRequest) {
       }, { status: 403 });
     }
 
+    // Parse query parameters
     const { searchParams } = new URL(req.url);
-    const email = searchParams.get('email');
+    const search = searchParams.get('search') || '';
+    const role = searchParams.get('role');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    if (role && role !== 'all') {
+      where.role = role;
+    }
+
+    // Fetch users with pagination
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: { 
+          id: true, 
+          name: true, 
+          email: true, 
+          bio: true, 
+          image: true, 
+          role: true,
+          emailVerified: true,
+          acquisitionDate: true,
+          lastActiveAt: true,
+          acquisitionSource: true,
+          lifetimeValue: true,
+          totalSpent: true,
+          preferredLanguage: true,
+          totalChatSessions: true,
+          notificationPreference: {
+            select: {
+              receiveSpecialOffers: true,
+              receivePriceAlerts: true,
+              receiveBackInStock: true
+            }
+          },
+          _count: {
+            select: {
+              wishlist: true,
+              wishlistFolder: true
+            }
+          }
+        },
+        orderBy: { acquisitionDate: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.user.count({ where })
+    ]);
 
     // Log successful admin access
     apiLogger.info("Admin user accessing users list", {
       adminEmail: currentUser.email,
+      adminId: currentUser.id,
       endpoint: "/api/admin/users",
-      searchQuery: email || 'all_users'
+      filters: { search, role },
+      pagination: { page, limit },
+      resultCount: users.length,
+      total
     });
-    
-    let users;
-    
-    if (email) {
-      // Search by email
-      users = await prisma.user.findMany({
-        where: {
-          email: {
-            contains: email,
-            mode: 'insensitive'
-          }
-        },
-        select: { 
-          id: true, 
-          name: true, 
-          email: true, 
-          bio: true, 
-          image: true, 
-          role: true,
-          acquisitionDate: true,
-          lastActiveAt: true,
-          acquisitionSource: true,
-          lifetimeValue: true,
-          totalSpent: true,
-          preferredLanguage: true,
-          totalChatSessions: true
-        },
-        orderBy: { acquisitionDate: 'desc' }
-      });
-    } else {
-      // Get all users
-      users = await prisma.user.findMany({
-        select: { 
-          id: true, 
-          name: true, 
-          email: true, 
-          bio: true, 
-          image: true, 
-          role: true,
-          acquisitionDate: true,
-          lastActiveAt: true,
-          acquisitionSource: true,
-          lifetimeValue: true,
-          totalSpent: true,
-          preferredLanguage: true,
-          totalChatSessions: true
-        },
-        orderBy: { acquisitionDate: 'desc' }
-      });
-    }
 
     return NextResponse.json({ 
-      users, 
-      count: users.length,
-      timestamp: new Date().toISOString()
+      users,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: skip + users.length < total
+      },
+      meta: {
+        timestamp: new Date().toISOString(),
+        filters: {
+          search: search || null,
+          role: role || 'all'
+        }
+      }
     });
+
   } catch (error) {
     apiLogger.logError("Error fetching users in admin endpoint", error as Error, {
       endpoint: "/api/admin/users"

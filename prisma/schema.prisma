@@ -15,6 +15,7 @@ datasource db {
 enum UserRole {
   ADMIN
   USER
+  BANNED
 }
 
 model User {
@@ -462,4 +463,92 @@ model WishlistFolder {
   wishlist  Wishlist[]
 
   @@unique([userId, name]) // đảm bảo không có 2 folder trùng tên nhau.
+}
+
+// ============================================
+// CMS Models - Content Management System
+// ============================================
+
+// Homepage Content - Stores all homepage sections
+model HomepageContent {
+  id        String   @id @default(cuid())
+  
+  // Hero Section
+  heroTitle       String
+  heroDescription String   @db.Text
+  
+  // How It Works Section
+  howItWorksTitle       String
+  howItWorksDescription String   @db.Text
+  howItWorksSteps       Json     // Array of {title, description}
+  
+  // Features Section
+  featuresTitle       String
+  featuresDescription String   @db.Text
+  features            Json     // Array of {icon: string, title, description}
+  
+  // CTA Section
+  ctaTitle       String
+  ctaDescription String   @db.Text
+  ctaLabel       String
+  ctaHref        String
+  
+  // Metadata
+  isPublished Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  updatedBy   String   // Admin email who updated
+  
+  @@map("homepage_content")
+}
+
+// FAQ Categories - Main categories for FAQ sections
+model FaqCategory {
+  id    String @id @default(cuid())
+  name  String // "General Questions", "Buying & Pricing", etc.
+  icon  String // FontAwesome icon name: "faLeaf", "faShoppingCart", etc.
+  order Int    @default(0)
+  
+  isVisible Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  faqs Faq[]
+  
+  @@map("faq_categories")
+}
+
+// FAQ Items - Individual questions and answers
+model Faq {
+  id         String      @id @default(cuid())
+  question   String
+  answer     String      @db.Text
+  order      Int         @default(0)
+  
+  isVisible  Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  
+  // Relations
+  categoryId String
+  category   FaqCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@index([categoryId, order])
+  @@map("faqs")
+}
+
+// FAQ Page Settings - Global settings for FAQ page
+model FaqPageSettings {
+  id                    String   @id @default(cuid())
+  title                 String   @default("Frequently Asked Questions")
+  description           String   @default("Find answers to the most common questions about our services.")
+  noAnswerMessage       String   @default("Can't find the answer you're looking for?")
+  contactLabel          String   @default("Contact Us")
+  contactHref           String   @default("/contact")
+  
+  isPublished           Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
+  updatedBy             String   // Admin email who updated
+  
+  @@map("faq_page_settings")
 }
