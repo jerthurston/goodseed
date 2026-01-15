@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiLogger } from "../../api-logger";
+import { CONFIG } from "./constants";
 
 /**
  * Cleanup old rate limit records (Chạy định kỳ bằng cron)

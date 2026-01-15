@@ -25,8 +25,6 @@ export default function AutoScraperTabContent({
   const {
     startAllAutoScraper,
     stopAllAutoScraper,
-    // startSellerAutoScraper,
-    // stopSellerAutoScraper,
     updateSellerInterval,
     isLoading,
     isBulkOperationLoading,

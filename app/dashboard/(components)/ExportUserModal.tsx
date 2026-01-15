@@ -157,11 +157,11 @@ export default function ExportUserModal({
                 <div className={styles.exportModalBody}>
                     <div className={styles.exportModalDescription}>
                         <FontAwesomeIcon icon={faCircleExclamation} />
-                    <p >
-                        Select the fields and format you want to export.
-                        Current filters (search: &quot;{searchTerm || 'none'}&quot;, role: {roleFilter}) will be applied.
-                        {data && <strong> Found {data.users.length} users to export.</strong>}
-                    </p>
+                        <p >
+                            Select the fields and format you want to export.
+                            Current filters (search: &quot;{searchTerm || 'none'}&quot;, role: {roleFilter}) will be applied.
+                            {data && <strong> Found {data.users.length} users to export.</strong>}
+                        </p>
                     </div>
 
                     {/* Loading State */}
@@ -214,12 +214,6 @@ export default function ExportUserModal({
                                             className={styles.exportFieldCheckbox}
                                         />
                                         <span className={styles.exportFieldText}>{field.label}</span>
-                                        {field.selected && (
-                                            <FontAwesomeIcon
-                                                icon={faCheck}
-                                                className={styles.exportFieldCheckIcon}
-                                            />
-                                        )}
                                     </label>
                                 ))}
                             </div>
@@ -277,7 +271,7 @@ export default function ExportUserModal({
                         ) : (
                             <>
                                 <FontAwesomeIcon icon={faFileDownload} />
-                                Export {exportFields.filter(f => f.selected).length} Fields as {selectedFormat.toUpperCase()}
+                                Export 
                             </>
                         )}
                     </button>

@@ -605,7 +605,7 @@ const ManageScrapingSourcesModal: React.FC<ManageScrapingSourcesModalProps> = ({
             <DeleteListConfirmModal
                 isOpen={deleteModalState.isOpen}
                 title="DELETE SCRAPING SOURCE"
-                listName={deleteModalState.sourceName}
+                folderName={deleteModalState.sourceName}
                 customMessage={`Are you sure you want to permanently delete the scraping source "<strong>${deleteModalState.sourceName}</strong>" from URL <em>${deleteModalState.sourceUrl}</em>?<br><br>This will stop all automated scraping from this source. This action cannot be undone.`}
                 onCancel={handleDeleteCancel}
                 onConfirm={handleDeleteConfirm}
