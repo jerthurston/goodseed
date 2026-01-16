@@ -122,12 +122,26 @@ jobs:
         BRANCH_NAME=${GITHUB_REF#refs/heads/}
         echo "branch_tag=$BRANCH_NAME" >> $GITHUB_OUTPUT
         
+    - name: Set DATABASE_URL based on environment
+      id: db-url
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "database_url=${{ secrets.PROD_DATABASE_URL }}" >> $GITHUB_OUTPUT
+        else
+          echo "database_url=${{ secrets.DEV_DATABASE_URL }}" >> $GITHUB_OUTPUT
+        fi
+        
     - name: Build & push web image
       uses: docker/build-push-action@v5
       with:
         context: .
         target: runner
         push: true
+        build-args: |
+          DATABASE_URL=${{ steps.db-url.outputs.database_url }}
+          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+          NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
         tags: |
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ steps.tags.outputs.branch_tag }}
@@ -141,6 +155,11 @@ jobs:
         context: .
         target: builder
         push: true
+        build-args: |
+          DATABASE_URL=${{ steps.db-url.outputs.database_url }}
+          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+          NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
         tags: |
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}${{ needs.set-environment.outputs.worker_image_suffix }}
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ steps.tags.outputs.branch_tag }}${{ needs.set-environment.outputs.worker_image_suffix }}

@@ -30,11 +30,22 @@ RUN pnpm install --frozen-lockfile
 # Copy source code and build script
 COPY . .
 
+# Build arguments for environment variables
+ARG RESEND_API_KEY
+ARG NEXTAUTH_SECRET
+ARG NEXTAUTH_URL
+ARG DATABASE_URL
+
 # Environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
+# Use ARG for DATABASE_URL with fallback to placeholder
+ENV DATABASE_URL=${DATABASE_URL:-"postgresql://placeholder:placeholder@localhost:5432/placeholder"}
 ENV NODE_OPTIONS="--max-old-space-size=2048"
+# Pass build args as environment variables
+ENV RESEND_API_KEY=${RESEND_API_KEY}
+ENV NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
 
 # Generate Prisma Client and build
 RUN pnpm prisma generate
