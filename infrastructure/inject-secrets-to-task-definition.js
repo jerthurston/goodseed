@@ -40,7 +40,8 @@ const ENV_VARS = {
   
   // Auth & Security
   AUTH_SECRET: process.env.AUTH_SECRET,
-  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  AUTH_URL: process.env.AUTH_URL,
+  AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   
   // Email service

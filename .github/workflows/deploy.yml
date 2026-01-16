@@ -141,7 +141,7 @@ jobs:
           DATABASE_URL=${{ steps.db-url.outputs.database_url }}
           RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
           AUTH_SECRET=${{ secrets.AUTH_SECRET }}
-          NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+          AUTH_URL=${{ secrets.AUTH_URL }}
           RESEND_FROM_EMAIL=${{ secrets.RESEND_FROM_EMAIL }}
           AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID }}
           AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET }}
@@ -171,7 +171,7 @@ jobs:
           DATABASE_URL=${{ steps.db-url.outputs.database_url }}
           RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
           AUTH_SECRET=${{ secrets.AUTH_SECRET }}
-          NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+          AUTH_URL=${{ secrets.AUTH_URL }}
           RESEND_FROM_EMAIL=${{ secrets.RESEND_FROM_EMAIL }}
           AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID }}
           AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET }}
@@ -225,8 +225,9 @@ jobs:
       env:
         DATABASE_URL: ${{ steps.db-url.outputs.database_url }}
         AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-        NEXT_PUBLIC_APP_URL: ${{ secrets.NEXTAUTH_URL }}
+        AUTH_URL: ${{ secrets.AUTH_URL }}
+        AUTH_TRUST_HOST: "true"
+        NEXT_PUBLIC_APP_URL: ${{ secrets.AUTH_URL }}
         RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
         AUTH_GOOGLE_ID: ${{ secrets.AUTH_GOOGLE_ID }}

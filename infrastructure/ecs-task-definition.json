@@ -31,8 +31,12 @@
           "value": "goodseed-nextauth-secret-key-production-2024"
         },
         {
-          "name": "NEXTAUTH_URL",
+          "name": "AUTH_URL",
           "value": "https://lembooking.com"
+        },
+        {
+          "name": "AUTH_TRUST_HOST",
+          "value": "true"
         },
         {
           "name": "NEXT_PUBLIC_APP_URL", 

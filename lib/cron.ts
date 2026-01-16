@@ -42,7 +42,7 @@ async function triggerScrapingJob(sites?: string[]): Promise<void> {
       throw new Error('CRON_SECRET not configured');
     }
 
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = process.env.AUTH_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/cron/scraper`, {
       method: 'GET',
       headers: {

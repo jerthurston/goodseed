@@ -10,7 +10,7 @@ const getBaseUrl = () => {
         }
         
         // Server environment - use environment variable or ALB fallback
-        const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
+        const baseUrl = process.env.AUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
         if (baseUrl) {
             return `${baseUrl}/api`;
         }
