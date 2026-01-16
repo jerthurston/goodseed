@@ -46,7 +46,7 @@ export const {
     maxAge: 60 * 60 * 24 * 7 // 1 week
   },
   // Secret used to encrypt session data
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   // Other NextAuth configuration options
   ...authConfig
 });
