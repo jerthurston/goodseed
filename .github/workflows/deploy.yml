@@ -147,13 +147,13 @@ jobs:
           AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET }}
           AUTH_FACEBOOK_ID=${{ secrets.AUTH_FACEBOOK_ID }}
           AUTH_FACEBOOK_SECRET=${{ secrets.AUTH_FACEBOOK_SECRET }}
-          NEXT_PUBLIC_DEMO_PASSWORD=${{ vars.NEXT_PUBLIC_DEMO_PASSWORD }}
+          NEXT_PUBLIC_DEMO_PASSWORD=${{ secrets.NEXT_PUBLIC_DEMO_PASSWORD }}
           CRON_SECRET=${{ secrets.CRON_SECRET }}
           REDIS_HOST=${{ secrets.REDIS_HOST }}
           REDIS_PORT=${{ secrets.REDIS_PORT }}
           CLOUDFLARE_ZONE_ID=${{ secrets.CLOUDFLARE_ZONE_ID }}
           CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DOMAIN=${{ vars.CLOUDFLARE_DOMAIN }}
+          CLOUDFLARE_DOMAIN=${{ secrets.CLOUDFLARE_DOMAIN }}
         tags: |
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ steps.tags.outputs.branch_tag }}
@@ -177,13 +177,13 @@ jobs:
           AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET }}
           AUTH_FACEBOOK_ID=${{ secrets.AUTH_FACEBOOK_ID }}
           AUTH_FACEBOOK_SECRET=${{ secrets.AUTH_FACEBOOK_SECRET }}
-          NEXT_PUBLIC_DEMO_PASSWORD=${{ vars.NEXT_PUBLIC_DEMO_PASSWORD }}
+          NEXT_PUBLIC_DEMO_PASSWORD=${{ secrets.NEXT_PUBLIC_DEMO_PASSWORD }}
           CRON_SECRET=${{ secrets.CRON_SECRET }}
           REDIS_HOST=${{ secrets.REDIS_HOST }}
           REDIS_PORT=${{ secrets.REDIS_PORT }}
           CLOUDFLARE_ZONE_ID=${{ secrets.CLOUDFLARE_ZONE_ID }}
           CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_DOMAIN=${{ vars.CLOUDFLARE_DOMAIN }}
+          CLOUDFLARE_DOMAIN=${{ secrets.CLOUDFLARE_DOMAIN }}
         tags: |
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}${{ needs.set-environment.outputs.worker_image_suffix }}
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ steps.tags.outputs.branch_tag }}${{ needs.set-environment.outputs.worker_image_suffix }}
@@ -220,16 +220,32 @@ jobs:
     # -----------------------------
     # DEPLOY TO ECS
     # -----------------------------
-    
-    - name: Pre-deployment health check
-      run: |
-        echo "🔍 Checking if health endpoint works locally..."
-        # Test that our app can start and health endpoint responds
-        timeout 60s bash -c 'until curl -f http://localhost:3000/api/health 2>/dev/null; do sleep 2; done' || echo "⚠️ Local health check timeout (app might need more time)"
 
-    - name: Copy web task definition
+    - name: Inject secrets into web task definition
+      env:
+        DATABASE_URL: ${{ steps.db-url.outputs.database_url }}
+        AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        NEXT_PUBLIC_APP_URL: ${{ secrets.NEXTAUTH_URL }}
+        RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+        AUTH_GOOGLE_ID: ${{ secrets.AUTH_GOOGLE_ID }}
+        AUTH_GOOGLE_SECRET: ${{ secrets.AUTH_GOOGLE_SECRET }}
+        AUTH_FACEBOOK_ID: ${{ secrets.AUTH_FACEBOOK_ID }}
+        AUTH_FACEBOOK_SECRET: ${{ secrets.AUTH_FACEBOOK_SECRET }}
+        NEXT_PUBLIC_DEMO_PASSWORD: ${{ secrets.NEXT_PUBLIC_DEMO_PASSWORD }}
+        CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        REDIS_HOST: ${{ secrets.REDIS_HOST }}
+        REDIS_PORT: ${{ secrets.REDIS_PORT }}
+        CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_DOMAIN: ${{ secrets.CLOUDFLARE_DOMAIN }}
       run: |
-        cp infrastructure/ecs-task-definition.json web-task-definition.json
+        echo "🔐 Injecting secrets into web task definition..."
+        node infrastructure/inject-secrets-to-task-definition.js \
+          --input infrastructure/ecs-task-definition.json \
+          --output web-task-definition.json \
+          --container goodseed-app
 
     - name: Update web task definition with new image
       id: web-task-def
@@ -248,9 +264,20 @@ jobs:
         wait-for-service-stability: true
         wait-for-minutes: 20
 
-    - name: Copy worker task definition
+    - name: Inject secrets into worker task definition
+      env:
+        DATABASE_URL: ${{ steps.db-url.outputs.database_url }}
+        AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        REDIS_HOST: ${{ secrets.REDIS_HOST }}
+        REDIS_PORT: ${{ secrets.REDIS_PORT }}
+        CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       run: |
-        cp infrastructure/ecs-worker-task-definition.json worker-task-definition.json
+        echo "🔐 Injecting secrets into worker task definition..."
+        node infrastructure/inject-secrets-to-task-definition.js \
+          --input infrastructure/ecs-worker-task-definition.json \
+          --output worker-task-definition.json \
+          --container goodseed-worker
 
     - name: Update worker task definition with dev image
       id: worker-task-def
