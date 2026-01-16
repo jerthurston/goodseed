@@ -5,8 +5,19 @@ import { MagicLinkEmail } from "../email-template/MagicLinkEmail";
 import { apiLogger } from "@/lib/helpers/api-logger";
 import { checkMagicLinkRateLimit } from "@/lib/helpers/server/magicLink/index";
 
+// Lazy initialization - only create client when needed
+let resendClientInstance: ResendClient | null = null;
 
-const resendClient = new ResendClient(process.env.RESEND_API_KEY!);
+function getResendClient(): ResendClient {
+    if (!resendClientInstance) {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (!apiKey) {
+            throw new Error('RESEND_API_KEY is not defined in environment variables');
+        }
+        resendClientInstance = new ResendClient(apiKey);
+    }
+    return resendClientInstance;
+}
 
 export const resendProvider = Resend({
     from: process.env.RESEND_FROM_EMAIL!,
@@ -18,6 +29,8 @@ export const resendProvider = Resend({
         request, // NextAuth request object
     }) {
         try {
+            // Get Resend client lazily
+            const resendClient = getResendClient();
             // ========================================
             // RATE LIMIT CHECK
             // ========================================
