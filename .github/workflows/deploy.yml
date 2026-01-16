@@ -271,7 +271,10 @@ jobs:
       if: steps.deploy-web.outcome == 'failure'
       run: |
         echo "⚠️ Deployment failed, fetching CloudWatch logs..."
-        aws logs tail /ecs/goodseed-free/app --follow --since 10m --region us-east-1 || echo "Failed to fetch logs"
+        echo "📋 Recent logs from /ecs/goodseed-free/app:"
+        aws logs tail /ecs/goodseed-free/app --since 10m --region us-east-1 --format short || echo "❌ Failed to fetch logs"
+        echo ""
+        echo "💡 Check full logs at: https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups/log-group//ecs/goodseed-free/app"
         exit 1
 
     - name: Inject secrets into worker task definition
