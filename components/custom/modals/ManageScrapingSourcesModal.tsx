@@ -165,7 +165,7 @@ const ScrapingSourceItem: React.FC<ScrapingSourceItemProps> = ({
                     <DashboardButton
                         variant="outline"
                         onClick={onDelete}
-                        className="!p-2 !border-(--danger-color) !text-(--danger-color) hover:!bg-(--danger-color) hover:!text-white"
+                        className="p-2! border-(--danger-color)! text-(--danger-color)! hover:bg-(--danger-color)! hover:text-white!"
                         title="Delete Source"
                         disabled={isDeleting}
                     >

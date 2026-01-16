@@ -27,7 +27,7 @@
           "value": "postgresql://goodseed_user:GoodSeed2024SecureDB@goodseed-production-db.us-east-1.rds.amazonaws.com:5432/goodseed_production?sslmode=disable"
         },
         {
-          "name": "NEXTAUTH_SECRET",
+          "name": "AUTH_SECRET",
           "value": "goodseed-nextauth-secret-key-production-2024"
         },
         {

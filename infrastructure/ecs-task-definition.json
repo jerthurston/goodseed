@@ -27,7 +27,7 @@
           "value": "postgresql://goodseed_user:GoodSeed2024SecureDB@goodseed-free-db.cq7eog2a85qn.us-east-1.rds.amazonaws.com:5432/goodseed_free?sslmode=disable"
         },
         {
-          "name": "NEXTAUTH_SECRET",
+          "name": "AUTH_SECRET",
           "value": "goodseed-nextauth-secret-key-production-2024"
         },
         {
@@ -45,6 +45,50 @@
         {
           "name": "REDIS_PORT",
           "value": "6379"
+        },
+        {
+          "name": "RESEND_API_KEY",
+          "value": "REPLACE_WITH_RESEND_API_KEY"
+        },
+        {
+          "name": "RESEND_FROM_EMAIL",
+          "value": "support@example.com"
+        },
+        {
+          "name": "AUTH_GOOGLE_ID",
+          "value": "REPLACE_WITH_GOOGLE_ID"
+        },
+        {
+          "name": "AUTH_GOOGLE_SECRET",
+          "value": "REPLACE_WITH_GOOGLE_SECRET"
+        },
+        {
+          "name": "AUTH_FACEBOOK_ID",
+          "value": "REPLACE_WITH_FACEBOOK_ID"
+        },
+        {
+          "name": "AUTH_FACEBOOK_SECRET",
+          "value": "REPLACE_WITH_FACEBOOK_SECRET"
+        },
+        {
+          "name": "NEXT_PUBLIC_DEMO_PASSWORD",
+          "value": "demo-password"
+        },
+        {
+          "name": "CRON_SECRET",
+          "value": "REPLACE_WITH_CRON_SECRET"
+        },
+        {
+          "name": "CLOUDFLARE_ZONE_ID",
+          "value": "REPLACE_WITH_CF_ZONE_ID"
+        },
+        {
+          "name": "CLOUDFLARE_API_TOKEN",
+          "value": "REPLACE_WITH_CF_API_TOKEN"
+        },
+        {
+          "name": "CLOUDFLARE_DOMAIN",
+          "value": "lembooking.com"
         }
       ],
       "logConfiguration": {
