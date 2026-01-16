@@ -257,6 +257,7 @@ jobs:
         image: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}
 
     - name: Deploy web service to Amazon ECS
+      id: deploy-web
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
         task-definition: ${{ steps.web-task-def.outputs.task-definition }}
@@ -264,6 +265,14 @@ jobs:
         cluster: ${{ needs.set-environment.outputs.ecs_cluster }}
         wait-for-service-stability: true
         wait-for-minutes: 20
+      continue-on-error: true
+
+    - name: Get ECS task logs on failure
+      if: steps.deploy-web.outcome == 'failure'
+      run: |
+        echo "⚠️ Deployment failed, fetching CloudWatch logs..."
+        aws logs tail /ecs/goodseed-free/app --follow --since 10m --region us-east-1 || echo "Failed to fetch logs"
+        exit 1
 
     - name: Inject secrets into worker task definition
       env:
