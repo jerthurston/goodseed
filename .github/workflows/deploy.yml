@@ -140,8 +140,21 @@ jobs:
         build-args: |
           DATABASE_URL=${{ steps.db-url.outputs.database_url }}
           RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-          NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+          AUTH_SECRET=${{ secrets.AUTH_SECRET }}
           NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+          RESEND_FROM_EMAIL=${{ secrets.RESEND_FROM_EMAIL }}
+          AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID }}
+          AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET }}
+          AUTH_FACEBOOK_ID=${{ secrets.AUTH_FACEBOOK_ID }}
+          AUTH_FACEBOOK_SECRET=${{ secrets.AUTH_FACEBOOK_SECRET }}
+          NEXT_PUBLIC_DEMO_PASSWORD=${{ vars.NEXT_PUBLIC_DEMO_PASSWORD }}
+          CRON_SECRET=${{ secrets.CRON_SECRET }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          CLOUDFLARE_ZONE_ID=${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DOMAIN=${{ vars.CLOUDFLARE_DOMAIN }}
         tags: |
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ steps.tags.outputs.branch_tag }}
@@ -158,8 +171,21 @@ jobs:
         build-args: |
           DATABASE_URL=${{ steps.db-url.outputs.database_url }}
           RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-          NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+          AUTH_SECRET=${{ secrets.AUTH_SECRET }}
           NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+          RESEND_FROM_EMAIL=${{ secrets.RESEND_FROM_EMAIL }}
+          AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID }}
+          AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET }}
+          AUTH_FACEBOOK_ID=${{ secrets.AUTH_FACEBOOK_ID }}
+          AUTH_FACEBOOK_SECRET=${{ secrets.AUTH_FACEBOOK_SECRET }}
+          NEXT_PUBLIC_DEMO_PASSWORD=${{ vars.NEXT_PUBLIC_DEMO_PASSWORD }}
+          CRON_SECRET=${{ secrets.CRON_SECRET }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          CLOUDFLARE_ZONE_ID=${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DOMAIN=${{ vars.CLOUDFLARE_DOMAIN }}
         tags: |
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}${{ needs.set-environment.outputs.worker_image_suffix }}
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ steps.tags.outputs.branch_tag }}${{ needs.set-environment.outputs.worker_image_suffix }}

@@ -1,9 +1,33 @@
 // scripts/test-cloudflare-connection.js
+const fs = require('fs')
 const dotenv = require('dotenv')
 const path = require('path')
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '../.env') })
+function loadEnvironment() {
+  const candidatePaths = [
+    path.join(process.cwd(), '.env.local'),
+    path.join(process.cwd(), '.env.development'),
+    path.join(process.cwd(), '.env'),
+    path.join(__dirname, '../.env.local'),
+    path.join(__dirname, '../.env.development'),
+    path.join(__dirname, '../.env'),
+  ]
+
+  for (const envPath of candidatePaths) {
+    if (fs.existsSync(envPath)) {
+      const result = dotenv.config({ path: envPath })
+      if (!result.error) {
+        console.log(`[dotenv] Loaded ${path.basename(envPath)} for Cloudflare tests`)
+        return
+      }
+    }
+  }
+
+  dotenv.config()
+  console.warn('[dotenv] No specific env file found, falling back to process.env only')
+}
+
+loadEnvironment()
 
 async function testCloudflareConnection() {
   const zoneId = process.env.CLOUDFLARE_ZONE_ID
