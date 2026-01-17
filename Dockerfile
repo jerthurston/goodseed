@@ -27,15 +27,8 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile
 
-# Copy Prisma schema first
-COPY prisma ./prisma
-
-# Copy source code (note: .dockerignore blocks node_modules, so Prisma Client won't be copied)
+# Copy source code and build script
 COPY . .
-
-# Generate Prisma Client AFTER copying all source code
-# This ensures .prisma folder is created fresh in builder
-RUN pnpm prisma generate
 
 # Build arguments for environment variables
 ARG RESEND_API_KEY
@@ -80,7 +73,8 @@ ENV CLOUDFLARE_ZONE_ID=${CLOUDFLARE_ZONE_ID}
 ENV CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
 ENV CLOUDFLARE_DOMAIN=${CLOUDFLARE_DOMAIN}
 
-# Build Next.js (Prisma Client already generated above)
+# Generate Prisma Client and build
+RUN pnpm prisma generate
 RUN pnpm run build
 
 # Production image, copy all the files and run next
