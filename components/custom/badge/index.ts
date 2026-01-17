@@ -1,0 +1,1 @@
+export { PotencyBadge } from './PotencyBadge'

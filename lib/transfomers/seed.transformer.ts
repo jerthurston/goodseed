@@ -23,8 +23,13 @@ export class SeedTransformer {
         }));
 
         // Get pack with LOWEST pricePerSeed (best value for money)
-        const bestValuePack = packs.reduce((best, pack) =>
-            pack.pricePerSeed < best.pricePerSeed ? pack : best,
+        // const bestValuePack = packs.reduce((best, pack) =>
+        //     pack.pricePerSeed < best.pricePerSeed ? pack : best,
+        //     packs[0] || { size: 0, totalPrice: 0, pricePerSeed: 0 }
+        // );
+
+         const HighestValuePack = packs.reduce((highest, pack) =>
+            pack.pricePerSeed > highest.pricePerSeed ? pack : highest,
             packs[0] || { size: 0, totalPrice: 0, pricePerSeed: 0 }
         );
 
@@ -65,15 +70,15 @@ export class SeedTransformer {
             name: raw.name,
             seedType: raw.seedType || 'UNKNOWN',
             cannabisType: raw.cannabisType || 'UNKNOWN',
-            price: bestValuePack.pricePerSeed,
+            price: HighestValuePack.pricePerSeed,
             thc,
             cbd,
             popularity: 0, // TODO: Implement popularity logic
             date: raw.createdAt,
             vendorName: raw.category.seller.name,
             vendorUrl: raw.url,
-            smallestPackSize: bestValuePack.size,
-            smallestPackPrice: bestValuePack.totalPrice,
+            smallestPackSize: HighestValuePack.size,
+            smallestPackPrice: HighestValuePack.totalPrice,
             strainDescription: raw.description || '',
             packs,
             imageUrl: primaryImage?.image.url || '/images/placeholder-seed.png',

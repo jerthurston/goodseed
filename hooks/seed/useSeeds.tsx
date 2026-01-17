@@ -24,11 +24,11 @@ export function useFetchSeeds(options: UseSeedsInputOptions): UseSeedsOutputResu
         queryKey: ['seeds', options],
         queryFn: async () => {
             const startTime = Date.now();
-            console.log('🚀 [TanStack] Starting API fetch for seeds:', options);
+            apiLogger.logRequest('useSeeds.queryFn', { options });
             try {
                 const data = await SeedService.fetchSeeds(options);
                 const duration = Date.now() - startTime;
-                console.log('✅ [TanStack] Fetch completed:', {
+                apiLogger.logResponse('useSeeds.queryFn', {}, {
                     rawSeedsCount: data.seeds.length,
                     duration: `${duration}ms`,
                     cacheSource: 'DATABASE_HIT'
@@ -40,7 +40,7 @@ export function useFetchSeeds(options: UseSeedsInputOptions): UseSeedsOutputResu
                 });
                 return data;
             } catch (error) {
-                console.error('❌ [TanStack] Fetch failed:', error);
+                apiLogger.logError('❌ [TanStack] Fetch failed:', error as Error);
                 apiLogger.logError('useSeeds.queryFn', error as Error);
                 throw error;
             }
@@ -60,8 +60,12 @@ export function useFetchSeeds(options: UseSeedsInputOptions): UseSeedsOutputResu
     // Log cache status for testing
     const cacheStatus = query.isStale ? 'STALE' : 'FRESH';
     const dataSource = query.isFetching ? 'FETCHING' : (query.data ? 'CACHE_HIT' : 'NO_DATA');
-    
-    console.log(`🎯 [TanStack Cache] Status: ${cacheStatus} | Source: ${dataSource} | Query:`, options);
+
+    apiLogger.logResponse('useSeeds.queryFn', {}, {
+        cacheStatus,
+        dataSource,
+        query: options
+    });
 
     const result: UseSeedsOutputResult = {
         seeds: query.data?.seeds || [],

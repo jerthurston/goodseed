@@ -1,6 +1,10 @@
 import { cn } from '@/lib/utils'
 import React from 'react'
-import { HashLoader } from 'react-spinners'
+import { HashLoader , RingLoader,
+    BeatLoader,
+    ClimbingBoxLoader
+
+ } from 'react-spinners'
 
 interface LoadingSpinnerProps {
     size?: 'small' | 'medium' | 'large'
@@ -15,11 +19,11 @@ const sizeMap = {
     large: 70
 }
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
-    size = 'medium',
-    color = "#FF6B34",
+export const ClimbingBoxLoaderSpinner: React.FC<LoadingSpinnerProps> = ({
+    size = 'small',
+    color = 'var(--brand-primary)',
     className,
-    loading = true
+    loading
 }) => {
     return (
         <div className={cn(
@@ -27,7 +31,8 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
             className
         )}>
             <div className="text-center">
-                <HashLoader
+               
+                <ClimbingBoxLoader
                     color={color}
                     loading={loading}
                     cssOverride={{
@@ -35,13 +40,16 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
                         margin: "0 auto",
                         borderColor: "transparent"
                     }}
+                    style={{
+                        color: "black",
+                    }}
                     size={sizeMap[size]}
                     aria-label="Loading Spinner"
-                    data-testid="loader"
-                />
-                <p className="mt-4 text-sm text-muted-foreground">
-                    Đang tải...
-                </p>
+                /> 
+                
+                {/* <p className="mt-4 text-sm text-muted-foreground">
+                    loading...
+                </p> */}
             </div>
         </div>
     )

@@ -236,7 +236,7 @@ const FavouritePage = () => {
                                 >
                                     {folders.map(folder => (
                                         <option key={folder.id} value={folder.id}>
-                                            {folder.name}
+                                            {folder.name === 'Uncategorized' ? 'Favorites (Default)' : folder.name}
                                         </option>
                                     ))}
                                 </select>
@@ -278,7 +278,7 @@ const FavouritePage = () => {
                                 <input
                                     type="text"
                                     id="newListName"
-                                    placeholder="New Folder name"
+                                    placeholder="Eg: My Favorite Seeds"
                                     className="list-create-input"
                                     value={newFolderName}
                                     onChange={(e) => setNewFolderName(e.target.value)}

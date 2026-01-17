@@ -1,7 +1,9 @@
 'use client'
 
+import { getVisiblePages } from '@/lib/helpers/client/get-visible-page';
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useEffect, useState } from 'react';
 
 interface PaginationProps {
     currentPage: number;
@@ -19,27 +21,37 @@ const Pagination = ({
     // Don't render if only one page
     if (totalPages <= 1) return null;
 
+    // 📱 Responsive maxVisiblePages: 3 on mobile, 5 on desktop
+    const [responsiveMaxPages, setResponsiveMaxPages] = useState(maxVisiblePages);
+
+    useEffect(() => {
+        const handleResize = () => {
+            // Mobile: <= 640px → 3 pages
+            // Tablet: <= 768px → 4 pages  
+            // Desktop: > 768px → 5 pages (default)
+            if (window.innerWidth <= 640) {
+                setResponsiveMaxPages(3);
+            } else if (window.innerWidth <= 768) {
+                setResponsiveMaxPages(4);
+            } else {
+                setResponsiveMaxPages(maxVisiblePages);
+            }
+        };
+
+        // Initial check
+        handleResize();
+
+        // Listen to window resize
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [maxVisiblePages]);
+
     // Calculate visible page numbers
-    const getVisiblePages = (): number[] => {
-        const pages: number[] = [];
-        const halfVisible = Math.floor(maxVisiblePages / 2);
-
-        let startPage = Math.max(1, currentPage - halfVisible);
-        const endPage = Math.min(totalPages, startPage + maxVisiblePages - 3);
-
-        // Adjust start if we're near the end
-        if (endPage - startPage < maxVisiblePages - 1) {
-            startPage = Math.max(1, endPage - maxVisiblePages + 1);
-        }
-
-        for (let i = startPage; i <= endPage; i++) {
-            pages.push(i);
-        }
-
-        return pages;
-    };
-
-    const visiblePages = getVisiblePages();
+    const visiblePages = getVisiblePages(
+        currentPage,
+        totalPages,
+        responsiveMaxPages
+    );
 
     return (
         <div className="pagination-container">

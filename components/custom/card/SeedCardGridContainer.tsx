@@ -18,6 +18,7 @@ import { useFetchWishlistFolders } from '@/hooks/client-user/wishlist-folder/use
 import { useCreateWishlistFolder } from '@/hooks/client-user/wishlist-folder/useCreateWishlistFolder'
 import AddToFolderModal from '../modals/AddToListModal'
 import { usePathname } from 'next/navigation'
+import { useAuthModal } from '@/hooks/auth/useAuthModal'
 
 interface CardGridContainerProps {
     seeds: SeedUI[];
@@ -36,7 +37,7 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
     const [isUnfavoriteModalOpen, setIsUnfavoriteModalOpen] = useState(false)
     const [unfavoriteMessage, setUnfavoriteMessage] = useState('')
     const [pendingUnfavoriteSeedId, setPendingUnfavoriteSeedId] = useState<string | null>(null)
-    const [activeOverlaySeedId, setActiveOverlaySeedId] = useState<string | null>(null)
+    // const [activeOverlaySeedId, setActiveOverlaySeedId] = useState<string | null>(null)
 
     // Add to Folder Modal state
     const [isAddToFolderModalOpen, setIsAddToFolderModalOpen] = useState(false)
@@ -44,24 +45,27 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
     const [activeModalSeedId, setActiveModalSeedId] = useState<string | null>(null)
     const [activeModalSeedName, setActiveModalSeedName] = useState<string>('')
 
-    // Fetch wishlist items from server
-    const { 
-        wishlistItems, 
+    // CUSTOM HOOKS:
+    // ----> Fetch wishlist items from server
+    const {
+        wishlistItems,
         isLoading: isLoadingWishlist,
         isError: isWishlistError,
         error: wishlistError,
-        refetch: refetchWishlist 
+        refetch: refetchWishlist
     } = useFetchWishlist({
         // Chỉ fetch khi component đã mount và có seeds
         enabled: true
     });
+
+    
 
     // Sync favorites state với wishlist data từ server
     useEffect(() => {
         if (wishlistItems.length > 0) {
             const wishlistSeedIds = new Set(wishlistItems.map(item => item.seedId));
             setFavorites(wishlistSeedIds);
-            
+
             apiLogger.debug('[CardGridContainer] Synced favorites from wishlist', {
                 count: wishlistSeedIds.size,
                 seedIds: Array.from(wishlistSeedIds)
@@ -78,13 +82,13 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
                 newFavorites.add(wishlist.seedId);
                 return newFavorites;
             });
-            
+
             // Refetch wishlist to ensure sync
             refetchWishlist();
-            
-            apiLogger.info('[CardGridContainer] Seed added to wishlist', { 
+
+            apiLogger.info('[CardGridContainer] Seed added to wishlist', {
                 wishlistId: wishlist.id,
-                seedId: wishlist.seedId 
+                seedId: wishlist.seedId
             });
         }
     });
@@ -100,8 +104,8 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
             });
             // Refetch wishlist to ensure sync
             refetchWishlist();
-            apiLogger.info('[CardGridContainer] Seed removed from wishlist', { 
-                seedId 
+            apiLogger.info('[CardGridContainer] Seed removed from wishlist', {
+                seedId
             });
         }
     });
@@ -111,7 +115,7 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
         onSuccess: ({ seedId, folderId }: { seedId: string; folderId: string }) => {
             // Refetch wishlist to get updated folder assignments
             refetchWishlist();
-            
+
             apiLogger.info('[CardGridContainer] Seed folder updated', {
                 seedId,
                 folderId
@@ -120,10 +124,10 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
     });
 
     // Fetch wishlist folders from server
-    const { 
-        folders: wishlistFolders, 
+    const {
+        folders: wishlistFolders,
         isLoading: isLoadingFolders,
-        refetch: refetchFolders, 
+        refetch: refetchFolders,
     } = useFetchWishlistFolders();
 
     // Create wishlist folder hook
@@ -132,7 +136,7 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
         onSuccess: (newFolder) => {
             // Refetch folders after creation
             refetchFolders();
-            
+
             apiLogger.info('[CardGridContainer] New folder created', {
                 folderId: newFolder.id,
                 folderName: newFolder.name
@@ -153,7 +157,7 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
     // Use pagination from props (API handles pagination server-side)
     const currentPage = pagination?.page || 1;
     const totalPages = pagination?.totalPages || 1;
-
+    // Function to add seed item to favorites
     const toggleFavorite = (seedId: string) => {
         const isCurrentlyFavorite = favorites.has(seedId)
 
@@ -168,49 +172,28 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
             addToWishlist({ seedId });
         }
     }
-
+    // Function to cancel unfavoriting
     const handleCancelUnfavorite = () => {
         setIsUnfavoriteModalOpen(false)
         setPendingUnfavoriteSeedId(null)
         setUnfavoriteMessage('')
     }
-
-    const handleConfirmUnfavorite = () => {
-        if (pendingUnfavoriteSeedId) {
-            // Call API to remove from wishlist
-            removeFromWishlist({ seedId: pendingUnfavoriteSeedId });
-        }
-        
-        // Close modal
-        setIsUnfavoriteModalOpen(false)
-        setPendingUnfavoriteSeedId(null)
-        setUnfavoriteMessage('')
-    }
-
-    const openPackDealsOverlay = (seedId: string) => {
-        setActiveOverlaySeedId(seedId)
-    }
-
-    const closePackDealsOverlay = () => {
-        setActiveOverlaySeedId(null)
-    }
-
+    // Function to open add to folder modal
     const handleOpenAddToFolder = (seedId: string, seedName: string) => {
         setActiveModalSeedId(seedId)
         setActiveModalSeedName(seedName)
         setIsAddToFolderModalOpen(true)
     }
-
+    // Function to close add to folder modal
     const handleCloseAddToFolder = () => {
         setIsAddToFolderModalOpen(false)
         setActiveModalSeedId(null)
         setActiveModalSeedName('')
     }
-
-    const handleFolderMembershipChange = (folderId: string, isChecked: boolean) => {
+    // Function to handle folder changes
+    const handleFolderChange = (folderId: string, isChecked: boolean) => {
         if (!activeModalSeedId) return
-
-        apiLogger.info('[CardGridContainer] Folder membership change requested', {
+        apiLogger.info('[CardGridContainer] Folder change requested', {
             seedId: activeModalSeedId,
             folderId,
             isChecked,
@@ -219,9 +202,9 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
 
         if (isChecked) {
             // Add/move seed to selected folder
-            updateFolder({ 
-                seedId: activeModalSeedId, 
-                folderId 
+            updateFolder({
+                seedId: activeModalSeedId,
+                folderId
             });
         } else {
             // When unchecking, move to Uncategorized folder
@@ -231,9 +214,9 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
             );
 
             if (uncategorizedFolder) {
-                updateFolder({ 
-                    seedId: activeModalSeedId, 
-                    folderId: uncategorizedFolder.id 
+                updateFolder({
+                    seedId: activeModalSeedId,
+                    folderId: uncategorizedFolder.id
                 });
             } else {
                 apiLogger.logError('[CardGridContainer] Uncategorized folder not found', {
@@ -244,22 +227,34 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
             }
         }
     }
-
+    // Function to create a new folder
     const handleCreateNewFolder = (folderName: string) => {
         // Call API to create folder (validation and duplicate check are handled in the hook)
         createFolder(folderName);
+    }
+     // Function to confirm unfavoriting
+    const handleConfirmUnfavorite = () => {
+        if (pendingUnfavoriteSeedId) {
+            // Call API to remove from wishlist
+            removeFromWishlist({ seedId: pendingUnfavoriteSeedId });
+        }
+
+        // Close modal
+        setIsUnfavoriteModalOpen(false)
+        setPendingUnfavoriteSeedId(null)
+        setUnfavoriteMessage('')
     }
 
     return (
         <main className="results-page-main">
             {!isFavoritesPage && (
-            <div className="page-header">
-                <h2 className=''>Our Seed Collection</h2>
-                <p>Browse our premium selection of high-quality seeds from trusted vendors</p>
-                <p className='font-bold'>
-                    {(!isLoading && !isError && pagination) && `${pagination.total} seeds found`}
-                </p>
-            </div>
+                <div className="page-header">
+                    <h2 className=''>Our Seed Collection</h2>
+                    <p>Browse our premium selection of high-quality seeds from trusted vendors</p>
+                    <p className='font-bold'>
+                        {(!isLoading && !isError && pagination) && `${pagination.total} seeds found`}
+                    </p>
+                </div>
             )}
 
             {/* Loading State */}
@@ -267,6 +262,7 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
                 <div className="results-grid" id="plantCardGrid">
                     <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem' }}>
                         <p>Loading seeds...</p>
+                        {/* Build Skeleton Loader UI */}
                     </div>
                 </div>
             )}
@@ -297,10 +293,7 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
                             key={seed.id}
                             seed={seed}
                             isFavorite={favorites.has(seed.id)}
-                            isOverlayActive={activeOverlaySeedId === seed.id}
                             onToggleFavorite={toggleFavorite}
-                            onOpenOverlay={openPackDealsOverlay}
-                            onCloseOverlay={closePackDealsOverlay}
                             onOpenAddToFolder={handleOpenAddToFolder}
                         />
                     ))}
@@ -316,6 +309,7 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
                 />
             )}
 
+            {/* Confirm unfavorite modal */}
             <UnfavoriteConfirmModal
                 isOpen={isUnfavoriteModalOpen}
                 message={unfavoriteMessage}
@@ -330,7 +324,7 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
                 wishlistFolders={wishlistFolders}
                 productFolderMemberships={activeModalSeedId ? getProductFolderMemberships(activeModalSeedId) : []}
                 onClose={handleCloseAddToFolder}
-                onMembershipChange={handleFolderMembershipChange}
+                onChangeFolder={handleFolderChange}
                 onCreateNewFolder={handleCreateNewFolder}
             />
         </main>

@@ -553,7 +553,7 @@ export default function AdminSellerDetailPage() {
             <DashboardButton
               onClick={handleConfigSource}
               disabled={hasActiveJob}
-              className={hasActiveJob ? 'opacity-50 cursor-not-allowed' : ''}
+              className={`${hasActiveJob ? 'opacity-50 cursor-not-allowed' : ''} shrink-0 w-full `}
             >
               <FontAwesomeIcon icon={faAdd} className={`mr-2 ${hasActiveJob ? 'opacity-50' : ''}`} />
               {hasActiveJob ? 'Scraping Sources (Job Running)' : 'Scraping Sources'}

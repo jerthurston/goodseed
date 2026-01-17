@@ -10,7 +10,7 @@ interface AddToFolderModalProps {
     wishlistFolders: WishlistFolderUI[]
     productFolderMemberships: string[] // Array of folder IDs this product belongs to
     onClose: () => void
-    onMembershipChange: (folderId: string, isChecked: boolean) => void
+    onChangeFolder: (folderId: string, isChecked: boolean) => void
     onCreateNewFolder: (folderName: string) => void
 }
 
@@ -21,21 +21,21 @@ const AddToFolderModal = ({
     wishlistFolders,
     productFolderMemberships,
     onClose,
-    onMembershipChange,
+    onChangeFolder,
     onCreateNewFolder
 }: AddToFolderModalProps) => {
     const [newFolderName, setNewFolderName] = useState('')
 
-    // LOG DEBUG:
-    useEffect(() => {
-        console.debug("AddToFolderModal rendered", {
-            isOpen,
-            strainName,
-            activeModalSeedId,
-            wishlistFolders,
-            productFolderMemberships
-        })
-    }, [isOpen, strainName, activeModalSeedId, wishlistFolders, productFolderMemberships])
+    // // LOG DEBUG:
+    // useEffect(() => {
+    //     console.debug("AddToFolderModal rendered", {
+    //         isOpen,
+    //         strainName,
+    //         activeModalSeedId,
+    //         wishlistFolders,
+    //         productFolderMemberships
+    //     })
+    // }, [isOpen, strainName, activeModalSeedId, wishlistFolders, productFolderMemberships])
 
     if (!isOpen) return null
 
@@ -58,9 +58,7 @@ const AddToFolderModal = ({
             e.preventDefault()
             handleCreateFolder()
         }
-    }
-
-    
+    } 
 
     return (
         <div
@@ -69,6 +67,7 @@ const AddToFolderModal = ({
             onClick={handleOverlayClick}
         >
             <div className="add-to-list-content">
+                {/* Header modal */}
                 <button
                     type="button"
                     className="add-to-list-close"
@@ -77,11 +76,10 @@ const AddToFolderModal = ({
                 >
                     &times;
                 </button>
-
                 <h2 className="add-to-list-title">
                     Add <span id="modalStrainName">{strainName}</span> To...
                 </h2>
-
+                {/* Body Modal */}
                 <div className="add-to-list-scroll-container">
                     <ul className="list-manager-ul" id="listManagerCheckboxContainer">
                         {wishlistFolders.length === 0 ? (
@@ -100,9 +98,9 @@ const AddToFolderModal = ({
                                             id={checkboxId}
                                             data-list-id={folder.id}
                                             checked={isChecked}
-                                            onChange={(e) => onMembershipChange(folder.id, e.target.checked)}
+                                            onChange={(e) => onChangeFolder(folder.id, e.target.checked)}
                                         />
-                                        <label htmlFor={checkboxId}>{folder.name}</label>
+                                        <label htmlFor={checkboxId}>{folder.name === 'Uncategorized' ? 'Favorites (Default)' : folder.name}</label>
                                     </li>
                                 )
                             })
@@ -111,7 +109,7 @@ const AddToFolderModal = ({
                 </div>
 
                 <div className="add-to-list-divider"></div>
-
+                {/* Footer Modal */}
                 <div className="add-to-list-create-section">
                     <p className="list-management-label">Create New Folder:</p>
                     <form
@@ -125,7 +123,7 @@ const AddToFolderModal = ({
                         <input
                             type="text"
                             className="list-create-input form-control"
-                            placeholder="New folder name..."
+                            placeholder="Eg: My Favorite Seeds"
                             value={newFolderName}
                             onChange={(e) => setNewFolderName(e.target.value)}
                             onKeyDown={handleKeyDown}
@@ -140,11 +138,6 @@ const AddToFolderModal = ({
                         </button>
                     </form>
                 </div>
-                {/* <div className="add-to-list-actions">
-                    <button type="button" className="btn-styled primary" onClick={onClose}>
-                        Done
-                    </button>
-                </div> */}
             </div>
         </div>
     )

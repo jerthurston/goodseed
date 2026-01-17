@@ -190,7 +190,7 @@ export class SaveDbService {
         // Get sellerId once at the beginning
         const sellerId = this.getSellerId();
 
-        console.log(`sample initial products data with length = 3:`, products.slice(0, 3));
+        apiLogger.debug(`sample initial products data with length = 3:`, {sampleProduct: products.slice(0, 3)});
 
         for (const product of products) {
             try {

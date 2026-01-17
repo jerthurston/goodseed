@@ -10,6 +10,8 @@ import {
   faShieldAlt, 
   faHeart 
 } from "@fortawesome/free-solid-svg-icons";
+import { BeatLoaderSpinner, ClimbingBoxLoaderSpinner, ClockLoaderSpinner } from '@/components/custom/loading';
+import { RingLoader } from 'react-spinners';
 
 // Icon mapping from string to FontAwesome icon
 const iconMap: Record<string, any> = {
@@ -25,10 +27,7 @@ export default function HomePageContent() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
+          <p className="text-gray-600 font-bold">Loading Homepage...</p>
       </div>
     );
   }

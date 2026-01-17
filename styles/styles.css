@@ -2113,6 +2113,7 @@ Plant Cards (Results & Favorites Page)
     border-radius: 0;
     transition: all 0.2s ease;
     z-index: 5; /* Ensure heart is on top of the list icon */
+    flex-shrink: 0;
 }
 .plant-card .favorite-btn-new:hover {
     background: var(--accent-cta);

@@ -342,7 +342,7 @@ export default function AdminDashboard() {
         }
     >
       {isLoading ? (
-        <div className="flex items-center justify-center h-96">
+        <div className="flex items-center justify-center h-screen inset-0">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-(--brand-primary) mx-auto"></div>
             <p className="mt-4 font-['Poppins'] text-(--text-primary-muted)">

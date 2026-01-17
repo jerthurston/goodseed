@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { apiLogger } from '@/lib/helpers/api-logger'
 import { SeedFilter, SortBy } from '@/types/seed.type'
 import { useEffect, useState } from 'react'
+import { ClockLoaderSpinner } from '@/components/custom/loading';
 
 const SeedsPageClient = () => {
     const router = useRouter()
@@ -68,17 +69,12 @@ const SeedsPageClient = () => {
     });
 
     // --> Log data for debugging (remove after UI integration)
-    useEffect(() => {
-       apiLogger.debug('🎨 [SeedsPageClient] Data from useSeeds:', {
-            seedsCount: seeds.length,
-            pagination,
-            isLoading,
-            isFetching,
-            isError,
-            error: error?.message,
-            sampleSeeds: seeds.slice(0, 2), // Log first 2 seeds
-        });
-    }, [seeds, pagination, isLoading, isFetching, isError, error]);
+    // useEffect(() => {
+    //    apiLogger.debug('🎨 [SeedsPageClient] Data from useSeeds:', {
+    //         error: error?.message,
+    //         sampleSeeds: seeds.slice(0, 2), // Log first 2 seeds
+    //     });
+    // }, [seeds, pagination, isLoading, isFetching, isError, error]);
 
     // --> Function handle search form submit
     const handleSearch = (e: React.FormEvent) => {
@@ -224,6 +220,8 @@ const SeedsPageClient = () => {
             newURL: params.toString()
         });
     }
+    
+
     return (
         <>
             {/* --> Section search and filter more */}

@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { fa } from "zod/v4/locales";
 
 const Header = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,8 +33,16 @@ const Header = () => {
       <nav className="goodseed-nav">
         <Link href="/" className={`logo ${archivoBlack.variable}`}>goodseed</Link>
         <div className="goodseed-nav-links" >
-          <Link style={{ fontFamily: poppins.style.fontFamily, fontSize: "13px", fontWeight: "700", lineHeight: "20px" }} href="/#features">About</Link>
-          <Link style={{ fontFamily: poppins.style.fontFamily }} href="/seeds">Browse</Link>
+          <Link 
+          style={{ fontFamily: poppins.style.fontFamily, fontSize: "13px", fontWeight: "700", lineHeight: "20px" }} 
+          href="/">
+            About
+            </Link>
+          <Link 
+          style={{ fontFamily: poppins.style.fontFamily, fontSize: "13px", fontWeight: "700", lineHeight: "20px" }} 
+          href="/seeds">
+          Browse
+          </Link>
           <Link
             href="/dashboard/user/favorites"
             className="favorites-link"

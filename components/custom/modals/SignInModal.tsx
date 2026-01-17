@@ -17,59 +17,14 @@ interface SignInModalProps {
 const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
     const { googleSignIn, isLoading: isGoogleLoading } = useGoogleSignIn();
     const { facebookSignIn, isLoading: isFacebookLoading } = useFacebookSignIn();
-    
-     const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+
+    const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
             onClose()
         }
     }
 
     if (!isOpen) return null
-
-    
-    // const handleGoogleSignInClient = async () => {
-    //     setIsGoogleLoading(true)
-    //     try {
-    //         const result = await signIn(
-    //             "google",
-    //             {
-    //                 redirect: true,
-    //                 redirectTo: "/"
-    //             }
-    //         )
-    //         apiLogger.info("Sign-in initiated", result as any);
-    //     } catch (error) {
-    //         apiLogger.logError("Sign-in failed", error as Error);
-    //         toast.error("Sign-in failed");
-    //         setIsGoogleLoading(false)
-    //     }
-    // }
-
-
-
-    
-
-    
-
-    // const handleFacebookLogin = async () => {
-    //     setIsFacebookLoading(true)
-    //     try {
-    //         const result = await signIn(
-    //             "facebook",
-    //             {
-    //                 redirect: true,
-    //                 redirectTo: "/"
-    //             }
-    //         )
-    //         apiLogger.info("Facebook sign-in initiated", result as any);
-    //     } catch (error) {
-    //         apiLogger.logError("Facebook sign-in failed", error as Error);
-    //         toast.error("Facebook sign-in failed");
-    //         setIsFacebookLoading(false)
-    //     }
-    // }
-
-   
     return (
         <div
             className={`login-modal-overlay 
@@ -140,7 +95,7 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
                         <div className="divider-or">
                             <span>OR</span>
                         </div>
-                        
+
                         {/* Email Authentication */}
                         <EmailVerificationForm
                             redirectTo="/dashboard/user/settings"
