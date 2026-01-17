@@ -6,7 +6,9 @@ import { Suspense } from "react"
 export const revalidate = 1800 // Revalidate every 30 minutes
 const SeedsPage = () => {
     return (
+        <Suspense fallback={<BeatLoaderSpinner />}>
             <SeedsPageClient />
+        </Suspense>
     )
 }
 export default SeedsPage
