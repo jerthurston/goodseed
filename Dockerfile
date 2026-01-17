@@ -96,15 +96,8 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy production dependencies FIRST (base layer)
+# Copy production dependencies
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
-
-# Copy Prisma Client AFTER (overwrites if needed, ensures latest generated client)
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-
-# Copy Prisma schema for potential runtime migrations
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Set proper permissions
 RUN chown -R nextjs:nodejs /app
