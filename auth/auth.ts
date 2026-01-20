@@ -12,7 +12,6 @@ import {
 // Import events
 import { 
   linkAccountEvent,
-  createUserEvent 
 } from './events/index';
 export const {
   handlers,

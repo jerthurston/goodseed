@@ -7,13 +7,14 @@ import { Archivo_Black, Poppins } from 'next/font/google';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { apiLogger } from '@/lib/helpers/api-logger';
-import { useFetchCurrentUser, useUpdateNotificationPreference, useDeleteAccount } from '@/hooks/client-user';
 import { signIn, signOut } from 'next-auth/react';
 import { ScrapingSourceService } from '@/lib/services/scraping-sources/scraping-source.service';
 import SignOutBtnInUserDashboard from '@/components/custom/auth/SignOutBtnInUserDashboard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWarning } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'sonner';
+import { useFetchCurrentUser, useDeleteAccount } from '@/hooks/client-user';
+import { useUpdateNotificationPreference } from '@/hooks/client-user/notification-preference';
 
 export const getArchivoBlack = Archivo_Black({ subsets: ['latin'], weight: ['400'], variable: '--font-archivo-black' })
 
@@ -52,12 +53,6 @@ const SettingsPage = () => {
         }
     }, [user]);
 
-    const handleSignOut = async () => {
-        apiLogger.info('Signing out from account page...')
-        await signOut({ redirect: false });
-        router.push('/');
-    }
-
     const handleDeleteAccount = () => {
         apiLogger.info('PERMANENTLY DELETING ACCOUNT...')
         // Call delete account mutation
@@ -73,41 +68,6 @@ const SettingsPage = () => {
             [preference]: enabled,
         });
     }
-
-    const handleEmailSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!email || !email.includes('@')) {
-            toast.error('Please enter a valid email');
-            return;
-        }
-
-        setIsEmailLoading(true);
-
-        try {
-            const result = await signIn('resend', {
-                email,
-                redirect: false,
-                callbackUrl: '/',
-            });
-
-            if (result?.error) {
-                toast.error('Failed to send magic link');
-                apiLogger.logError('email.signIn', new Error(result.error), { email });
-            } else {
-                setEmailSent(true);
-                toast.success('Check your email for the magic link!');
-                apiLogger.info('Magic link requested', { email });
-            }
-
-        } catch (error) {
-            toast.error('An error occurred');
-            apiLogger.logError('email.signIn', error as Error, { email });
-        } finally {
-            setIsEmailLoading(false);
-        }
-
-    };
 
     // Loading state
     if (isLoading) {
@@ -190,7 +150,7 @@ const SettingsPage = () => {
                         {/* Notification Preferences Section */}
                         <section className="account-section">
                             <h2 className={`account-section-title`}>Notifications</h2>
-
+                            {/* --> Special offer alert */}
                             <div className="setting-item">
                                 <div className="setting-text">
                                     <label htmlFor="special-offers" style={{ fontFamily: "Poppins" }}>
@@ -212,7 +172,7 @@ const SettingsPage = () => {
                                     <label htmlFor="special-offers" className="toggle-label"></label>
                                 </div>
                             </div>
-
+                            {/* --> Price alert */}
                             <div className="setting-item">
                                 <div className="setting-text">
                                     <label htmlFor="price-alerts" style={{ fontFamily: "Poppins, sans-serif" }}>
@@ -234,7 +194,7 @@ const SettingsPage = () => {
                                     <label htmlFor="price-alerts" className="toggle-label"></label>
                                 </div>
                             </div>
-
+                            {/* --> Back in stock alert */}
                             <div className="setting-item">
                                 <div className="setting-text">
                                     <label htmlFor="back-in-stock" style={{ fontFamily: "Poppins, sans-serif" }}>

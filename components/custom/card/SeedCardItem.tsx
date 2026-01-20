@@ -11,6 +11,7 @@ import type { SeedUI } from '@/types/seed.type'
 import { useAuthModal } from '@/hooks/auth/useAuthModal'
 import SignInModal from '../modals/SignInModal'
 import { PotencyBadge } from '../badge'
+import { Heart } from 'lucide-react'
 
 // Component for enhanced potency display with better styling
 
@@ -106,6 +107,7 @@ const SeedCardItem = ({
                         type="button"
                     >
                         <FontAwesomeIcon
+                            className='text-xl'
                             icon={isFavorite ? faHeartSolid : faHeartRegular}
                             color={isFavorite ? 'var(--brand-primary)' : ''}
                         />
@@ -168,7 +170,7 @@ const SeedCardItem = ({
                                 >
                                     <FontAwesomeIcon
                                         icon={isFavorite ? faHeartSolid : faHeartRegular}
-                                        color='var(--brand-primary)'
+                                        color={isFavorite ? 'var(--brand-primary)' : ''}
                                     />
                                 </button>
                             </div>

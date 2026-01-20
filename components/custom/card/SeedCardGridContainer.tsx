@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 
-import AddToListModal from '../modals/AddToListModal'
 import UnfavoriteConfirmModal from '../modals/UnfavoriteConfirmModal'
 import Pagination from '../Pagination'
 import SeedCardItem from './SeedCardItem'
+import AddToFolderModal from '../modals/AddToListModal'
 
 import type { SeedPaginationUI, SeedUI } from '@/types/seed.type'
 import { apiLogger } from '@/lib/helpers/api-logger'
@@ -16,8 +16,9 @@ import { useFetchWishlist } from '@/hooks/client-user/wishlist/useFetchWishlist'
 import { useUpdateWishlistFolder } from '@/hooks/client-user/wishlist/useUpdateWishlistFolder'
 import { useFetchWishlistFolders } from '@/hooks/client-user/wishlist-folder/useFetchWishlistFolders'
 import { useCreateWishlistFolder } from '@/hooks/client-user/wishlist-folder/useCreateWishlistFolder'
-import AddToFolderModal from '../modals/AddToListModal'
 import { usePathname } from 'next/navigation'
+
+import AddToListModal from '../modals/AddToListModal'
 import { useAuthModal } from '@/hooks/auth/useAuthModal'
 
 interface CardGridContainerProps {

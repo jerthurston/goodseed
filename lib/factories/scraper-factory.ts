@@ -25,7 +25,7 @@ import { vancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/v
 import { sunwestgeneticsProductListScraper } from '@/scrapers/sunwestgenetics/core/sunwestgenetics-scrape-product-list';
 import { sonomaSeedsProductListScraper } from '@/scrapers/sonomaseeds/core/sonomaseeds-product-list-scraper';
 import { BeaverseedScraper } from '@/scrapers/beaverseed/core/beaverseed-scraper';
-import { BCBUDDEPOT_PRODUCT_CARD_SELECTORS, BCBUDDEPOT_PRODUCT_DETAIL_SELECTORS } from '@/scrapers/bcbuddepot/core/selector';
+import { BCBUDDEPOT_PRODUCT_DETAIL_SELECTORS } from '@/scrapers/bcbuddepot/core/selector';
 import { BcbuddepotScraper } from '@/scrapers/bcbuddepot/core/bcbuddepot-scraper';
 import { MARYJANESGARDEN_PRODUCT_CARD_SELECTORS } from '@/scrapers/maryjanesgarden/core/selector';
 import { MaryJanesGardenScraper } from '@/scrapers/maryjanesgarden/core/maryjanesgarden-scraper';
@@ -322,13 +322,16 @@ export class ScraperFactory {
   createSaveDbService(scraperSourceName: SupportedScraperSourceName): ISaveDbService {
     switch (scraperSourceName) {
       case 'vancouverseedbank':
-        return new VancouverSaveDbService(this.prisma);
+        // return new VancouverSaveDbService(this.prisma);
+        return new CommonSaveDbService(this.prisma);
 
       case 'sunwestgenetics':
-        return new SunWestSaveDbService(this.prisma);
+        // return new SunWestSaveDbService(this.prisma);
+        return new CommonSaveDbService(this.prisma);
 
       case 'sonomaseeds':
-        return new SonomaSeedsDbService(this.prisma);
+        // return new SonomaSeedsDbService(this.prisma);
+        return new CommonSaveDbService(this.prisma);
 
       case 'beaverseed':
         return new CommonSaveDbService(this.prisma);

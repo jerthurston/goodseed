@@ -45,11 +45,11 @@ export function extractProductFromDetailHTML(
         // Extract main product image - Using selectors from config
         let imageUrl: string | undefined = undefined;
         
-        console.log(`🔍 [Debug] Starting image extraction for: ${name}`);
+        apiLogger.info(`🔍 [Debug] Starting image extraction for: ${name}`);
         
         // Primary strategy: Use the configured productImage selector
         if (selectors.productImage) {
-            console.log(`🔍 [Debug] Using config selector: "${selectors.productImage}"`);
+            apiLogger.info(`🔍 [Debug] Using config selector: "${selectors.productImage}"`);
             const $mainImage = $(selectors.productImage).first();
             
             if ($mainImage.length > 0) {
@@ -61,7 +61,7 @@ export function extractProductFromDetailHTML(
                 
                 imageUrl = srcAttr || dataSrcAttr || hrefAttr || parentHrefAttr;
                 if (imageUrl) {
-                    console.log(`🔍 [Debug] ✅ Config selector found: "${imageUrl}"`);
+                    apiLogger.info(`🔍 [Debug] ✅ Config selector found: "${imageUrl}"`);
                 }
             }
         }
@@ -84,7 +84,7 @@ export function extractProductFromDetailHTML(
                 if ($altImg.length > 0) {
                     imageUrl = $altImg.attr('src') || $altImg.attr('data-src');
                     if (imageUrl) {
-                        console.log(`🔍 [Debug] ✅ Alternative "${altSelector}": "${imageUrl}"`);
+                        apiLogger.info(`🔍 [Debug] ✅ Alternative "${altSelector}": "${imageUrl}"`);
                         break;
                     }
                 }
@@ -96,7 +96,7 @@ export function extractProductFromDetailHTML(
             const ogImage = $('meta[property="og:image"]').attr('content');
             if (ogImage) {
                 imageUrl = ogImage;
-                console.log(`🔍 [Debug] ✅ Using OG image fallback: "${ogImage}"`);
+                apiLogger.info(`🔍 [Debug] ✅ Using OG image fallback: "${ogImage}"`);
             }
         }
         
@@ -108,7 +108,7 @@ export function extractProductFromDetailHTML(
         if (imageUrl) {
             apiLogger.info(`🖼️ [Image] Successfully extracted: "${imageUrl}"`);
         } else {
-            console.log(`🔍 [Debug] ❌ No image found with any strategy`);
+            apiLogger.info(`🔍 [Debug] ❌ No image found with any strategy`);
         }
 
         // Initialize cannabis data variables

@@ -1,13 +1,13 @@
 'use client';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { archivoBlack, poppins } from "@/lib/fonts";
+import { useSession } from "next-auth/react";
 import AccountDropdown from "@/components/custom/AccountDropdown";
 import SignInModal from "@/components/custom/modals/SignInModal";
-import { archivoBlack, poppins } from "@/lib/fonts";
-import { faHeart } from '@fortawesome/free-solid-svg-icons';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useSession } from "next-auth/react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { fa } from "zod/v4/locales";
+import { faHeart } from "@fortawesome/free-solid-svg-icons";
 
 const Header = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,15 +33,15 @@ const Header = () => {
       <nav className="goodseed-nav">
         <Link href="/" className={`logo ${archivoBlack.variable}`}>goodseed</Link>
         <div className="goodseed-nav-links" >
-          <Link 
-          style={{ fontFamily: poppins.style.fontFamily, fontSize: "13px", fontWeight: "700", lineHeight: "20px" }} 
-          href="/">
+          <Link
+            style={{ fontFamily: poppins.style.fontFamily, fontSize: "1.1rem", fontWeight: "700", lineHeight: "20px" }}
+            href="/">
             About
-            </Link>
-          <Link 
-          style={{ fontFamily: poppins.style.fontFamily, fontSize: "13px", fontWeight: "700", lineHeight: "20px" }} 
-          href="/seeds">
-          Browse
+          </Link>
+          <Link
+            style={{ fontFamily: poppins.style.fontFamily, fontSize: "1.1rem", fontWeight: "700", lineHeight: "20px" }}
+            href="/seeds">
+            Browse
           </Link>
           <Link
             href="/dashboard/user/favorites"
@@ -61,7 +61,7 @@ const Header = () => {
             <button
               onClick={() => setIsModalOpen(true)}
               className="login-btn"
-              style={{ fontFamily: "'Poppins'", fontSize: "13px", fontWeight: "700", lineHeight: "20px" }}
+              style={{ fontFamily: "'Poppins'", fontSize: "1.1rem", fontWeight: "700", lineHeight: "20px" }}
             >
               Sign in
             </button>

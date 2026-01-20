@@ -4,7 +4,7 @@ import { DashboardCard, DashboardCardHeader } from '@/app/dashboard/(components)
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
 import { useFetchScrapeJobs, type ScrapeJob } from '@/hooks/admin/scrape-job/useFetchScrapeJobs';
 import { apiLogger } from '@/lib/helpers/api-logger';
-import { faAlarmClock } from '@fortawesome/free-regular-svg-icons';
+// import { faAlarmClock } from '@fortawesome/free-regular-svg-icons';
 
 interface SellerScrapeJobLogsProps {
   sellerId: string;
@@ -152,7 +152,7 @@ export default function SellerScrapeJobLogs({ sellerId }: SellerScrapeJobLogsPro
                     </div>
                     {job.duration && (
                       <div className="text-xs text-(--text-primary-muted) ">
-                        <FontAwesomeIcon icon={faAlarmClock} />
+                        <FontAwesomeIcon icon={faClock} />
                         Duration: {Math.round(job.duration / 60)}min
                       </div>
                     )}

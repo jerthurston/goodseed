@@ -68,13 +68,17 @@ const SeedsPageClient = () => {
         limit: 20,
     });
 
-    // --> Log data for debugging (remove after UI integration)
-    // useEffect(() => {
-    //    apiLogger.debug('🎨 [SeedsPageClient] Data from useSeeds:', {
-    //         error: error?.message,
-    //         sampleSeeds: seeds.slice(0, 2), // Log first 2 seeds
-    //     });
-    // }, [seeds, pagination, isLoading, isFetching, isError, error]);
+    // --> Log data for debugging (Optional - can be removed in production)
+    useEffect(() => {
+       if (seeds.length > 0) {
+           apiLogger.debug('[SeedsPageClient] Seeds loaded:', {
+               sortBy: sortBy,
+               totalSeeds: seeds.length,
+               firstSeed: seeds[0]?.name,
+               firstPrice: seeds[0]?.price
+           });
+       }
+    }, [seeds, sortBy]);
 
     // --> Function handle search form submit
     const handleSearch = (e: React.FormEvent) => {
@@ -238,6 +242,7 @@ const SeedsPageClient = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                             <div className="hero-search-actions">
+                                {/* Search button */}
                                 <button
                                     type="submit"
                                     id="mainSearchButtonIcon"
@@ -251,14 +256,17 @@ const SeedsPageClient = () => {
                                         <FontAwesomeIcon icon={faSearch} className="search-btn-icon" />
                                     </div>
                                 </button>
+                                {/* Filter button */}
                                 <button
                                     type="button"
                                     className="advanced-filter-btn"
                                     id="openFilter"
                                     onClick={handleOpenFilter}
                                 >
-                                    <FontAwesomeIcon icon={faSlidersH} />
                                     <span className="filter-btn-text font-extrabold">Filters</span>
+                                    <FontAwesomeIcon icon={faSlidersH} 
+                                    className='filter-btn-icon'
+                                    />
                                 </button>
                             </div>
                         </form>
@@ -290,7 +298,7 @@ const SeedsPageClient = () => {
                         />
                     </button>
 
-                    {/* --> Select Filter by type, category and sort */}
+                    {/* --> Secondary Filter by type, category and sort */}
                     <div
                         id="collapsibleInlineFilters"
                         role="region"

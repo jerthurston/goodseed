@@ -22,16 +22,15 @@ export class SeedTransformer {
             pricePerSeed: pricing.pricePerSeed,
         }));
 
-        // Get pack with LOWEST pricePerSeed (best value for money)
-        // const bestValuePack = packs.reduce((best, pack) =>
-        //     pack.pricePerSeed < best.pricePerSeed ? pack : best,
-        //     packs[0] || { size: 0, totalPrice: 0, pricePerSeed: 0 }
-        // );
-
-         const HighestValuePack = packs.reduce((highest, pack) =>
-            pack.pricePerSeed > highest.pricePerSeed ? pack : highest,
+        // Get pack with SMALLEST packSize (for display info)
+        const smallestPack = packs.reduce((smallest, pack) =>
+            pack.size < smallest.size ? pack : smallest,
             packs[0] || { size: 0, totalPrice: 0, pricePerSeed: 0 }
         );
+
+        // Use displayPrice from database (already calculated during scraping)
+        // Fallback to smallest pack's pricePerSeed if displayPrice is null
+        const displayPrice = raw.displayPrice ?? smallestPack.pricePerSeed;
 
         // Get primary image
         const primaryImage = raw.productImages.find(img => img.isPrimary)
@@ -70,15 +69,15 @@ export class SeedTransformer {
             name: raw.name,
             seedType: raw.seedType || 'UNKNOWN',
             cannabisType: raw.cannabisType || 'UNKNOWN',
-            price: HighestValuePack.pricePerSeed,
+            price: displayPrice, // Use displayPrice from database
             thc,
             cbd,
             popularity: 0, // TODO: Implement popularity logic
             date: raw.createdAt,
             vendorName: raw.category.seller.name,
             vendorUrl: raw.url,
-            smallestPackSize: HighestValuePack.size,
-            smallestPackPrice: HighestValuePack.totalPrice,
+            smallestPackSize: smallestPack.size,
+            smallestPackPrice: smallestPack.totalPrice,
             strainDescription: raw.description || '',
             packs,
             imageUrl: primaryImage?.image.url || '/images/placeholder-seed.png',

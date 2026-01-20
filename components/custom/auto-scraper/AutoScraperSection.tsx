@@ -1,11 +1,11 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRobot, faClock, faPlay, faStop } from '@fortawesome/free-solid-svg-icons';
+import { faRobot, faClock, } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'sonner';
-import { DashboardCard, DashboardCardHeader } from '@/app/dashboard/(components)/DashboardCard';
-import { DashboardButton } from '@/app/dashboard/(components)/DashboardButton';
-import { SellerAutoScraperCard, AutoScraperStatusBadge } from '@/components/custom/auto-scraper';
+import { DashboardCard, } from '@/app/dashboard/(components)/DashboardCard';
+import { AutoScraperStatusBadge } from '@/components/custom/auto-scraper';
 import { useAutoScraper } from '@/hooks/admin/auto-scrape/useAutoScraper';
 import { useSellerAutoScraperStatus } from '@/hooks/admin/auto-scrape/useAutoScraperStatus';
+
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
 
 interface AutoScraperSectionProps {

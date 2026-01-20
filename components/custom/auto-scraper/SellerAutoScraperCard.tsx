@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStore, faClock } from '@fortawesome/free-solid-svg-icons';
 import { DashboardToggle } from '@/app/dashboard/(components)/DashboardToggle';
-import { DashboardCard, DashboardCardHeader } from '@/app/dashboard/(components)/DashboardCard';
+import { DashboardCard, } from '@/app/dashboard/(components)/DashboardCard';
 import AutoScraperStatusBadge from './AutoScraperStatusBadge';
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
 import { apiLogger } from '@/lib/helpers/api-logger';

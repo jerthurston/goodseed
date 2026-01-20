@@ -177,13 +177,13 @@ export async function canukSeedScraper(
                     
                 } catch (extractionError) {
                     errorCount++;
-                    console.error(`❌ Error extracting product from ${request.url}:`, extractionError);
+                    apiLogger.logError(`❌ Error extracting product from ${request.url}:`, extractionError as Error);
                 }
             },
             
             failedRequestHandler: async ({ request, error }) => {
                 errorCount++;
-                console.error(`❌ Failed to load page: ${request.url}`, error);
+                apiLogger.logError(`❌ Failed to load page: ${request.url}`, error as Error);
             },
         });
         
@@ -195,7 +195,7 @@ export async function canukSeedScraper(
         apiLogger.info(`📊 Success: ${successCount}, Errors: ${errorCount}, Total: ${urlsToProcess.length}`);
         
     } catch (error) {
-        console.error(`❌ [CanukSeedsScraper] Failed to process product pages:`, error);
+        apiLogger.logError(`❌ [CanukSeedsScraper] Failed to process product pages:`, error as Error);
         throw error;
     }
 

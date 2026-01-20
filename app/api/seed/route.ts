@@ -115,17 +115,13 @@ export async function GET(req: NextRequest) {
         switch (sortBy) {
             case 'priceLowToHigh': {
                 orderBy = {
-                    pricings: {
-                        _count: 'asc' as Prisma.SortOrder
-                    }
+                    displayPrice: 'asc' as Prisma.SortOrder
                 };
             };
                 break;
             case 'priceHighToLow': {
                 orderBy = {
-                    pricings: {
-                        _count: 'desc' as Prisma.SortOrder
-                    }
+                    displayPrice: 'desc' as Prisma.SortOrder
                 };
             };
                 break;

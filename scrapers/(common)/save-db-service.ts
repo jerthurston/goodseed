@@ -17,6 +17,7 @@ import type { CategoryMetadataFromCrawling, ProductCardDataFromCrawling } from '
 import { PrismaClient, Seller, StockStatus } from '@prisma/client';
 import { parseCannabisType, parseSeedType } from '../vancouverseedbank/utils/data-mappers';
 import { apiLogger } from '@/lib/helpers/api-logger';
+import { calculateDisplayPrice } from './utils/calculateDisplayPrice';
 
 export class SaveDbService {
     private seller: Seller | null = null;
@@ -200,6 +201,9 @@ export class SaveDbService {
                 // Parse cannabisType from strainType (e.g., "Indica Dominant Hybrid" -> INDICA)
                 const cannabisType = parseCannabisType(product.cannabisType);
 
+                // Calculate displayPrice from smallest pack
+                const displayPrice = calculateDisplayPrice(product.pricings || []);
+
                 // Kiểm tra slug của product đã tồn tại chưa, nếu chưa thì tạo mới, nếu đã có thì update bằng upsert
                 const existing = await this.prisma.seedProduct.findUnique({
                     where: {
@@ -224,6 +228,7 @@ export class SaveDbService {
                         name: product.name,
                         url: product.url,
                         description: product.cannabisType || null,
+                        displayPrice: displayPrice, // Add displayPrice
                         stockStatus: StockStatus.IN_STOCK,
                         seedType: seedType,
                         cannabisType: cannabisType,
@@ -242,6 +247,7 @@ export class SaveDbService {
                         slug: product.slug,
                         url: product.url,
                         description: product.cannabisType || null,
+                        displayPrice: displayPrice, // Add displayPrice
                         stockStatus: StockStatus.IN_STOCK,
                         seedType: seedType,
                         cannabisType: cannabisType,

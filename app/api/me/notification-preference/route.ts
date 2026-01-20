@@ -114,13 +114,13 @@ export async function GET(request: NextRequest) {
     });
 
     // Return default values if no preference exists
-    if (!preference) {
-      return NextResponse.json({
-        receiveSpecialOffers: false,
-        receivePriceAlerts: false,
-        receiveBackInStock: false,
-      });
-    }
+    // if (!preference) {
+    //   return NextResponse.json({
+    //     receiveSpecialOffers: false,
+    //     receivePriceAlerts: false,
+    //     receiveBackInStock: false,
+    //   });
+    // }
 
     return NextResponse.json(preference);
 

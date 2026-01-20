@@ -17,7 +17,6 @@
  */
 
 export { linkAccountEvent } from './linkAccount.event';
-export { createUserEvent } from './createUserEvent';
 
 // Có thể thêm các events khác:
 // export { signInEvent } from './signIn.event';

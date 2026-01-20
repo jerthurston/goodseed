@@ -1,32 +1,17 @@
 
 "use client"
 
-import { BarChart3, Clock, Play, Settings, Users } from "lucide-react"
-import { useState, useMemo } from "react"
 import {
   DashboardButton,
   DashboardCard,
-  DashboardLayout,
-  DashboardSidebar,
-  DashboardSidebarItem,
   DashboardToggle,
-  SellerCard,
-  StatsOverview,
-} from "../(components)"
-
-import { type Seller } from "@/types/seller.type"
-import { SellerTransformer } from "@/lib/transfomers/seller.transformer"
-import { SellerUI } from "@/types/seller.type"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faHeart, faSearchDollar, faShieldAlt, faChartDiagram, faChartBar, faChartLine, faUser, faTools } from '@fortawesome/free-solid-svg-icons'
-import RecentActivity from "../(components)/DashboardOverview"
-import DashboardOverview from "../(components)/DashboardOverview"
-import DashboardSellersTabContent from "../(components)/DashboardSellersTabContent"
+} from "../(components)";
 import { ScraperSite } from '@/types/scraperStite.type'
 import React from 'react'
 import { useScraperOperations } from "@/hooks/scraper-site/useScraperOperations"
 import { toast } from "sonner"
 import { apiLogger } from "@/lib/helpers/api-logger"
+import { Clock, Play } from "lucide-react";
 import style from './dashboardAdmin.module.css'
 
 interface DashboardScraperSitesTabContentProps {
@@ -35,9 +20,6 @@ interface DashboardScraperSitesTabContentProps {
 }
 
 const DashboardScraperSitesTabContent: React.FC<DashboardScraperSitesTabContentProps> = ({ scraperSites, refetchScraperSites }) => {
-
-  console.log("Rendering DashboardScraperSitesTabContent with sites:", scraperSites);
-
   const {
     useTriggerScrape,
     isTriggering,

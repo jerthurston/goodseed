@@ -1,8 +1,10 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRobot, faClock, faChartLine, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faRobot, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { DashboardCard, DashboardCardHeader } from '@/app/dashboard/(components)/DashboardCard';
 import { useBulkAutoScraperStatus } from '@/hooks/admin/auto-scrape/useAutoScraperStatus';
+
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
+import { apiLogger } from '@/lib/helpers/api-logger';
 
 interface AutoScraperSystemOverviewProps {
   sellersCount: number;
@@ -12,7 +14,7 @@ export default function AutoScraperSystemOverview({ sellersCount }: AutoScraperS
   const { status: bulkStatus, isLoading, error } = useBulkAutoScraperStatus();
 
   // Debug logging
-  console.log('AutoScraperSystemOverview - Hook data:', { 
+  apiLogger.debug('AutoScraperSystemOverview - Hook data:', { 
     bulkStatus, 
     isLoading, 
     error,

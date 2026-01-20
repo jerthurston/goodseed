@@ -352,6 +352,7 @@ html.age-verified .age-verification {
 }
 .filter-title {
     font-size: 2rem;
+    margin-top: 1.5rem;
     margin-bottom: 1.5rem;
     color: var(--brand-primary);
     letter-spacing: -1px;
@@ -918,6 +919,10 @@ main {
     display: none;
     font-size: 1rem;
 }
+#openFilter .filter-btn-icon {
+    display: none;
+    font-size: 1rem;
+}
 .advanced-filter-btn {
     background-color: var(--accent-cta);
     color: var(--text-primary);
@@ -1225,8 +1230,8 @@ Results Page
 .inline-refinements__collapsible {
     width: 100%;
     display: none; /* Hidden by default on mobile */
-    overflow: hidden;
     transition: max-height 0.3s ease;
+    /* overflow: hidden; */
 }
 
 /* Show when toggle is clicked (is-open class added) */
@@ -3265,6 +3270,9 @@ Responsive Styles
         display: none;
     }
     #mainSearchButtonIcon .search-btn-icon {
+        display: inline;
+    }
+    #openFilter .filter-btn-icon {
         display: inline;
     }
     .advanced-filter-btn {

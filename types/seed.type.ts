@@ -94,6 +94,7 @@ export interface SeedProductRaw {
     url: string;
     slug: string;
     description: string | null;
+    displayPrice: number | null; // Add displayPrice field
     stockStatus: 'IN_STOCK' | 'OUT_OF_STOCK' | 'LOW_STOCK';
     seedType: 'REGULAR' | 'FEMINIZED' | 'AUTOFLOWER' | 'PHOTOPERIOD' | null;
     cannabisType: string | null;

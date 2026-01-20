@@ -273,6 +273,8 @@ model SeedProduct {
   slug        String // "blue-dream-feminized"
   description String? // Mô tả ngắn (nếu có)
 
+  displayPrice Float? // displayPrice là pricePerSeed ở packsize nhỏ nhất. eg: displayPrice sẽ là 13 khi { packsize: 5 seeds; totalPrice: 65; pricePerSeed: 13 } và  { packsize: 10 seeds; totalPrice: 200; pricePerSeed: 18.33 }
+
   // Stock
   stockStatus StockStatus @default(IN_STOCK)
 
@@ -308,6 +310,7 @@ model SeedProduct {
   @@index([thcMin, thcMax])
   @@index([cbdMin, cbdMax])
   @@index([stockStatus])
+  @@index([displayPrice]) // Index for price sorting
 }
 
 model Pricing {

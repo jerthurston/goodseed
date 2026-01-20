@@ -49,7 +49,7 @@ export const EmailVerificationForm: React.FC<EmailVerificationFormProps> = ({
     onClose
 }) => {
     const [email, setEmail] = useState(initialEmail)
-    const { magicLinkSignIn, isEmailLoading, emailSent } = useMagicLinkSignIn()
+    const { magicLinkSignIn, isEmailLoading, emailSent } = useMagicLinkSignIn();
 
     const handleEmailSubmit = async (e: React.FormEvent) => {
         e.preventDefault()

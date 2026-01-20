@@ -21,8 +21,8 @@ const SortSelect: React.FC<SortSelectProps> = ({
                     onChange={(e) => onSortChange(e.target.value as SortBy)}
                 >
                     <option value="popularity">Popularity</option>
-                    <option value="priceLowToHigh">Price: Low to High</option>
                     <option value="priceHighToLow">Price: High to Low</option>
+                    <option value="priceLowToHigh">Price: Low to High</option>
                     <option value="newest">Newest</option>
                 </select>
             </div>

@@ -15,6 +15,7 @@ interface SignInModalProps {
 }
 
 const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
+    
     const { googleSignIn, isLoading: isGoogleLoading } = useGoogleSignIn();
     const { facebookSignIn, isLoading: isFacebookLoading } = useFacebookSignIn();
 
@@ -96,7 +97,7 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
                             <span>OR</span>
                         </div>
 
-                        {/* Email Authentication */}
+                        {/* Email Authentication - Resend verification email */}
                         <EmailVerificationForm
                             redirectTo="/dashboard/user/settings"
                         />

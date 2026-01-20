@@ -27,10 +27,27 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
     })
 
     const handlePriceChange = (type: 'min' | 'max', value: number) => {
-        setFilters(prev => ({
-            ...prev,
-            priceRange: { ...prev.priceRange, [type]: value }
-        }))
+        setFilters(prev => {
+            if (type === 'min') {
+                // Ensure min doesn't exceed max
+                return {
+                    ...prev,
+                    priceRange: {
+                        ...prev.priceRange,
+                        min: Math.min(value, prev.priceRange.max - 1)
+                    }
+                }
+            } else {
+                // Ensure max doesn't go below min
+                return {
+                    ...prev,
+                    priceRange: {
+                        ...prev.priceRange,
+                        max: Math.max(value, prev.priceRange.min + 1)
+                    }
+                }
+            }
+        })
     }
 
     const handleSeedTypeChange = (type: string) => {
@@ -52,17 +69,51 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
     }
 
     const handleTHCChange = (type: 'min' | 'max', value: number) => {
-        setFilters(prev => ({
-            ...prev,
-            thcRange: { ...prev.thcRange, [type]: value }
-        }))
+        setFilters(prev => {
+            if (type === 'min') {
+                // Ensure min doesn't exceed max
+                return {
+                    ...prev,
+                    thcRange: {
+                        ...prev.thcRange,
+                        min: Math.min(value, prev.thcRange.max)
+                    }
+                }
+            } else {
+                // Ensure max doesn't go below min
+                return {
+                    ...prev,
+                    thcRange: {
+                        ...prev.thcRange,
+                        max: Math.max(value, prev.thcRange.min)
+                    }
+                }
+            }
+        })
     }
 
     const handleCBDChange = (type: 'min' | 'max', value: number) => {
-        setFilters(prev => ({
-            ...prev,
-            cbdRange: { ...prev.cbdRange, [type]: value }
-        }))
+        setFilters(prev => {
+            if (type === 'min') {
+                // Ensure min doesn't exceed max
+                return {
+                    ...prev,
+                    cbdRange: {
+                        ...prev.cbdRange,
+                        min: Math.min(value, prev.cbdRange.max)
+                    }
+                }
+            } else {
+                // Ensure max doesn't go below min
+                return {
+                    ...prev,
+                    cbdRange: {
+                        ...prev.cbdRange,
+                        max: Math.max(value, prev.cbdRange.min)
+                    }
+                }
+            }
+        })
     }
 
     const handleReset = () => {
@@ -134,7 +185,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                                 type="number"
                                 id="minPrice"
                                 min="0"
-                                max="100"
+                                max={filters.priceRange.max}
                                 step="1"
                                 value={filters.priceRange.min}
                                 onChange={(e) => handlePriceChange('min', Number(e.target.value))}
@@ -145,7 +196,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                             <input
                                 type="number"
                                 id="maxPrice"
-                                min="0"
+                                min={filters.priceRange.min}
                                 max="100"
                                 step="1"
                                 value={filters.priceRange.max}
@@ -265,7 +316,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                                 type="number"
                                 id="minTHC"
                                 min="0"
-                                max="40"
+                                max={filters.thcRange.max}
                                 step="0.5"
                                 value={filters.thcRange.min}
                                 onChange={(e) => handleTHCChange('min', Number(e.target.value))}
@@ -277,7 +328,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                             <input
                                 type="number"
                                 id="maxTHC"
-                                min="0"
+                                min={filters.thcRange.min}
                                 max="40"
                                 step="0.5"
                                 value={filters.thcRange.max}
@@ -318,7 +369,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                                 type="number"
                                 id="minCBD"
                                 min="0"
-                                max="25"
+                                max={filters.cbdRange.max}
                                 step="0.5"
                                 value={filters.cbdRange.min}
                                 onChange={(e) => handleCBDChange('min', Number(e.target.value))}
@@ -330,7 +381,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                             <input
                                 type="number"
                                 id="maxCBD"
-                                min="0"
+                                min={filters.cbdRange.min}
                                 max="25"
                                 step="0.5"
                                 value={filters.cbdRange.max}
