@@ -439,7 +439,7 @@ model Wishlist {
   id          String          @id @default(cuid())
   userId      String
   seedId      String
-  folderId    String?
+  // folderId    String?
   // notifyPrice Boolean @default(false)
   // notifyBackInStock Boolean @default(false)
   // targetPrice Float?
@@ -448,10 +448,30 @@ model Wishlist {
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   // 1 wishlist sẽ chứa thông tin của 1 seedProduct
   seedProduct SeedProduct     @relation(fields: [seedId], references: [id], onDelete: Cascade)
-  folder      WishlistFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
   // folder onDelete:SetNull và folderId:String? để khi xóa folder wishlist được chuyển về uncategoried
+  //New: Many-to-many relation  
+  wishlistFolderItems      WishlistFolderItem[] // WishlistFolderItem is join table between wishlist and folder
 
   @@unique([userId, seedId])
+}
+
+// Join table for Wishlist and Folder
+model WishlistFolderItem {
+  id String @id @default(cuid())
+  wishlistId String
+  wishlistFolderId String
+  
+  order Int? @default(0)
+  createdAt DateTime @default(now())
+
+  // Relations
+  wishlist Wishlist @relation(fields:[wishlistId], references: [id], onDelete:Cascade)
+  wishlistFolder WishlistFolder @relation(fields:[wishlistFolderId], references: [id], onDelete: Cascade)
+
+  @@unique([wishlistId, wishlistFolderId])
+  @@index([wishlistId])
+  @@index([wishlistFolderId])
+  @@index([wishlistFolderId, order]) // For efficient sorted queries within folder
 }
 
 model WishlistFolder {
@@ -463,7 +483,7 @@ model WishlistFolder {
   updatedAt DateTime   @updatedAt
   //Relations
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  wishlist  Wishlist[]
+  wishlistFolderItems WishlistFolderItem[]
 
   @@unique([userId, name]) // đảm bảo không có 2 folder trùng tên nhau.
 }

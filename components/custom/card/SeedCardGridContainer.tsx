@@ -13,7 +13,7 @@ import { apiLogger } from '@/lib/helpers/api-logger'
 import { useCreateFavoriteSeedInWishlist } from '@/hooks/client-user/wishlist/useCreateFavoriteSeedInWishlist'
 import { useDeleteFavoriteSeedInWishlist } from '@/hooks/client-user/wishlist/useDeleteFavoriteSeedInWishlist'
 import { useFetchWishlist } from '@/hooks/client-user/wishlist/useFetchWishlist'
-import { useUpdateWishlistFolder } from '@/hooks/client-user/wishlist/useUpdateWishlistFolder'
+import { useUpdateWishlistFolders } from '@/hooks/client-user/wishlist/useUpdateWishlistFolder'
 import { useFetchWishlistFolders } from '@/hooks/client-user/wishlist-folder/useFetchWishlistFolders'
 import { useCreateWishlistFolder } from '@/hooks/client-user/wishlist-folder/useCreateWishlistFolder'
 import { usePathname } from 'next/navigation'
@@ -111,15 +111,16 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
         }
     });
 
-    // Wishlist Hook - Update folder
-    const { updateFolder, isPending: isUpdatingFolder } = useUpdateWishlistFolder({
-        onSuccess: ({ seedId, folderId }: { seedId: string; folderId: string }) => {
+    // Wishlist Hook - Update folders (Many-to-Many)
+    const { updateFolders, isPending: isUpdatingFolder } = useUpdateWishlistFolders({
+        onSuccess: ({ seedId, folderIds }: { seedId: string; folderIds: string[] }) => {
             // Refetch wishlist to get updated folder assignments
             refetchWishlist();
 
-            apiLogger.info('[CardGridContainer] Seed folder updated', {
+            apiLogger.info('[CardGridContainer] Seed folders updated', {
                 seedId,
-                folderId
+                folderIds,
+                folderCount: folderIds.length
             });
         }
     });
@@ -147,12 +148,13 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
 
     /**
      * Compute which folders a seed belongs to from wishlist data
-     * No need for separate state - single source of truth from server
+     * Returns array of folder IDs (supports many-to-many)
      */
     const getProductFolderMemberships = (seedId: string): string[] => {
-        return wishlistItems
-            .filter(item => item.seedId === seedId && item.folderId)
-            .map(item => item.folderId as string);
+        const wishlistItem = wishlistItems.find(item => item.seedId === seedId);
+        if (!wishlistItem) return [];
+        
+        return wishlistItem.folders.map(folder => folder.id);
     };
 
     // Use pagination from props (API handles pagination server-side)
@@ -191,9 +193,11 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
         setActiveModalSeedId(null)
         setActiveModalSeedName('')
     }
-    // Function to handle folder changes
+    
+    // Function to handle folder changes (Many-to-Many)
     const handleFolderChange = (folderId: string, isChecked: boolean) => {
-        if (!activeModalSeedId) return
+        if (!activeModalSeedId) return;
+        
         apiLogger.info('[CardGridContainer] Folder change requested', {
             seedId: activeModalSeedId,
             folderId,
@@ -201,33 +205,48 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
             action: isChecked ? 'add_to_folder' : 'remove_from_folder'
         });
 
+        // Get current folder memberships
+        const currentFolderIds = getProductFolderMemberships(activeModalSeedId);
+        
+        let newFolderIds: string[];
+        
         if (isChecked) {
-            // Add/move seed to selected folder
-            updateFolder({
-                seedId: activeModalSeedId,
-                folderId
-            });
-        } else {
-            // When unchecking, move to Uncategorized folder
-            // Find Uncategorized folder
-            const uncategorizedFolder = wishlistFolders.find(
-                folder => folder.name === 'Uncategorized'
-            );
-
-            if (uncategorizedFolder) {
-                updateFolder({
-                    seedId: activeModalSeedId,
-                    folderId: uncategorizedFolder.id
-                });
+            // Add folder (if not already in)
+            if (!currentFolderIds.includes(folderId)) {
+                newFolderIds = [...currentFolderIds, folderId];
             } else {
-                apiLogger.logError('[CardGridContainer] Uncategorized folder not found', {
-                    seedId: activeModalSeedId,
-                    availableFolders: wishlistFolders.map(f => f.name)
-                });
-                toast.error('Cannot remove from folder: Uncategorized folder not found');
+                return; // Already in folder
+            }
+        } else {
+            // Remove folder
+            newFolderIds = currentFolderIds.filter(id => id !== folderId);
+            
+            // If removing all folders, auto-assign to Uncategorized
+            if (newFolderIds.length === 0) {
+                const uncategorizedFolder = wishlistFolders.find(
+                    folder => folder.name === 'Uncategorized'
+                );
+                
+                if (uncategorizedFolder) {
+                    newFolderIds = [uncategorizedFolder.id];
+                } else {
+                    apiLogger.logError('[CardGridContainer] Uncategorized folder not found', {
+                        seedId: activeModalSeedId,
+                        availableFolders: wishlistFolders.map(f => f.name)
+                    });
+                    toast.error('Cannot remove from all folders');
+                    return;
+                }
             }
         }
+        
+        // Update folders (many-to-many)
+        updateFolders({
+            seedId: activeModalSeedId,
+            folderIds: newFolderIds
+        });
     }
+    
     // Function to create a new folder
     const handleCreateNewFolder = (folderName: string) => {
         // Call API to create folder (validation and duplicate check are handled in the hook)

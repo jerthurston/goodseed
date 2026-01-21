@@ -62,6 +62,8 @@ export async function GET(
       where: wishlistWhere,
       select: {
         id: true,
+        userId: true,
+        seedId: true,
         createdAt: true,
         seedProduct: {
           select: {
@@ -70,10 +72,14 @@ export async function GET(
             slug: true
           }
         },
-        folder: {
+        wishlistFolderItems: {
           select: {
-            id: true,
-            name: true
+            wishlistFolder: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         }
       },
@@ -104,7 +110,7 @@ export async function GET(
         metadata: {
           seedId: item.seedProduct.id,
           seedSlug: item.seedProduct.slug,
-          folder: item.folder?.name || 'Uncategorized'
+          folders: item.wishlistFolderItems.map(fi => fi.wishlistFolder.name).join(', ') || 'No folders'
         },
         type: 'wishlist' as const
       })),

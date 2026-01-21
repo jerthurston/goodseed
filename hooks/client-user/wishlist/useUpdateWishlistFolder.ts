@@ -3,49 +3,53 @@ import { toast } from 'sonner';
 import api from '@/lib/api';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
-interface UpdateWishlistFolderParams {
+interface UpdateWishlistFoldersParams {
   seedId: string;
-  folderId: string;
+  folderIds: string[];
 }
 
-interface UseUpdateWishlistFolderOptions {
-  onSuccess?: (data: { seedId: string; folderId: string }) => void;
+interface UseUpdateWishlistFoldersOptions {
+  onSuccess?: (data: { seedId: string; folderIds: string[] }) => void;
   onError?: (error: any) => void;
 }
 
 /**
- * Hook để update folder của seed trong wishlist
+ * Hook để update folders của seed trong wishlist (Many-to-Many)
  * 
  * Use cases:
- * - Move seed from one folder to another
- * - Assign seed to a specific folder
+ * - Assign seed to multiple folders
+ * - Move seed between folders
+ * - Update folder assignments
  * 
  * @example
  * ```tsx
- * const { updateFolder, isPending } = useUpdateWishlistFolder({
+ * const { updateFolders, isPending } = useUpdateWishlistFolders({
  *   onSuccess: () => {
- *     console.log('Folder updated!');
+ *     console.log('Folders updated!');
  *   }
  * });
  * 
- * // Move seed to different folder
- * updateFolder({ seedId: 'seed-123', folderId: 'folder-456' });
+ * // Assign seed to multiple folders
+ * updateFolders({ 
+ *   seedId: 'seed-123', 
+ *   folderIds: ['folder-1', 'folder-2', 'folder-3'] 
+ * });
  * ```
  */
-export const useUpdateWishlistFolder = (options?: UseUpdateWishlistFolderOptions) => {
+export const useUpdateWishlistFolders = (options?: UseUpdateWishlistFoldersOptions) => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async ({ seedId, folderId }: UpdateWishlistFolderParams) => {
+    mutationFn: async ({ seedId, folderIds }: UpdateWishlistFoldersParams) => {
       // Validation
-      if (!seedId || !folderId) {
-        toast.error('Seed ID and Folder ID are required');
-        throw new Error('Missing seedId or folderId');
+      if (!seedId || !folderIds || folderIds.length === 0) {
+        toast.error('Seed ID and at least one Folder ID are required');
+        throw new Error('Missing seedId or folderIds');
       }
 
       // API call: PUT /api/me/wishlist/[seedId]
       const response = await api.put(`/me/wishlist/${seedId}`, {
-        folderId,
+        folderIds,
       });
 
       return response.data;
@@ -57,39 +61,35 @@ export const useUpdateWishlistFolder = (options?: UseUpdateWishlistFolderOptions
       queryClient.invalidateQueries({ queryKey: ['wishlist-folders'] });
 
       // Toast success
-      toast.success(data.message || 'Folder updated!');
+      toast.success(data.message || 'Folders updated!');
 
       // Log
-      apiLogger.info('[useUpdateWishlistFolder] Folder updated', {
+      apiLogger.info('[useUpdateWishlistFolders] Folders updated', {
         seedId: variables.seedId,
-        folderId: variables.folderId,
+        folderIds: variables.folderIds,
       });
 
       // Custom callback
       options?.onSuccess?.({
         seedId: variables.seedId,
-        folderId: variables.folderId,
+        folderIds: variables.folderIds,
       });
     },
 
     onError: (error: any, variables) => {
       // Error handling
       if (error?.response?.status === 404) {
-        if (error?.response?.data?.error?.includes('Folder not found')) {
-          toast.error('Folder not found');
-        } else {
-          toast.error('Seed not found in wishlist');
-        }
+        toast.error('Seed not found in wishlist');
       } else if (error?.response?.status === 403) {
-        toast.error('You do not have permission to use this folder');
+        toast.error('One or more folders not found or not accessible');
       } else if (error?.response?.status === 401) {
         toast.error('Please log in to manage folders');
       } else {
-        toast.error('Failed to update folder');
+        toast.error('Failed to update folders');
       }
 
       // Log error
-      apiLogger.logError('[useUpdateWishlistFolder] API error', error);
+      apiLogger.logError('[useUpdateWishlistFolders] API error', error);
 
       // Custom error callback
       options?.onError?.(error);
@@ -97,11 +97,17 @@ export const useUpdateWishlistFolder = (options?: UseUpdateWishlistFolderOptions
   });
 
   return {
-    updateFolder: mutation.mutate,
-    updateFolderAsync: mutation.mutateAsync,
+    updateFolders: mutation.mutate,
+    updateFoldersAsync: mutation.mutateAsync,
     isPending: mutation.isPending,
     isSuccess: mutation.isSuccess,
     isError: mutation.isError,
     error: mutation.error,
   };
 };
+
+// Backward compatibility: Export old hook name with deprecation warning
+/**
+ * @deprecated Use useUpdateWishlistFolders instead (supports multiple folders)
+ */
+export const useUpdateWishlistFolder = useUpdateWishlistFolders;

@@ -65,13 +65,19 @@ export function transformWishlistItemRawToUI(raw: WishlistItemRaw): WishlistItem
     }
   };
 
+  const folders = raw.wishlistFolderItems.map(item => ({
+    id: item.wishlistFolder.id,
+    name: item.wishlistFolder.name,
+    order: item.order,
+    createdAt: item.createdAt,
+  }))
+
   return {
     id: raw.id,
     userId: raw.userId,
     seedId: raw.seedId,
-    folderId: raw.folderId,
     createdAt: raw.createdAt,
     seedProduct,
-    folder: raw.folder,
+    folders,
   };
 }

@@ -210,18 +210,19 @@ export async function DELETE(
       );
     }
 
-    // Move all wishlist items from this folder to Uncategorized before deleting
-    const moveResult = await prisma.wishlist.updateMany({
+    // Remove all wishlist items from this folder before deleting
+    // (The junction table entries will be cascade deleted automatically)
+    // But we log the count for debugging
+    const itemsCount = await prisma.wishlistFolderItem.count({
       where: {
-        folderId: folderId,
-        userId: user.id
-      },
-      data: {
-        folderId: uncategorizedFolder.id
+        wishlistFolderId: folderId,
+        wishlist: {
+          userId: user.id
+        }
       }
     });
 
-    // Now delete the folder
+    // Now delete the folder (cascade delete will remove junction table entries)
     await prisma.wishlistFolder.delete({
       where: { id: folderId }
     });
@@ -230,7 +231,7 @@ export async function DELETE(
       userId: user.id,
       folderId: folderId,
       folderName: existingFolder.name,
-      movedItems: moveResult.count
+      removedItemsCount: itemsCount
     });
 
     return NextResponse.json(

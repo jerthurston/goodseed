@@ -7,7 +7,6 @@ export interface WishlistItemRaw {
   id: string;
   userId: string;
   seedId: string;
-  folderId: string | null;
   createdAt: string | Date;
   seedProduct: {
     id: string;
@@ -43,10 +42,21 @@ export interface WishlistItemRaw {
       affiliateTag: string | null;
     };
   };
-  folder: {
-    id: string;
-    name: string;
-  } | null;
+  // folderId: string | null;
+  // folder: {
+  //   id: string;
+  //   name: string;
+  // } | null;
+  wishlistFolderItems: Array<{
+    id:string;
+    folderId:string;
+    order:number;
+    createdAt: string | Date;
+    wishlistFolder:{
+      id:string;
+      name:string;
+    }
+  }>
 }
 
 /**
@@ -56,11 +66,17 @@ export interface WishlistItemUI {
   id: string;
   userId: string;
   seedId: string;
-  folderId: string | null;
   createdAt: string | Date;
   seedProduct: SeedUI;
-  folder: {
-    id: string;
-    name: string;
-  } | null;
+  // folderId: string | null;
+  // folder: {
+  //   id: string;
+  //   name: string;
+  // } | null;
+  folders: Array<{
+    id:string;
+    name:string;
+    order:number;
+    createdAt: string | Date;
+  }>
 }

@@ -1,7 +1,7 @@
 /**
  * GET /api/me/wishlist/[seedProductId]: Lấy thông tin chi tiết của một seedProduct trong wishlist của user
  * DELETE /api/me/wishlist/[seedProductId]: Xóa một seedProduct khỏi wishlist của user
- * PUT /api/me/wishlist/[seedProductId]: Update folder của một seedProduct trong wishlist
+ * PUT /api/me/wishlist/[seedProductId]: Update folders của một seedProduct trong wishlist (Many-to-Many)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -11,10 +11,10 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 import { z } from 'zod';
 
 /**
- * Validation schema for updating wishlist folder
+ * Validation schema for updating wishlist folders (Many-to-Many)
  */
-const updateWishlistFolderSchema = z.object({
-  folderId: z.string().min(1, 'Folder ID is required'),
+const updateWishlistFoldersSchema = z.object({
+  folderIds: z.array(z.string()).min(1, 'At least one folder is required'),
 });
 
 /**
@@ -191,10 +191,18 @@ export async function GET(
             },
           }
         },
-        folder: {
-          select: {
-            id: true,
-            name: true,
+        // NEW: Many-to-many folders
+        wishlistFolderItems: {
+          include: {
+            wishlistFolder: {
+              select: {
+                id: true,
+                name: true,
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'asc'
           }
         }
       }
@@ -227,8 +235,8 @@ export async function GET(
 /**
  * PUT /api/me/wishlist/[seedId]
  * 
- * Update folder của seed trong wishlist
- * Dùng để move seed giữa các folders hoặc assign vào folder mới
+ * Update folders của seed trong wishlist (Many-to-Many)
+ * Assign seed vào nhiều folders cùng lúc
  */
 export async function PUT(
   request: NextRequest,
@@ -258,7 +266,7 @@ export async function PUT(
 
     // Parse and validate request body
     const body = await request.json();
-    const validatedData = updateWishlistFolderSchema.parse(body);
+    const validatedData = updateWishlistFoldersSchema.parse(body);
 
     // Find user
     const user = await prisma.user.findUnique({
@@ -273,26 +281,6 @@ export async function PUT(
       );
     }
 
-    // Verify folder exists and belongs to user
-    const folder = await prisma.wishlistFolder.findUnique({
-      where: { id: validatedData.folderId },
-      select: { id: true, userId: true, name: true }
-    });
-
-    if (!folder) {
-      return NextResponse.json(
-        { error: 'Folder not found' },
-        { status: 404 }
-      );
-    }
-
-    if (folder.userId !== user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden: This folder does not belong to you' },
-        { status: 403 }
-      );
-    }
-
     // Check if seed exists in wishlist
     const existingWishlistItem = await prisma.wishlist.findUnique({
       where: {
@@ -302,10 +290,13 @@ export async function PUT(
         }
       },
       select: { 
-        id: true, 
-        folderId: true,
-        folder: {
-          select: { id: true, name: true }
+        id: true,
+        wishlistFolderItems: {
+          include: {
+            wishlistFolder: {
+              select: { id: true, name: true }
+            }
+          }
         }
       }
     });
@@ -317,54 +308,78 @@ export async function PUT(
       );
     }
 
-    // Check if already in target folder
-    if (existingWishlistItem.folderId === validatedData.folderId) {
+    // Verify all folders exist and belong to user
+    const folders = await prisma.wishlistFolder.findMany({
+      where: {
+        id: { in: validatedData.folderIds },
+        userId: user.id,
+      },
+      select: { id: true, name: true }
+    });
+
+    if (folders.length !== validatedData.folderIds.length) {
+      return NextResponse.json(
+        { error: 'One or more folders not found or not owned by user' },
+        { status: 403 }
+      );
+    }
+
+    // Get current folder IDs
+    const currentFolderIds = existingWishlistItem.wishlistFolderItems.map(
+      item => item.wishlistFolder.id
+    );
+
+    // Check if already assigned to exactly these folders
+    const isSameSet = 
+      currentFolderIds.length === validatedData.folderIds.length &&
+      currentFolderIds.every(id => validatedData.folderIds.includes(id));
+
+    if (isSameSet) {
       return NextResponse.json(
         { 
           success: true,
-          message: 'Seed is already in this folder',
+          message: 'Seed is already in these folders',
           wishlistId: existingWishlistItem.id,
-          folderId: validatedData.folderId,
-          folderName: folder.name,
+          folderIds: validatedData.folderIds,
+          folderNames: folders.map(f => f.name),
         },
         { status: 200 }
       );
     }
 
-    // Update wishlist item's folder
-    const updatedWishlistItem = await prisma.wishlist.update({
-      where: {
-        userId_seedId: {
-          userId: user.id,
-          seedId: seedId,
-        }
-      },
-      data: {
-        folderId: validatedData.folderId,
-      },
-      include: {
-        folder: {
-          select: {
-            id: true,
-            name: true,
-          }
-        }
-      }
-    });
+    // Transaction: Remove old + Add new folder assignments
+    await prisma.$transaction([
+      // Remove all existing folder assignments
+      prisma.wishlistFolderItem.deleteMany({
+        where: { wishlistId: existingWishlistItem.id }
+      }),
+      // Create new folder assignments
+      prisma.wishlistFolderItem.createMany({
+        data: validatedData.folderIds.map((folderId, index) => ({
+          wishlistId: existingWishlistItem.id,
+          wishlistFolderId: folderId,
+          order: index,
+        })),
+        skipDuplicates: true,
+      })
+    ]);
 
-    apiLogger.info('[PUT /api/me/wishlist/[seedId]] Folder updated', {
+    apiLogger.info('[PUT /api/me/wishlist/[seedId]] Folders updated', {
       userId: user.id,
       seedId,
-      wishlistId: updatedWishlistItem.id,
-      previousFolder: existingWishlistItem.folder?.name || 'none',
-      newFolder: folder.name,
+      wishlistId: existingWishlistItem.id,
+      previousFolders: currentFolderIds,
+      newFolders: validatedData.folderIds,
+      folderNames: folders.map(f => f.name),
     });
 
     return NextResponse.json(
       { 
         success: true,
-        message: `Moved to ${folder.name}`,
-        wishlist: updatedWishlistItem,
+        message: `Assigned to ${folders.length} folder(s)`,
+        wishlistId: existingWishlistItem.id,
+        folderIds: validatedData.folderIds,
+        folderNames: folders.map(f => f.name),
       },
       { status: 200 }
     );
@@ -379,7 +394,7 @@ export async function PUT(
 
     apiLogger.logError('[PUT /api/me/wishlist/[seedId]]', error as Error);
     return NextResponse.json(
-      { error: 'Failed to update wishlist folder' },
+      { error: 'Failed to update wishlist folders' },
       { status: 500 }
     );
   }

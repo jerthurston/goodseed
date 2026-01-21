@@ -55,11 +55,16 @@ export async function GET(request: NextRequest) {
 
     // Filter by folder if provided
     if (folderId) {
-      whereClause.folderId = folderId;
+      // whereClause.folderId = folderId;
+      whereClause.wishlistFolderItems = {
+        some:{
+          wishlistFolderId:folderId 
+        }
+      }
     }
 
     // Fetch wishlist items with full seed product details
-    const wishlistItems = await prisma.wishlist.findMany({
+    const wishlist = await prisma.wishlist.findMany({
       where: whereClause,
       include: {
         seedProduct: {
@@ -105,12 +110,22 @@ export async function GET(request: NextRequest) {
             }
           }
         },
-        folder: {
-          select: {
-            id: true,
-            name: true,
+        wishlistFolderItems:{
+          include:{
+            wishlistFolder:{
+              select:{
+                id:true,
+                name:true,
+              }
+            }
           }
-        }
+        },
+        // folder: {
+        //   select: {
+        //     id: true,
+        //     name: true,
+        //   }
+        // },
       },
       orderBy: {
         createdAt: 'desc'
@@ -119,12 +134,12 @@ export async function GET(request: NextRequest) {
 
     apiLogger.debug('[GET /api/me/wishlist]', {
       userId: user.id,
-      count: wishlistItems.length,
+      count: wishlist.length,
       folderId: folderId || 'all',
-      items: wishlistItems
+      items: wishlist
     });
 
-    return NextResponse.json(wishlistItems, { status: 200 });
+    return NextResponse.json(wishlist, { status: 200 });
 
   } catch (error) {
     apiLogger.logError('[GET /api/me/wishlist]', error as Error);
@@ -139,7 +154,7 @@ export async function GET(request: NextRequest) {
  * POST /api/me/wishlist
  * 
  * Thêm seed vào wishlist (favorite)
- * Nếu không có folderId, sẽ add vào folder "Uncategorized"
+ * Tự động assign vào folder "Uncategorized" thông qua junction table
  */
 export async function POST(request: NextRequest) {
   try {
@@ -182,6 +197,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if already in wishlist
+    const existing = await prisma.wishlist.findUnique({
+      where: {
+        userId_seedId: {
+          userId: user.id,
+          seedId: validatedData.seedId
+        }
+      }
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: 'This seed is already in your wishlist' },
+        { status: 409 }
+      );
+    }
+
     // Auto-assign to "Uncategorized" folder
     const UNCATEGORIZED_NAME = 'Uncategorized';
     
@@ -215,49 +247,49 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const targetFolderId = uncategorizedFolder.id;
-
-    // Check if already in wishlist
-    const existing = await prisma.wishlist.findUnique({
-      where: {
-        userId_seedId: {
+    // Transaction: Create wishlist + Create folder assignment
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Create wishlist item (without folderId)
+      const wishlistItem = await tx.wishlist.create({
+        data: {
           userId: user.id,
-          seedId: validatedData.seedId
+          seedId: validatedData.seedId,
+        },
+        select: {
+          id: true,
+          userId: true,
+          seedId: true,
+          createdAt: true,
         }
-      }
-    });
+      });
 
-    if (existing) {
-      return NextResponse.json(
-        { error: 'This seed is already in your wishlist' },
-        { status: 409 }
-      );
-    }
+      // 2. Create folder assignment in junction table
+      await tx.wishlistFolderItem.create({
+        data: {
+          wishlistId: wishlistItem.id,
+          wishlistFolderId: uncategorizedFolder!.id,
+          order: 0,
+        }
+      });
 
-    // Create wishlist item
-    const wishlistItem = await prisma.wishlist.create({
-      data: {
-        userId: user.id,
-        seedId: validatedData.seedId,
-        folderId: targetFolderId,
-      },
-      select: {
-        id: true,
-        userId: true,
-        seedId: true,
-        folderId: true,
-        createdAt: true,
-      }
+      return wishlistItem;
     });
 
     apiLogger.info('[POST /api/me/wishlist] Seed added to wishlist', {
       userId: user.id,
-      wishlistId: wishlistItem.id,
-      seedId: wishlistItem.seedId,
-      folderId: wishlistItem.folderId
+      wishlistId: result.id,
+      seedId: result.seedId,
+      folderId: uncategorizedFolder.id,
+      folderName: UNCATEGORIZED_NAME
     });
 
-    return NextResponse.json(wishlistItem, { status: 201 });
+    return NextResponse.json({
+      ...result,
+      folders: [{
+        id: uncategorizedFolder.id,
+        name: UNCATEGORIZED_NAME
+      }]
+    }, { status: 201 });
 
   } catch (error) {
     // Zod validation error

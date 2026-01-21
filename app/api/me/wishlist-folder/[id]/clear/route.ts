@@ -80,14 +80,14 @@ export async function POST(
       );
     }
 
-    // Move all seeds from current folder to Uncategorized
-    const result = await prisma.wishlist.updateMany({
+    // Remove all wishlist items from this folder (delete junction table entries)
+    // This will not delete the wishlist items themselves, just remove them from this folder
+    const result = await prisma.wishlistFolderItem.deleteMany({
       where: {
-        folderId: folderId,
-        userId: user.id
-      },
-      data: {
-        folderId: uncategorizedFolder.id
+        wishlistFolderId: folderId,
+        wishlist: {
+          userId: user.id
+        }
       }
     });
 
@@ -95,8 +95,7 @@ export async function POST(
       userId: user.id,
       folderId,
       folderName: folder.name,
-      movedCount: result.count,
-      targetFolderId: uncategorizedFolder.id
+      removedCount: result.count
     });
 
     return NextResponse.json({

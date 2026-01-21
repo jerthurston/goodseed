@@ -98,8 +98,8 @@ const FavouritePage = () => {
                 apiLogger.debug(`[FavoritePage] Wishlist item #${index + 1}`, {
                     wishlistId: item.id,
                     seedId: item.seedId,
-                    folderId: item.folderId,
-                    folderName: item.folder?.name || 'No folder',
+                    folders: item.folders.map(f => ({ id: f.id, name: f.name })),
+                    folderNames: item.folders.map(f => f.name).join(', ') || 'No folders',
                     seedName: item.seedProduct.name,
                     seedImage: item.seedProduct.imageUrl,
                     seedPrice: item.seedProduct.price,
@@ -109,11 +109,14 @@ const FavouritePage = () => {
 
             // Group by folder
             const groupedByFolder = wishlistItems.reduce((acc, item) => {
-                const folderName = item.folder?.name || 'No folder';
-                if (!acc[folderName]) {
-                    acc[folderName] = [];
-                }
-                acc[folderName].push(item.seedProduct.name);
+                // Each item can belong to multiple folders
+                item.folders.forEach(folder => {
+                    const folderName = folder.name || 'No folder';
+                    if (!acc[folderName]) {
+                        acc[folderName] = [];
+                    }
+                    acc[folderName].push(item.seedProduct.name);
+                });
                 return acc;
             }, {} as Record<string, string[]>);
 
@@ -202,9 +205,10 @@ const FavouritePage = () => {
     const visibleSeeds = useMemo(() => {
         return wishlistItems
             .filter(item => {
-                // Filter by current folder
+                // Filter by current folder (Many-to-Many support)
                 if (!currentWishlistFolder) return true;
-                return item.folderId === currentWishlistFolder.id;
+                // Check if item belongs to current folder
+                return item.folders.some(folder => folder.id === currentWishlistFolder.id);
             })
             .map(item => item.seedProduct); // seedProduct is already in SeedUI format from transformer
     }, [wishlistItems, currentWishlistFolder]);

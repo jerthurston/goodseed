@@ -68,7 +68,7 @@ export const useCreateFavoriteSeedInWishlist = (options?: UseCreateFavoriteSeedO
       apiLogger.info('[useCreateFavoriteSeedInWishlist] Seed added to wishlist', {
         wishlistId: wishlist.id,
         seedId: wishlist.seedId,
-        folderId: wishlist.folderId,
+        folders: wishlist.wishlistFolderItems?.map(item => item.wishlistFolder.name) || [],
       });
 
       // Custom callback
