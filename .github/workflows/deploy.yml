@@ -114,7 +114,32 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v2
 
     # -----------------------------
-    # Build & Push WEB image
+    # RUN DATABASE MIGRATIONS FIRST (before building image)
+    # -----------------------------
+    - name: Run database migrations
+      env:
+        PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        DEV_DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+      run: |
+        echo "🚀 Running Prisma migrations..."
+        
+        # Set DATABASE_URL based on environment using secrets
+        if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          export DATABASE_URL="$PROD_DATABASE_URL"
+          echo "📊 Using PRODUCTION database"
+        else
+          export DATABASE_URL="$DEV_DATABASE_URL"
+          echo "🧪 Using DEVELOPMENT database"
+        fi
+        
+        # Apply migrations to update database schema
+        echo "📊 Applying database migrations..."
+        pnpm prisma migrate deploy
+        
+        echo "✅ Database migrations completed successfully"
+
+    # -----------------------------
+    # Build & Push WEB image (after migrations applied)
     # -----------------------------
     - name: Set image tags
       id: tags
@@ -187,35 +212,6 @@ jobs:
         tags: |
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}${{ needs.set-environment.outputs.worker_image_suffix }}
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ steps.tags.outputs.branch_tag }}${{ needs.set-environment.outputs.worker_image_suffix }}
-
-    # -----------------------------
-    # RUN DATABASE MIGRATIONS BEFORE DEPLOYMENT
-    # -----------------------------
-    - name: Run database migrations
-      env:
-        PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-        DEV_DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
-      run: |
-        echo "🚀 Running Prisma migrations..."
-        
-        # Set DATABASE_URL based on environment using secrets
-        if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-          export DATABASE_URL="$PROD_DATABASE_URL"
-          echo "📊 Using PRODUCTION database"
-        else
-          export DATABASE_URL="$DEV_DATABASE_URL"
-          echo "🧪 Using DEVELOPMENT database"
-        fi
-        
-        # 1. Apply migrations FIRST (schema changes)
-        echo "📊 Applying database migrations..."
-        pnpm prisma migrate deploy
-        
-        # 2. Generate Prisma client AFTER (code generation)  
-        echo "🔧 Generating Prisma client..."
-        pnpm prisma generate
-        
-        echo "✅ Database migrations completed successfully"
 
     # -----------------------------
     # DEPLOY TO ECS
