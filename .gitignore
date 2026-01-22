@@ -62,6 +62,8 @@ terraform.tfstate*
 database.config
 redis.config
 *.sql
+# Allow Prisma migration files
+!prisma/migrations/**/*.sql
 *.dump
 
 # SSH & API Keys
