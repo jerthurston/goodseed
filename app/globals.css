@@ -122,29 +122,34 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Add padding-top to compensate for fixed header */
+    /* Header height: padding (1.5rem * 2) + logo height (~2.5rem) + border (6px) ≈ 90px */
+    padding-top: 90px;
   }
 }
 
-/* Dashboard-specific styles - Hide header and footer on mobile */
-@media (max-width: 1023px) {
-  body[data-page="dashboard"] .goodseed-nav,
-  body[data-page="dashboard"] .main-footer,
-  body[data-page="dashboard"] .header-wrapper,
-  body[data-page="dashboard"] .footer-wrapper {
-    display: none !important;
+/* Adjust padding-top for mobile (header becomes taller with flex-column) */
+@media (max-width: 768px) {
+  body {
+    /* Mobile header height: ~140px due to column layout */
+    padding-top: 140px;
   }
 }
 
-/* Alternative approach - more specific selectors */
-@media (max-width: 1023px) {
-  .dashboard-page .goodseed-nav,
-  .dashboard-page .main-footer,
-  .dashboard-page .header-wrapper,
-  .dashboard-page .footer-wrapper,
-  [data-dashboard="true"] .goodseed-nav,
-  [data-dashboard="true"] .main-footer,
-  [data-dashboard="true"] .header-wrapper,
-  [data-dashboard="true"] .footer-wrapper {
-    display: none !important;
-  }
+/* Admin Dashboard - Hide header and footer on all screen sizes */
+body[data-page="admin-dashboard"] .goodseed-nav,
+body[data-page="admin-dashboard"] .main-footer,
+body[data-page="admin-dashboard"] .header-wrapper,
+body[data-page="admin-dashboard"] .footer-wrapper,
+.admin-dashboard-page .goodseed-nav,
+.admin-dashboard-page .main-footer,
+.admin-dashboard-page .header-wrapper,
+.admin-dashboard-page .footer-wrapper {
+  display: none !important;
+}
+
+/* Reset padding-top when header is hidden on admin dashboard */
+body[data-page="admin-dashboard"],
+.admin-dashboard-page {
+  padding-top: 0 !important;
 }

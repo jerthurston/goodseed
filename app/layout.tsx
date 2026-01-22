@@ -41,13 +41,13 @@ export default function RootLayout({
             <CookieBanner />
             {/* --> Authentication first time and showing notification preferences */}
             <NotificationPreferences />
-            <div className="header-wrapper">
+            {/* <div className="header-wrapper relative"> */}
               <Header />
-            </div>
+            {/* </div> */}
             {children}
-            <div className="footer-wrapper">
+            {/* <div className="footer-wrapper"> */}
               <Footer />
-            </div>
+            {/* </div> */}
             <Toaster />
           </ReactQueryProvider>
         </SessionProvider>

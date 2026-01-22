@@ -61,7 +61,7 @@ const Header = () => {
             <button
               onClick={() => setIsModalOpen(true)}
               className="login-btn"
-              style={{ fontFamily: "'Poppins'", fontSize: "1.1rem", fontWeight: "700", lineHeight: "20px" }}
+              // style={{ fontFamily: "'Poppins'", fontSize: "1.1rem", fontWeight: "700", lineHeight: "20px" }}
             >
               Sign in
             </button>

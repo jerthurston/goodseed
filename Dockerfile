@@ -52,6 +52,8 @@ ARG CLOUDFLARE_DOMAIN
 # Environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+# Enable standalone output for Docker build
+ENV ENABLE_STANDALONE=true
 # Use ARG for DATABASE_URL with fallback to placeholder
 ENV DATABASE_URL=${DATABASE_URL:-"postgresql://placeholder:placeholder@localhost:5432/placeholder"}
 ENV NODE_OPTIONS="--max-old-space-size=2048"

@@ -7,6 +7,7 @@ import { Icons } from "@/components/ui/icons"
 import { useGoogleSignIn } from "@/hooks/auth/useGoogleSignIn"
 import { useFacebookSignIn } from "@/hooks/auth/useFacebookSignIn"
 import { EmailVerificationForm } from "@/components/custom/forms/EmailVerificationForm"
+import { usePathname } from 'next/navigation'
 
 interface SignInModalProps {
     isOpen: boolean
@@ -15,6 +16,7 @@ interface SignInModalProps {
 }
 
 const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
+    const pathname = usePathname();
     
     const { googleSignIn, isLoading: isGoogleLoading } = useGoogleSignIn();
     const { facebookSignIn, isLoading: isFacebookLoading } = useFacebookSignIn();
@@ -53,7 +55,7 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
                         {/* Google Authentication */}
                         <button
                             className="social-login-btn google"
-                            onClick={() => googleSignIn('/dashboard/user/settings')}
+                            onClick={() => googleSignIn(`${pathname}`)}
                             disabled={isGoogleLoading}
                             type="button"
                         >

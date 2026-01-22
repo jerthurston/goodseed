@@ -14,9 +14,9 @@ const HeroSection = ({ title, description }: HeroSectionProps) => {
     return (
         <>
             <section className="hero">
-                <div>
+                {/* <div> */}
                     <h1>{title}</h1>
-                </div>
+                {/* </div> */}
                 <div className="hero-search-container">
                     <SearchForHomepage />
                     <FilterBtnForHomepage />

@@ -76,7 +76,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                     ...prev,
                     thcRange: {
                         ...prev.thcRange,
-                        min: Math.min(value, prev.thcRange.max)
+                        min: Math.min(value, prev.thcRange.max - 0.5)
                     }
                 }
             } else {
@@ -85,7 +85,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                     ...prev,
                     thcRange: {
                         ...prev.thcRange,
-                        max: Math.max(value, prev.thcRange.min)
+                        max: Math.max(value, prev.thcRange.min + 0.5)
                     }
                 }
             }
@@ -100,7 +100,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                     ...prev,
                     cbdRange: {
                         ...prev.cbdRange,
-                        min: Math.min(value, prev.cbdRange.max)
+                        min: Math.min(value, prev.cbdRange.max - 0.5)
                     }
                 }
             } else {
@@ -109,7 +109,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                     ...prev,
                     cbdRange: {
                         ...prev.cbdRange,
-                        max: Math.max(value, prev.cbdRange.min)
+                        max: Math.max(value, prev.cbdRange.min + 0.5)
                     }
                 }
             }

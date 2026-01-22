@@ -33,20 +33,14 @@ const AccountDropdown = ({ onLogout, user }: AccountDropdownProps) => {
         }
     }, [isOpen])
 
-    const handleLogout = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        e.preventDefault()
-        onLogout()
-        setIsOpen(false)
-    }
-
-    useEffect(() => {
-        apiLogger.debug('🔍 Account dropdown debug:', {
-            userRole: user?.role,
-            userEmail: user?.email,
-            userName: user?.name,
-            fullUserObject: user
-        });
-    }, [])
+    // useEffect(() => {
+    //     apiLogger.debug('🔍 Account dropdown debug:', {
+    //         userRole: user?.role,
+    //         userEmail: user?.email,
+    //         userName: user?.name,
+    //         fullUserObject: user
+    //     });
+    // }, [])
 
     return (
         <div
@@ -66,8 +60,9 @@ const AccountDropdown = ({ onLogout, user }: AccountDropdownProps) => {
                 {!!user ?
                     (
                         <>
-                            <FontAwesomeIcon icon={faUser} />
-                            <span className='text-sm'>Hi! {user.name}</span>
+                            {/* <FontAwesomeIcon icon={faUser} /> */}
+                            {/* <span className='text-sm'>Hi! {user.name}</span> */}
+                            <span className='text-sm'>Account</span>
                         </>
                     ) : <span>Account</span>}
                 <FontAwesomeIcon icon={faChevronDown} className="dropdown-caret" />
@@ -100,10 +95,10 @@ const AccountDropdown = ({ onLogout, user }: AccountDropdownProps) => {
                             id="accountDropdownMenu"
                         >
                             <Link href="/dashboard/user/favorites" className="dropdown-item">
-                                <FontAwesomeIcon icon={faHeart} /> Wishlist
+                                <FontAwesomeIcon icon={faHeart} color="var(--brand-primary)" /> Wishlist
                             </Link>
                             <Link href="/dashboard/user/settings" className="dropdown-item">
-                                <FontAwesomeIcon icon={faCog} /> Account Settings
+                                <FontAwesomeIcon icon={faCog} style={{ color: "var(--brand-primary)" }} /> Account Settings
                             </Link>
                             {/* Logout button */}
                             <SignOutBtn />

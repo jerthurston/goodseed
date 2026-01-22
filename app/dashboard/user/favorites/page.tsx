@@ -216,15 +216,17 @@ const FavouritePage = () => {
     return (
         <main className="favorites-page-main">
             <div className="page-header">
-                <div className='max-w-[1440px] mx-auto'>
-                    <h2 className=''>
+                <div className=''>
+                    <h2 
+                    style={{color: 'var(--brand-primary)'}}
+                    className='my-8'>
                         My Favorites</h2>
                     <p>Manage your saved seeds and organize them into custom lists.</p>
                 </div>
             </div>
 
             <section className="favorites-list-management ">
-                <div className='max-w-[1440px] mx-auto'>
+                <div className=''>
                     <div className="list-management__controls ">
                         {/* -->Danh sách Wishlist Folder */}
                         <div className="list-management__selector-group">

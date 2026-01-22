@@ -33,6 +33,8 @@ COPY . .
 # Build application with optimizations
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
+# Enable standalone output for Docker build
+ENV ENABLE_STANDALONE true
 
 # Build Next.js application
 RUN pnpm run build

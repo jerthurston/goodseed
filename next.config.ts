@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable standalone output for Docker
-  output: 'standalone',
+  // Enable standalone output for Docker/Production only
+  // Set ENABLE_STANDALONE=true when building for Docker
+  // This avoids Windows symlink permission issues in development
+  ...(process.env.ENABLE_STANDALONE === 'true' && { output: 'standalone' }),
   
   // Mark server-only packages as external for Turbopack
   serverExternalPackages: ['crawlee', 'cheerio', 'puppeteer', 'playwright', 'bull', '@prisma/client'],

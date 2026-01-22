@@ -609,7 +609,11 @@ nav.goodseed-nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    position: sticky; top: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
     z-index: 100;
 }
 .logo {
@@ -652,6 +656,7 @@ nav.goodseed-nav {
     transition: all 0.2s ease;
     box-shadow: 4px 4px 0 var(--border-color);
     font-family: 'Poppins', sans-serif;
+    font-size: 1.1rem;
 }
 .login-btn:hover {
     background-color: var(--brand-primary);
@@ -764,6 +769,7 @@ main {
 .hero h1 {
     font-size: 5rem;
     margin: 2rem 0;
+    margin-top: 0rem;
     line-height: 0.9;
     letter-spacing: -4px;
     max-width: 900px;
@@ -1120,6 +1126,12 @@ main {
     color: var(--bg-main);
     line-height: 1.6;
     font-size: 1.1rem;
+}
+
+@media screen and (max-width: 640px) {
+    .step b {
+        margin:10px 0px;
+    }
 }
 
 /* --- CTA Section (Home Page) --- */
@@ -1933,9 +1945,15 @@ Results Page
     /* Replicates Tailwind's: w-full px-4 sm:px-6 lg:px-8 py-8 */
     width: 100%;
     padding: 1rem 1rem; /* Increased side padding for the full-width look */
+    padding: 2.3rem 2.5rem;
 }
 
 /* Optional: Adjust padding for smaller screens if needed */
+
+@media (max-width: 1024px) {
+
+}
+
 @media (max-width: 768px) {
     .favorites-page-main {
         padding: 2rem 1.5rem;
@@ -1944,7 +1962,7 @@ Results Page
 
 @media (max-width: 480px) {
     .favorites-page-main {
-        padding: 2rem 0rem;
+        padding: 1.5rem 1rem;
     }
 }
 
@@ -2569,7 +2587,7 @@ Favorites Page Specific Styles
 
 .list-management-label {
     font-family: 'Poppins', sans-serif;
-    font-weight: 800;
+    font-weight: 600;
     font-size: 0.95rem;
     color: var(--text-primary);
     /* Tailwind: block mb-1 */
@@ -2938,7 +2956,7 @@ Pagination & Footer
 .main-footer {
     background-color: var(--text-primary);
     color: var(--bg-main);
-    padding: 3rem 2rem;
+    padding: 5rem 2rem;
     border-top: 6px solid var(--accent-cta);
     font-family: 'Poppins', sans-serif;
     font-weight: 400;
@@ -2958,7 +2976,7 @@ Pagination & Footer
 .footer-grid {
     display: grid;
     grid-template-columns: repeat(1, minmax(0, 1fr));
-    gap: 2rem;
+    gap: 5rem;
     margin-bottom: 2rem;
 }
 
@@ -3229,11 +3247,13 @@ Responsive Styles
     .goodseed-nav-links a, .login-btn, .account-btn {
         font-size: 1rem;
         padding: 0.4rem 0.6rem;
-    }
-    .login-btn, .account-btn {
+    } 
+    .account-btn {
         padding: 0.5rem 1rem;
     }
     .hero {
+        padding-top: 0;
+        padding-bottom: 2rem;
         min-height: 0;
     }
     .hero h1 {

@@ -20,17 +20,17 @@ const HowItWorkSection = ({ title, description, steps }: HowItWorkSectionProps) 
                 <div className="step">
                     <div className="step-number">1</div>
                     <h3>{steps[0].title}</h3>
-                    <p>{steps[0].description}</p>
+                    <p className="my-4">{steps[0].description}</p>
                 </div>
                 <div className="step">
                     <div className="step-number">2</div>
                     <h3>{steps[1].title}</h3>
-                    <p>{steps[1].description}</p>
+                    <p className="my-4">{steps[1].description}</p>
                 </div>
                 <div className="step">
                     <div className="step-number">3</div>
                     <h3>{steps[2].title}</h3>
-                    <p>{steps[2].description}</p>
+                    <p className="my-4">{steps[2].description}</p>
                 </div>
             </div>
         </section>

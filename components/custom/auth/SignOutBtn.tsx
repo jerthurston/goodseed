@@ -22,7 +22,7 @@ const SignOutBtn = () => {
             className="dropdown-item"
             onClick={() => handleLogOut()}
             >
-            <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+            <FontAwesomeIcon icon={faSignOutAlt} color='var(--brand-primary)'/> Logout
         </Link>
             
             {/* Confirmation Action Modal - Rendered using Portal */}
@@ -31,7 +31,11 @@ const SignOutBtn = () => {
             <SignOutModal 
                isOpen={isConfirmModal}
                onCancel={() => setIsConfirmModal(false)}
-               onConfirm={() => signOut()}
+               onConfirm={() => signOut(
+                {
+                    callbackUrl: '/'
+                }
+               )}
             />,
             document.body
            )}
