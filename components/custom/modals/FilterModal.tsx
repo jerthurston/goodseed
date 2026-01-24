@@ -50,6 +50,68 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
         })
     }
 
+    // Generic smart click handler for range sliders with smooth animation
+    const createRangeSliderClickHandler = (
+        rangeType: 'priceRange' | 'thcRange' | 'cbdRange',
+        maxValue: number,
+        step: number,
+        handleChange: (type: 'min' | 'max', value: number) => void
+    ) => {
+        return (e: React.MouseEvent<HTMLDivElement>) => {
+            const sliderContainer = e.currentTarget
+            const rect = sliderContainer.getBoundingClientRect()
+            const clickX = e.clientX - rect.left
+            const clickPercentage = clickX / rect.width
+            
+            // Calculate clicked value with proper rounding based on step
+            const rawValue = clickPercentage * maxValue
+            const clickedValue = step === 1 
+                ? Math.round(rawValue)
+                : Math.round(rawValue / step) * step
+            
+            const { min, max } = filters[rangeType]
+            const midPoint = (min + max) / 2
+            
+            // Xác định slider nào sẽ di chuyển
+            const isMovingMin = clickedValue < midPoint
+            const currentValue = isMovingMin ? min : max
+            const targetValue = clickedValue
+            
+            // Tạo smooth animation
+            const duration = 200 // ms
+            const startTime = Date.now()
+            const difference = targetValue - currentValue
+            
+            const animate = () => {
+                const elapsed = Date.now() - startTime
+                const progress = Math.min(elapsed / duration, 1)
+                
+                // Easing function (ease-in-out)
+                const eased = progress < 0.5 
+                    ? 2 * progress * progress 
+                    : 1 - Math.pow(-2 * progress + 2, 2) / 2
+                
+                // Calculate new value with proper rounding based on step
+                const rawNewValue = currentValue + difference * eased
+                const newValue = step === 1
+                    ? Math.round(rawNewValue)
+                    : Math.round(rawNewValue / step) * step
+                
+                if (isMovingMin) {
+                    handleChange('min', newValue)
+                } else {
+                    handleChange('max', newValue)
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate)
+                }
+            }
+            
+            requestAnimationFrame(animate)
+        }
+    }
+
     const handleSeedTypeChange = (type: string) => {
         setFilters(prev => ({
             ...prev,
@@ -116,6 +178,11 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
         })
     }
 
+    // Create specific handlers using the generic function
+    const handlePriceSliderClick = createRangeSliderClickHandler('priceRange', 100, 1, handlePriceChange)
+    const handleTHCSliderClick = createRangeSliderClickHandler('thcRange', 40, 0.5, handleTHCChange)
+    const handleCBDSliderClick = createRangeSliderClickHandler('cbdRange', 25, 0.5, handleCBDChange)
+
     const handleReset = () => {
         setFilters({
             priceRange: { min: 0, max: 100 },
@@ -158,7 +225,12 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                 {/* Price per Seed */}
                 <div className="filter-section">
                     <h3 className="filter-section-title">Price per Seed</h3>
-                    <div className="range-slider-container flex justify-center">
+                    <div 
+                        className="range-slider-container flex justify-center" 
+                        onClick={handlePriceSliderClick}
+                        style={{ cursor: 'pointer', position: 'relative' }}
+                    >
+                        {/* min pricing input slider */}
                         <input
                             type="range"
                             min="0"
@@ -167,7 +239,9 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                             step="1"
                             className="range-slider range-slider-min"
                             onChange={(e) => handlePriceChange('min', Number(e.target.value))}
+                            onClick={(e) => e.stopPropagation()}
                         />
+                        {/* max pricing input slider */}
                         <input
                             type="range"
                             min="0"
@@ -176,8 +250,10 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                             step="1"
                             className="range-slider range-slider-max"
                             onChange={(e) => handlePriceChange('max', Number(e.target.value))}
+                            onClick={(e) => e.stopPropagation()}
                         />
                     </div>
+                    {/* pricing input form */}
                     <div className="range-inputs">
                         <div className="range-input">
                             <label htmlFor="minPrice">Min:</label>
@@ -289,7 +365,11 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                 {/* THC Range */}
                 <div className="filter-section">
                     <h3 className="filter-section-title">THC Range</h3>
-                    <div className="range-slider-container flex justify-center">
+                    <div 
+                        className="range-slider-container flex justify-center"
+                        onClick={handleTHCSliderClick}
+                        style={{ cursor: 'pointer', position: 'relative' }}
+                    >
                         <input
                             type="range"
                             min="0"
@@ -298,6 +378,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                             step="0.5"
                             className="range-slider range-slider-min"
                             onChange={(e) => handleTHCChange('min', Number(e.target.value))}
+                            onClick={(e) => e.stopPropagation()}
                         />
                         <input
                             type="range"
@@ -307,6 +388,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                             step="0.5"
                             className="range-slider range-slider-max"
                             onChange={(e) => handleTHCChange('max', Number(e.target.value))}
+                            onClick={(e) => e.stopPropagation()}
                         />
                     </div>
                     <div className="range-inputs">
@@ -342,7 +424,11 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                 {/* CBD Range */}
                 <div className="filter-section">
                     <h3 className="filter-section-title">CBD Range</h3>
-                    <div className="range-slider-container flex justify-center">
+                    <div 
+                        className="range-slider-container flex justify-center"
+                        onClick={handleCBDSliderClick}
+                        style={{ cursor: 'pointer', position: 'relative' }}
+                    >
                         <input
                             type="range"
                             min="0"
@@ -351,6 +437,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                             step="0.5"
                             className="range-slider range-slider-min"
                             onChange={(e) => handleCBDChange('min', Number(e.target.value))}
+                            onClick={(e) => e.stopPropagation()}
                         />
                         <input
                             type="range"
@@ -360,6 +447,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
                             step="0.5"
                             className="range-slider range-slider-max"
                             onChange={(e) => handleCBDChange('max', Number(e.target.value))}
+                            onClick={(e) => e.stopPropagation()}
                         />
                     </div>
                     <div className="range-inputs">

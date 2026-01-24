@@ -5,8 +5,8 @@ import SearchForHomepage from '@/components/custom/search/SearchForHomepage'
 
 
 interface HeroSectionProps {
-    title:string;
-    description:string;
+    title: string;
+    description: string;
 }
 
 const HeroSection = ({ title, description }: HeroSectionProps) => {
@@ -15,15 +15,13 @@ const HeroSection = ({ title, description }: HeroSectionProps) => {
         <>
             <section className="hero">
                 {/* <div> */}
-                    <h1>{title}</h1>
+                <h1>{title}</h1>
                 {/* </div> */}
                 <div className="hero-search-container">
                     <SearchForHomepage />
                     <FilterBtnForHomepage />
                 </div>
-                <div>
-                    <p>{description}</p>
-                </div>
+                <p>{description}</p>
             </section>
 
 

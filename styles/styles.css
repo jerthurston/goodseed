@@ -322,12 +322,22 @@ html.age-verified .age-verification {
 
 /* --- Filter Modal --- */
 .filter-modal {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 1000;
-    opacity: 0; pointer-events: none;
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    z-index: 9999;
+    opacity: 0; 
+    pointer-events: none;
     transition: opacity 0.3s ease;
+    /* Reset any transform inheritance */
+    transform: none;
+    will-change: opacity;
 }
 .filter-modal.active {
     opacity: 1;
@@ -356,11 +366,15 @@ html.age-verified .age-verification {
     margin-bottom: 1.5rem;
     color: var(--brand-primary);
     letter-spacing: -1px;
+    /* add custom styles */
+    text-align: left;
 }
 .filter-section {
     margin-bottom: 2rem;
     padding-bottom: 1.5rem;
     border-bottom: 3px solid var(--text-primary);
+    /* add custom styles */
+    text-align: left;
 }
 .filter-section:last-child {
     border-bottom: none;
@@ -609,11 +623,8 @@ nav.goodseed-nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    position: fixed;
+    position: sticky; 
     top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
     z-index: 100;
 }
 .logo {
@@ -682,7 +693,6 @@ nav.goodseed-nav {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    height: 3.15rem;
 }
 .account-btn:hover {
     background-color: var(--brand-primary);
@@ -1262,7 +1272,7 @@ Results Page
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding: 1rem 1rem; /* Replicates py-8 and px-4 */
+    padding: 2rem 1rem; /* Replicates py-8 and px-4 */
 }
 
 @media (min-width: 640px) {
@@ -3216,12 +3226,17 @@ Responsive Styles
         padding: 1.5rem;
         box-shadow: 6px 6px 0 var(--border-color);
     }
-    .account-section h1 { font-size: 2rem; }
+    .account-section h1 { 
+        font-size: 2rem;
+        margin-top: 16.08px 
+    }
     .account-section-title { font-size: 1.5rem; }
     .setting-item {
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
+        /* add new css */
+        height:154.2px
     }
     .setting-item .btn-styled {
         width: 100%;
@@ -3248,23 +3263,25 @@ Responsive Styles
         font-size: 1rem;
         padding: 0.4rem 0.6rem;
     } 
-    .account-btn {
+    .login-btn, .account-btn {
         padding: 0.5rem 1rem;
     }
     .hero {
-        padding-top: 0;
-        padding-bottom: 2rem;
+        /* padding-top: 0;
+        padding-bottom: 2rem; */
         min-height: 0;
     }
     .hero h1 {
         font-size: 2.2rem;
         line-height: 1.15;
         letter-spacing: -2px;
-        margin: 2rem 0;
+        margin: 1rem 0;
     }
     .hero p {
         font-size: 1rem;
         margin-top: 0.75rem;
+        /* addition */
+        margin-bottom: 1rem;
     }
     .hero .hero-search input {
         padding: 0.8rem 1rem;

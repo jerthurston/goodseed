@@ -57,14 +57,7 @@ const AccountDropdown = ({ onLogout, user }: AccountDropdownProps) => {
                     setIsOpen(!isOpen)
                 }}
             >
-                {!!user ?
-                    (
-                        <>
-                            {/* <FontAwesomeIcon icon={faUser} /> */}
-                            {/* <span className='text-sm'>Hi! {user.name}</span> */}
-                            <span className='text-sm'>Account</span>
-                        </>
-                    ) : <span>Account</span>}
+                {!!user && <>Account</>}
                 <FontAwesomeIcon icon={faChevronDown} className="dropdown-caret" />
             </Link>
 

@@ -12,7 +12,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { apiLogger } from '@/lib/helpers/api-logger'
 import { SeedFilter, SortBy } from '@/types/seed.type'
 import { useEffect, useState } from 'react'
-import { ClockLoaderSpinner } from '@/components/custom/loading';
 
 const SeedsPageClient = () => {
     const router = useRouter()
@@ -223,8 +222,7 @@ const SeedsPageClient = () => {
             value,
             newURL: params.toString()
         });
-    }
-    
+    }    
 
     return (
         <>
@@ -326,11 +324,12 @@ const SeedsPageClient = () => {
                 </div>
             </section>
 
+
             {/* --> Main section -- Card Grid container */}
             <CardGridContainer
                 seeds={seeds}
                 pagination={pagination}
-                isLoading={isLoading}
+                isLoading={isLoading || isFetching}
                 isError={isError}
                 onPageChange={handlePageChange}
             />

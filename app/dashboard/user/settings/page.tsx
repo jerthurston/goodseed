@@ -15,6 +15,7 @@ import { faWarning } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'sonner';
 import { useFetchCurrentUser, useDeleteAccount } from '@/hooks/client-user';
 import { useUpdateNotificationPreference } from '@/hooks/client-user/notification-preference';
+import { BeatLoaderSpinner } from '@/components/custom/loading';
 
 export const getArchivoBlack = Archivo_Black({ subsets: ['latin'], weight: ['400'], variable: '--font-archivo-black' })
 
@@ -74,9 +75,12 @@ const SettingsPage = () => {
         return (
             <main className="account-page-main">
                 <div className="account-content-wrapper">
-                    <div className="account-container flex items-center justify-center py-12">
+                    {/* <div className="account-container flex items-center justify-center py-12">
                         <Icons.spinner className="h-8 w-8 animate-spin mr-3" />
                         <span>Loading account settings...</span>
+                    </div> */}
+                    <div className='inset-0 fixed top-0 left-0 bg-(--bg-main) z-50 flex items-center justify-center'>
+                        <BeatLoaderSpinner />
                     </div>
                 </div>
             </main>
@@ -124,7 +128,7 @@ const SettingsPage = () => {
                                             <span className='text-sm text-yellow-800'>
                                                 You're signed in with an unverified email address. Please{' '}
                                                 <span
-                                                    onClick={() => setIsVerifyEmailModalOpen(true)} 
+                                                    onClick={() => setIsVerifyEmailModalOpen(true)}
                                                     className='underline cursor-pointer text-red-700 font-bold hover:text-red-800'
                                                 >
                                                     verify your email
@@ -141,7 +145,7 @@ const SettingsPage = () => {
                                     </>
                                 )
                             }
-                            
+
 
                         </section>
 

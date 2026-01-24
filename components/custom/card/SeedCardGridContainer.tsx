@@ -20,6 +20,7 @@ import { usePathname } from 'next/navigation'
 
 import AddToListModal from '../modals/AddToListModal'
 import { useAuthModal } from '@/hooks/auth/useAuthModal'
+import { BeatLoaderSpinner } from '../loading'
 
 interface CardGridContainerProps {
     seeds: SeedUI[];
@@ -280,10 +281,9 @@ const CardGridContainer = ({ seeds, pagination, isLoading, isError, onPageChange
             {/* Loading State */}
             {isLoading && (
                 <div className="results-grid" id="plantCardGrid">
-                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem' }}>
-                        <p>Loading seeds...</p>
-                        {/* Build Skeleton Loader UI */}
-                    </div>
+                        <div className='inset-0 fixed top-0 left-0 bg-(--bg-main) z-50 flex items-center justify-center'>
+                            <BeatLoaderSpinner />
+                        </div>
                 </div>
             )}
 

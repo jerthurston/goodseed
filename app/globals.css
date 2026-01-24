@@ -122,17 +122,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Add padding-top to compensate for fixed header */
-    /* Header height: padding (1.5rem * 2) + logo height (~2.5rem) + border (6px) ≈ 90px */
-    padding-top: 90px;
-  }
-}
-
-/* Adjust padding-top for mobile (header becomes taller with flex-column) */
-@media (max-width: 768px) {
-  body {
-    /* Mobile header height: ~140px due to column layout */
-    padding-top: 140px;
   }
 }
 

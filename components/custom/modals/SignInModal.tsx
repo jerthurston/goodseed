@@ -8,6 +8,7 @@ import { useGoogleSignIn } from "@/hooks/auth/useGoogleSignIn"
 import { useFacebookSignIn } from "@/hooks/auth/useFacebookSignIn"
 import { EmailVerificationForm } from "@/components/custom/forms/EmailVerificationForm"
 import { usePathname } from 'next/navigation'
+import { createPortal } from 'react-dom'
 
 interface SignInModalProps {
     isOpen: boolean
@@ -28,7 +29,8 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
     }
 
     if (!isOpen) return null
-    return (
+
+    const modalContent = (
         <div
             className={`login-modal-overlay 
                 ${isOpen ? 'active' : ''}
@@ -114,6 +116,11 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
             </div>
         </div>
     )
+
+    // Render modal through portal to document.body
+    return typeof document !== 'undefined' 
+        ? createPortal(modalContent, document.body)
+        : null
 }
 
 export default SignInModal

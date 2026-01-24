@@ -1,5 +1,6 @@
 'use client';
 
+import { BeatLoaderSpinner } from '@/components/custom/loading';
 import { useFaqContent } from '@/hooks/content';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {
@@ -50,7 +51,7 @@ function AccordionItem({ question, answer }: AccordionItemData) {
   );
 }
 
-export default function FAQPageContent() {
+export default function FAQPageClient() {
   const { data: content, isLoading, error } = useFaqContent();
 
   // Loading state
@@ -58,9 +59,8 @@ export default function FAQPageContent() {
     return (
       <main className="faq-page-main">
         <section className="faq-hero">
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-            <span className="ml-3 text-lg">Loading FAQ...</span>
+          <div className='inset-0 fixed top-0 left-0 bg-(--bg-main) z-50 flex items-center justify-center'>
+            <BeatLoaderSpinner />
           </div>
         </section>
       </main>
@@ -109,7 +109,7 @@ export default function FAQPageContent() {
             return (
               <section key={section.id} className="faq-section" id={section.id}>
                 <h2 className="faq-section-title">
-                  <FontAwesomeIcon icon={icon} /> {section.name}
+                  <FontAwesomeIcon icon={icon} className='mr-[9px]'/> {section.name}
                 </h2>
                 <div className="accordion">
                   {visibleItems.map((item, index) => (

@@ -34,12 +34,12 @@ const Header = () => {
         <Link href="/" className={`logo ${archivoBlack.variable}`}>goodseed</Link>
         <div className="goodseed-nav-links" >
           <Link
-            style={{ fontFamily: poppins.style.fontFamily, fontSize: "1.1rem", fontWeight: "700", lineHeight: "20px" }}
+            // style={{ fontFamily: poppins.style.fontFamily, fontSize: "1.1rem", fontWeight: "700", lineHeight: "20px" }}
             href="/">
             About
           </Link>
           <Link
-            style={{ fontFamily: poppins.style.fontFamily, fontSize: "1.1rem", fontWeight: "700", lineHeight: "20px" }}
+            // style={{ fontFamily: poppins.style.fontFamily, fontSize: "1.1rem", fontWeight: "700", lineHeight: "20px" }}
             href="/seeds">
             Browse
           </Link>
@@ -48,7 +48,7 @@ const Header = () => {
             className="favorites-link"
             title="View Favorites"
           >
-            <FontAwesomeIcon icon={faHeart} />
+            <FontAwesomeIcon icon={faHeart}/>
           </Link>
           {isLoggedIn ? (
             // --> Render after user login

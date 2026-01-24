@@ -30,7 +30,7 @@ export const BeatLoaderSpinner: React.FC<LoadingSpinnerProps> = ({
             "flex items-center justify-center min-h-[400px]",
             className
         )}>
-            <div className="text-center">
+            {/* <div className="text-center"> */}
                
                 <BeatLoader
                     color={color}
@@ -47,7 +47,7 @@ export const BeatLoaderSpinner: React.FC<LoadingSpinnerProps> = ({
                 {/* <p className="mt-4 text-sm text-muted-foreground">
                     loading...
                 </p> */}
-            </div>
+            {/* </div> */}
         </div>
     )
 }

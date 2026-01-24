@@ -42,11 +42,11 @@ export default function RootLayout({
             {/* --> Authentication first time and showing notification preferences */}
             <NotificationPreferences />
             {/* <div className="header-wrapper relative"> */}
-              <Header />
+            <Header />
             {/* </div> */}
             {children}
             {/* <div className="footer-wrapper"> */}
-              <Footer />
+            <Footer />
             {/* </div> */}
             <Toaster />
           </ReactQueryProvider>
