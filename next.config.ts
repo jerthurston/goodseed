@@ -152,6 +152,85 @@ const nextConfig: NextConfig = {
 
     ],
   },
+
+  // Phase 3: Static Files Caching
+  // Cache headers for files in /public folder
+  async headers() {
+    return [
+      // 1️⃣ IMAGES từ /public/images/*
+      // Ví dụ: /public/images/logo.png → http://yoursite.com/images/logo.png
+      {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=2592000, immutable' // 30 days
+            // immutable = nội dung không đổi, browser không cần revalidate
+          }
+        ]
+      },
+
+      // 2️⃣ FONTS từ /public/fonts/*
+      // Ví dụ: /public/fonts/inter.woff2 → http://yoursite.com/fonts/inter.woff2
+      {
+        source: '/fonts/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable' // 1 year
+            // Font files hầu như không đổi → cache cực mạnh
+          }
+        ]
+      },
+
+      // 3️⃣ FAVICON
+      // File: /public/favicon.ico → http://yoursite.com/favicon.ico
+      {
+        source: '/favicon.ico',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400' // 1 day
+            // Favicon có thể đổi khi rebrand → không dùng immutable
+          }
+        ]
+      },
+
+      // 4️⃣ Next.js BUILD OUTPUT (/_next/static/*)
+      // Next.js đã tự động cache, nhưng explicit để rõ ràng
+      // Ví dụ: /_next/static/chunks/main-abc123.js
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+            // Build files có hash trong tên → cache vĩnh viễn OK
+          }
+        ]
+      },
+
+      // 5️⃣ SECURITY HEADERS (áp dụng cho TẤT CẢ routes)
+      // Không liên quan đến cache nhưng là best practice
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on' // Cho phép browser prefetch DNS
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN' // Chống clickjacking
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff' // Chống MIME sniffing
+          }
+        ]
+      }
+    ];
+  }
 };
 
 export default nextConfig;

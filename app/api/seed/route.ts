@@ -2,7 +2,7 @@ import { apiLogger } from "@/lib/helpers/api-logger";
 import { prisma } from "@/lib/prisma";
 import { CannabisType, Prisma, SeedType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { getCacheHeaders } from "@/lib/cache-headers";
+import { generateETag, getCacheHeaders, shouldReturnNotModified } from "@/lib/cache-headers";
 
 export async function GET(req: NextRequest) {
     try {
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
             environment: process.env.NODE_ENV,
             databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT_SET'
         });
-        
+
         //--> 1. Lấy search params từ req.url - Test pass
         const { searchParams } = new URL(req.url);
         //--> 2. Parse các search params thành các biến tương ứng
@@ -137,10 +137,10 @@ export async function GET(req: NextRequest) {
         }
         //6. Xây dựng inClude realtions
         const inCludeClause: Prisma.SeedProductInclude = {
-            seller:{
-                select:{
+            seller: {
+                select: {
                     id: true,
-                    affiliateTag:true
+                    affiliateTag: true
                 }
             },
             category: {
@@ -175,7 +175,7 @@ export async function GET(req: NextRequest) {
                 }
             }
         };
-        
+
         // DEBUG: Log query details before execution
         apiLogger.debug('[API /seed] About to execute query:', {
             whereClause: JSON.stringify(whereClause, null, 2),
@@ -184,7 +184,7 @@ export async function GET(req: NextRequest) {
             limit,
             skip
         });
-        
+
         //7. Query seeds từ database (without price filter)
         let seeds = await prisma.seedProduct.findMany({
             where: whereClause,
@@ -193,24 +193,24 @@ export async function GET(req: NextRequest) {
         });
 
         const totalBeforeFilter = seeds.length;
-        
-        // DEBUG: Log raw query results
-        apiLogger.debug('[API /seed] Raw query results:', {
-            totalSeeds: totalBeforeFilter,
-            sampleSeed: totalBeforeFilter > 0 ? {
-                id: seeds[0].id,
-                name: seeds[0].name,
-                sellerId: seeds[0].sellerId,
-                categoryId: seeds[0].categoryId
-            } : null
-        });
 
-        apiLogger.debug('[API /seed] Query results after active sellers filter:', {
-            totalSeeds: totalBeforeFilter,
-            activeSellersOnly: true,
-            minPrice,
-            maxPrice,
-        });
+        // DEBUG: Log raw query results
+        // apiLogger.debug('[API /seed] Raw query results:', {
+        //     totalSeeds: totalBeforeFilter,
+        //     sampleSeed: totalBeforeFilter > 0 ? {
+        //         id: seeds[0].id,
+        //         name: seeds[0].name,
+        //         sellerId: seeds[0].sellerId,
+        //         categoryId: seeds[0].categoryId
+        //     } : null
+        // });
+
+        // apiLogger.debug('[API /seed] Query results after active sellers filter:', {
+        //     totalSeeds: totalBeforeFilter,
+        //     activeSellersOnly: true,
+        //     minPrice,
+        //     maxPrice,
+        // });
 
         // Verify all returned seeds have active sellers (debug logging)
         if (totalBeforeFilter > 0) {
@@ -253,42 +253,55 @@ export async function GET(req: NextRequest) {
         const total = seeds.length;
         const paginatedSeeds = seeds.slice(skip, skip + limit);
 
-        apiLogger.debug(
-            '[API /seed] Final results:', {
-            totalBeforeFilter,
-            totalAfterFilter: total,
-            returnedCount: paginatedSeeds.length,
-            page,
-            limit,
-        }
-        )
+        // apiLogger.debug(
+        //     '[API /seed] Final results:', {
+        //     totalBeforeFilter,
+        //     totalAfterFilter: total,
+        //     returnedCount: paginatedSeeds.length,
+        //     page,
+        //     limit,
+        // }
+        // )
 
-        // apiLogger.debug("[API /seed] Final results (after pagination):", seeds[0]);
-        console.dir("check raw seed" + JSON.stringify(seeds[0]), { depth: 1 });
-
-        //11. Trả về dữ liệu với Cloudflare caching headers
-        const response = NextResponse.json(
-            {
-                seeds: paginatedSeeds,
-                pagination: {
-                    total,
-                    page,
-                    limit,
-                    totalPages: Math.ceil(total / limit)
-                },
-            },
-            {
-                status: 200,
+        //11. Prepare response data (plain object for ETag)
+        const responseData = {
+            seeds: paginatedSeeds,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
             }
-        );
+        };
+
+        // NEW: Generate ETag for conditional requests
+        const etag = generateETag(responseData);
+
+        //NEW: Check if client has fresh cache (304)
+        if (shouldReturnNotModified(req, etag)) {
+            return new NextResponse(null, {
+                status: 304,
+                headers: {
+                    'ETag': etag,
+                    'Cache-Control': getCacheHeaders('api')['Cache-Control']
+                }
+            });
+        }
+
+        // NEW: Return full response with data
+        const response = NextResponse.json(responseData, { status: 200 });
 
         // ADD: Cloudflare cache headers
         const cacheHeaders = getCacheHeaders('api')
         Object.entries(cacheHeaders).forEach(([key, value]) => {
             response.headers.set(key, value)
-        })
-        
-        // ADD: Cache tags for selective purging
+        });
+        //NEW: Add ETag
+        response.headers.set('ETag', etag);
+        // NEW: Add Last-Modified (optional)
+        response.headers.set('Last-Modified', new Date().toUTCString());
+
+        // Cloudflare-Cache-Tag
         const tags = ['seeds', 'products']
         if (cannabisTypes.length > 0) {
             cannabisTypes.forEach(type => tags.push(`cannabis_${type.toLowerCase()}`))
@@ -299,10 +312,10 @@ export async function GET(req: NextRequest) {
         if (search) {
             tags.push('search')
         }
-        
+
         response.headers.set('CF-Cache-Tag', tags.join(','))
         response.headers.set('Vary', 'Accept-Encoding')
-        
+
         // Enhanced logging with cache info
         apiLogger.info('Seeds API cached response', {
             search,
