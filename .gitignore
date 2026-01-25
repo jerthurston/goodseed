@@ -18,8 +18,8 @@ storage/
 
 # docs - Ignore all except specific files
 /docs/*
-!/docs/README.md
-!/docs/project-requirements/
+# !/docs/README.md
+# !/docs/project-requirements/
 
 # next.js
 /.next/
