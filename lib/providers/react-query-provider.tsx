@@ -2,7 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { useState } from 'react';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { useState, useEffect } from 'react';
+import { createLocalStoragePersister, PERSIST_CONFIG } from '@/lib/cache/query-persister';
 
 type DefaultOptions = {
     queries?: {
@@ -38,11 +40,40 @@ export function ReactQueryProvider({
         })
     );
 
+    // Create persister once
+    const [persister] = useState(() => createLocalStoragePersister());
+
+    if (!persister) {
+        // Fallback if localStorage not available
+        console.log('[Cache] localStorage not available, using memory-only cache');
+        return (
+            <QueryClientProvider client={queryClient}>
+                {children}
+                <ReactQueryDevtools initialIsOpen={false} position='bottom' />
+            </QueryClientProvider>
+        );
+    }
+
     return (
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{
+                persister,
+                maxAge: PERSIST_CONFIG.MAX_AGE, // 24 hours
+                dehydrateOptions: {
+                    shouldDehydrateQuery: (query) => {
+                        const key = query.queryKey[0] as string;
+                        // Only persist seeds queries
+                        return key === 'seeds';
+                    },
+                },
+            }}
+            onSuccess={() => {
+                console.log('[Cache] ✅ Persistence enabled for /seeds queries (24h TTL, 2MB limit)');
+            }}
+        >
             {children}
-            {/* tanstack tool chỉ sử dụng ở dev enviroment để debug */}
             <ReactQueryDevtools initialIsOpen={false} position='bottom' />
-        </QueryClientProvider>
-    )
+        </PersistQueryClientProvider>
+    );
 }
