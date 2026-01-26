@@ -7,11 +7,11 @@ import { generateETag, getCacheHeaders, shouldReturnNotModified } from "@/lib/ca
 export async function GET(req: NextRequest) {
     try {
         // DEBUG: Log environment and request info
-        apiLogger.debug('[API /seed] Request received:', {
-            url: req.url,
-            environment: process.env.NODE_ENV,
-            databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT_SET'
-        });
+        // apiLogger.debug('[API /seed] Request received:', {
+        //     url: req.url,
+        //     environment: process.env.NODE_ENV,
+        //     databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT_SET'
+        // });
 
         //--> 1. Lấy search params từ req.url - Test pass
         const { searchParams } = new URL(req.url);
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
         const sortBy = searchParams.get('sortBy');
 
         apiLogger.debug(
-            '[SeedService.fetchSeeds] Received request with params:',
+            '[API route: api/seed] Received request with params:',
             {
                 search,
                 cannabisTypes,
@@ -178,8 +178,8 @@ export async function GET(req: NextRequest) {
 
         // DEBUG: Log query details before execution
         apiLogger.debug('[API /seed] About to execute query:', {
-            whereClause: JSON.stringify(whereClause, null, 2),
-            orderBy: JSON.stringify(orderBy, null, 2),
+            whereClause,
+            orderBy,
             page,
             limit,
             skip
