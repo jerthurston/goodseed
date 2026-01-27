@@ -1,12 +1,14 @@
 'use client'
 
 import { SeedFilter } from "@/types/seed.type"
-import React, { useState } from 'react'
+import { apiLogger } from "@/lib/helpers/api-logger"
+import React, { useEffect, useState } from 'react'
 
 interface FilterModalProps {
     isOpen: boolean
     onClose: () => void
     onApplyFilters: (filters: SeedFilter) => void
+    initialFilters?: SeedFilter  // 🆕 NEW: Add optional prop for syncing with URL
 }
 
 // export interface FilterState {
@@ -17,7 +19,7 @@ interface FilterModalProps {
 //     cbdRange: { min: number; max: number }
 // }
 
-const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilters }) => {
+const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilters, initialFilters }) => {
     const [filters, setFilters] = useState<SeedFilter>({
         priceRange: { min: 0, max: 100 },
         seedTypes: [],
@@ -25,6 +27,39 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApplyFilte
         thcRange: { min: 0, max: 40 },
         cbdRange: { min: 0, max: 25 },
     })
+
+    // 🆕 NEW: Sync modal state with URL params when modal opens
+    // Always sync when modal opens to ensure showing current URL state
+    useEffect(() => {
+        if (isOpen) {
+            if (initialFilters) {
+                apiLogger.debug('🔄 [FilterModal] Syncing with URL params:', {
+                    initialFilters,
+                    seedTypes: initialFilters.seedTypes,
+                    cannabisTypes: initialFilters.cannabisTypes,
+                    priceRange: initialFilters.priceRange,
+                });
+                
+                setFilters({
+                    priceRange: initialFilters.priceRange || { min: 0, max: 100 },
+                    seedTypes: initialFilters.seedTypes || [],
+                    cannabisTypes: initialFilters.cannabisTypes || [],
+                    thcRange: initialFilters.thcRange || { min: 0, max: 40 },
+                    cbdRange: initialFilters.cbdRange || { min: 0, max: 25 },
+                });
+            } else {
+                apiLogger.debug('🔄 [FilterModal] No initialFilters, resetting to defaults');
+                // Reset to defaults if no initialFilters
+                setFilters({
+                    priceRange: { min: 0, max: 100 },
+                    seedTypes: [],
+                    cannabisTypes: [],
+                    thcRange: { min: 0, max: 40 },
+                    cbdRange: { min: 0, max: 25 },
+                });
+            }
+        }
+    }, [isOpen, initialFilters]);
 
     const handlePriceChange = (type: 'min' | 'max', value: number) => {
         setFilters(prev => {

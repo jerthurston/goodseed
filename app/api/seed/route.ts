@@ -231,22 +231,38 @@ export async function GET(req: NextRequest) {
             removedCount: totalBeforeFilter - totalWithPricing
         });
 
-        // 9. Apply price filter in-memory (filter by minimum pricePerSeed)
+        // 9. Apply price filter in-memory (filter by displayPrice)
         if (minPrice > 0 || maxPrice < 999999) {
+            const beforePriceFilter = seeds.length;
             seeds = seeds.filter(seed => {
-                const minPricePerSeed = seed.pricings[0]?.pricePerSeed || 0;
-                const passesFilter = minPricePerSeed >= minPrice && minPricePerSeed <= maxPrice;
-
-                if (!passesFilter && totalBeforeFilter < 5) { // Debug first 5
-                    apiLogger.debug(`[API /seed] Filtered out: ${seed.name}`, {
-                        minPricePerSeed,
-                        minPrice,
-                        maxPrice,
-                    });
+                // Skip seeds without displayPrice
+                if (seed.displayPrice === null || seed.displayPrice === undefined) {
+                    apiLogger.debug(`[API /seed] Skipped (no displayPrice): ${seed.name}`);
+                    return false;
                 }
+
+                // Use displayPrice (which is the pricePerSeed of smallest pack)
+                const displayPrice = seed.displayPrice;
+                const passesFilter = displayPrice >= minPrice && displayPrice <= maxPrice;
+
+                // if (!passesFilter) {
+                //     apiLogger.debug(`[API /seed] Filtered out by price: ${seed.name}`, {
+                //         displayPrice,
+                //         minPrice,
+                //         maxPrice,
+                //         passesFilter
+                //     });
+                // }
 
                 return passesFilter;
             });
+
+            // apiLogger.debug('[API /seed] After price filtering:', {
+            //     beforePriceFilter,
+            //     afterPriceFilter: seeds.length,
+            //     filteredOut: beforePriceFilter - seeds.length,
+            //     priceRange: `${minPrice} - ${maxPrice}`
+            // });
         }
 
         // 10. Apply pagination after filtering

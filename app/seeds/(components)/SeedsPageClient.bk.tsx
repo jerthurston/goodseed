@@ -11,36 +11,27 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import { apiLogger } from '@/lib/helpers/api-logger'
 import { SeedFilter, SortBy } from '@/types/seed.type'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const SeedsPageClient = () => {
     const router = useRouter()
     const searchParams = useSearchParams()
     //--> State management Hook for page
-    const [searchQuery, setSearchQuery] = useState('')
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
     const [isInlineFiltersOpen, setIsInlineFiltersOpen] = useState(false)
 
-    // Inline filters state - will be synced via useEffect
-    const [filterSeedType, setFilterSeedType] = useState('all')
-    const [filterCategory, setFilterCategory] = useState('all')
-    const [sortBy, setSortBy] = useState('popularity' as SortBy)
+    // Inline filters state - sync với URL ngay từ đầu
+    const urlSeedTypes = searchParams.get('seedTypes')?.split(',').filter(Boolean) || [];
+    const urlCannabisTypes = searchParams.get('cannabisTypes')?.split(',').filter(Boolean) || [];
 
-    // 🆕 NEW: Sync all inline states (filters, sort, search) with URL params automatically
-    useEffect(() => {
-        const urlSeedTypes = searchParams.get('seedTypes')?.split(',').filter(Boolean) || [];
-        const urlCannabisTypes = searchParams.get('cannabisTypes')?.split(',').filter(Boolean) || [];
-        const urlSortBy = (searchParams.get('sortBy') || 'popularity') as SortBy;
-        const urlSearch = searchParams.get('search') || '';
-        
-        const newSeedType = urlSeedTypes.length === 1 ? urlSeedTypes[0] : 'all';
-        const newCategory = urlCannabisTypes.length === 1 ? urlCannabisTypes[0] : 'all';
-        
-        setFilterSeedType(newSeedType);
-        setFilterCategory(newCategory);
-        setSortBy(urlSortBy);
-        setSearchQuery(urlSearch);
-    }, [searchParams]);
+    const [filterSeedType, setFilterSeedType] = useState(
+        urlSeedTypes.length === 1 ? urlSeedTypes[0] : 'all'
+    )
+    const [filterCategory, setFilterCategory] = useState(
+        urlCannabisTypes.length === 1 ? urlCannabisTypes[0] : 'all'
+    )
+    const [sortBy, setSortBy] = useState((searchParams.get('sortBy') || 'popularity') as SortBy)
 
     // --> Sử dụng search keyword từ URL thay vì từ state local
     const activeSearchKeyword = searchParams.get('search') || ''
@@ -77,16 +68,16 @@ const SeedsPageClient = () => {
     });
 
     // --> Log data for debugging (Optional - can be removed in production)
-    // useEffect(() => {
-    //     if (seeds.length > 0) {
-    //         apiLogger.debug('[SeedsPageClient] Seeds loaded:', {
-    //             sortBy: sortBy,
-    //             totalSeeds: seeds.length,
-    //             firstSeed: seeds[0]?.name,
-    //             firstPrice: seeds[0]?.price
-    //         });
-    //     }
-    // }, [seeds, sortBy]);
+    useEffect(() => {
+        if (seeds.length > 0) {
+            apiLogger.debug('[SeedsPageClient] Seeds loaded:', {
+                sortBy: sortBy,
+                totalSeeds: seeds.length,
+                firstSeed: seeds[0]?.name,
+                firstPrice: seeds[0]?.price
+            });
+        }
+    }, [seeds, sortBy]);
 
     // --> Function handle search form submit
     const handleSearch = (e: React.FormEvent) => {
@@ -107,40 +98,10 @@ const SeedsPageClient = () => {
     const handleOpenFilter = () => {
         setIsFilterModalOpen(true)
     }
-
-    // 🆕 NEW: Parse current filters from URL to pass to modal
-    const currentFilters: SeedFilter = useMemo(() => {
-        const filters = {
-            priceRange: {
-                min: Number(searchParams.get('minPrice')) || 0,
-                max: Number(searchParams.get('maxPrice')) || 100,
-            },
-            seedTypes: searchParams.get('seedTypes')?.split(',').filter(Boolean) || [],
-            cannabisTypes: searchParams.get('cannabisTypes')?.split(',').filter(Boolean) || [],
-            thcRange: {
-                min: Number(searchParams.get('minTHC')) || 0,
-                max: Number(searchParams.get('maxTHC')) || 40,
-            },
-            cbdRange: {
-                min: Number(searchParams.get('minCBD')) || 0,
-                max: Number(searchParams.get('maxCBD')) || 25,
-            },
-        };
-        
-        // apiLogger.debug('🎯 [SeedsPageClient useMemo] currentFilters parsed:', {
-        //     seedTypes: filters.seedTypes,
-        //     cannabisTypes: filters.cannabisTypes,
-        //     priceRange: filters.priceRange,
-        //     rawURL: searchParams.toString()
-        // });
-        
-        return filters;
-    }, [searchParams]);
-
     //  --> Function add params filter into url when user apply filter params in the modal
     // Flow: User dùng modal filter → Reset inline selects → Áp dụng modal filters
     const handleApplyFilters = (filters: SeedFilter) => {
-        // apiLogger.debug('Applied filters from modal:', { filters })
+        apiLogger.debug('Applied filters from modal:', { filters })
         // Start with existing params to preserve sortBy and search
         const params = new URLSearchParams(searchParams.toString())
         // Remove all filter params first
@@ -152,7 +113,6 @@ const SeedsPageClient = () => {
         params.delete('maxTHC')
         params.delete('minCBD')
         params.delete('maxCBD')
-        // params.delete('sortBy')
         // Only add filter params if they differ from default values
         // Price range (default: 0-100)
         if (filters.priceRange.min > 0) {
@@ -183,11 +143,21 @@ const SeedsPageClient = () => {
         if (filters.cbdRange.max < 25) {
             params.set('maxCBD', filters.cbdRange.max.toString())
         }
-
+        // IMPORTANT: Reset inline select states về "all" khi dùng modal
+        // (Chỉ reset nếu modal không có chọn seedTypes/cannabisTypes single value)
+        if (filters.seedTypes.length !== 1) {
+            setFilterSeedType('all');
+        }
+        if (filters.cannabisTypes.length !== 1) {
+            setFilterCategory('all');
+        }
         // Reset to page 1 when filters change
         params.set('page', '1')
         router.push(`/seeds?${params.toString()}`)
-        // apiLogger.debug('Modal filters applied:', { filters });
+        apiLogger.debug('Modal filters applied (inline selects reset):', {
+            filterSeedType: filters.seedTypes.length === 1 ? filters.seedTypes[0] : 'all',
+            filterCategory: filters.cannabisTypes.length === 1 ? filters.cannabisTypes[0] : 'all'
+        });
     }
     // --> Function to toggle inline filters display: expand or minimize refine result button on mobile
     const toggleInlineFilters = () => {
@@ -201,16 +171,23 @@ const SeedsPageClient = () => {
     }
     // --> Function to handle sort change
     const handleSortChange = (newSortBy: SortBy) => {
+        setSortBy(newSortBy);
         const params = new URLSearchParams(searchParams.toString());
         params.set('sortBy', newSortBy);
         params.set('page', '1'); // Reset to page 1 when sorting changes
         router.push(`/seeds?${params.toString()}`);
-        // ❌ REMOVED: setSortBy(newSortBy) - useEffect sẽ sync từ URL
     }
     // --> Function to handle inline filter changes
-    // Flow: User dùng inline select → Preserve modal filters → Chỉ update seedType/category
+    // Flow: User dùng select filter → Reset modal filters → Chỉ giữ lại seedType/category
     const handleInlineFilterChange = (filterType: 'seedType' | 'category', value: string) => {
         const params = new URLSearchParams(searchParams.toString());
+        // IMPORTANT: Reset tất cả modal filter params khi dùng inline select
+        params.delete('minPrice');
+        params.delete('maxPrice');
+        params.delete('minTHC');
+        params.delete('maxTHC');
+        params.delete('minCBD');
+        params.delete('maxCBD');
 
         if (filterType === 'seedType') {
             // Cập nhật seedTypes param
@@ -221,7 +198,8 @@ const SeedsPageClient = () => {
                 // Set single seedType
                 params.set('seedTypes', value);
             }
-            // ❌ REMOVED: setFilterSeedType(value) - useEffect sẽ sync
+            // Update local state
+            setFilterSeedType(value);
         } else if (filterType === 'category') {
             // Cập nhật cannabisTypes param
             if (value === 'all') {
@@ -231,25 +209,19 @@ const SeedsPageClient = () => {
                 // Set single cannabisType
                 params.set('cannabisTypes', value);
             }
-            // ❌ REMOVED: setFilterCategory(value) - useEffect sẽ sync
+            // Update local state
+            setFilterCategory(value);
         }
         // Reset to page 1 when filter changes
         params.set('page', '1');
         // Update URL (use push for navigation history)
         router.push(`/seeds?${params.toString()}`);
         // Debug log
-        // apiLogger.debug('Inline filter changed (modal filters preserved):', {
-        //     filterType,
-        //     value,
-        //     preservedParams: {
-        //         minPrice: params.get('minPrice'),
-        //         maxPrice: params.get('maxPrice'),
-        //         minTHC: params.get('minTHC'),
-        //         maxTHC: params.get('maxTHC'),
-        //         minCBD: params.get('minCBD'),
-        //         maxCBD: params.get('maxCBD'),
-        //     }
-        // });
+        apiLogger.debug('Inline filter changed (modal filters reset):', {
+            filterType,
+            value,
+            newURL: params.toString()
+        });
     }
 
     return (
@@ -369,7 +341,6 @@ const SeedsPageClient = () => {
                 isOpen={isFilterModalOpen}
                 onClose={() => setIsFilterModalOpen(false)}
                 onApplyFilters={handleApplyFilters}
-                initialFilters={currentFilters}
             />
         </>
     )
