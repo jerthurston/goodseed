@@ -6,13 +6,10 @@
  */
 
 import { apiLogger } from "@/lib/helpers/api-logger";
-import { getSellerById } from "@/lib/helpers/server/seller/getSellerById";
 import { prisma } from "@/lib/prisma";
 import { AutoScraperScheduler } from "@/lib/services/auto-scraper/backend/auto-scraper-scheduler.service";
 import { getScheduledAutoJobs } from "@/lib/queue/scraper-queue";
 import { NextRequest, NextResponse } from "next/server";
-
-
 
 interface RouteParams {
     params: Promise<{ id: string }>

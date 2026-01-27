@@ -322,26 +322,17 @@ export class ScraperFactory {
   createSaveDbService(scraperSourceName: SupportedScraperSourceName): ISaveDbService {
     switch (scraperSourceName) {
       case 'vancouverseedbank':
-        // return new VancouverSaveDbService(this.prisma);
         return new CommonSaveDbService(this.prisma);
-
       case 'sunwestgenetics':
-        // return new SunWestSaveDbService(this.prisma);
         return new CommonSaveDbService(this.prisma);
-
       case 'sonomaseeds':
-        // return new SonomaSeedsDbService(this.prisma);
         return new CommonSaveDbService(this.prisma);
-
       case 'beaverseed':
         return new CommonSaveDbService(this.prisma);
-
       case 'maryjanesgarden':
         return new CommonSaveDbService(this.prisma);
-
       case 'bcbuddepot':
         return new CommonSaveDbService(this.prisma);
-
       case 'mjseedscanada':
         return new CommonSaveDbService(this.prisma);
       case 'rocketseeds':
@@ -352,10 +343,6 @@ export class ScraperFactory {
         return new CommonSaveDbService(this.prisma);
       case 'truenorthseedbank':
         return new CommonSaveDbService(this.prisma);
-
-      // case 'cropkingseeds':
-      //   return new CropKingSaveDbService(this.prisma);
-
       default:
         const siteConfig = this.getSiteConfig(scraperSourceName);
         throw new Error(`Database service for ${siteConfig.name} is not yet implemented.`);

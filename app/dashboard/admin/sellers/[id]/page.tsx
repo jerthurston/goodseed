@@ -305,7 +305,7 @@ export default function AdminSellerDetailPage() {
   // NOW WE CAN HAVE CONDITIONAL RETURNS AFTER ALL HOOKS ARE CALLED
   if (isLoading) {
     return (
-      <div className="max-w-[1440px] w-full min-h-screen bg-(--bg-main) p-6">
+      <div className="max-w-360 w-full min-h-screen bg-(--bg-main) p-6">
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-(--brand-primary) mx-auto"></div>
@@ -320,7 +320,7 @@ export default function AdminSellerDetailPage() {
 
   if (isError || (!isLoading && !seller)) {
     return (
-      <div className="max-w-[1440px] w-full min-h-screen bg-(--bg-main) p-6">
+      <div className="max-w-360 w-full min-h-screen bg-(--bg-main) p-6">
         <div className="text-center py-12">
           <h1 className="font-['Archivo_Black'] text-3xl text-(--text-primary) mb-4">
             {isError ? 'Error Loading Seller' : 'Seller Not Found'}
@@ -343,7 +343,7 @@ export default function AdminSellerDetailPage() {
   }
 
   return (
-    <div className="max-w-[1440px] mx-auto w-full min-h-screen bg-(--bg-main) p-1 lg:p-6">
+    <div className="max-w-360 mx-auto w-full min-h-screen bg-(--bg-main) p-1 lg:p-6">
       {/* Header */}
       <div className="mb-8 flex flex-col-reverse gap-4 lg:flex-row items-start lg:items-center justify-between">
         <div>
@@ -472,7 +472,7 @@ export default function AdminSellerDetailPage() {
                           </span>
                       </div>
                     ) : (
-                     <div className="flex flex-col lg:flex-row gap-1 items-center w-[70px] lg:w-full">
+                     <div className="flex flex-col lg:flex-row gap-1 items-center w-17.5 lg:w-full">
                         <FontAwesomeIcon icon={faToolbox} className="h-3 w-3" />
                         Quick Test <span className="hidden lg:block">2 pages</span>
                       </div>

@@ -9,8 +9,6 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { ScrapeJobStatus } from '@prisma/client';
 import { createManualScrapeJob } from '@/lib/helpers/server/createManualScrapeJob';
-import { ScraperFactory } from '@/lib/factories/scraper-factory';
-import { getScraperSource } from '@/lib/helpers/server/getScraperSource';
 import { getSellerById } from '@/lib/helpers/server/seller/getSellerById';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
