@@ -23,21 +23,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: latest
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - name: Setup Node.js & pnpm
+      uses: ./.github/actions/setup-node-pnpm
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'pnpm'
+        pnpm-version: 'latest'
 
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
-
-    # ⚠️ Prisma MUST be generated before type checking
+    # ⚠️ Prisma MUST be generated before type checking - Just Faking to make type check. But need to do something more suitable
     - name: Generate Prisma Client
       run: pnpm prisma generate
       env:
@@ -97,12 +89,18 @@ jobs:
     name: Build & Deploy to AWS ECS
     runs-on: ubuntu-latest
     needs: [test, set-environment]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     environment: ${{ needs.set-environment.outputs.environment }}
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Setup Node.js & pnpm
+      uses: ./.github/actions/setup-node-pnpm
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        pnpm-version: '9'
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -116,17 +114,74 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v2
 
     # -----------------------------
-    # Build & Push WEB image
+    # RUN DATABASE MIGRATIONS FIRST (before building image)
     # -----------------------------
+    - name: Run database migrations
+      env:
+        PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        DEV_DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+      run: |
+        echo "🚀 Running Prisma migrations..."
+        
+        # Set DATABASE_URL based on environment using secrets
+        if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          export DATABASE_URL="$PROD_DATABASE_URL"
+          echo "📊 Using PRODUCTION database"
+        else
+          export DATABASE_URL="$DEV_DATABASE_URL"
+          echo "🧪 Using DEVELOPMENT database"
+        fi
+        
+        # Apply migrations to update database schema
+        echo "📊 Applying database migrations..."
+        pnpm prisma migrate deploy
+        
+        echo "✅ Database migrations completed successfully"
+
+    # -----------------------------
+    # Build & Push WEB image (after migrations applied)
+    # -----------------------------
+    - name: Set image tags
+      id: tags
+      run: |
+        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        echo "branch_tag=$BRANCH_NAME" >> $GITHUB_OUTPUT
+        
+    - name: Set DATABASE_URL based on environment
+      id: db-url
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "database_url=${{ secrets.PROD_DATABASE_URL }}" >> $GITHUB_OUTPUT
+        else
+          echo "database_url=${{ secrets.DEV_DATABASE_URL }}" >> $GITHUB_OUTPUT
+        fi
+        
     - name: Build & push web image
       uses: docker/build-push-action@v5
       with:
         context: .
         target: runner
         push: true
+        build-args: |
+          DATABASE_URL=${{ steps.db-url.outputs.database_url }}
+          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+          AUTH_SECRET=${{ secrets.AUTH_SECRET }}
+          AUTH_URL=${{ secrets.AUTH_URL }}
+          RESEND_FROM_EMAIL=${{ secrets.RESEND_FROM_EMAIL }}
+          AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID }}
+          AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET }}
+          AUTH_FACEBOOK_ID=${{ secrets.AUTH_FACEBOOK_ID }}
+          AUTH_FACEBOOK_SECRET=${{ secrets.AUTH_FACEBOOK_SECRET }}
+          NEXT_PUBLIC_DEMO_PASSWORD=${{ secrets.NEXT_PUBLIC_DEMO_PASSWORD }}
+          CRON_SECRET=${{ secrets.CRON_SECRET }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          CLOUDFLARE_ZONE_ID=${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DOMAIN=${{ secrets.CLOUDFLARE_DOMAIN }}
         tags: |
           ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}
-          ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:develop
+          ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ steps.tags.outputs.branch_tag }}
 
     # -----------------------------
     # Build & Push WORKER image
@@ -137,24 +192,57 @@ jobs:
         context: .
         target: builder
         push: true
-        tags: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}${{ needs.set-environment.outputs.worker_image_suffix }}
+        build-args: |
+          DATABASE_URL=${{ steps.db-url.outputs.database_url }}
+          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+          AUTH_SECRET=${{ secrets.AUTH_SECRET }}
+          AUTH_URL=${{ secrets.AUTH_URL }}
+          RESEND_FROM_EMAIL=${{ secrets.RESEND_FROM_EMAIL }}
+          AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID }}
+          AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET }}
+          AUTH_FACEBOOK_ID=${{ secrets.AUTH_FACEBOOK_ID }}
+          AUTH_FACEBOOK_SECRET=${{ secrets.AUTH_FACEBOOK_SECRET }}
+          NEXT_PUBLIC_DEMO_PASSWORD=${{ secrets.NEXT_PUBLIC_DEMO_PASSWORD }}
+          CRON_SECRET=${{ secrets.CRON_SECRET }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          CLOUDFLARE_ZONE_ID=${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DOMAIN=${{ secrets.CLOUDFLARE_DOMAIN }}
+        tags: |
+          ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}${{ needs.set-environment.outputs.worker_image_suffix }}
+          ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ steps.tags.outputs.branch_tag }}${{ needs.set-environment.outputs.worker_image_suffix }}
 
     # -----------------------------
-    # Database migration (production only)
+    # DEPLOY TO ECS
     # -----------------------------
-    - name: Run database migrations
-      if: needs.set-environment.outputs.environment == 'production'
+
+    - name: Inject secrets into web task definition
       env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        DATABASE_URL: ${{ steps.db-url.outputs.database_url }}
+        AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        AUTH_URL: ${{ secrets.AUTH_URL }}
+        AUTH_TRUST_HOST: "true"
+        NEXT_PUBLIC_APP_URL: ${{ secrets.AUTH_URL }}
+        RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+        AUTH_GOOGLE_ID: ${{ secrets.AUTH_GOOGLE_ID }}
+        AUTH_GOOGLE_SECRET: ${{ secrets.AUTH_GOOGLE_SECRET }}
+        AUTH_FACEBOOK_ID: ${{ secrets.AUTH_FACEBOOK_ID }}
+        AUTH_FACEBOOK_SECRET: ${{ secrets.AUTH_FACEBOOK_SECRET }}
+        NEXT_PUBLIC_DEMO_PASSWORD: ${{ secrets.NEXT_PUBLIC_DEMO_PASSWORD }}
+        CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        REDIS_HOST: ${{ secrets.REDIS_HOST }}
+        REDIS_PORT: ${{ secrets.REDIS_PORT }}
+        CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_DOMAIN: ${{ secrets.CLOUDFLARE_DOMAIN }}
       run: |
-        # Install dependencies and run migrations
-        npm install -g pnpm
-        pnpm install --frozen-lockfile
-        pnpm prisma migrate deploy
-
-    - name: Copy web task definition
-      run: |
-        cp infrastructure/ecs-task-definition.json web-task-definition.json
+        echo "🔐 Injecting secrets into web task definition..."
+        node infrastructure/inject-secrets-to-task-definition.js \
+          --input infrastructure/ecs-task-definition.json \
+          --output web-task-definition.json \
+          --container goodseed-app
 
     - name: Update web task definition with new image
       id: web-task-def
@@ -165,17 +253,40 @@ jobs:
         image: ${{ steps.login-ecr.outputs.registry }}/${{ needs.set-environment.outputs.ecr_repository }}:${{ github.sha }}
 
     - name: Deploy web service to Amazon ECS
+      id: deploy-web
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
         task-definition: ${{ steps.web-task-def.outputs.task-definition }}
         service: ${{ needs.set-environment.outputs.web_service }}
         cluster: ${{ needs.set-environment.outputs.ecs_cluster }}
         wait-for-service-stability: true
-        wait-for-minutes: 10
+        wait-for-minutes: 20
+      continue-on-error: true
 
-    - name: Copy worker task definition
+    - name: Get ECS task logs on failure
+      if: steps.deploy-web.outcome == 'failure'
       run: |
-        cp infrastructure/ecs-worker-task-definition.json worker-task-definition.json
+        echo "⚠️ Deployment failed, fetching CloudWatch logs..."
+        echo "📋 Recent logs from /ecs/goodseed-free/app:"
+        aws logs tail /ecs/goodseed-free/app --since 10m --region us-east-1 --format short || echo "❌ Failed to fetch logs"
+        echo ""
+        echo "💡 Check full logs at: https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups/log-group//ecs/goodseed-free/app"
+        exit 1
+
+    - name: Inject secrets into worker task definition
+      env:
+        DATABASE_URL: ${{ steps.db-url.outputs.database_url }}
+        AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        REDIS_HOST: ${{ secrets.REDIS_HOST }}
+        REDIS_PORT: ${{ secrets.REDIS_PORT }}
+        CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      run: |
+        echo "🔐 Injecting secrets into worker task definition..."
+        node infrastructure/inject-secrets-to-task-definition.js \
+          --input infrastructure/ecs-worker-task-definition.json \
+          --output worker-task-definition.json \
+          --container goodseed-worker
 
     - name: Update worker task definition with dev image
       id: worker-task-def
@@ -192,49 +303,89 @@ jobs:
         service: ${{ needs.set-environment.outputs.worker_service }}
         cluster: ${{ needs.set-environment.outputs.ecs_cluster }}
         wait-for-service-stability: true
-        wait-for-minutes: 10
+        wait-for-minutes: 20
 
     - name: Verify deployment health
+      env:
+        PROD_PUBLIC_URL: ${{ secrets.PROD_PUBLIC_URL }}
+        DEV_PUBLIC_URL: ${{ secrets.DEV_PUBLIC_URL }}
       run: |
-        # Determine public URL based on environment
+        # Determine URLs based on environment
         if [ "${{ github.ref }}" == "refs/heads/main" ]; then
           ENVIRONMENT="production"
-          # When custom domain is enabled: https://app.goodseed.com
-          ALB_URL="http://goodseed-production-alb-xxx.us-east-1.elb.amazonaws.com"  # Update when prod ALB exists
+          PUBLIC_URL="${PROD_PUBLIC_URL:-https://app.goodseed.com}"
+          ALB_URL="http://goodseed-production-alb-xxx.us-east-1.elb.amazonaws.com"
+          echo "📊 Using PRODUCTION environment"
         else
           ENVIRONMENT="development"  
-          # When custom domain is enabled: https://dev.goodseed.com
+          PUBLIC_URL="${DEV_PUBLIC_URL:-https://lembooking.com}"
           ALB_URL="http://goodseed-free-alb-1825640970.us-east-1.elb.amazonaws.com"
+          echo "🧪 Using DEVELOPMENT environment"
         fi
         
         echo "🌍 Environment: $ENVIRONMENT"
-        echo "🔗 Public URL: $ALB_URL"
+        echo "🔗 Public URL: $PUBLIC_URL"
+        echo "🔗 ALB URL: $ALB_URL"
         
-        # Wait for services to be stable
+        # Wait longer for services to be stable
         echo "⏳ Waiting for services to become healthy..."
-        sleep 60
+        sleep 120
         
-        # Test web service health
-        echo "🔍 Testing web service health..."
-        curl -f $ALB_URL/api/health || (echo "❌ Web health check failed" && exit 1)
-        echo "✅ Web service is healthy"
+        # Test ALB health first (reliable) with retries
+        echo "🔍 Testing ALB health directly (with retries)..."
+        for i in {1..5}; do
+          if curl -f "$ALB_URL/api/health" 2>/dev/null; then
+            echo "✅ ALB health check PASSED (attempt $i)"
+            ALB_HEALTHY=true
+            break
+          else
+            echo "⚠️ ALB health check failed (attempt $i/5), retrying in 30s..."
+            sleep 30
+          fi
+        done
         
-        # Test application readiness (comprehensive check)
-        echo "🔍 Testing application readiness..."
-        curl -f $ALB_URL/api/health/ready || (echo "⚠️ Application has some issues but deployment continues" && true)
-        echo "✅ Application readiness verified"
+        if [ "$ALB_HEALTHY" != "true" ]; then
+          echo "❌ ALB health check FAILED after 5 attempts"
+          exit 1
+        fi
         
-        # Test worker service (queue stats)
+        # Test public domain with retries (may take time to propagate)
+        echo "🔍 Testing public domain health (with retries)..."
+        for i in {1..10}; do
+          if curl -f "$PUBLIC_URL/api/health" 2>/dev/null; then
+            echo "✅ Public domain health check PASSED (attempt $i)"
+            DOMAIN_HEALTHY=true
+            break
+          else
+            echo "⚠️ Public domain check failed (attempt $i/10), retrying in 30s..."
+            sleep 30
+          fi
+        done
+        
+        if [ "$DOMAIN_HEALTHY" != "true" ]; then
+          echo "⚠️ Public domain health check FAILED after 10 attempts"
+          echo "🚨 NOTE: ALB is healthy but domain may need more time to propagate"
+        fi
+        
+        # Summary of health checks
+        if [ "$ALB_HEALTHY" == "true" ] && [ "$DOMAIN_HEALTHY" == "true" ]; then
+          echo "✅ All health checks PASSED - Application fully ready"
+        elif [ "$ALB_HEALTHY" == "true" ]; then
+          echo "✅ ALB healthy, domain needs propagation - Application partially ready"  
+        fi
+        
+        # Test worker service (queue stats) via ALB
         echo "🔍 Testing worker service health..."
         STATS=$(curl -s $ALB_URL/api/admin/scraper/stats)
         echo "Queue stats: $STATS"
         
         echo ""
         echo "🎉 Deployment successful!"
-        echo "📱 Access your application at: $ALB_URL"
+        echo "📱 ALB Direct Access: $ALB_URL"
+        echo "🌐 Public Domain: $PUBLIC_URL"
         
         # Check if worker is processing jobs
-        WAITING_JOBS=$(echo $STATS | jq -r '.data.jobCounts.WAITING // 0')
+        WAITING_JOBS=$(echo $STATS | jq -r '.data.jobCounts.WAITING // 0' 2>/dev/null || echo 0)
         if [ "$WAITING_JOBS" -gt 10 ]; then
           echo "⚠️  Warning: $WAITING_JOBS jobs waiting (possible worker issue)"
         else
@@ -242,3 +393,8 @@ jobs:
         fi
         
         echo "🎉 Web + Worker deployment completed successfully!"
+        echo ""
+        echo "🚨 NEXT STEPS:"
+        echo "1. If public domain fails, check Cloudflare DNS settings"
+        echo "2. Verify A record points to ALB: goodseed-free-alb-1825640970.us-east-1.elb.amazonaws.com"
+        echo "3. Check Cloudflare SSL/TLS mode is 'Full'"

@@ -15,32 +15,36 @@ datasource db {
 enum UserRole {
   ADMIN
   USER
+  BANNED
 }
 
 model User {
-  id                    String                 @id @default(cuid())
-  name                  String?
-  email                 String?                @unique
-  email_verified        DateTime?
-  image                 String?
-  password              String?
-  role                  UserRole               @default(USER)
-  isTwoFactorEnabled    Boolean                @default(false)
-  bio                   String?
-  acquisitionDate       DateTime?              @default(now())
-  acquisitionSource     String?
-  lastActiveAt          DateTime?
-  lifetimeValue         Float?                 @default(0)
-  // subscriptionType       SubscriptionType?       @default(FREE)
-  totalSpent            Float?                 @default(0)
+  id                     String                  @id @default(cuid())
+  name                   String?
+  email                  String                  @unique
+  emailVerified          DateTime?
+  image                  String?
+  password               String?
+  role                   UserRole                @default(USER)
+  isTwoFactorEnabled     Boolean                 @default(false)
+  bio                    String?
+  acquisitionDate        DateTime?               @default(now())
+  acquisitionSource      String?
+  lastActiveAt           DateTime?
+  lifetimeValue          Float?                  @default(0)
+  totalSpent             Float?                  @default(0)
+  chatSettings           Json?
+  lastChatAt             DateTime?
+  preferredLanguage      String                  @default("en")
+  totalChatSessions      Int                     @default(0)
+  //Relations
+  twoFactorConfirmation  TwoFactorConfirmation?
+  session                Session[]
+  account                Account[]
+  notificationPreference NotificationPreference?
+  wishlist               Wishlist[]
+  wishlistFolder         WishlistFolder[]
   // userSegment            UserSegment?            @default(REGULAR)
-  chatSettings          Json?
-  lastChatAt            DateTime?
-  preferredLanguage     String                 @default("en")
-  totalChatSessions     Int                    @default(0)
-  twoFactorConfirmation TwoFactorConfirmation?
-  session               Session[]
-  account               Account[]
 }
 
 model Account {
@@ -75,13 +79,16 @@ model Session {
   @@map("sessions")
 }
 
+// Verification Tokens giao cho nextauth quản lý. Đổi dùng id và email thành identifier để khớp với type prisma adapter
 model VerificationToken {
-  id      String   @id @default(cuid())
-  email   String
-  token   String   @unique
-  expires DateTime
+  // id      String   @id @default(cuid())
+  // email   String
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  // @@map("verification_tokens")
 
-  @@unique([email, token])
+  @@unique([identifier, token])
 }
 
 model TwoFactorConfirmation {
@@ -97,6 +104,49 @@ model TwoFactorToken {
   expires DateTime
 
   @@unique([email, token])
+}
+
+model PasswordResetToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+// Rate Limiting for Magic Link Authentication
+// Prevents abuse and spam by tracking email verification requests
+model MagicLinkRateLimit {
+  id            String    @id @default(cuid())
+  email         String
+  ipAddress     String? // Optional: Track by IP for extra security
+  attemptCount  Int       @default(1)
+  lastAttempt   DateTime  @default(now())
+  cooldownUntil DateTime? // NULL = no cooldown, DateTime = blocked until this time
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // @@map("magic_link_rate_limits")
+
+  @@unique([email])
+  @@index([email, cooldownUntil]) // Fast lookup for rate limit check
+  @@index([createdAt]) // Cleanup old records
+}
+
+// Tùy chỉnh notification cho user
+model NotificationPreference {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  receiveSpecialOffers Boolean  @default(false) // giữ lại vì ở scoper 
+  receivePriceAlerts   Boolean  @default(false)
+  receiveBackInStock   Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  //Relations
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ==============================================================================
@@ -141,15 +191,15 @@ enum StockStatus {
 // Đại diện cho các site bán hạt giống (e.g., Seed Supreme, ILGM, Herbies)
 // GoodSeed làm affiliate marketing để chuyển hướng traffic đến website của họ
 model Seller {
-  id   String @id @default(cuid())
-  name String @unique // "Seed Supreme", "ILGM"
-  url  String // Homepage URL Seller
+  id                 String  @id @default(cuid())
+  name               String  @unique // "Seed Supreme", "ILGM"
+  url                String // Homepage URL Seller
   affiliateTag       String? // Affiliate tag để tạo commission URL
-  isActive           Boolean   @default(true) // Kill switch để ẩn cách products của seller ở trang seed
-  autoScrapeInterval Int?      @default(6) // Auto scrape interval in hours
+  isActive           Boolean @default(true) // Kill switch để ẩn cách products của seller ở trang seed
+  autoScrapeInterval Int?    @default(6) // Auto scrape interval in hours
 
-  lastScraped        DateTime? //TODO: có thể để scrapeLog quản lý luôn
-  status             String? // success/error - TODO: có thể để scrapeLog quản lý luôn
+  lastScraped DateTime? //TODO: có thể để scrapeLog quản lý luôn
+  status      String? // success/error - TODO: có thể để scrapeLog quản lý luôn
 
   // Scraper Configuration (Simple approach) - Build tính năng Crud seller trong tương lai nếu yêu cầu
   // productCardHtml     String? // Raw HTML của 1 product card (admin copy/paste)
@@ -183,8 +233,8 @@ model ScrapingSource {
   //Relations
   seller Seller @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 
-  @@index([id, sellerId])
   @@unique([sellerId, scrapingSourceUrl]) // Prevent duplicate URL per seller
+  @@index([id, sellerId])
 }
 
 // SeedProductCategory là danh mục product :Sativa, Indica, Hybrid. 
@@ -223,6 +273,8 @@ model SeedProduct {
   slug        String // "blue-dream-feminized"
   description String? // Mô tả ngắn (nếu có)
 
+  displayPrice Float? // displayPrice là pricePerSeed ở packsize nhỏ nhất. eg: displayPrice sẽ là 13 khi { packsize: 5 seeds; totalPrice: 65; pricePerSeed: 13 } và  { packsize: 10 seeds; totalPrice: 200; pricePerSeed: 18.33 }
+
   // Stock
   stockStatus StockStatus @default(IN_STOCK)
 
@@ -248,6 +300,7 @@ model SeedProduct {
   category      SeedProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   productImages SeedProductImage[]
   pricings      Pricing[]
+  wishlists     Wishlist[]
 
   @@unique([categoryId, slug])
   @@index([categoryId])
@@ -257,15 +310,17 @@ model SeedProduct {
   @@index([thcMin, thcMax])
   @@index([cbdMin, cbdMax])
   @@index([stockStatus])
+  @@index([displayPrice]) // Index for price sorting
 }
 
 model Pricing {
   id            String @id @default(cuid())
   seedProductId String
+  totalPrice    Float
+  packSize      Int    @default(5)
+  pricePerSeed  Float // Calculated: totalPrice / packSize
 
-  totalPrice   Float
-  packSize     Int   @default(5)
-  pricePerSeed Float // Calculated: totalPrice / packSize
+  //Cần thêm metadata như scrapedAt. Sẽ làm sau.
 
   // Relations
   seedProduct SeedProduct @relation(fields: [seedProductId], references: [id], onDelete: Cascade)
@@ -324,13 +379,13 @@ model ScrapeLog {
 
 // ScrapeJobStatus - Job execution status (sync with Bull Queue states)
 enum ScrapeJobStatus {
-  CREATED    // Job created in database, not yet in queue
-  WAITING    // Job in Bull queue, waiting to be processed
-  DELAYED    // Job scheduled for future execution (Bull delayed set)
-  ACTIVE     // Job currently running (Bull active set)
-  COMPLETED  // Job finished successfully (Bull completed set)
-  FAILED     // Job failed with error (Bull failed set)
-  CANCELLED  // Job manually cancelled or removed
+  CREATED // Job created in database, not yet in queue
+  WAITING // Job in Bull queue, waiting to be processed
+  DELAYED // Job scheduled for future execution (Bull delayed set)
+  ACTIVE // Job currently running (Bull active set)
+  COMPLETED // Job finished successfully (Bull completed set)
+  FAILED // Job failed with error (Bull failed set)
+  CANCELLED // Job manually cancelled or removed
 }
 
 // ScrapeJob - Track scraping job progress and status
@@ -377,4 +432,146 @@ model ScrapeJob {
   @@index([jobId])
   @@index([createdAt])
   @@index([targetCategoryId])
+}
+
+// Wishlist (Danh sách sản phẩm yêu thích của người dùng)
+model Wishlist {
+  id          String          @id @default(cuid())
+  userId      String
+  seedId      String
+  // folderId    String?
+  // notifyPrice Boolean @default(false)
+  // notifyBackInStock Boolean @default(false)
+  // targetPrice Float?
+  createdAt   DateTime        @default(now())
+  // Relations
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // 1 wishlist sẽ chứa thông tin của 1 seedProduct
+  seedProduct SeedProduct     @relation(fields: [seedId], references: [id], onDelete: Cascade)
+  // folder onDelete:SetNull và folderId:String? để khi xóa folder wishlist được chuyển về uncategoried
+  //New: Many-to-many relation  
+  wishlistFolderItems      WishlistFolderItem[] // WishlistFolderItem is join table between wishlist and folder
+
+  @@unique([userId, seedId])
+}
+
+// Join table for Wishlist and Folder
+model WishlistFolderItem {
+  id String @id @default(cuid())
+  wishlistId String
+  wishlistFolderId String
+  
+  order Int? @default(0)
+  createdAt DateTime @default(now())
+
+  // Relations
+  wishlist Wishlist @relation(fields:[wishlistId], references: [id], onDelete:Cascade)
+  wishlistFolder WishlistFolder @relation(fields:[wishlistFolderId], references: [id], onDelete: Cascade)
+
+  @@unique([wishlistId, wishlistFolderId])
+  @@index([wishlistId])
+  @@index([wishlistFolderId])
+  @@index([wishlistFolderId, order]) // For efficient sorted queries within folder
+}
+
+model WishlistFolder {
+  id        String     @id @default(cuid())
+  userId    String
+  name      String
+  order     Int
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  //Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wishlistFolderItems WishlistFolderItem[]
+
+  @@unique([userId, name]) // đảm bảo không có 2 folder trùng tên nhau.
+}
+
+// ============================================
+// CMS Models - Content Management System
+// ============================================
+
+// Homepage Content - Stores all homepage sections
+model HomepageContent {
+  id        String   @id @default(cuid())
+  
+  // Hero Section
+  heroTitle       String
+  heroDescription String   @db.Text
+  
+  // How It Works Section
+  howItWorksTitle       String
+  howItWorksDescription String   @db.Text
+  howItWorksSteps       Json     // Array of {title, description}
+  
+  // Features Section
+  featuresTitle       String
+  featuresDescription String   @db.Text
+  features            Json     // Array of {icon: string, title, description}
+  
+  // CTA Section
+  ctaTitle       String
+  ctaDescription String   @db.Text
+  ctaLabel       String
+  ctaHref        String
+  
+  // Metadata
+  isPublished Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  updatedBy   String   // Admin email who updated
+  
+  @@map("homepage_content")
+}
+
+// FAQ Categories - Main categories for FAQ sections
+model FaqCategory {
+  id    String @id @default(cuid())
+  name  String // "General Questions", "Buying & Pricing", etc.
+  icon  String // FontAwesome icon name: "faLeaf", "faShoppingCart", etc.
+  order Int    @default(0)
+  
+  isVisible Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  faqs Faq[]
+  
+  @@map("faq_categories")
+}
+
+// FAQ Items - Individual questions and answers
+model Faq {
+  id         String      @id @default(cuid())
+  question   String
+  answer     String      @db.Text
+  order      Int         @default(0)
+  
+  isVisible  Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  
+  // Relations
+  categoryId String
+  category   FaqCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@index([categoryId, order])
+  @@map("faqs")
+}
+
+// FAQ Page Settings - Global settings for FAQ page
+model FaqPageSettings {
+  id                    String   @id @default(cuid())
+  title                 String   @default("Frequently Asked Questions")
+  description           String   @default("Find answers to the most common questions about our services.")
+  noAnswerMessage       String   @default("Can't find the answer you're looking for?")
+  contactLabel          String   @default("Contact Us")
+  contactHref           String   @default("/contact")
+  
+  isPublished           Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
+  updatedBy             String   // Admin email who updated
+  
+  @@map("faq_page_settings")
 }

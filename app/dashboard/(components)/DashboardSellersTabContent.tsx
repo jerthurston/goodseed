@@ -95,7 +95,7 @@ const DashboardSellersTabContent = ({ sellers, refetchSellers }: DashboardSeller
 
   return (
     <>
-      <div className='flex flex-row justify-between items-center'>
+      <div className='flex flex-col lg:flex-row justify-between items-center'>
         <div>
           <h2 className="font-['Archivo_Black'] text-3xl uppercase text-(--brand-primary) tracking-tight mb-4">
             Sellers Management
@@ -113,7 +113,7 @@ const DashboardSellersTabContent = ({ sellers, refetchSellers }: DashboardSeller
         >
           <>
             <PlusCircle className="h-4 w-4" />
-            Create New Seller
+            Add Seller
           </>
         </DashboardButton>
       </div>

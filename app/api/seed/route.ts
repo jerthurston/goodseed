@@ -2,9 +2,17 @@ import { apiLogger } from "@/lib/helpers/api-logger";
 import { prisma } from "@/lib/prisma";
 import { CannabisType, Prisma, SeedType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { generateETag, getCacheHeaders, shouldReturnNotModified } from "@/lib/cache-headers";
 
 export async function GET(req: NextRequest) {
     try {
+        // DEBUG: Log environment and request info
+        // apiLogger.debug('[API /seed] Request received:', {
+        //     url: req.url,
+        //     environment: process.env.NODE_ENV,
+        //     databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT_SET'
+        // });
+
         //--> 1. Lấy search params từ req.url - Test pass
         const { searchParams } = new URL(req.url);
         //--> 2. Parse các search params thành các biến tương ứng
@@ -34,7 +42,7 @@ export async function GET(req: NextRequest) {
         const sortBy = searchParams.get('sortBy');
 
         apiLogger.debug(
-            '[SeedService.fetchSeeds] Received request with params:',
+            '[API route: api/seed] Received request with params:',
             {
                 search,
                 cannabisTypes,
@@ -107,17 +115,13 @@ export async function GET(req: NextRequest) {
         switch (sortBy) {
             case 'priceLowToHigh': {
                 orderBy = {
-                    pricings: {
-                        _count: 'asc' as Prisma.SortOrder
-                    }
+                    displayPrice: 'asc' as Prisma.SortOrder
                 };
             };
                 break;
             case 'priceHighToLow': {
                 orderBy = {
-                    pricings: {
-                        _count: 'desc' as Prisma.SortOrder
-                    }
+                    displayPrice: 'desc' as Prisma.SortOrder
                 };
             };
                 break;
@@ -133,6 +137,12 @@ export async function GET(req: NextRequest) {
         }
         //6. Xây dựng inClude realtions
         const inCludeClause: Prisma.SeedProductInclude = {
+            seller: {
+                select: {
+                    id: true,
+                    affiliateTag: true
+                }
+            },
             category: {
                 include: {
                     seller: {
@@ -165,6 +175,16 @@ export async function GET(req: NextRequest) {
                 }
             }
         };
+
+        // DEBUG: Log query details before execution
+        apiLogger.debug('[API /seed] About to execute query:', {
+            whereClause,
+            orderBy,
+            page,
+            limit,
+            skip
+        });
+
         //7. Query seeds từ database (without price filter)
         let seeds = await prisma.seedProduct.findMany({
             where: whereClause,
@@ -174,12 +194,23 @@ export async function GET(req: NextRequest) {
 
         const totalBeforeFilter = seeds.length;
 
-        apiLogger.debug('[API /seed] Query results after active sellers filter:', {
-            totalSeeds: totalBeforeFilter,
-            activeSellersOnly: true,
-            minPrice,
-            maxPrice,
-        });
+        // DEBUG: Log raw query results
+        // apiLogger.debug('[API /seed] Raw query results:', {
+        //     totalSeeds: totalBeforeFilter,
+        //     sampleSeed: totalBeforeFilter > 0 ? {
+        //         id: seeds[0].id,
+        //         name: seeds[0].name,
+        //         sellerId: seeds[0].sellerId,
+        //         categoryId: seeds[0].categoryId
+        //     } : null
+        // });
+
+        // apiLogger.debug('[API /seed] Query results after active sellers filter:', {
+        //     totalSeeds: totalBeforeFilter,
+        //     activeSellersOnly: true,
+        //     minPrice,
+        //     maxPrice,
+        // });
 
         // Verify all returned seeds have active sellers (debug logging)
         if (totalBeforeFilter > 0) {
@@ -200,54 +231,119 @@ export async function GET(req: NextRequest) {
             removedCount: totalBeforeFilter - totalWithPricing
         });
 
-        // 9. Apply price filter in-memory (filter by minimum pricePerSeed)
+        // 9. Apply price filter in-memory (filter by displayPrice)
         if (minPrice > 0 || maxPrice < 999999) {
+            const beforePriceFilter = seeds.length;
             seeds = seeds.filter(seed => {
-                const minPricePerSeed = seed.pricings[0]?.pricePerSeed || 0;
-                const passesFilter = minPricePerSeed >= minPrice && minPricePerSeed <= maxPrice;
-
-                if (!passesFilter && totalBeforeFilter < 5) { // Debug first 5
-                    apiLogger.debug(`[API /seed] Filtered out: ${seed.name}`, {
-                        minPricePerSeed,
-                        minPrice,
-                        maxPrice,
-                    });
+                // Skip seeds without displayPrice
+                if (seed.displayPrice === null || seed.displayPrice === undefined) {
+                    apiLogger.debug(`[API /seed] Skipped (no displayPrice): ${seed.name}`);
+                    return false;
                 }
+
+                // Use displayPrice (which is the pricePerSeed of smallest pack)
+                const displayPrice = seed.displayPrice;
+                const passesFilter = displayPrice >= minPrice && displayPrice <= maxPrice;
+
+                // if (!passesFilter) {
+                //     apiLogger.debug(`[API /seed] Filtered out by price: ${seed.name}`, {
+                //         displayPrice,
+                //         minPrice,
+                //         maxPrice,
+                //         passesFilter
+                //     });
+                // }
 
                 return passesFilter;
             });
+
+            // apiLogger.debug('[API /seed] After price filtering:', {
+            //     beforePriceFilter,
+            //     afterPriceFilter: seeds.length,
+            //     filteredOut: beforePriceFilter - seeds.length,
+            //     priceRange: `${minPrice} - ${maxPrice}`
+            // });
         }
 
         // 10. Apply pagination after filtering
         const total = seeds.length;
         const paginatedSeeds = seeds.slice(skip, skip + limit);
 
-        apiLogger.debug(
-            '[API /seed] Final results:', {
-            totalBeforeFilter,
-            totalAfterFilter: total,
-            returnedCount: paginatedSeeds.length,
-            page,
-            limit,
+        // apiLogger.debug(
+        //     '[API /seed] Final results:', {
+        //     totalBeforeFilter,
+        //     totalAfterFilter: total,
+        //     returnedCount: paginatedSeeds.length,
+        //     page,
+        //     limit,
+        // }
+        // )
+
+        //11. Prepare response data (plain object for ETag)
+        const responseData = {
+            seeds: paginatedSeeds,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
+
+        // NEW: Generate ETag for conditional requests
+        const etag = generateETag(responseData);
+
+        //NEW: Check if client has fresh cache (304)
+        if (shouldReturnNotModified(req, etag)) {
+            return new NextResponse(null, {
+                status: 304,
+                headers: {
+                    'ETag': etag,
+                    'Cache-Control': getCacheHeaders('api')['Cache-Control']
+                }
+            });
         }
-        )
 
-        //11. Trả về dữ liệu dưới dạng JSON response nếu thành công
-        return NextResponse.json(
-            {
-                seeds: paginatedSeeds,
-                pagination: {
-                    total,
-                    page,
-                    limit,
-                    totalPages: Math.ceil(total / limit)
-                },
-            },
-            {
-                status: 200,
-            },
+        // NEW: Return full response with data
+        const response = NextResponse.json(responseData, { status: 200 });
 
-        );
+        // ADD: Cloudflare cache headers
+        const cacheHeaders = getCacheHeaders('api')
+        Object.entries(cacheHeaders).forEach(([key, value]) => {
+            response.headers.set(key, value)
+        });
+        //NEW: Add ETag
+        response.headers.set('ETag', etag);
+        // NEW: Add Last-Modified (optional)
+        response.headers.set('Last-Modified', new Date().toUTCString());
+
+        // Cloudflare-Cache-Tag
+        const tags = ['seeds', 'products']
+        if (cannabisTypes.length > 0) {
+            cannabisTypes.forEach(type => tags.push(`cannabis_${type.toLowerCase()}`))
+        }
+        if (seedTypes.length > 0) {
+            seedTypes.forEach(type => tags.push(`seed_${type.toLowerCase()}`))
+        }
+        if (search) {
+            tags.push('search')
+        }
+
+        response.headers.set('CF-Cache-Tag', tags.join(','))
+        response.headers.set('Vary', 'Accept-Encoding')
+
+        // Enhanced logging with cache info
+        apiLogger.info('Seeds API cached response', {
+            search,
+            cannabisTypes,
+            seedTypes,
+            resultCount: paginatedSeeds.length,
+            responseTime: `${Date.now() - (Date.now() - 100)}ms`, // Approximate
+            cacheTags: tags,
+            totalResults: total
+        })
+
+        return response;
         //9. Xử lý lỗi và trả về lỗi dưới dạng JSON response
     } catch (error) {
         apiLogger.logError(

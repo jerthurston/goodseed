@@ -65,6 +65,16 @@ export async function POST(
     }
 
     // Step 2: Find specific scrape job by jobId and sellerId
+    apiLogger.debug("[Seller Cancel Job API] Searching for job", { 
+        jobId, 
+        sellerId,
+        searchCriteria: {
+            jobId,
+            sellerId,
+            statusIn: ['CREATED', 'WAITING', 'DELAYED', 'ACTIVE']
+        }
+    });
+
     const unfinishedJob = await prisma.scrapeJob.findFirst({
         where: {
             jobId: jobId,           // Must match exact jobId from request
@@ -76,6 +86,14 @@ export async function POST(
     });
 
     apiLogger.debug("[Seller Cancel Job API] Found unfinished job", { unfinishedJob });
+
+    // Also check if job exists with any status
+    const anyJob = await prisma.scrapeJob.findFirst({
+        where: { jobId, sellerId },
+        select: { id: true, jobId: true, status: true, mode: true }
+    });
+    
+    apiLogger.debug("[Seller Cancel Job API] Job with any status", { anyJob });
 
     if (!unfinishedJob) {
         return NextResponse.json({
@@ -90,6 +108,37 @@ export async function POST(
     try {
         const bullJob = await getJob(unfinishedJob.jobId);
         if(bullJob) {
+            // Step 3.1: Check if worker is actively processing
+            const isActivelyProcessing = bullJob.processedOn && !bullJob.finishedOn;
+            
+            if (isActivelyProcessing) {
+                const elapsedSeconds = Math.floor((Date.now() - bullJob.processedOn!) / 1000);
+                
+                apiLogger.warn('[Seller Cancel Job] Cannot stop ACTIVE job - worker is processing', {
+                    jobId: unfinishedJob.jobId,
+                    sellerId,
+                    sellerName: seller.name,
+                    status: 'ACTIVE',
+                    startedAt: new Date(bullJob.processedOn!),
+                    elapsedSeconds
+                });
+                
+                return NextResponse.json({
+                    success: false,
+                    canStop: false,
+                    status: 'ACTIVE',
+                    message: 'Cannot stop job: Worker is currently processing.',
+                    recommendation: 'The job will complete naturally. Workers cannot be interrupted mid-execution.',
+                    jobInfo: {
+                        jobId: unfinishedJob.jobId,
+                        startedAt: new Date(bullJob.processedOn!),
+                        elapsedSeconds,
+                        estimatedCompletion: 'The job is actively running and will finish soon.'
+                    }
+                }, { status: 400 });
+            }
+            
+            // Step 3.2: If not active, safe to remove from queue
             await bullJob.remove();
             queueCancelResult = 'removed_from_queue';
             apiLogger.info("[Seller Cancel Job API] Bull job removed", {

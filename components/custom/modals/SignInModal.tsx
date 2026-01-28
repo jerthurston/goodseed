@@ -1,9 +1,14 @@
 'use client'
-
 import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
-import React, { useState } from 'react'
+import React from 'react'
+import { Icons } from "@/components/ui/icons"
+import { useGoogleSignIn } from "@/hooks/auth/useGoogleSignIn"
+import { useFacebookSignIn } from "@/hooks/auth/useFacebookSignIn"
+import { EmailVerificationForm } from "@/components/custom/forms/EmailVerificationForm"
+import { usePathname } from 'next/navigation'
+import { createPortal } from 'react-dom'
 
 interface SignInModalProps {
     isOpen: boolean
@@ -12,36 +17,10 @@ interface SignInModalProps {
 }
 
 const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
-    const [email, setEmail] = useState('')
-
-    const handleEmailSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        // TODO: Implement email login logic
-        console.log('Email login:', email)
-        setEmail('')
-        // Simulate successful login
-        if (onLoginSuccess) {
-            onLoginSuccess()
-        }
-    }
-
-    const handleGoogleLogin = () => {
-        // TODO: Implement Google OAuth logic
-        console.log('Google login')
-        // Simulate successful login
-        if (onLoginSuccess) {
-            onLoginSuccess()
-        }
-    }
-
-    const handleFacebookLogin = () => {
-        // TODO: Implement Facebook OAuth logic
-        console.log('Facebook login')
-        // Simulate successful login
-        if (onLoginSuccess) {
-            onLoginSuccess()
-        }
-    }
+    const pathname = usePathname();
+    
+    const { googleSignIn, isLoading: isGoogleLoading } = useGoogleSignIn();
+    const { facebookSignIn, isLoading: isFacebookLoading } = useFacebookSignIn();
 
     const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
@@ -51,7 +30,7 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
 
     if (!isOpen) return null
 
-    return (
+    const modalContent = (
         <div
             className={`login-modal-overlay 
                 ${isOpen ? 'active' : ''}
@@ -75,40 +54,57 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
                     </p>
 
                     <div className="login-options">
+                        {/* Google Authentication */}
                         <button
                             className="social-login-btn google"
-                            onClick={handleGoogleLogin}
+                            onClick={() => googleSignIn(`${pathname}`)}
+                            disabled={isGoogleLoading}
                             type="button"
                         >
-                            <FontAwesomeIcon icon={faGoogle} /> Continue with Google
+                            {
+                                isGoogleLoading ? (
+                                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        <FontAwesomeIcon icon={faGoogle} />
+                                        <span className='ml-1'>
+                                            Continue with Google
+                                        </span>
+                                    </>
+                                )
+                            }
+
                         </button>
 
+                        {/* Facebook Authentication */}
                         <button
                             className="social-login-btn facebook"
-                            onClick={handleFacebookLogin}
+                            onClick={() => facebookSignIn('/dashboard/user/settings')}
+                            disabled={isFacebookLoading}
                             type="button"
                         >
-                            <FontAwesomeIcon icon={faFacebook} /> Continue with Facebook
+                            {
+                                isFacebookLoading ? (
+                                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        <FontAwesomeIcon icon={faFacebook} />
+                                        <span className='ml-1'>
+                                            Continue with Facebook
+                                        </span>
+                                    </>
+                                )
+                            }
                         </button>
 
                         <div className="divider-or">
                             <span>OR</span>
                         </div>
 
-                        <form className="email-form" onSubmit={handleEmailSubmit}>
-                            <input
-                                type="email"
-                                placeholder="Enter your email"
-                                required
-                                className="email-input"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                aria-label="Email address"
-                            />
-                            <button type="submit" className="email-submit-btn">
-                                Continue with Email
-                            </button>
-                        </form>
+                        {/* Email Authentication - Resend verification email */}
+                        <EmailVerificationForm
+                            redirectTo="/dashboard/user/settings"
+                        />
                     </div>
 
                     <p className="login-modal-footer">
@@ -120,6 +116,11 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLoginSucce
             </div>
         </div>
     )
+
+    // Render modal through portal to document.body
+    return typeof document !== 'undefined' 
+        ? createPortal(modalContent, document.body)
+        : null
 }
 
 export default SignInModal

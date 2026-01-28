@@ -66,11 +66,6 @@ export function parseCannabisType(strainType: string | undefined): CannabisType 
         return CannabisType.HYBRID;
     }
 
-    // Check for Ruderalis (rare but possible)
-    // if (typeLower.includes('ruderalis')) {
-    //     return CannabisType.RUDERALIS;
-    // }
-
     return null;
 }
 

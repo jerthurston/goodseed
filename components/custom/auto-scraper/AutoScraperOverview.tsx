@@ -1,10 +1,7 @@
 'use client'
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { DashboardCard, DashboardCardHeader } from '@/app/dashboard/(components)/DashboardCard';
+
+import { DashboardCard} from '@/app/dashboard/(components)/DashboardCard';
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
-import JobStatusCard from './JobStatusCard';
-import AutoScraperStatusBadge from './AutoScraperStatusBadge';
 
 // Use database ScrapeJobStatus enum values (sync with Bull Queue)
 interface JobStatusCounts {

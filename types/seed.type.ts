@@ -13,8 +13,8 @@ export interface SeedUI {
     seedType: string
     cannabisType: string
     price: number
-    thc: number
-    cbd: number
+    thc?: number | { min: number; max: number } // Support both single value and range, optional if no data.
+    cbd?: number | { min: number; max: number } // Support both single value and range, optional if no data.
     popularity: number
     date: string
     vendorName: string
@@ -25,6 +25,10 @@ export interface SeedUI {
     packs: PackUI[]
     imageUrl: string
     stockStatus: string;
+    seller:{
+        ids:string;
+        affiliateTags:string | null;
+    }
 }
 
 export interface SeedPaginationUI {
@@ -90,6 +94,7 @@ export interface SeedProductRaw {
     url: string;
     slug: string;
     description: string | null;
+    displayPrice: number | null; // Add displayPrice field
     stockStatus: 'IN_STOCK' | 'OUT_OF_STOCK' | 'LOW_STOCK';
     seedType: 'REGULAR' | 'FEMINIZED' | 'AUTOFLOWER' | 'PHOTOPERIOD' | null;
     cannabisType: string | null;
@@ -101,6 +106,10 @@ export interface SeedProductRaw {
     cbdText: string | null;
     createdAt: string;
     updatedAt: string;
+    seller:{
+        id:string;
+        affiliateTag:string | null;
+    };
     category: {
         id: string;
         sellerId: string;

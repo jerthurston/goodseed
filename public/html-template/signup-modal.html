@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoodSeed - Modal Preview</title>
+
+    <!-- External Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Link to Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- START: Universal Navigation Bar -->
+<nav class="goodseed-nav">
+    <a href="#" class="logo">goodseed</a>
+    <div class="goodseed-nav-links">
+        <a href="#">About</a>
+        <a href="#">Browse</a>
+        <a href="#" class="favorites-link" title="View Favorites"><i class="fas fa-heart"></i></a>
+        <a href="#" class="login-btn">Sign in</a>
+    </div>
+</nav>
+<!-- END: Universal Navigation Bar -->
+
+<!-- 
+    Post-Signup Preferences Modal 
+    The 'active' class makes it visible by default for this preview.
+-->
+<div class="login-modal-overlay active" id="signupPrefsModal">
+    <div class="login-modal-content">
+        <h2 class="login-modal-title">Communication Preferences</h2>
+        <p class="login-modal-subtitle">Customize how you hear from us. You can change these settings later.</p>
+
+        <div class="preferences-list">
+            <!-- Preference Item 1: Special Offers -->
+            <div class="setting-item">
+                <div class="setting-text">
+                    <label for="specialOffersToggle">Receive Special Offers</label>
+                    <p>Get exclusive deals and updates from GoodSeed.</p>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="specialOffersToggle" checked>
+                    <label class="toggle-label" for="specialOffersToggle"></label>
+                </div>
+            </div>
+
+            <!-- Preference Item 2: Price Alerts -->
+            <div class="setting-item">
+                <div class="setting-text">
+                    <label for="priceAlertsToggle">Receive Price Alerts</label>
+                    <p>Be notified when prices drop on seeds you’ve favorited.</p>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="priceAlertsToggle" checked>
+                    <label class="toggle-label" for="priceAlertsToggle"></label>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-actions-prefs">
+            <button class="btn-styled primary">Save & Continue</button>
+            <button class="btn-styled ghost">Decide Later</button>
+        </div>
+
+        <p class="transparency-link">
+            You can update these preferences anytime in your account settings.
+        </p>
+    </div>
+</div>
+
+<!-- START: Universal Footer -->
+<footer class="main-footer">
+    <div class="footer-container">
+        <div class="footer-grid">
+           <div class="footer-column">
+               <h3 class="logo-text">goodseed</h3>
+               <p>Connecting you to trusted seed vendors since 2023.</p>
+           </div>
+           <div class="footer-column">
+               <h4 class="footer-section-title">Navigate</h4>
+               <ul class="footer-links">
+                   <li><a href="#">Home</a></li>
+                   <li><a href="#">About</a></li>
+                   <li><a href="#">Browse</a></li>
+                   <li><a href="#">Favorites</a></li>
+               </ul>
+           </div>
+           <div class="footer-column">
+               <h4 class="footer-section-title">Support</h4>
+               <ul class="footer-links">
+                   <li><a href="#">Contact</a></li>
+                   <li><a href="#">FAQs</a></li>
+                   <li><a href="#">Partners</a></li>
+                   <li><a href="#">Privacy</a></li>
+                   <li><a href="#">Terms</a></li>
+               </ul>
+           </div>
+           <div class="footer-column">
+               <h4 class="footer-section-title">Stay Connected</h4>
+               <div class="social-icons">
+                   <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                   <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                   <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+               </div>
+               <p class="footer-newsletter-prompt">Subscribe to our newsletter:</p>
+               <div class="footer-newsletter-form">
+                   <input type="email" placeholder="Your email" class="newsletter-input">
+                   <button class="newsletter-button" aria-label="Subscribe to Newsletter"><i class="fas fa-paper-plane"></i></button>
+               </div>
+           </div>
+       </div>
+        <div class="copyright">
+           <p>© <script>document.write(new Date().getFullYear())</script> goodseed. All rights reserved.</p>
+       </div>
+    </div>
+</footer>
+<!-- END: Universal Footer -->
+
+</body>
+</html>

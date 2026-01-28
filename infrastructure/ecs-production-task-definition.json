@@ -1,0 +1,67 @@
+{
+  "family": "goodseed-production-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::396260462264:role/goodseed-production-ecs-task-execution-role",
+  "taskRoleArn": "arn:aws:iam::396260462264:role/goodseed-production-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "goodseed-app",
+      "image": "396260462264.dkr.ecr.us-east-1.amazonaws.com/goodseed-production:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://goodseed_user:GoodSeed2024SecureDB@goodseed-production-db.us-east-1.rds.amazonaws.com:5432/goodseed_production?sslmode=disable"
+        },
+        {
+          "name": "AUTH_SECRET",
+          "value": "goodseed-nextauth-secret-key-production-2024"
+        },
+        {
+          "name": "NEXTAUTH_URL",
+          "value": "https://app.yourdomain.com"
+        },
+        {
+          "name": "NEXT_PUBLIC_APP_URL", 
+          "value": "https://app.yourdomain.com"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "goodseed-production-redis.amazonaws.com"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/goodseed-production/app",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

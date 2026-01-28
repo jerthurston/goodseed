@@ -1,5 +1,4 @@
-'use client'
-
+'use client';
 import CardGridContainer from '@/components/custom/card/SeedCardGridContainer'
 import FilterModal from '@/components/custom/modals/FilterModal'
 import CategorySelect from '@/components/custom/select/CategorySelect'
@@ -12,27 +11,36 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import { apiLogger } from '@/lib/helpers/api-logger'
 import { SeedFilter, SortBy } from '@/types/seed.type'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 const SeedsPageClient = () => {
     const router = useRouter()
     const searchParams = useSearchParams()
     //--> State management Hook for page
-    const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
+    const [searchQuery, setSearchQuery] = useState('')
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
     const [isInlineFiltersOpen, setIsInlineFiltersOpen] = useState(false)
 
-    // Inline filters state - sync với URL ngay từ đầu
-    const urlSeedTypes = searchParams.get('seedTypes')?.split(',').filter(Boolean) || [];
-    const urlCannabisTypes = searchParams.get('cannabisTypes')?.split(',').filter(Boolean) || [];
+    // Inline filters state - will be synced via useEffect
+    const [filterSeedType, setFilterSeedType] = useState('all')
+    const [filterCategory, setFilterCategory] = useState('all')
+    const [sortBy, setSortBy] = useState('popularity' as SortBy)
 
-    const [filterSeedType, setFilterSeedType] = useState(
-        urlSeedTypes.length === 1 ? urlSeedTypes[0] : 'all'
-    )
-    const [filterCategory, setFilterCategory] = useState(
-        urlCannabisTypes.length === 1 ? urlCannabisTypes[0] : 'all'
-    )
-    const [sortBy, setSortBy] = useState((searchParams.get('sortBy') || 'popularity') as SortBy)
+    // 🆕 NEW: Sync all inline states (filters, sort, search) with URL params automatically
+    useEffect(() => {
+        const urlSeedTypes = searchParams.get('seedTypes')?.split(',').filter(Boolean) || [];
+        const urlCannabisTypes = searchParams.get('cannabisTypes')?.split(',').filter(Boolean) || [];
+        const urlSortBy = (searchParams.get('sortBy') || 'popularity') as SortBy;
+        const urlSearch = searchParams.get('search') || '';
+        
+        const newSeedType = urlSeedTypes.length === 1 ? urlSeedTypes[0] : 'all';
+        const newCategory = urlCannabisTypes.length === 1 ? urlCannabisTypes[0] : 'all';
+        
+        setFilterSeedType(newSeedType);
+        setFilterCategory(newCategory);
+        setSortBy(urlSortBy);
+        setSearchQuery(urlSearch);
+    }, [searchParams]);
 
     // --> Sử dụng search keyword từ URL thay vì từ state local
     const activeSearchKeyword = searchParams.get('search') || ''
@@ -68,18 +76,17 @@ const SeedsPageClient = () => {
         limit: 20,
     });
 
-    // --> Log data for debugging (remove after UI integration)
-    useEffect(() => {
-       apiLogger.debug('🎨 [SeedsPageClient] Data from useSeeds:', {
-            seedsCount: seeds.length,
-            pagination,
-            isLoading,
-            isFetching,
-            isError,
-            error: error?.message,
-            sampleSeeds: seeds.slice(0, 2), // Log first 2 seeds
-        });
-    }, [seeds, pagination, isLoading, isFetching, isError, error]);
+    // --> Log data for debugging (Optional - can be removed in production)
+    // useEffect(() => {
+    //     if (seeds.length > 0) {
+    //         apiLogger.debug('[SeedsPageClient] Seeds loaded:', {
+    //             sortBy: sortBy,
+    //             totalSeeds: seeds.length,
+    //             firstSeed: seeds[0]?.name,
+    //             firstPrice: seeds[0]?.price
+    //         });
+    //     }
+    // }, [seeds, sortBy]);
 
     // --> Function handle search form submit
     const handleSearch = (e: React.FormEvent) => {
@@ -100,13 +107,42 @@ const SeedsPageClient = () => {
     const handleOpenFilter = () => {
         setIsFilterModalOpen(true)
     }
+
+    // 🆕 NEW: Parse current filters from URL to pass to modal
+    const currentFilters: SeedFilter = useMemo(() => {
+        const filters = {
+            priceRange: {
+                min: Number(searchParams.get('minPrice')) || 0,
+                max: Number(searchParams.get('maxPrice')) || 100,
+            },
+            seedTypes: searchParams.get('seedTypes')?.split(',').filter(Boolean) || [],
+            cannabisTypes: searchParams.get('cannabisTypes')?.split(',').filter(Boolean) || [],
+            thcRange: {
+                min: Number(searchParams.get('minTHC')) || 0,
+                max: Number(searchParams.get('maxTHC')) || 40,
+            },
+            cbdRange: {
+                min: Number(searchParams.get('minCBD')) || 0,
+                max: Number(searchParams.get('maxCBD')) || 25,
+            },
+        };
+        
+        // apiLogger.debug('🎯 [SeedsPageClient useMemo] currentFilters parsed:', {
+        //     seedTypes: filters.seedTypes,
+        //     cannabisTypes: filters.cannabisTypes,
+        //     priceRange: filters.priceRange,
+        //     rawURL: searchParams.toString()
+        // });
+        
+        return filters;
+    }, [searchParams]);
+
     //  --> Function add params filter into url when user apply filter params in the modal
     // Flow: User dùng modal filter → Reset inline selects → Áp dụng modal filters
     const handleApplyFilters = (filters: SeedFilter) => {
-        apiLogger.debug('Applied filters from modal:', { filters })
+        // apiLogger.debug('Applied filters from modal:', { filters })
         // Start with existing params to preserve sortBy and search
         const params = new URLSearchParams(searchParams.toString())
-
         // Remove all filter params first
         params.delete('minPrice')
         params.delete('maxPrice')
@@ -116,7 +152,7 @@ const SeedsPageClient = () => {
         params.delete('maxTHC')
         params.delete('minCBD')
         params.delete('maxCBD')
-
+        // params.delete('sortBy')
         // Only add filter params if they differ from default values
         // Price range (default: 0-100)
         if (filters.priceRange.min > 0) {
@@ -125,17 +161,14 @@ const SeedsPageClient = () => {
         if (filters.priceRange.max < 100) {
             params.set('maxPrice', filters.priceRange.max.toString())
         }
-
         // Seed types (default: empty array)
         if (filters.seedTypes.length > 0) {
             params.set('seedTypes', filters.seedTypes.join(','))
         }
-
         // Cannabis types (default: empty array)
         if (filters.cannabisTypes.length > 0) {
             params.set('cannabisTypes', filters.cannabisTypes.join(','))
         }
-
         // THC range (default: 0-40)
         if (filters.thcRange.min > 0) {
             params.set('minTHC', filters.thcRange.min.toString())
@@ -143,7 +176,6 @@ const SeedsPageClient = () => {
         if (filters.thcRange.max < 40) {
             params.set('maxTHC', filters.thcRange.max.toString())
         }
-
         // CBD range (default: 0-25)
         if (filters.cbdRange.min > 0) {
             params.set('minCBD', filters.cbdRange.min.toString())
@@ -152,58 +184,33 @@ const SeedsPageClient = () => {
             params.set('maxCBD', filters.cbdRange.max.toString())
         }
 
-        // IMPORTANT: Reset inline select states về "all" khi dùng modal
-        // (Chỉ reset nếu modal không có chọn seedTypes/cannabisTypes single value)
-        if (filters.seedTypes.length !== 1) {
-            setFilterSeedType('all');
-        }
-        if (filters.cannabisTypes.length !== 1) {
-            setFilterCategory('all');
-        }
-
         // Reset to page 1 when filters change
         params.set('page', '1')
-
         router.push(`/seeds?${params.toString()}`)
-
-        apiLogger.debug('Modal filters applied (inline selects reset):', {
-            filterSeedType: filters.seedTypes.length === 1 ? filters.seedTypes[0] : 'all',
-            filterCategory: filters.cannabisTypes.length === 1 ? filters.cannabisTypes[0] : 'all'
-        });
+        // apiLogger.debug('Modal filters applied:', { filters });
     }
     // --> Function to toggle inline filters display: expand or minimize refine result button on mobile
     const toggleInlineFilters = () => {
         setIsInlineFiltersOpen(!isInlineFiltersOpen)
     }
-
     // --> Handle page change for pagination
     const handlePageChange = (page: number) => {
         const params = new URLSearchParams(searchParams.toString());
         params.set('page', page.toString());
         router.push(`/seeds?${params.toString()}`);
     }
-
     // --> Function to handle sort change
     const handleSortChange = (newSortBy: SortBy) => {
-        setSortBy(newSortBy);
         const params = new URLSearchParams(searchParams.toString());
         params.set('sortBy', newSortBy);
         params.set('page', '1'); // Reset to page 1 when sorting changes
         router.push(`/seeds?${params.toString()}`);
+        // ❌ REMOVED: setSortBy(newSortBy) - useEffect sẽ sync từ URL
     }
-
     // --> Function to handle inline filter changes
-    // Flow: User dùng select filter → Reset modal filters → Chỉ giữ lại seedType/category
+    // Flow: User dùng inline select → Preserve modal filters → Chỉ update seedType/category
     const handleInlineFilterChange = (filterType: 'seedType' | 'category', value: string) => {
         const params = new URLSearchParams(searchParams.toString());
-
-        // IMPORTANT: Reset tất cả modal filter params khi dùng inline select
-        params.delete('minPrice');
-        params.delete('maxPrice');
-        params.delete('minTHC');
-        params.delete('maxTHC');
-        params.delete('minCBD');
-        params.delete('maxCBD');
 
         if (filterType === 'seedType') {
             // Cập nhật seedTypes param
@@ -214,8 +221,7 @@ const SeedsPageClient = () => {
                 // Set single seedType
                 params.set('seedTypes', value);
             }
-            // Update local state
-            setFilterSeedType(value);
+            // ❌ REMOVED: setFilterSeedType(value) - useEffect sẽ sync
         } else if (filterType === 'category') {
             // Cập nhật cannabisTypes param
             if (value === 'all') {
@@ -225,30 +231,36 @@ const SeedsPageClient = () => {
                 // Set single cannabisType
                 params.set('cannabisTypes', value);
             }
-            // Update local state
-            setFilterCategory(value);
+            // ❌ REMOVED: setFilterCategory(value) - useEffect sẽ sync
         }
-
         // Reset to page 1 when filter changes
         params.set('page', '1');
-
         // Update URL (use push for navigation history)
         router.push(`/seeds?${params.toString()}`);
-
         // Debug log
-        apiLogger.debug('Inline filter changed (modal filters reset):', {
-            filterType,
-            value,
-            newURL: params.toString()
-        });
+        // apiLogger.debug('Inline filter changed (modal filters preserved):', {
+        //     filterType,
+        //     value,
+        //     preservedParams: {
+        //         minPrice: params.get('minPrice'),
+        //         maxPrice: params.get('maxPrice'),
+        //         minTHC: params.get('minTHC'),
+        //         maxTHC: params.get('maxTHC'),
+        //         minCBD: params.get('minCBD'),
+        //         maxCBD: params.get('maxCBD'),
+        //     }
+        // });
     }
+
     return (
         <>
             {/* --> Section search and filter more */}
             <section className="search-controls-section">
                 <div className="search-controls-container">
                     <div className="hero-search-container">
-                        <form className="hero-search" onSubmit={handleSearch}>
+                        <form className="hero-search"
+                            onSubmit={handleSearch}
+                        >
                             <input
                                 type="text"
                                 placeholder="Search for seeds..."
@@ -258,6 +270,7 @@ const SeedsPageClient = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                             <div className="hero-search-actions">
+                                {/* Search button */}
                                 <button
                                     type="submit"
                                     id="mainSearchButtonIcon"
@@ -271,14 +284,17 @@ const SeedsPageClient = () => {
                                         <FontAwesomeIcon icon={faSearch} className="search-btn-icon" />
                                     </div>
                                 </button>
+                                {/* Advanced Filter button */}
                                 <button
                                     type="button"
                                     className="advanced-filter-btn"
                                     id="openFilter"
                                     onClick={handleOpenFilter}
                                 >
-                                    <FontAwesomeIcon icon={faSlidersH} />
                                     <span className="filter-btn-text font-extrabold">Filters</span>
+                                    <FontAwesomeIcon icon={faSlidersH}
+                                        className='filter-btn-icon'
+                                    />
                                 </button>
                             </div>
                         </form>
@@ -310,7 +326,7 @@ const SeedsPageClient = () => {
                         />
                     </button>
 
-                    {/* --> Select Filter by type, category and sort */}
+                    {/* --> Secondary Filter by type, category and sort */}
                     <div
                         id="collapsibleInlineFilters"
                         role="region"
@@ -338,11 +354,12 @@ const SeedsPageClient = () => {
                 </div>
             </section>
 
+
             {/* --> Main section -- Card Grid container */}
             <CardGridContainer
                 seeds={seeds}
                 pagination={pagination}
-                isLoading={isLoading}
+                isLoading={isLoading || isFetching}
                 isError={isError}
                 onPageChange={handlePageChange}
             />
@@ -352,6 +369,7 @@ const SeedsPageClient = () => {
                 isOpen={isFilterModalOpen}
                 onClose={() => setIsFilterModalOpen(false)}
                 onApplyFilters={handleApplyFilters}
+                initialFilters={currentFilters}
             />
         </>
     )

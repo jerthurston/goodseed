@@ -2,11 +2,11 @@
 # Run with: terraform apply -var-file="production.tfvars"
 
 environment = "production"
-project_name = "goodseed"
+project_name = "goodseed-production"  # Separate from free tier
 
 # Domain configuration (enable when you have a custom domain)
-enable_custom_domain = false  # Set to true when you buy a domain
-domain_name = ""  # Set to your domain like "goodseed.com"
+enable_custom_domain = false  # Will setup later with proper domain
+domain_name = ""  # Will choose production domain later
 
 # Resource sizing for production
 web_task_cpu = 512

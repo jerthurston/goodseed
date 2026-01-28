@@ -1,32 +1,53 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRobot, faClock, faChartLine, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faRobot, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { DashboardCard, DashboardCardHeader } from '@/app/dashboard/(components)/DashboardCard';
 import { useBulkAutoScraperStatus } from '@/hooks/admin/auto-scrape/useAutoScraperStatus';
+
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
+import { apiLogger } from '@/lib/helpers/api-logger';
 
 interface AutoScraperSystemOverviewProps {
   sellersCount: number;
 }
 
 export default function AutoScraperSystemOverview({ sellersCount }: AutoScraperSystemOverviewProps) {
-  const { status: bulkStatus, isLoading } = useBulkAutoScraperStatus();
+  const { status: bulkStatus, isLoading, error } = useBulkAutoScraperStatus();
+
+  // Debug logging
+  apiLogger.debug('AutoScraperSystemOverview - Hook data:', { 
+    bulkStatus, 
+    isLoading, 
+    error,
+    sellersCount 
+  });
 
   const getSystemHealthColor = () => {
     if (!bulkStatus) return 'var(--text-primary-muted)';
     
-    const errorRate = bulkStatus.totalErrors / Math.max(bulkStatus.totalJobs, 1);
-    if (errorRate > 0.2) return 'var(--status-danger)';
-    if (errorRate > 0.1) return 'var(--status-warning)';
+    // Use coverage percentage for health determination
+    const coverage = bulkStatus.coverage || 0;
+    if (coverage < 50) return 'var(--status-danger)';
+    if (coverage < 90) return 'var(--status-warning)';
     return 'var(--status-success)';
   };
 
   const getSystemHealthText = () => {
     if (!bulkStatus) return 'Unknown';
     
-    const errorRate = bulkStatus.totalErrors / Math.max(bulkStatus.totalJobs, 1);
-    if (errorRate > 0.2) return 'Critical';
-    if (errorRate > 0.1) return 'Warning';
-    return 'Healthy';
+    // Use the health status from API
+    const status = bulkStatus.status;
+    switch (status) {
+      case 'healthy':
+        return 'Healthy';
+      case 'degraded':
+        return 'Degraded';
+      case 'unhealthy':
+        return 'Unhealthy';
+      case 'error':
+        return 'Error';
+      default:
+        return 'Updating...';
+    }
   };
 
   if (isLoading) {

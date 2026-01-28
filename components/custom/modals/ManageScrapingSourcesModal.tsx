@@ -13,6 +13,7 @@ import { transformScrapingSourceForAPI } from '@/lib/transfomers/scraping-source
 import { extractScrapingSourceName } from '@/lib/utils/scraping-source.utils'
 import type { ScrapingSource, CreateScrapingSourceData } from '@/lib/services/scraping-sources/scraping-source.service'
 import DeleteListConfirmModal from './DeleteListConfirmModal'
+import { apiLogger } from '@/lib/helpers/api-logger'
 
 interface ManageScrapingSourcesModalProps {
     isOpen: boolean
@@ -164,7 +165,7 @@ const ScrapingSourceItem: React.FC<ScrapingSourceItemProps> = ({
                     <DashboardButton
                         variant="outline"
                         onClick={onDelete}
-                        className="!p-2 !border-(--danger-color) !text-(--danger-color) hover:!bg-(--danger-color) hover:!text-white"
+                        className="p-2! border-(--danger-color)! text-(--danger-color)! hover:bg-(--danger-color)! hover:text-white!"
                         title="Delete Source"
                         disabled={isDeleting}
                     >
@@ -197,7 +198,7 @@ const ManageScrapingSourcesModal: React.FC<ManageScrapingSourcesModalProps> = ({
 
     // Debug logging
     useEffect(() => {
-        console.log('[ManageScrapingSourcesModal] Debug info:', {
+        apiLogger.debug('[ManageScrapingSourcesModal] Debug info:', {
             sellerId,
             scrapingSources,
             scrapingSourcesLength: scrapingSources?.length || 0,
@@ -404,7 +405,7 @@ const ManageScrapingSourcesModal: React.FC<ManageScrapingSourcesModalProps> = ({
                 <div className={styles.modalHeader}>
                     <h2 className={styles.modalTitle}>
                         <FontAwesomeIcon icon={faGlobe} className="mr-3" />
-                        Manage Scraping Sources - {sellerName}
+                        Manage Scraping Sources
                     </h2>
                     <button
                         onClick={onClose}
@@ -604,7 +605,7 @@ const ManageScrapingSourcesModal: React.FC<ManageScrapingSourcesModalProps> = ({
             <DeleteListConfirmModal
                 isOpen={deleteModalState.isOpen}
                 title="DELETE SCRAPING SOURCE"
-                listName={deleteModalState.sourceName}
+                folderName={deleteModalState.sourceName}
                 customMessage={`Are you sure you want to permanently delete the scraping source "<strong>${deleteModalState.sourceName}</strong>" from URL <em>${deleteModalState.sourceUrl}</em>?<br><br>This will stop all automated scraping from this source. This action cannot be undone.`}
                 onCancel={handleDeleteCancel}
                 onConfirm={handleDeleteConfirm}

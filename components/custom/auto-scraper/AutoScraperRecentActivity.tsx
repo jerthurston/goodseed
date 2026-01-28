@@ -1,6 +1,8 @@
+import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faCheckCircle, faExclamationCircle, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { DashboardCard, DashboardCardHeader } from '@/app/dashboard/(components)/DashboardCard';
+import { useFetchScrapeJobs } from '@/hooks/admin/scrape-job/useFetchScrapeJobs';
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
 
 interface AutoScraperActivityItem {
@@ -14,47 +16,175 @@ interface AutoScraperActivityItem {
 }
 
 interface AutoScraperRecentActivityProps {
-  activities?: AutoScraperActivityItem[];
-  isLoading?: boolean;
+  className?: string;
 }
 
-export default function AutoScraperRecentActivity({ activities = [], isLoading = false }: AutoScraperRecentActivityProps) {
-  // Mock data for demonstration (can be replaced with real API data)
-  const mockActivities: AutoScraperActivityItem[] = [
-    {
-      id: '1',
-      sellerId: 'seller1',
-      sellerName: 'BC Bud Depot',
-      status: 'completed',
-      timestamp: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
-      productsScraped: 45
-    },
-    {
-      id: '2',
-      sellerId: 'seller2',
-      sellerName: 'Crop King Seeds',
-      status: 'running',
-      timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-    },
-    {
-      id: '3',
-      sellerId: 'seller3',
-      sellerName: 'Beaver Seeds',
-      status: 'failed',
-      timestamp: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
-      errorMessage: 'Network timeout'
-    },
-    {
-      id: '4',
-      sellerId: 'seller4',
-      sellerName: 'Royal Queen Seeds',
-      status: 'completed',
-      timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-      productsScraped: 32
-    }
-  ];
+export default function AutoScraperRecentActivity() {
+  // Fetch recent scrape jobs from real API
+  const { 
+    jobs, 
+    isLoading,
+    error,
+    successfulJobs,
+    failedJobs 
+  } = useFetchScrapeJobs({
+    limit: 50, // Get more jobs to ensure we have recent ones
+    timeframe: undefined, // No timeframe filter - get ALL jobs
+  });
 
-  const displayActivities = activities.length > 0 ? activities : mockActivities;
+  // Handle error state
+  if (error) {
+    console.error('Error fetching scrape jobs:', error);
+    return (
+      <DashboardCard className={styles.card}>
+        <DashboardCardHeader className={styles.cardHeader}>
+          <h3 
+            className="text-lg font-['Archivo_Black'] uppercase tracking-wide"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            Auto Scraper Activity
+          </h3>
+        </DashboardCardHeader>
+        <div className={styles.cardBody}>
+          <div className="text-center py-8">
+            <FontAwesomeIcon
+              icon={faExclamationCircle}
+              className="text-2xl mb-3"
+              style={{ color: 'var(--status-danger)' }}
+            />
+            <p 
+              className="font-['Poppins']"
+              style={{ color: 'var(--status-danger-text)' }}
+            >
+              Failed to load recent activity
+            </p>
+          </div>
+        </div>
+      </DashboardCard>
+    );
+  }
+
+  // Transform scrape jobs to activity items
+  const transformJobToActivity = (job: any): AutoScraperActivityItem => {
+    let status: 'running' | 'completed' | 'failed';
+    
+    // Map job status to display status
+    switch (job.status) {
+      case 'CREATED':
+      case 'WAITING':
+      case 'DELAYED':
+      case 'ACTIVE':
+        status = 'running';
+        break;
+      case 'COMPLETED':
+        status = 'completed';
+        break;
+      case 'FAILED':
+      case 'CANCELLED':
+        status = 'failed';
+        break;
+      default:
+        status = 'failed';
+    }
+
+    // Safely extract error message
+    let errorMessage: string | undefined;
+    if (status === 'failed') {
+      if (typeof job.errorDetails === 'string') {
+        errorMessage = job.errorDetails;
+      } else if (job.errorDetails && typeof job.errorDetails === 'object') {
+        errorMessage = JSON.stringify(job.errorDetails);
+      } else {
+        errorMessage = 'Scraping failed';
+      }
+    }
+
+    // Safely parse timestamp - prefer endTime > updatedAt > createdAt
+    let timestamp: Date;
+    const endTime = job.endTime || job.completedAt;
+    const updatedAt = job.updatedAt;
+    const createdAt = job.createdAt;
+    
+    if (endTime) {
+      timestamp = new Date(endTime);
+    } else if (updatedAt) {
+      timestamp = new Date(updatedAt);
+    } else if (createdAt) {
+      timestamp = new Date(createdAt);
+    } else {
+      timestamp = new Date(); // fallback to now
+    }
+    
+    // Validate timestamp
+    if (isNaN(timestamp.getTime())) {
+      timestamp = new Date();
+    }
+
+    // Extract seller name from job data
+    const sellerName = job.sellerName || 
+                      (job as any).seller?.name || 
+                      `Seller ${job.sellerId}` || 
+                      'Unknown Seller';
+
+    return {
+      id: job.id || 'unknown',
+      sellerId: job.sellerId || 'unknown',
+      sellerName,
+      status,
+      timestamp,
+      productsScraped: Number(job.productsSaved || job.productsScraped || 0) || undefined,
+      errorMessage
+    };
+  };
+
+  // Transform and sort activities by timestamp
+  const activities: AutoScraperActivityItem[] = React.useMemo(() => {
+    try {
+      console.log('AutoScraperRecentActivity - Hook data:', { 
+        jobsCount: jobs?.length, 
+        isLoading, 
+        error,
+        jobs: jobs?.slice(0, 2) 
+      });
+      
+      if (!jobs || !Array.isArray(jobs)) {
+        console.log('AutoScraperRecentActivity - No jobs array available');
+        return [];
+      }
+
+      if (jobs.length === 0) {
+        console.log('AutoScraperRecentActivity - Jobs array is empty');
+        return [];
+      }
+
+      // Debug: Log raw job data
+      console.log('AutoScraperRecentActivity - Raw jobs data (first 3):', jobs.slice(0, 3).map(job => ({
+        id: job.id,
+        sellerName: job.sellerName,
+        sellerId: job.sellerId,
+        seller: (job as any).seller,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+        endTime: job.endTime,
+        status: job.status,
+        mode: job.mode
+      })));
+
+      const transformed = jobs
+        .map(transformJobToActivity)
+        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+        .slice(0, 5); // Show 5 most recent activities
+        
+      // Debug logging for transformation
+      console.log('AutoScraperRecentActivity - Transformed activities:', transformed);
+      console.log('AutoScraperRecentActivity - Activities count:', transformed.length);
+      
+      return transformed;
+    } catch (error) {
+      console.error('AutoScraperRecentActivity - Error transforming activities:', error);
+      return [];
+    }
+  }, [jobs, isLoading, error]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -83,17 +213,38 @@ export default function AutoScraperRecentActivity({ activities = [], isLoading =
   };
 
   const formatTimeAgo = (timestamp: Date) => {
-    const now = new Date();
-    const diff = Math.floor((now.getTime() - timestamp.getTime()) / 1000 / 60);
-    
-    if (diff < 1) return 'Just now';
-    if (diff < 60) return `${diff}m ago`;
-    
-    const hours = Math.floor(diff / 60);
-    if (hours < 24) return `${hours}h ago`;
-    
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+    try {
+      const now = new Date();
+      const diffInMs = now.getTime() - timestamp.getTime();
+      
+      // If timestamp is in the future or invalid, return fallback
+      if (diffInMs < 0 || isNaN(diffInMs)) {
+        return 'Unknown time';
+      }
+      
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+      
+      if (diffInMinutes < 1) return 'Just now';
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+      if (diffInDays < 7) return `${diffInDays}d ago`;
+      
+      // For older than 7 days, show date
+      const weeks = Math.floor(diffInDays / 7);
+      if (weeks < 4) return `${weeks}w ago`;
+      
+      // For very old dates, show actual date
+      return timestamp.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: timestamp.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+      });
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return 'Unknown time';
+    }
   };
 
   if (isLoading) {
@@ -136,10 +287,10 @@ export default function AutoScraperRecentActivity({ activities = [], isLoading =
 
       <div className={styles.cardBody}>
         <div className="space-y-4">
-          {displayActivities.slice(0, 4).map((activity) => (
+          {activities.slice(0, 5).map((activity) => (
             <div key={activity.id} className="flex items-center gap-4">
               {/* Status Icon */}
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <FontAwesomeIcon
                   icon={getStatusIcon(activity.status)}
                   className={`text-lg ${activity.status === 'running' ? 'animate-spin' : ''}`}
@@ -154,7 +305,7 @@ export default function AutoScraperRecentActivity({ activities = [], isLoading =
                     className="text-sm font-semibold font-['Poppins'] truncate"
                     style={{ color: 'var(--text-primary)' }}
                   >
-                    {activity.sellerName}
+                    {String(activity.sellerName || 'Unknown Seller')}
                   </h4>
                   <span 
                     className="text-xs font-['Poppins'] ml-2"
@@ -179,7 +330,7 @@ export default function AutoScraperRecentActivity({ activities = [], isLoading =
                       className="text-xs font-['Poppins']"
                       style={{ color: 'var(--status-success-text)' }}
                     >
-                      Successfully scraped {activity.productsScraped} products
+                      Successfully scraped {String(activity.productsScraped)} products
                     </p>
                   )}
                   
@@ -188,7 +339,8 @@ export default function AutoScraperRecentActivity({ activities = [], isLoading =
                       className="text-xs font-['Poppins']"
                       style={{ color: 'var(--status-danger-text)' }}
                     >
-                      Failed: {activity.errorMessage}
+                      Failed: {String(activity.errorMessage).substring(0, 50)}
+                      {String(activity.errorMessage).length > 50 ? '...' : ''}
                     </p>
                   )}
                 </div>
@@ -196,7 +348,7 @@ export default function AutoScraperRecentActivity({ activities = [], isLoading =
             </div>
           ))}
 
-          {displayActivities.length === 0 && (
+          {activities.length === 0 && !isLoading && (
             <div className="text-center py-8">
               <FontAwesomeIcon
                 icon={faClock}
@@ -204,11 +356,25 @@ export default function AutoScraperRecentActivity({ activities = [], isLoading =
                 style={{ color: 'var(--text-primary-muted)' }}
               />
               <p 
-                className="font-['Poppins']"
+                className="font-['Poppins'] mb-2"
                 style={{ color: 'var(--text-primary-muted)' }}
               >
                 No recent auto scraper activity
               </p>
+              <p 
+                className="text-xs font-['Poppins']"
+                style={{ color: 'var(--text-primary-muted)' }}
+              >
+                {jobs ? `Found ${jobs.length} total jobs` : 'No jobs data available'}
+              </p>
+              {error && (
+                <p 
+                  className="text-xs font-['Poppins'] mt-2"
+                  style={{ color: 'var(--status-danger)' }}
+                >
+                  Error: {error}
+                </p>
+              )}
             </div>
           )}
         </div>

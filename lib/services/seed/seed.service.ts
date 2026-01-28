@@ -60,7 +60,6 @@ export class SeedService {
             const response = await api.get<SeedApiResponseRaw>(url);
             const data = response.data;
             const duration = Date.now() - startTime;
-
             // Log response with metrics
             apiLogger.logResponse('SeedService.fetchSeeds', {
                 seedCount: data.seeds?.length || 0,

@@ -360,21 +360,6 @@ export class SaveDbService {
             },
         });
     }
-
-    // /**
-    //  * Map strain type to cannabis type enum
-    //  */
-    // private mapCannabisType(strainType: string | undefined): CannabisType | null {
-    //     if (!strainType) return null;
-
-    //     const typeLower = strainType.toLowerCase();
-    //     if (typeLower.includes('sativa')) return CannabisType.SATIVA;
-    //     if (typeLower.includes('indica')) return CannabisType.INDICA;
-    //     if (typeLower.includes('hybrid')) return CannabisType.HYBRID;
-
-    //     return null;
-    // }
-
     /**
      * Get summary statistics for a seller
      */

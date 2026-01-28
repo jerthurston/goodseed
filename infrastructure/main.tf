@@ -90,3 +90,17 @@ output "ecs_cluster_arn" {
   description = "ARN of the ECS cluster"
   value       = aws_ecs_cluster.main.arn
 }
+
+# Database connection string output
+output "database_url" {
+  description = "Complete database connection URL"
+  value = format(
+    "postgresql://%s:%s@%s:%d/%s?sslmode=disable",
+    aws_db_instance.main.username,
+    aws_db_instance.main.password,
+    aws_db_instance.main.endpoint,
+    aws_db_instance.main.port,
+    aws_db_instance.main.db_name
+  )
+  sensitive = true
+}

@@ -1,34 +1,41 @@
 'use client'
 
-import { useState } from 'react'
+import { WishlistFolderUI } from '@/types/wishlist-folder.type'
+import { useEffect, useState } from 'react'
 
-export interface UserList {
-    id: string
-    name: string
-}
-
-interface AddToListModalProps {
+interface AddToFolderModalProps {
     isOpen: boolean
     strainName: string
-    productId: string
-    userLists: UserList[]
-    productListMemberships: string[] // Array of list IDs this product belongs to
+    activeModalSeedId: string
+    wishlistFolders: WishlistFolderUI[]
+    productFolderMemberships: string[] // Array of folder IDs this product belongs to
     onClose: () => void
-    onMembershipChange: (listId: string, isChecked: boolean) => void
-    onCreateNewList: (listName: string) => void
+    onChangeFolder: (folderId: string, isChecked: boolean) => void
+    onCreateNewFolder: (folderName: string) => void
 }
 
-const AddToListModal = ({
+const AddToFolderModal = ({
     isOpen,
     strainName,
-    productId,
-    userLists,
-    productListMemberships,
+    activeModalSeedId,
+    wishlistFolders,
+    productFolderMemberships,
     onClose,
-    onMembershipChange,
-    onCreateNewList
-}: AddToListModalProps) => {
-    const [newListName, setNewListName] = useState('')
+    onChangeFolder,
+    onCreateNewFolder
+}: AddToFolderModalProps) => {
+    const [newFolderName, setNewFolderName] = useState('')
+
+    // // LOG DEBUG:
+    // useEffect(() => {
+    //     console.debug("AddToFolderModal rendered", {
+    //         isOpen,
+    //         strainName,
+    //         activeModalSeedId,
+    //         wishlistFolders,
+    //         productFolderMemberships
+    //     })
+    // }, [isOpen, strainName, activeModalSeedId, wishlistFolders, productFolderMemberships])
 
     if (!isOpen) return null
 
@@ -38,20 +45,20 @@ const AddToListModal = ({
         }
     }
 
-    const handleCreateList = () => {
-        const trimmedName = newListName.trim()
+    const handleCreateFolder = () => {
+        const trimmedName = newFolderName.trim()
         if (trimmedName) {
-            onCreateNewList(trimmedName)
-            setNewListName('')
+            onCreateNewFolder(trimmedName)
+            setNewFolderName('')
         }
     }
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault()
-            handleCreateList()
+            handleCreateFolder()
         }
-    }
+    } 
 
     return (
         <div
@@ -60,6 +67,7 @@ const AddToListModal = ({
             onClick={handleOverlayClick}
         >
             <div className="add-to-list-content">
+                {/* Header modal */}
                 <button
                     type="button"
                     className="add-to-list-close"
@@ -68,32 +76,31 @@ const AddToListModal = ({
                 >
                     &times;
                 </button>
-
                 <h2 className="add-to-list-title">
                     Add <span id="modalStrainName">{strainName}</span> To...
                 </h2>
-
+                {/* Body Modal */}
                 <div className="add-to-list-scroll-container">
                     <ul className="list-manager-ul" id="listManagerCheckboxContainer">
-                        {userLists.length === 0 ? (
+                        {wishlistFolders.length === 0 ? (
                             <li style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-secondary)' }}>
-                                No lists yet. Create one below!
+                                No folders yet. Create one below!
                             </li>
                         ) : (
-                            userLists.map((list) => {
-                                const checkboxId = `list-check-${productId}-${list.id}`
-                                const isChecked = productListMemberships.includes(list.id)
+                            wishlistFolders.map((folder) => {
+                                const checkboxId = `list-check-${activeModalSeedId}-${folder.id}`
+                                const isChecked = productFolderMemberships.includes(folder.id)
 
                                 return (
-                                    <li key={list.id} className="list-manager-item">
+                                    <li key={folder.id} className="list-manager-item">
                                         <input
                                             type="checkbox"
                                             id={checkboxId}
-                                            data-list-id={list.id}
+                                            data-list-id={folder.id}
                                             checked={isChecked}
-                                            onChange={(e) => onMembershipChange(list.id, e.target.checked)}
+                                            onChange={(e) => onChangeFolder(folder.id, e.target.checked)}
                                         />
-                                        <label htmlFor={checkboxId}>{list.name}</label>
+                                        <label htmlFor={checkboxId}>{folder.name === 'Uncategorized' ? 'Favorites (Default)' : folder.name}</label>
                                     </li>
                                 )
                             })
@@ -102,43 +109,38 @@ const AddToListModal = ({
                 </div>
 
                 <div className="add-to-list-divider"></div>
-
+                {/* Footer Modal */}
                 <div className="add-to-list-create-section">
-                    <p className="list-management-label">Create New List:</p>
+                    <p className="list-management-label">Create New Folder:</p>
                     <form
                         className="add-to-list-create-form"
                         onSubmit={(e) => {
                             e.preventDefault()
-                            handleCreateList()
+                            handleCreateFolder()
                         }}
                     >
 
                         <input
                             type="text"
                             className="list-create-input form-control"
-                            placeholder="New list name..."
-                            value={newListName}
-                            onChange={(e) => setNewListName(e.target.value)}
+                            placeholder="Eg: My Favorite Seeds"
+                            value={newFolderName}
+                            onChange={(e) => setNewFolderName(e.target.value)}
                             onKeyDown={handleKeyDown}
                         />
                         <button
                             type="button"
                             className="list-create-btn btn-styled primary"
-                            onClick={handleCreateList}
-                            disabled={!newListName.trim()}
+                            onClick={handleCreateFolder}
+                            disabled={!newFolderName.trim()}
                         >
                             Create
                         </button>
                     </form>
                 </div>
-                {/* <div className="add-to-list-actions">
-                    <button type="button" className="btn-styled primary" onClick={onClose}>
-                        Done
-                    </button>
-                </div> */}
             </div>
         </div>
     )
 }
 
-export default AddToListModal
+export default AddToFolderModal

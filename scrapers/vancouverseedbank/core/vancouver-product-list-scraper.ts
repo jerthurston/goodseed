@@ -10,9 +10,11 @@
 
 import { extractProductsFromHTML } from '@/scrapers/vancouverseedbank/utils/extractProductsFromHTML';
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { CheerioCrawler, Dataset, RequestQueue } from 'crawlee';
+import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, ErrorHandler, Log, RequestQueue, RobotsTxtFile } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
+
+import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
 
 /**
  * ProductListScraper - LUỒNG XỬ LÝ CHÍNH
@@ -68,6 +70,33 @@ import { apiLogger } from '@/lib/helpers/api-logger';
      * RETURN: ProductsDataResultFromCrawling với complete metadata
      */
 
+/**
+ * Polite crawling should be happen like that:
+ * 1. Trình tự tổng thể (High-level flow)
+Start
+↓
+Check Legal / ToS / robots.txt
+↓
+Decide Crawl Scope
+↓
+Request Scheduling (Rate limit)
+↓
+Fetch Page (with headers)
+↓
+Respect Response (status / retry / backoff)
+↓
+Parse & Extract Data
+↓
+Normalize & Store
+↓
+Cache / Fingerprint
+↓
+Schedule Next Crawl
+↓
+End
+*/
+
+
 export async function vancouverProductListScraper(
     siteConfig: SiteConfig,
     // dbMaxPage?: number,
@@ -81,7 +110,6 @@ export async function vancouverProductListScraper(
     }
 ): Promise<ProductsDataResultFromCrawling> {
     const startTime = Date.now();
-
     const { baseUrl, selectors } = siteConfig
 
 
@@ -95,53 +123,122 @@ export async function vancouverProductListScraper(
     const runId = Date.now();
     const datasetName = `vsb-${runId}`;
     const dataset = await Dataset.open(datasetName);
+
+    //Initialize request queue
     const requestQueue = await RequestQueue.open(`vsb-queue-${runId}`);
+
+    // Initialize polite crawler
+    const politeCrawler = new SimplePoliteCrawler({
+        userAgent: 'GoodSeed-Bot/1.0 (+https://goodseed.ca/contact) Commercial Cannabis Research',
+        acceptLanguage: 'en-US,en;q=0.9',
+        minDelay: 2000,
+        maxDelay: 5000
+    });
 
     let actualPages = 0;
     const emptyPages = new Set<string>();
 
+    // Initialize requestHandler with proper TypeScript types
+    async function requestHandler(context: CheerioCrawlingContext): Promise<void> {
+        const { $, request, log }: { 
+            $: CheerioAPI; 
+            request: CheerioCrawlingContext['request']; 
+            log: Log 
+        } = context;
+        
+        log.info(`[Product List] Scraping: ${request.url}`);
 
+        // POLITE CRAWLING: Check robots.txt compliance
+        const isAllowed = await politeCrawler.isAllowed(request.url);
+        if (!isAllowed) {
+            log.error(`[Product List] BLOCKED by robots.txt: ${request.url}`);
+            throw new Error(`robots.txt blocked access to ${request.url}`);
+        }
 
+        // Extract products and pagination from current page
+        const extractResult = extractProductsFromHTML($, siteConfig, sourceContext?.dbMaxPage, startPage, endPage, fullSiteCrawl);
+        const products = extractResult.products;
+        const maxPages = extractResult.maxPages;
+
+        // Use ScraperLogger for aggregated page progress (reduces 4 logs to 1)
+        const pageMatch = request.url.match(/\/page\/(\d+)\//);
+        const currentPage = pageMatch ? parseInt(pageMatch[1]) : 1;
+        
+        apiLogger.logPageProgress({
+            page: currentPage,
+            totalPages: maxPages || actualPages || 1,
+            productsFound: products.length,
+            totalProductsSoFar: 0, // Will be updated in final summary
+            url: request.url
+        });
+
+        // Track empty pages
+        if (products.length === 0) {
+            emptyPages.add(request.url);
+        }
+
+        // Check if there's a next page (verbose only)
+        const hasNextPage = $(selectors.nextPage).length > 0;
+        apiLogger.debug(`[Product List] Has next page: ${hasNextPage}`);
+
+        // lưu dữ liệu vào dataset
+        await dataset.pushData({
+            products,
+            url: request.url,
+            hasNextPage,
+            maxPages: maxPages // Include maxPages in dataset
+        });
+
+        // POLITE CRAWLING: Use polite crawler for delays and robots.txt compliance
+        const delayMs = await politeCrawler.getCrawlDelay(request.url);
+        apiLogger.debug(`[Product List] Using polite crawl delay: ${delayMs}ms for ${request.url}`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+
+    // Initialize errorHandler with proper TypeScript types
+    const errorHandler: ErrorHandler<CheerioCrawlingContext> = async (context: CheerioCrawlingContext, error: Error): Promise<void> => {
+        const { request, log }: {
+            request: CheerioCrawlingContext['request'];
+            log: Log;
+        } = context;
+        
+        // POLITE CRAWLING: Handle HTTP status codes properly
+        const httpError = error as any;
+        if (httpError?.response?.status) {
+            const statusCode: number = httpError.response.status;
+            const shouldRetry: boolean = politeCrawler.shouldRetryOnStatus(statusCode);
+
+            if (shouldRetry) {
+                const backoffDelay: number = await politeCrawler.handleHttpStatus(statusCode, request.url);
+                apiLogger.debug(`[Product List] HTTP ${statusCode} for ${request.url}, backing off for ${backoffDelay}ms`);
+                await new Promise<void>(resolve => setTimeout(resolve, backoffDelay));
+                throw error; // Re-throw to trigger retry
+            } else {
+                log.error(`[Product List] Non-retryable HTTP ${statusCode} for ${request.url}`);
+                throw error;
+            }
+        } else {
+            log.error(`[Product List] Non-HTTP error for ${request.url}`);
+            throw error;
+        }
+    };
+
+    // Thiết lập function crawler
     const crawler = new CheerioCrawler({
         requestQueue,
-        async requestHandler({ $, request, log }) {
-            log.info(`[Product List] Scraping: ${request.url}`);
-
-            // Extract products and pagination from current page
-            const extractResult = extractProductsFromHTML($, siteConfig, sourceContext?.dbMaxPage, startPage, endPage, fullSiteCrawl);
-            const products = extractResult.products;
-            const maxPages = extractResult.maxPages;
-
-            log.info(`[Product List] Extracted ${products.length} products`);
-            if (maxPages) {
-                log.info(`[Product List] Detected ${maxPages} total pages from pagination`);
-            }
-
-            // Track empty pages
-            if (products.length === 0) {
-                emptyPages.add(request.url);
-            }
-
-            // Check if there's a next page
-            const hasNextPage = $(selectors.nextPage).length > 0;
-            log.info(`[Product List] Has next page: ${hasNextPage}`);
-
-            await dataset.pushData({
-                products,
-                url: request.url,
-                hasNextPage,
-                maxPages: maxPages // Include maxPages in dataset
-            });
-
-            // PROJECT REQUIREMENT: Wait 2-5 seconds between requests to same site
-            const delayMs = Math.floor(Math.random() * 3000) + 2000; // Random 2000-5000ms
-            log.info(`[Product List] Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
-            await new Promise(resolve => setTimeout(resolve, delayMs));
-        },
-
+        // sameDomainDelaySecs: delayMs / 1000,
+        requestHandler, // Use the extracted requestHandler function
+        errorHandler, // Use the extracted errorHandler function
         maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
         maxConcurrency: 1, // Sequential requests within same site (project requirement)
         maxRequestRetries: 3,
+        preNavigationHooks: [
+            async (crawlingContext, requestAsBrowserOptions) => {
+                // Add polite crawler headers
+                const headers = politeCrawler.getHeaders();
+                Object.assign(requestAsBrowserOptions.headers || {}, headers);
+            }
+        ],
     });
 
     // Auto-crawl mode: Start với page 1 để detect maxPages, sau đó crawl remaining pages
@@ -149,18 +246,18 @@ export async function vancouverProductListScraper(
 
     // Extract path from source URL - handle both /shop and /product-category/* patterns
     let sourcePath = '/shop'; // default fallback
-    
+
     if (sourceContext?.scrapingSourceUrl) {
         try {
             const url = new URL(sourceContext.scrapingSourceUrl);
             sourcePath = url.pathname;
-            
+
             // Ensure path doesn't end with slash for consistent URL building
             sourcePath = sourcePath.replace(/\/$/, '');
-            
+
             apiLogger.info(`[Product List] Using dynamic source path: ${sourcePath}`);
         } catch (error) {
-            apiLogger.warn('[Product List] Invalid sourceContext URL, using default /shop', { 
+            apiLogger.warn('[Product List] Invalid sourceContext URL, using default /shop', {
                 url: sourceContext.scrapingSourceUrl,
                 error: error instanceof Error ? error.message : 'Unknown error'
             });

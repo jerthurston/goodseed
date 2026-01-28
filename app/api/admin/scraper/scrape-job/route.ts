@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ScrapeJobStatus } from "@prisma/client";
 import { apiLogger } from "@/lib/helpers/api-logger";
+import { getCacheHeaders } from "@/lib/cache-headers";
 
 /**
  * GET /api/admin/scraper/scrape-job - Query scrape jobs
@@ -100,7 +101,16 @@ export async function GET(request: NextRequest) {
     // LOG response API
     apiLogger.debug('[ScrapeJob API] Fetched jobs successfully', { scrapeJobs });
 
-    return NextResponse.json(response);
+    // Create response with admin cache headers
+    const jsonResponse = NextResponse.json(response);
+    
+    // Apply admin cache headers - no cache for sensitive admin data
+    const adminHeaders = getCacheHeaders('admin');
+    Object.entries(adminHeaders).forEach(([key, value]) => {
+      jsonResponse.headers.set(key, value);
+    });
+
+    return jsonResponse;
 
   } catch (error) {
     apiLogger.logError('[ScrapeJob API] Failed to fetch jobs', error as Error, {

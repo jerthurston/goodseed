@@ -18,44 +18,54 @@ interface CreateScheduleAutoScrapeJobProps {
     }>;
     scrapingConfig: ScrapeJobConfig;
     targetCategoryId?: string | null;
+    customStartTime?: Date; // ✅ Custom start time for first run
 }
 
 /**
- * Auto Scraper Schedule Configuration
- * Thay đổi các giá trị này để điều chỉnh lịch chạy auto scraper
+ * Generate cron pattern từ autoScrapeInterval (hours) và optional customStartTime
+ * @param intervalHours - Interval in hours between runs
+ * @param customStartTime - Optional custom start time for first run
  */
-const AUTO_SCRAPER_SCHEDULE = {
-    MINUTE: 0,     // Phút (0-59) - hiện tại: 0 phút
-    HOUR: 2,       // Giờ cho daily job (0-23) - hiện tại: 2 (2 AM Edmonton)
-    HOURS: {
-        MORNING: 3,     // 3 AM
-        AFTERNOON: 15,  // 3 PM
-        EVENING: 19,    // 7 PM
-        NIGHT: 23      // 11 PM
+function generateCronPattern(intervalHours: number, customStartTime?: Date): string {
+    // If custom start time provided, use its hour and minute
+    if (customStartTime) {
+        const minute = customStartTime.getMinutes();
+        const hour = customStartTime.getHours();
+        
+        apiLogger.info('[Schedule Helper] Using custom start time for cron pattern', {
+            customStartTime: customStartTime.toISOString(),
+            minute,
+            hour,
+            intervalHours
+        });
+        
+        // Generate cron based on interval but using custom time
+        if (intervalHours === 24) {
+            return `${minute} ${hour} * * *`; // Daily at custom time
+        } else if (intervalHours === 12) {
+            const secondHour = (hour + 12) % 24;
+            return `${minute} ${hour},${secondHour} * * *`; // Twice a day
+        } else if (intervalHours === 8) {
+            const hour2 = (hour + 8) % 24;
+            const hour3 = (hour + 16) % 24;
+            return `${minute} ${hour},${hour2},${hour3} * * *`; // Three times a day
+        } else if (intervalHours === 6) {
+            return `${minute} */${intervalHours} * * *`; // Every 6 hours
+        } else if (intervalHours === 4) {
+            const hours = Array.from({ length: 6 }, (_, i) => (hour + i * 4) % 24).join(',');
+            return `${minute} ${hours} * * *`; // Every 4 hours
+        } else {
+            return `${minute} */${intervalHours} * * *`; // Generic interval
+        }
     }
-};
-
-/**
- * Generate cron pattern từ autoScrapeInterval (hours)
- */
-function generateCronPattern(intervalHours: number): string {
-    const { MINUTE, HOUR, HOURS } = AUTO_SCRAPER_SCHEDULE;
     
-    // TEST: Chạy lúc 15:45 (3:45 PM Edmonton time) để test auto scraper
-    if (intervalHours === 24) {
-        return `${MINUTE} ${HOUR} * * *`; // Daily lúc 3:45 PM for testing
-    } else if (intervalHours === 12) {
-        return `${MINUTE} ${HOURS.MORNING},${HOURS.AFTERNOON} * * *`; // 3:45 AM và 3:45 PM
-    } else if (intervalHours === 8) {
-        return `${MINUTE} ${HOURS.MORNING},11,${HOURS.EVENING} * * *`; // 3:45 AM, 11:45 AM, 7:45 PM
-    } else if (intervalHours === 6) {
-        return `${MINUTE} */${intervalHours} * * *`; // Every 6 hours starting từ 45 minutes
-    } else if (intervalHours === 4) {
-        return `${MINUTE} ${HOURS.MORNING},7,11,${HOURS.AFTERNOON},${HOURS.EVENING},${HOURS.NIGHT} * * *`; // Every 4 hours at 45 minutes
-    } else {
-        // Fallback cho các interval khác
-        return `${MINUTE} */${intervalHours} * * *`;
-    }
+    // Fallback: If no custom time provided, use simple interval-based cron
+    // This starts at minute 0 of every N hours
+    apiLogger.warn('[Schedule Helper] No custom start time provided, using simple interval-based cron', {
+        intervalHours
+    });
+    
+    return `0 */${intervalHours} * * *`; // Every N hours at minute 0
 }
 
 export async function createScheduleAutoScrapeJob({
@@ -66,7 +76,8 @@ export async function createScheduleAutoScrapeJob({
     scrapingConfig: {
         fullSiteCrawl
     },
-    targetCategoryId
+    targetCategoryId,
+    customStartTime
 }: CreateScheduleAutoScrapeJobProps) {
 
     try {
@@ -108,8 +119,8 @@ export async function createScheduleAutoScrapeJob({
             }
         });
 
-        // Generate cron pattern
-        const cronPattern = generateCronPattern(autoScrapeInterval);
+        // Generate cron pattern with custom start time if provided
+        const cronPattern = generateCronPattern(autoScrapeInterval, customStartTime);
 
         // Debug log trước khi add to queue
         apiLogger.debug("Check all params before adding to queue", {
@@ -120,7 +131,8 @@ export async function createScheduleAutoScrapeJob({
             mode: 'auto',
             cronPattern,
             intervalHours: autoScrapeInterval,
-            config: { fullSiteCrawl: true }
+            config: { fullSiteCrawl: true },
+            customStartTime: customStartTime?.toISOString()
         });
 
         // Thêm job vào hàng đợi queue bull với repeat options
@@ -130,9 +142,9 @@ export async function createScheduleAutoScrapeJob({
                 jobId, //Job Data jobId (Database jobId)
                 sellerId,
                 scrapingSources,
-                mode: 'auto', // Auto mode for full site crawl
                 config: {
                     fullSiteCrawl: true,
+                    mode: 'auto', // Auto mode for full site crawl
                 },
             },
             // repeat options cho mode === auto

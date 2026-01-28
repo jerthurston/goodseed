@@ -68,7 +68,7 @@ export default function ErrorAlertBanner({
   });
 
   // Scraper operations for retry functionality
-  const { triggerManualScrape } = useScraperOperations(() => {
+  const { useTriggerScrape } = useScraperOperations(() => {
     // Refresh errors after manual scrape
     refreshErrors();
   });
@@ -100,7 +100,7 @@ export default function ErrorAlertBanner({
     try {
       apiLogger.info('[ErrorAlertBanner] Retrying scrape', { sellerId, sellerName });
       
-      await triggerManualScrape(sellerId, {}); // Pass empty config object
+      await useTriggerScrape(sellerId, {}); // Pass empty config object
       
       toast.success('Retry initiated', {
         description: `Manual scrape started for ${sellerName}`,

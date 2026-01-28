@@ -7,8 +7,11 @@ environment  = "free-tier"
 project_name = "goodseed-free"
 
 # Contact Information - UPDATE THESE!
-domain_name = "yourdomain.com"         # Update with your domain
-alert_email = "admin@yourdomain.com"   # Update with your email
+domain_name = "lembooking.com"         # Your Cloudflare domain
+alert_email = "admin@lembooking.com"   # Update with your email
+
+# Domain Configuration
+enable_custom_domain = true
 
 # VPC Configuration - Free tier eligible
 vpc_cidr = "10.0.0.0/16"

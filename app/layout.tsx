@@ -1,15 +1,22 @@
 
-
 import CookieBanner from "@/components/custom/CookieBanner";
 import Footer from "@/components/custom/footer";
 import Header from "@/components/custom/header";
 import AgeVerificationModal from "@/components/custom/modals/AgeVerificationModal";
+import DemoPasswordModal from "@/components/custom/modals/DemoPasswordModal";
 import { archivoBlack, poppins } from "@/lib/fonts";
 import { ReactQueryProvider } from "@/lib/providers/react-query-provider";
 import type { Metadata } from "next";
 import "../styles/styles.css";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { SessionProvider } from "next-auth/react";
+
+// FontAwesome configuration for Next.js
+import '@fortawesome/fontawesome-svg-core/styles.css';
+import { config } from '@fortawesome/fontawesome-svg-core';
+import NotificationPreferences from "@/components/custom/modals/NotificationPreferences";
+config.autoAddCss = true; // Prevent FA from auto-adding CSS (Next.js handles it)
 
 export const metadata: Metadata = {
   title: "Goodseed - Plant Seed Marketplace",
@@ -26,14 +33,24 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} ${archivoBlack.variable} antialiased`}
       >
-        <ReactQueryProvider>
-          <AgeVerificationModal />
-          <CookieBanner />
-          <Header />
-          {children}
-          <Footer />
-          <Toaster />
-        </ReactQueryProvider>
+        <SessionProvider>
+          <ReactQueryProvider>
+            {/* Demo Password Protection - Must be first */}
+            <DemoPasswordModal />
+            <AgeVerificationModal />
+            <CookieBanner />
+            {/* --> Authentication first time and showing notification preferences */}
+            <NotificationPreferences />
+            {/* <div className="header-wrapper relative"> */}
+            <Header />
+            {/* </div> */}
+            {children}
+            {/* <div className="footer-wrapper"> */}
+            <Footer />
+            {/* </div> */}
+            <Toaster />
+          </ReactQueryProvider>
+        </SessionProvider>
       </body>
     </html>
   );

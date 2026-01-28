@@ -1,15 +1,19 @@
 'use client'
 
-import { faChevronDown, faCog, faSignOutAlt } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { ExtendedUser } from '@/next-auth'
+import { faChevronDown, faCog, faFile, faHeart, faSignOutAlt, faUser } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import SignOutBtn from './auth/SignOutBtn'
+import { apiLogger } from '@/lib/helpers/api-logger'
 
 interface AccountDropdownProps {
-    onLogout: () => void
+    onLogout: () => void;
+    user: ExtendedUser | undefined;
 }
 
-const AccountDropdown = ({ onLogout }: AccountDropdownProps) => {
+const AccountDropdown = ({ onLogout, user }: AccountDropdownProps) => {
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -29,15 +33,20 @@ const AccountDropdown = ({ onLogout }: AccountDropdownProps) => {
         }
     }, [isOpen])
 
-    const handleLogout = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        e.preventDefault()
-        onLogout()
-        setIsOpen(false)
-    }
+    // useEffect(() => {
+    //     apiLogger.debug('🔍 Account dropdown debug:', {
+    //         userRole: user?.role,
+    //         userEmail: user?.email,
+    //         userName: user?.name,
+    //         fullUserObject: user
+    //     });
+    // }, [])
 
     return (
-        <div className="account-dropdown" ref={dropdownRef}>
-            <a
+        <div
+            className="account-dropdown"
+            ref={dropdownRef}>
+            <Link
                 href="#"
                 className="account-btn"
                 id="accountBtn"
@@ -48,24 +57,48 @@ const AccountDropdown = ({ onLogout }: AccountDropdownProps) => {
                     setIsOpen(!isOpen)
                 }}
             >
-                Account <FontAwesomeIcon icon={faChevronDown} className="dropdown-caret" />
-            </a>
-            <div
-                className={`dropdown-menu ${isOpen ? 'active' : ''}`}
-                id="accountDropdownMenu"
-            >
-                <Link href="/dashboard/user/settings" className="dropdown-item">
-                    <FontAwesomeIcon icon={faCog} /> Settings
-                </Link>
-                <a
-                    href="#"
-                    id="logout-btn"
-                    className="dropdown-item"
-                    onClick={handleLogout}
-                >
-                    <FontAwesomeIcon icon={faSignOutAlt} /> Logout
-                </a>
-            </div>
+                {!!user && <>Account</>}
+                <FontAwesomeIcon icon={faChevronDown} className="dropdown-caret" />
+            </Link>
+
+            {/* Render dropdown menu based on user role */}
+            {
+                user?.role === 'ADMIN' ? (
+                    <>
+                        {/* -->Admin Menu */}
+                        <div
+                            className={`dropdown-menu ${isOpen ? 'active' : ''}`}
+                            id="accountDropdownMenu"
+                        >
+                            <Link href="/dashboard/admin" className="dropdown-item">
+                                <FontAwesomeIcon icon={faFile} /> Dashboard
+                            </Link>
+                            {/* <Link href="/dashboard/dashboard/admin/settings" className="dropdown-item">
+                                <FontAwesomeIcon icon={faCog} /> Settings
+                            </Link> */}
+                            <SignOutBtn />
+
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        {/* -->User Menu */}
+                        <div
+                            className={`dropdown-menu ${isOpen ? 'active' : ''}`}
+                            id="accountDropdownMenu"
+                        >
+                            <Link href="/dashboard/user/favorites" className="dropdown-item">
+                                <FontAwesomeIcon icon={faHeart} color="var(--brand-primary)" /> Wishlist
+                            </Link>
+                            <Link href="/dashboard/user/settings" className="dropdown-item">
+                                <FontAwesomeIcon icon={faCog} style={{ color: "var(--brand-primary)" }} /> Account Settings
+                            </Link>
+                            {/* Logout button */}
+                            <SignOutBtn />
+                        </div>
+                    </>
+                )
+            }
         </div>
     )
 }

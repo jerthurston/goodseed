@@ -1,0 +1,256 @@
+/* Modal Overlay */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal Content */
+.modalContent {
+  background-color: var(--bg-section, #ffffff);
+  border: 6px solid var(--border-color, #000000);
+  box-shadow: 8px 8px 0 var(--border-color, #000000);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Modal Header */
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 3px solid var(--border-color, #000000);
+  background-color: var(--bg-main, #f5f5f5);
+}
+
+.modalTitle {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 1.25rem;
+  color: var(--brand-primary, #4caf50);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.modalSubtitle {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  color: var(--text-primary-muted, #666666);
+  margin: 0.25rem 0 0 0;
+  font-weight: normal;
+}
+
+.closeButton {
+  padding: 0.5rem;
+  font-size: 1.25rem;
+  color: var(--text-primary, #000000);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.closeButton:hover {
+  transform: scale(1.1);
+  color: var(--danger-color, #f44336);
+}
+
+/* Modal Body */
+.modalBody {
+  padding: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup:last-of-type {
+  margin-bottom: 0;
+}
+
+.label {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary, #000000);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: var(--text-primary, #000000);
+  background-color: var(--bg-main, #ffffff);
+  border: 3px solid var(--border-color, #000000);
+  outline: none;
+  transition: all 0.2s;
+}
+
+.input:focus {
+  border-color: var(--brand-primary, #4caf50);
+  box-shadow: 3px 3px 0 var(--border-color, #000000);
+}
+
+.textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-primary, #000000);
+  background-color: var(--bg-main, #ffffff);
+  border: 3px solid var(--border-color, #000000);
+  outline: none;
+  resize: vertical;
+  min-height: 120px;
+  transition: all 0.2s;
+}
+
+.textarea:focus {
+  border-color: var(--brand-primary, #4caf50);
+  box-shadow: 3px 3px 0 var(--border-color, #000000);
+}
+
+.hint {
+  margin-top: 0.5rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  color: var(--text-primary-muted, #666666);
+  line-height: 1.4;
+}
+
+/* Modal Footer */
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 3px solid var(--border-color, #000000);
+}
+
+.cancelButton {
+  padding: 0.75rem 1.5rem;
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  color: var(--text-primary, #000000);
+  background-color: var(--bg-main, #ffffff);
+  border: 3px solid var(--border-color, #000000);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background-color: var(--text-primary, #000000);
+  color: var(--bg-main, #ffffff);
+  box-shadow: 3px 3px 0 var(--border-color, #000000);
+}
+
+.saveButton {
+  padding: 0.75rem 1.5rem;
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  color: white;
+  background-color: var(--brand-primary, #4caf50);
+  border: 3px solid var(--border-color, #000000);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.saveButton:hover {
+  background-color: var(--brand-primary-dark, #388e3c);
+  box-shadow: 3px 3px 0 var(--border-color, #000000);
+  transform: translate(-1px, -1px);
+}
+
+.saveButton:active {
+  transform: translate(0, 0);
+  box-shadow: 2px 2px 0 var(--border-color, #000000);
+}
+
+/* Modal Info Message */
+.modalInfo {
+  padding: 1rem 1.5rem;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-top: 3px solid var(--border-color, #000000);
+  font-family: 'Poppins', sans-serif;
+}
+
+.modalInfo p {
+  margin: 0;
+  font-size: 0.813rem;
+  color: var(--text-primary, #000000);
+  line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .modalContent {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .modalHeader {
+    padding: 1rem;
+  }
+
+  .modalTitle {
+    font-size: 1rem;
+  }
+
+  .modalBody {
+    padding: 1rem;
+  }
+
+  .modalFooter {
+    flex-direction: column;
+  }
+
+  .cancelButton,
+  .saveButton {
+    width: 100%;
+    justify-content: center;
+  }
+}

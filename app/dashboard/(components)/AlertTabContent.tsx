@@ -215,23 +215,8 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
 
   return (
     <div className={styles.tabContent}>
-      {/* Header with stats */}
-      <div className={styles.alertHeader}>
+    {/*--> Header with stats */}
         <h2 className={styles.alertTitle}>Scrape Jobs Management</h2>
-        {/* Overview scrape job status section*/}
-        <div className={styles.alertStats}>
-          {statsCards.map((stat, index) => (
-            <div key={stat.label} className={styles.statCard}>
-              <FontAwesomeIcon icon={stat.icon} className={stat.iconColor} />
-              <div className={stat.className}>
-                <div className={styles.statNumber}>{stat.value}</div>
-                <div className={styles.statLabel}>{stat.label}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Toolbar */}
       <div className={styles.alertToolbar}>
         {/* Quick filters */}
@@ -266,7 +251,7 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
         </div>
 
         {/* Actions */}
-        <div className={styles.actionGroup}>
+        {/* <div className={styles.actionGroup}>
           {selectedJobs.size > 0 && (
             <button
               onClick={handleBulkDelete}
@@ -279,6 +264,21 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
               </span>
             </button>
           )}
+        </div> */}
+      </div>
+      {/* overview scraper jobs */}
+      <div className={styles.alertHeader}>
+        {/* Overview scrape job status section*/}
+        <div className={styles.alertStats}>
+          {statsCards.map((stat, index) => (
+            <div key={stat.label} className={styles.statCard}>
+              <FontAwesomeIcon icon={stat.icon} className={stat.iconColor} />
+              <div className={stat.className}>
+                <div className={styles.statNumber}>{stat.value}</div>
+                <div className={styles.statLabel}>{stat.label}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -306,6 +306,22 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
               </Button>
             )}
           </div>
+
+           {/* Actions */}
+        <div className={styles.actionGroup}>
+          {selectedJobs.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              disabled={isDeletingJob}
+              className={styles.bulkDeleteButton}
+            >
+              <FontAwesomeIcon icon={faTrashCan} />
+              <span>
+                Delete ({selectedJobs.size})
+              </span>
+            </button>
+          )}
+        </div>
         </div>
       )}
 

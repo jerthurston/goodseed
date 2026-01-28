@@ -1,0 +1,87 @@
+name: Database Cleanup Jobs
+
+on:
+  # Schedule - Daily at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2:00 AM UTC
+  
+  # Manual trigger button in GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      cleanup_type:
+        description: 'Type of cleanup to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - rate-limits
+          - tokens
+          - sessions
+
+# Prevent concurrent runs
+concurrency:
+  group: database-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup-rate-limits:
+    name: Cleanup Magic Link Rate Limits
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Call Cleanup API
+        id: cleanup
+        run: |
+          echo "🧹 Starting magic link rate limit cleanup..."
+          
+          response=$(curl -s -w "\n%{http_code}" -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            ${{ secrets.API_URL }}/api/cron/cleanup-rate-limits)
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+          
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+          
+          if [ $http_code -eq 200 ]; then
+            echo "✅ Cleanup successful"
+            echo "result=$body" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Cleanup failed with status $http_code"
+            echo "Response: $body"
+            exit 1
+          fi
+
+      - name: Parse Results
+        run: |
+          echo "📊 Cleanup Results:"
+          echo "${{ steps.cleanup.outputs.result }}" | jq '.'
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "🚨 Cleanup job failed!"
+          echo "Check the logs above for details."
+          # Optional: Send notification to Slack/Discord
+          # curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+          #   -H 'Content-Type: application/json' \
+          #   -d '{"text":"🚨 Database cleanup failed!"}'
+
+  # Future: Add more cleanup jobs here
+  # Example:
+  # cleanup-expired-tokens:
+  #   name: Cleanup Expired Tokens
+  #   runs-on: ubuntu-latest
+  #   needs: cleanup-rate-limits  # Run after rate-limits cleanup
+  #   steps:
+  #     - name: Call Token Cleanup API
+  #       run: |
+  #         curl -X GET \
+  #           -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+  #           ${{ secrets.API_URL }}/api/cron/cleanup-tokens

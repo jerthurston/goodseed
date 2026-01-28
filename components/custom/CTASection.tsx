@@ -1,14 +1,26 @@
+'use client';
 import Link from 'next/link'
 
-const CTASection = () => {
+interface CTASectionProps{
+    title: string;
+    description: string;
+    ctaLabel:string;
+    ctaHref:string;
+}
+const CTASection = ({
+    title,
+    description,
+    ctaLabel,
+    ctaHref
+}:CTASectionProps) => {
     return (
         <section className="cta-section">
             <div className="section-title">
-                <h2>Ready to Start Your next grow?</h2>
-                <p>Join thousands of happy growers who found their perfect seeds with goodseed</p>
+                <h2>{title}</h2>
+                <p>{description}</p>
             </div>
-            <Link href="/seeds" className="cta-button">
-                Browse Seeds Now
+            <Link href={ctaHref} className="cta-button">
+                {ctaLabel}
             </Link>
         </section>
     )

@@ -5,7 +5,9 @@ import { SellerCard } from './SellerCard'
 import { StatsOverview } from './StatsOverview'
 import AutoScraperSystemOverview from '@/components/custom/auto-scraper/AutoScraperSystemOverview'
 import AutoScraperRecentActivity from '@/components/custom/auto-scraper/AutoScraperRecentActivity'
-import AutoScraperPerformanceMetrics from '@/components/custom/auto-scraper/AutoScraperPerformanceMetrics'
+import AutoScraperPerformanceMetrics from '@/components/custom/auto-scraper/ScraperPerformanceMetrics'
+import UserRecentActivity from '@/components/custom/user/UserRecentActivity'
+import ScraperPerformanceMetrics from '@/components/custom/auto-scraper/ScraperPerformanceMetrics'
 
 
 interface DashboardOverviewProps {
@@ -39,30 +41,18 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ sellers }) => {
             />
             
             {/* Auto Scraper System Overview */}
-            <AutoScraperSystemOverview sellersCount={sellers.length} />
+            {/* <AutoScraperSystemOverview sellersCount={sellers.length} /> */}
             
-            {/* Auto Scraper Performance Metrics */}
-            <AutoScraperPerformanceMetrics />
+            {/* Scraper Performance Metrics */}
+            <ScraperPerformanceMetrics />
             
             {/* Split layout for Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
               {/* Auto Scraper Recent Activity */}
               <AutoScraperRecentActivity />
               
-              {/* Recent Seller Activity */}
-              <DashboardCard>
-                <h2 className="font-['Archivo_Black'] text-3xl uppercase text-(--brand-primary) tracking-tight mb-4">
-                    Recent Activity
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {sellers
-                        .filter((s) => s.isActive)
-                        .slice(0, 4)
-                        .map((seller) => (
-                            <SellerCard key={seller.id} seller={seller} />
-                        ))}
-                </div>
-              </DashboardCard>
+              {/* Recent User Activity */}
+              <UserRecentActivity />
             </div>
         </>
     )

@@ -22,38 +22,70 @@ export class SeedTransformer {
             pricePerSeed: pricing.pricePerSeed,
         }));
 
-        // Get pack with LOWEST pricePerSeed (best value for money)
-        const bestValuePack = packs.reduce((best, pack) =>
-            pack.pricePerSeed < best.pricePerSeed ? pack : best,
+        // Get pack with SMALLEST packSize (for display info)
+        const smallestPack = packs.reduce((smallest, pack) =>
+            pack.size < smallest.size ? pack : smallest,
             packs[0] || { size: 0, totalPrice: 0, pricePerSeed: 0 }
         );
+
+        // Use displayPrice from database (already calculated during scraping)
+        // Fallback to smallest pack's pricePerSeed if displayPrice is null
+        const displayPrice = raw.displayPrice ?? smallestPack.pricePerSeed;
 
         // Get primary image
         const primaryImage = raw.productImages.find(img => img.isPrimary)
             || raw.productImages[0];
 
-        // Calculate average THC/CBD
-        const thc = raw.thcMax || raw.thcMin || 0;
-        const cbd = raw.cbdMax || raw.cbdMin || 0;
+        // Transform THC/CBD to support both single values and min/max ranges
+        let thc: number | { min: number; max: number } | undefined;
+        let cbd: number | { min: number; max: number } | undefined;
+
+        // THC handling
+        if (raw.thcMin !== null && raw.thcMax !== null) {
+            // Both min and max available - return as range
+            thc = { min: raw.thcMin, max: raw.thcMax };
+        } else if (raw.thcMin !== null) {
+            // Only min available - use as single value
+            thc = raw.thcMin;
+        } else if (raw.thcMax !== null) {
+            // Only max available - use as single value  
+            thc = raw.thcMax;
+        }
+
+        // CBD handling
+        if (raw.cbdMin !== null && raw.cbdMax !== null) {
+            // Both min and max available - return as range
+            cbd = { min: raw.cbdMin, max: raw.cbdMax };
+        } else if (raw.cbdMin !== null) {
+            // Only min available - use as single value
+            cbd = raw.cbdMin;
+        } else if (raw.cbdMax !== null) {
+            // Only max available - use as single value
+            cbd = raw.cbdMax;
+        }
 
         const result: SeedUI = {
             id: raw.id,
             name: raw.name,
             seedType: raw.seedType || 'UNKNOWN',
             cannabisType: raw.cannabisType || 'UNKNOWN',
-            price: bestValuePack.pricePerSeed,
+            price: displayPrice, // Use displayPrice from database
             thc,
             cbd,
             popularity: 0, // TODO: Implement popularity logic
             date: raw.createdAt,
             vendorName: raw.category.seller.name,
             vendorUrl: raw.url,
-            smallestPackSize: bestValuePack.size,
-            smallestPackPrice: bestValuePack.totalPrice,
+            smallestPackSize: smallestPack.size,
+            smallestPackPrice: smallestPack.totalPrice,
             strainDescription: raw.description || '',
             packs,
             imageUrl: primaryImage?.image.url || '/images/placeholder-seed.png',
             stockStatus: raw.stockStatus,
+            seller: {
+                ids: raw.seller.id,
+                affiliateTags: raw.seller.affiliateTag
+            }
         };
 
         apiLogger.logResponse('SeedTransformer.toUI', {}, {
