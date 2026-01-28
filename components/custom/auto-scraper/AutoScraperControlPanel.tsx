@@ -1,14 +1,16 @@
+import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faPlay, faRobot, faStop } from '@fortawesome/free-solid-svg-icons';
 import { DashboardButton } from '@/app/dashboard/(components)/DashboardButton';
 import { DashboardCard } from '@/app/dashboard/(components)/DashboardCard';
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
+import ScheduleAutoScraperModal from '@/components/custom/modals/ScheduleAutoScraperModal';
 
 interface AutoScraperControlPanelProps {
   totalSellers: number;
   activeSellers: string[];
   activeAutoScrapers: number; // Number of currently scheduled auto-scrapers
-  onBulkAction: (action: 'start' | 'stop') => void;
+  onBulkAction: (action: 'start' | 'stop', startTime?: Date) => void;
   isLoading: boolean;
   lastRun: Date | undefined;
 }
@@ -21,10 +23,19 @@ export default function AutoScraperControlPanel({
   isLoading,
   lastRun,
 }: AutoScraperControlPanelProps) {
+  // Modal state
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+
   // Logic for button states
   const hasScheduledJobs = activeAutoScrapers > 0;
   const canStartAll = !hasScheduledJobs && !isLoading;
   const canStopAll = hasScheduledJobs && !isLoading;
+
+  // Handle schedule confirmation
+  const handleScheduleConfirm = (startTime: Date) => {
+    setIsScheduleModalOpen(false);
+    onBulkAction('start', startTime);
+  };
   return (
     <DashboardCard className={styles.card}>
       <div className="space-y-6">
@@ -53,13 +64,13 @@ export default function AutoScraperControlPanel({
         {/* Bulk Actions */}
         <div className="flex gap-4 justify-center">
           <DashboardButton
-            onClick={() => onBulkAction('start')}
+            onClick={() => setIsScheduleModalOpen(true)}
             disabled={!canStartAll}
             variant="primary"
             className={`${styles.button} relative`}
             title={hasScheduledJobs
               ? `Auto-scrapers already running (${activeAutoScrapers}). Stop All first to reschedule.`
-              : 'Start auto-scraping for all enabled sellers'
+              : 'Schedule auto-scraping for all enabled sellers'
             }
           >
             {
@@ -85,7 +96,7 @@ export default function AutoScraperControlPanel({
             onClick={() => onBulkAction('stop')}
             disabled={!canStopAll}
             variant="danger"
-            className={styles.button}
+            className={`${styles.button} flex flex-row items-center`}
             title={hasScheduledJobs
               ? `Stop ${activeAutoScrapers} running auto-scrapers`
               : 'No auto-scrapers currently running'
@@ -115,6 +126,15 @@ export default function AutoScraperControlPanel({
         </span>
        </div>
       </div>
+
+      {/* Schedule Modal */}
+      <ScheduleAutoScraperModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        onConfirm={handleScheduleConfirm}
+        isLoading={isLoading}
+        totalSellers={activeSellers.length}
+      />
     </DashboardCard>
   )
 }

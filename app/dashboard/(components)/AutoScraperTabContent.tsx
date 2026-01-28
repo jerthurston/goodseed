@@ -77,7 +77,7 @@ export default function AutoScraperTabContent({
     .filter(seller => seller.isAutoEnabled)
     .map(seller => seller.id);
 
-  const handleBulkAction = async (action: 'start' | 'stop') => {
+  const handleBulkAction = async (action: 'start' | 'stop', startTime?: Date) => {
     try {
       // Check for eligible sellers before starting auto scraper: chỉ với những seller đủ điều kiện có active và autoScrapeInterval > 0
       if (action === 'start') {
@@ -102,12 +102,23 @@ export default function AutoScraperTabContent({
           return; // Early return without proceeding
         }
         
-        toast.info(`🚀 Starting auto scraper for ${eligibleSellers.length} eligible sellers...`, {
+        // Show custom start time if provided
+        const timeInfo = startTime 
+          ? ` starting at ${startTime.toLocaleString('en-US', { 
+              month: 'short', 
+              day: 'numeric', 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}`
+          : '';
+          
+        toast.info(`🚀 Starting auto scraper for ${eligibleSellers.length} eligible sellers${timeInfo}...`, {
           description: 'Previous auto jobs will be cancelled and rescheduled. This may temporarily increase cancelled job count.',
           duration: 4000
         });
         
-        await startAllAutoScraper.mutateAsync();
+        // Pass startTime to API
+        await startAllAutoScraper.mutateAsync(startTime);
       } else {
         await stopAllAutoScraper.mutateAsync();
       }

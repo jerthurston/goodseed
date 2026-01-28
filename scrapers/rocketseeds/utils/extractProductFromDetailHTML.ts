@@ -8,7 +8,8 @@
 import { CheerioAPI } from 'cheerio';
 
 import { ProductCardDataFromCrawling } from '../../../types/crawl.type';
-import { apiLogger } from '../../../lib/helpers/api-logger';
+import { apiLogger } from '../../../lib/helpers/api-logger'
+;
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { ROCKETSEEDS_PRODUCT_CARD_SELECTORS } from '../core/selector';
 
@@ -73,7 +74,7 @@ export function extractProductFromDetailHTML(
         let yieldInfo: string | undefined = undefined;
         // Extract Cannabis Type (Strain Type) from specification_individual with strain-types icon
         const strainTypeText = $(selectors.strainType).first().text().trim();
-        apiLogger.info(`🌿 [Strain Type] Raw: "${strainTypeText}"`);
+        apiLogger.debug(`🌿 [Strain Type] Raw: "${strainTypeText}"`);
         
         if (strainTypeText) {
             const strainLower = strainTypeText.toLowerCase();
@@ -90,12 +91,12 @@ export function extractProductFromDetailHTML(
             } else if (strainLower.includes('hybrid')) {
                 cannabisType = 'hybrid';
             }
-            apiLogger.info(`🌿 [Cannabis Type] Extracted: "${cannabisType}"`);
+            apiLogger.debug(`🌿 [Cannabis Type] Extracted: "${cannabisType}"`);
         }
 
         // Extract THC Level from specification_individual with fm_img3.svg icon
         const thcText = $(selectors.thcLevel).first().text().trim();
-        apiLogger.info(`🧪 [THC] Raw: "${thcText}"`);
+        apiLogger.debug(`🧪 [THC] Raw: "${thcText}"`);
         
         if (thcText) {
             // Handle ranges like "22%", "15-21%", "25-26%"
@@ -112,13 +113,13 @@ export function extractProductFromDetailHTML(
                     thcMin = thcMax = thcValue;
                     thcLevel = `${thcValue}%`;
                 }
-                apiLogger.info(`🧪 [THC] Extracted: "${thcLevel}" (${thcMin}-${thcMax})`);
+                apiLogger.debug(`🧪 [THC] Extracted: "${thcLevel}" (${thcMin}-${thcMax})`);
             }
         }
 
         // Extract CBD Level from specification_individual with cbd.png icon
         const cbdText = $(selectors.cbdLevel).first().text().trim();
-        apiLogger.info(`🌱 [CBD] Raw: "${cbdText}"`);
+        apiLogger.debug(`🌱 [CBD] Raw: "${cbdText}"`);
         
         if (cbdText) {
             cbdLevel = cbdText.includes('%') ? cbdText : `${cbdText}%`;
@@ -126,20 +127,20 @@ export function extractProductFromDetailHTML(
             if (!isNaN(cbdNumber)) {
                 cbdMin = cbdMax = cbdNumber;
             }
-            apiLogger.info(`🌱 [CBD] Extracted: "${cbdLevel}" (${cbdMin}-${cbdMax})`);
+            apiLogger.debug(`🌱 [CBD] Extracted: "${cbdLevel}" (${cbdMin}-${cbdMax})`);
         }
 
         // Extract Genetics from specification_individual with igenetics_img.png icon
         genetics = $(selectors.genetics).first().text().trim();
-        apiLogger.info(`🧬 [Genetics] Extracted: "${genetics}"`);
+        apiLogger.debug(`🧬 [Genetics] Extracted: "${genetics}"`);
 
         // Extract Flowering Time from specification_individual with marijuana.png icon
         floweringTime = $(selectors.floweringTime).first().text().trim();
-        apiLogger.info(`⏰ [Flowering Time] Extracted: "${floweringTime}"`);
+        apiLogger.debug(`⏰ [Flowering Time] Extracted: "${floweringTime}"`);
 
         // Extract Yield Information from specification_individual with indoor/outdoor yield icons
         yieldInfo = $(selectors.yieldInfo).map((_, el) => $(el).text().trim()).get().join(', ');
-        apiLogger.info(`📊 [Yield Info] Extracted: "${yieldInfo}"`);
+        apiLogger.debug(`📊 [Yield Info] Extracted: "${yieldInfo}"`);
 
         // Extract seedType from product name (fallback)
         const nameLower = name.toLowerCase();
@@ -152,7 +153,7 @@ export function extractProductFromDetailHTML(
         } else if (nameLower.includes('photoperiod') || nameLower.includes('photo')) {
             seedType = 'photoperiod';
         }
-        apiLogger.info(`🌾 [Seed Type] Extracted: "${seedType}"`);
+        apiLogger.debug(`🌾 [Seed Type] Extracted: "${seedType}"`);
 
         // Extract growing level (placeholder - may need custom logic based on site structure)
         let growingLevel: string | undefined = undefined;
@@ -162,7 +163,7 @@ export function extractProductFromDetailHTML(
         
         // Target specific pricing rows in the variant table
         const $priceRows = $(selectors.priceDisplay);
-        apiLogger.info(`💰 [Pricing] Found ${$priceRows.length} pricing rows`);
+        apiLogger.debug(`💰 [Pricing] Found ${$priceRows.length} pricing rows`);
         
         if ($priceRows.length > 0) {
             $priceRows.each((index, row) => {
@@ -186,7 +187,7 @@ export function extractProductFromDetailHTML(
                         packSize,
                         pricePerSeed,
                     });
-                    apiLogger.info(`💰 [Pricing] Row ${index + 1}: ${packSize} seeds = $${totalPrice} ($${pricePerSeed.toFixed(2)}/seed)`);
+                    apiLogger.debug(`💰 [Pricing] Row ${index + 1}: ${packSize} seeds = $${totalPrice} ($${pricePerSeed.toFixed(2)}/seed)`);
                 } else {
                     apiLogger.warn(`💰 [Pricing] Row ${index + 1}: Invalid data - packText: "${packText}", priceText: "${priceText}"`);
                 }
@@ -209,7 +210,7 @@ export function extractProductFromDetailHTML(
                         packSize: 1,
                         pricePerSeed: totalPrice,
                     });
-                    apiLogger.info(`💰 [Pricing] Single price: $${totalPrice}`);
+                    apiLogger.debug(`💰 [Pricing] Single price: $${totalPrice}`);
                 }
             }
         }
@@ -241,7 +242,7 @@ export function extractProductFromDetailHTML(
             pricings,
         };
 
-        apiLogger.info(`✅ [Rocket Seeds] Successfully extracted product: "${name}"`);
+        apiLogger.debug(`✅ $1 Successfully extracted product: "${name}"`);
         return product;
 
     } catch (error) {

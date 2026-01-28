@@ -1,7 +1,16 @@
 /**
  * extractProductsFromHTML - Crop King Seeds extraction function
  * 
- * Based on Mary Jane's Garden structure but adapted for Crop King Seeds specific elements
+ * Based on Mary Jane's Garden structure but adapted                     if (cannabisTypeText.includes('hybrid')) {
+                        cannabisType = 'hybrid';
+                    } else if (cannabisTypeText.includes('sativa')) {
+                        cannabisType = 'sativa';
+                    } else if (cannabisTypeText.includes('indica')) {
+                        cannabisType = 'indica';
+                    }
+                    
+                    apiLogger.debug(`🌿 [Cannabis Type] Found in .itype: "${$cannabisTypeElement.first().text().trim()}" → "${cannabisType}"`);
+                }ing Seeds specific elements
  * 
  * Features:
  * - Extract products from WooCommerce structure with Crop King specific selectors
@@ -21,6 +30,7 @@
 
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
+
 import { ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { CROPKINGSEEDS_PRODUCT_CARD_SELECTORS } from '../core/selectors';
 
@@ -151,7 +161,7 @@ export function extractProductsFromHTML(
                     }
                     
                     if (cannabisType) {
-                        apiLogger.info(`🌿 [Cannabis Type] Fallback from name: "${cannabisType}"`);
+                        apiLogger.debug(`🌿 [Cannabis Type] Fallback from name: "${cannabisType}"`);
                     }
                 }
 
@@ -295,7 +305,7 @@ export function extractProductsFromHTML(
                 };
 
                 products.push(productCard);
-                apiLogger.info(`[Crop King Seeds] Extracted product: ${name} with ${pricings.length} pricing variants`);
+                apiLogger.debug(`[Crop King Seeds] Extracted product: ${name} with ${pricings.length} pricing variants`);
 
             } catch (error) {
                 apiLogger.logError('[Crop King Seeds] Product extraction error', error instanceof Error ? error : new Error('Unknown error'));
@@ -326,7 +336,7 @@ export function extractProductsFromHTML(
             
             if ($pagination.length > 0) {
                 const paginationType = $pagination.hasClass('woocommerce-pagination') ? 'WooCommerce' : 'Jet Smart Filters';
-                apiLogger.info(`[Crop King Seeds Pagination] Found ${paginationType} pagination`);
+                apiLogger.debug(`[Crop King Seeds Pagination] Found ${paginationType} pagination`);
                 
                 let highestPage = 0;
                 
@@ -380,7 +390,7 @@ export function extractProductsFromHTML(
                     apiLogger.warn('[Crop King Seeds Pagination] Could not determine max pages, will continue until no products found');
                 }
                 
-                // Debug log for pagination structure
+                // Debug log for pagination structure (verbose only)
                 apiLogger.debug(`[Crop King Seeds Pagination] Debug info:`, {
                     paginationType,
                     highestPageFromParsing: highestPage,
@@ -399,19 +409,18 @@ export function extractProductsFromHTML(
         }
     }
 
-    // 📊 Final extraction summary logging
-    apiLogger.info(`[Crop King Seeds] Extracted ${products.length} products, maxPages: ${maxPages}`);
+    // 📊 Final extraction summary using ScraperLogger
+    apiLogger.logProductExtraction({
+        products: products,
+        context: 'Crop King Seeds',
+        additionalInfo: {
+            maxPages,
+            extractionParams: { startPage, endPage, fullSiteCrawl, dbMaxPage }
+        }
+    });
     
-    // 🔍 Detailed extraction results logging
-    apiLogger.info(`[Crop King Seeds] EXTRACTION SUMMARY:`, {
-        totalProducts: products.length,
-        maxPages: maxPages,
-        extractionParams: {
-            startPage,
-            endPage,
-            fullSiteCrawl,
-            dbMaxPage
-        },
+    // 🔍 Detailed analytics (only in verbose mode)
+    apiLogger.debug(`[Crop King Seeds] DETAILED ANALYTICS:`, {
         productTypes: {
             autoflower: products.filter(p => p.seedType === 'autoflower').length,
             feminized: products.filter(p => p.seedType === 'feminized').length,
@@ -433,22 +442,6 @@ export function extractProductsFromHTML(
             withFloweringTime: products.filter(p => p.floweringTime && p.floweringTime.length > 0).length
         }
     });
-    
-    // 📋 Log sample products for verification
-    if (products.length > 0) {
-        const sampleProducts = products.slice(0, 3).map(p => ({
-            name: p.name,
-            url: p.url,
-            seedType: p.seedType,
-            cannabisType: p.cannabisType,
-            thc: p.thcLevel || `${p.thcMin}-${p.thcMax}%`,
-            cbd: p.cbdLevel || `${p.cbdMin}-${p.cbdMax}%`,
-            pricingCount: p.pricings.length,
-            hasImage: !!p.imageUrl
-        }));
-        
-        apiLogger.info(`[Crop King Seeds] SAMPLE PRODUCTS (first 3):`, { sampleProducts });
-    }
     
     return {
         products,

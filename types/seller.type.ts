@@ -31,8 +31,13 @@ export interface SellerRaw {
   id: string;
   name: string;
   url: string;
+  affiliateTag: string | null;
   isActive: boolean;
   autoScrapeInterval: number | null;
+  lastScraped: Date | null;
+  status: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   scrapeLogs: Array<{
     id: string;
     timestamp: Date;
@@ -44,6 +49,9 @@ export interface SellerRaw {
       id: string;
     }>;
   }>;
+  seedProducts: Array<{
+    id: string;
+  }>;
 }
 
 // UI-friendly seller data type
@@ -51,8 +59,13 @@ export interface SellerUI {
   id: string;
   name: string;
   url: string;
+  affiliateTag: string | null;
   isActive: boolean;
   lastScraped: string;
+  lastScrapedRaw: Date | null;
+  status: string | null;
+  createdAt: string;
+  updatedAt: string;
   autoScrapeInterval: number | null
   isAutoEnabled: boolean
   stats: {

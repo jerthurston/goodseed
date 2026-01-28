@@ -4,17 +4,23 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 export class AutoScraperService {
   /**
    * Start auto scraping cho tất cả eligible sellers
+   * @param startTime - Optional custom start time for the first run
    */
-  static async startAllAutoScraper() {
+  static async startAllAutoScraper(startTime?: Date) {
     try {
-      apiLogger.info('[AutoScraperService] Starting all auto scrapers');
+      apiLogger.info('[AutoScraperService] Starting all auto scrapers', { 
+        startTime: startTime?.toISOString() 
+      });
       
-      const response = await api.post('/admin/scraper/schedule-all');
+      const response = await api.post('/admin/scraper/schedule-all', {
+        startTime: startTime?.toISOString() // Send as ISO string
+      });
       
       apiLogger.info('[AutoScraperService] Start all auto scrapers completed', {
         totalProcessed: response.data.data.totalProcessed,
         scheduled: response.data.data.scheduled,
-        failed: response.data.data.failed
+        failed: response.data.data.failed,
+        startTime: startTime?.toISOString()
       });
       
       return response.data;

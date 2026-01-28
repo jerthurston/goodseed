@@ -1,5 +1,6 @@
 import { CheerioCrawler } from 'crawlee';
-import { apiLogger } from '@/lib/helpers/api-logger';
+import { apiLogger } from '@/lib/helpers/api-logger'
+;
 import { getScrapingUrl } from './getScrapingUrl';
 import { RobotsRules } from '@/lib/utils/polite-crawler';
 import { checkUrlAgainstRobots } from '@/scrapers/(common)/utils/checkUrlAgainstRobots';

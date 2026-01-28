@@ -32,24 +32,24 @@ export default function AutoScraperSection({ seller, onRefresh }: AutoScraperSec
     refreshStatus 
   } = useSellerAutoScraperStatus(seller.id);
 
-  const handleToggle = async () => {
-    try {
-      const action = seller.isAutoEnabled ? 'stop' : 'start';
+  // const handleToggle = async () => {
+  //   try {
+  //     const action = seller.isAutoEnabled ? 'stop' : 'start';
       
-      if (action === 'start') {
-        await startSellerAutoScraper.mutateAsync(seller.id);
-        toast.success(`Auto scraper started for ${seller.name}`);
-      } else {
-        await stopSellerAutoScraper.mutateAsync(seller.id);
-        toast.success(`Auto scraper stopped for ${seller.name}`);
-      }
-      onRefresh?.();
-      refreshStatus(); // Refresh real-time status
-    } catch (error) {
-      console.error(`Auto scraper toggle failed:`, error);
-      toast.error(`Failed to ${seller.isAutoEnabled ? 'stop' : 'start'} auto scraper`);
-    }
-  };
+  //     if (action === 'start') {
+  //       await startSellerAutoScraper.mutateAsync(seller.id);
+  //       toast.success(`Auto scraper started for ${seller.name}`);
+  //     } else {
+  //       await stopSellerAutoScraper.mutateAsync(seller.id);
+  //       toast.success(`Auto scraper stopped for ${seller.name}`);
+  //     }
+  //     onRefresh?.();
+  //     refreshStatus(); // Refresh real-time status
+  //   } catch (error) {
+  //     console.error(`Auto scraper toggle failed:`, error);
+  //     toast.error(`Failed to ${seller.isAutoEnabled ? 'stop' : 'start'} auto scraper`);
+  //   }
+  // };
 
   return (
     <DashboardCard className={styles.card}>
@@ -58,18 +58,18 @@ export default function AutoScraperSection({ seller, onRefresh }: AutoScraperSec
           <div className="flex items-center gap-3">
             <FontAwesomeIcon icon={faRobot} className="text-xl" style={{ color: 'var(--brand-primary)' }} />
             <h2 className="font-['Archivo_Black'] text-xl uppercase" style={{ color: 'var(--text-primary)' }}>
-              Auto Scraper Schedule Information
+              Auto Scraper System Information
             </h2>
           </div>
           <p className="text-sm font-['Poppins'] mt-1" style={{ color: 'var(--text-primary-muted)' }}>
             Advanced auto scraping configuration and control
           </p>
         </div>
+      </div>
         <AutoScraperStatusBadge 
           status={seller.isAutoEnabled ? 'AVAILABLE' : 'CANCELLED'}
           size="lg"
         />
-      </div>
       
       <div className={styles.cardBody}>
         {/* Real-time Status Indicator */}

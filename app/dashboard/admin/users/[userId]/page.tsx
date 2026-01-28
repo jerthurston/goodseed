@@ -38,6 +38,8 @@ import {
 } from '@/hooks/admin/users';
 import { useRouter } from 'next/navigation';
 import styles from '../../../(components)/dashboardAdmin.module.css';
+import { AdminBreadcrumb } from '../../../(components)';
+import { getUserDetailBreadcrumbs } from '../../../(components)/utils/breadcrumbHelpers';
 
 type TabType = 'overview' | 'activity' | 'actions';
 
@@ -84,6 +86,9 @@ export default function UserDetailPage({ params }: UserDetailProps) {
 
   return (
     <div className={styles.userDetailPage}>
+      {/* Breadcrumb Navigation */}
+      <AdminBreadcrumb items={getUserDetailBreadcrumbs(user.name || user.email || 'User')} />
+      
       {/* Back Button */}
       <Link href="/dashboard/admin" className={styles.backLink}>
         <FontAwesomeIcon icon={faArrowLeft} /> Back to Admin Dashboard

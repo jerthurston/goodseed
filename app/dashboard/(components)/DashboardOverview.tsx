@@ -41,7 +41,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ sellers }) => {
             />
             
             {/* Auto Scraper System Overview */}
-            <AutoScraperSystemOverview sellersCount={sellers.length} />
+            {/* <AutoScraperSystemOverview sellersCount={sellers.length} /> */}
             
             {/* Scraper Performance Metrics */}
             <ScraperPerformanceMetrics />

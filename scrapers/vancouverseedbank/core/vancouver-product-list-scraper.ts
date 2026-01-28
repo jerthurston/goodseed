@@ -13,6 +13,7 @@ import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/t
 import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, ErrorHandler, Log, RequestQueue, RobotsTxtFile } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
+
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
 
 /**
@@ -159,19 +160,26 @@ export async function vancouverProductListScraper(
         const products = extractResult.products;
         const maxPages = extractResult.maxPages;
 
-        log.info(`[Product List] Extracted ${products.length} products`);
-        if (maxPages) {
-            log.info(`[Product List] Detected ${maxPages} total pages from pagination`);
-        }
+        // Use ScraperLogger for aggregated page progress (reduces 4 logs to 1)
+        const pageMatch = request.url.match(/\/page\/(\d+)\//);
+        const currentPage = pageMatch ? parseInt(pageMatch[1]) : 1;
+        
+        apiLogger.logPageProgress({
+            page: currentPage,
+            totalPages: maxPages || actualPages || 1,
+            productsFound: products.length,
+            totalProductsSoFar: 0, // Will be updated in final summary
+            url: request.url
+        });
 
         // Track empty pages
         if (products.length === 0) {
             emptyPages.add(request.url);
         }
 
-        // Check if there's a next page
+        // Check if there's a next page (verbose only)
         const hasNextPage = $(selectors.nextPage).length > 0;
-        log.info(`[Product List] Has next page: ${hasNextPage}`);
+        apiLogger.debug(`[Product List] Has next page: ${hasNextPage}`);
 
         // lưu dữ liệu vào dataset
         await dataset.pushData({
@@ -183,7 +191,7 @@ export async function vancouverProductListScraper(
 
         // POLITE CRAWLING: Use polite crawler for delays and robots.txt compliance
         const delayMs = await politeCrawler.getCrawlDelay(request.url);
-        log.info(`[Product List] Using polite crawl delay: ${delayMs}ms for ${request.url}`);
+        apiLogger.debug(`[Product List] Using polite crawl delay: ${delayMs}ms for ${request.url}`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
     }
 
@@ -202,7 +210,7 @@ export async function vancouverProductListScraper(
 
             if (shouldRetry) {
                 const backoffDelay: number = await politeCrawler.handleHttpStatus(statusCode, request.url);
-                log.info(`[Product List] HTTP ${statusCode} for ${request.url}, backing off for ${backoffDelay}ms`);
+                apiLogger.debug(`[Product List] HTTP ${statusCode} for ${request.url}, backing off for ${backoffDelay}ms`);
                 await new Promise<void>(resolve => setTimeout(resolve, backoffDelay));
                 throw error; // Re-throw to trigger retry
             } else {

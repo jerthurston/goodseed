@@ -125,20 +125,33 @@
   }
 }
 
-/* Admin Dashboard - Hide header and footer on all screen sizes */
-body[data-page="admin-dashboard"] .goodseed-nav,
-body[data-page="admin-dashboard"] .main-footer,
-body[data-page="admin-dashboard"] .header-wrapper,
-body[data-page="admin-dashboard"] .footer-wrapper,
-.admin-dashboard-page .goodseed-nav,
-.admin-dashboard-page .main-footer,
-.admin-dashboard-page .header-wrapper,
-.admin-dashboard-page .footer-wrapper {
-  display: none !important;
+/* Admin Dashboard - Hide header and footer on mobile, show on desktop */
+/* Mobile: Hide header and footer */
+@media (max-width: 1023px) {
+  body[data-page="admin-dashboard"] .goodseed-nav,
+  body[data-page="admin-dashboard"] .main-footer,
+  body[data-page="admin-dashboard"] .header-wrapper,
+  body[data-page="admin-dashboard"] .footer-wrapper,
+  .admin-dashboard-page .goodseed-nav,
+  .admin-dashboard-page .main-footer,
+  .admin-dashboard-page .header-wrapper,
+  .admin-dashboard-page .footer-wrapper {
+    display: none !important;
+  }
+
+  /* Reset padding-top when header is hidden on mobile */
+  body[data-page="admin-dashboard"],
+  .admin-dashboard-page {
+    padding-top: 0 !important;
+  }
 }
 
-/* Reset padding-top when header is hidden on admin dashboard */
-body[data-page="admin-dashboard"],
-.admin-dashboard-page {
-  padding-top: 0 !important;
+/* Desktop: Show header, hide footer */
+@media (min-width: 1024px) {
+  body[data-page="admin-dashboard"] .main-footer,
+  body[data-page="admin-dashboard"] .footer-wrapper,
+  .admin-dashboard-page .main-footer,
+  .admin-dashboard-page .footer-wrapper {
+    display: none !important;
+  }
 }
