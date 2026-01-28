@@ -1,139 +1,333 @@
-# Vercel Free Tier Deployment Documentation
+# Production Infrastructure Documentation
 
 ## 📚 Documentation Overview
 
-This directory contains comprehensive guides for deploying the GoodSeed Cannabis App on **100% free tier** infrastructure for customer demos.
+This directory contains comprehensive guides for deploying and operating the GoodSeed Cannabis App in production using modern serverless infrastructure (Vercel + Neon + Upstash + Resend).
+
+**Documentation Version**: 2.0  
+**Last Updated**: January 28, 2026  
+**Target Infrastructure**: Vercel, Neon PostgreSQL, Upstash Redis, Resend Email
 
 ---
 
-## 📖 Documents
+## 🎯 Quick Navigation
 
-### 1. [FREE-DEPLOYMENT-PLAN.md](./FREE-DEPLOYMENT-PLAN.md) 📋
-**Complete architecture and strategy document**
+### 🏗️ **Architecture & Design**
+Start here to understand the system design and technology choices.
 
-- 🏗️ Full architecture diagram
-- 💰 Cost breakdown (all free!)
-- 🔄 Service comparisons
-- ⚠️ Limitations and workarounds
-- 📊 Monitoring guidelines
-- 📈 Upgrade path when demo succeeds
+#### [ARCHITECTURE.md](./ARCHITECTURE.md) - System Architecture
+**Complete system architecture and design principles**
+- System architecture diagram
+- Component breakdown (Frontend, Backend, Database, Queue, Worker)
+- Data flow diagrams
+- Technology stack comparison
+- Security architecture
+- High availability design
 
-**Read this first** to understand the complete picture.
-
----
-
-### 2. [QUICK-START-GUIDE.md](./QUICK-START-GUIDE.md) 🚀
-**Step-by-step deployment in 1 hour**
-
-- ✅ Prerequisites checklist
-- 🎯 7-step deployment process
-- 🔧 Troubleshooting common issues
-- 🎬 Demo flow and tips
-- 📞 Support resources
-
-**Use this** when you're ready to deploy.
+**Read this first** to understand how everything fits together.
 
 ---
 
-### 3. [CODE-CHANGES-REQUIRED.md](./CODE-CHANGES-REQUIRED.md) 💻
-**Technical implementation details**
+### 🚀 **Deployment & Setup**
 
-- 📝 All new files to create
-- 🔄 Existing files to modify
-- 🐳 Docker configurations
-- 🔌 API endpoints
-- ⚙️ Environment variables
+#### [DEPLOYMENT-GUIDE.md](./DEPLOYMENT-GUIDE.md) - Production Deployment
+**Step-by-step deployment guide (2-3 hours)**
+- Phase 1: Service setup (Neon, Upstash, Resend, Vercel)
+- Phase 2: Database migration
+- Phase 3: Application deployment
+- Phase 4: Worker deployment (optional)
+- Phase 5: Monitoring setup
+- Phase 6: Testing & verification
+- Complete environment variables reference
 
-**Reference this** during implementation.
+**Use this** when deploying to production.
+
+---
+
+#### [ENVIRONMENT-SETUP.md](./ENVIRONMENT-SETUP.md) - Environment Configuration
+**Complete environment variables reference**
+- Required variables for each service
+- Optional features configuration
+- Security best practices
+- Multi-environment setup (dev, staging, production)
+- Troubleshooting configuration issues
+
+**Reference this** when configuring services.
+
+---
+
+### ⚙️ **Infrastructure Components**
+
+#### [BACKGROUND-WORKERS.md](./BACKGROUND-WORKERS.md) - Worker Architecture
+**Background job processing system**
+- Worker architecture design
+- Bull Queue configuration
+- Job types and handlers
+- Deployment options (Render, Railway, Fly.io, AWS ECS)
+- Worker monitoring and debugging
+- Scaling worker fleet
+
+**Use this** for background job setup.
+
+---
+
+### 📈 **Operations & Maintenance**
+
+#### [SCALING-GUIDE.md](./SCALING-GUIDE.md) - Scaling Infrastructure
+**From free tier to enterprise scale**
+- Infrastructure tier comparison table
+- When to scale each service
+- Step-by-step migration procedures
+- Performance benchmarks
+- Cost optimization strategies
+- Scaling checklist
+
+**Use this** when ready to scale beyond free tier.
+
+---
+
+#### [MONITORING.md](./MONITORING.md) - Monitoring & Observability
+**Complete monitoring setup**
+- Monitoring stack by tier (Free, Production, Enterprise)
+- Sentry setup for error tracking
+- Vercel Analytics configuration
+- Database and Redis monitoring
+- Worker health monitoring
+- Uptime monitoring setup
+- Alerting strategy
+- Logging best practices
+
+**Use this** to set up monitoring and alerting.
+
+---
+
+#### [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Issue Resolution
+**Common issues and solutions**
+- Deployment failures
+- Database connection issues
+- Redis/Queue problems
+- Email delivery issues
+- Worker crashes
+- Authentication problems
+- Performance degradation
+- Emergency procedures
+
+**Use this** when encountering production issues.
+
+---
+
+### 📋 **Legacy Documentation (Free Tier Focus)**
+
+These documents focus on 100% free tier deployment for demos/MVP:
+
+#### [FREE-DEPLOYMENT-PLAN.md](./FREE-DEPLOYMENT-PLAN.md)
+Complete free tier architecture and strategy
+
+#### [QUICK-START-GUIDE.md](./QUICK-START-GUIDE.md)
+Quick deployment in 1 hour
+
+#### [CODE-CHANGES-REQUIRED.md](./CODE-CHANGES-REQUIRED.md)
+Technical implementation for free tier
+
+---
+
+## 🗺️ Documentation Roadmap
+
+### For First-Time Deployment
+
+```
+1. Read ARCHITECTURE.md
+   ↓ Understand the system design
+   
+2. Follow DEPLOYMENT-GUIDE.md
+   ↓ Deploy all services (2-3 hours)
+   
+3. Configure ENVIRONMENT-SETUP.md
+   ↓ Set all environment variables
+   
+4. Setup BACKGROUND-WORKERS.md (optional)
+   ↓ Deploy worker service
+   
+5. Configure MONITORING.md
+   ↓ Setup monitoring and alerts
+   
+6. Keep TROUBLESHOOTING.md handy
+   ↓ Reference when issues arise
+```
+
+### For Scaling Existing Deployment
+
+```
+1. Review SCALING-GUIDE.md
+   ↓ Determine when to upgrade
+   
+2. Follow migration procedures
+   ↓ Upgrade services one by one
+   
+3. Update monitoring
+   ↓ Adjust thresholds and alerts
+   
+4. Verify performance
+   ↓ Compare before/after metrics
+```
 
 ---
 
 ## 🎯 Quick Decision Matrix
 
-### Choose Your Path:
+| Your Situation | Recommended Path |
+|----------------|------------------|
+| 🆕 **New to the project** | Start with [ARCHITECTURE.md](./ARCHITECTURE.md) |
+| 🚀 **Ready to deploy production** | Follow [DEPLOYMENT-GUIDE.md](./DEPLOYMENT-GUIDE.md) |
+| 💰 **Planning free tier demo** | Use [FREE-DEPLOYMENT-PLAN.md](./FREE-DEPLOYMENT-PLAN.md) |
+| ⚙️ **Need background workers** | Setup [BACKGROUND-WORKERS.md](./BACKGROUND-WORKERS.md) |
+| 📈 **Ready to scale** | Review [SCALING-GUIDE.md](./SCALING-GUIDE.md) |
+| 📊 **Setup monitoring** | Configure [MONITORING.md](./MONITORING.md) |
+| 🐛 **Troubleshooting issues** | Check [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) |
+| 🔧 **Configuring environment** | Reference [ENVIRONMENT-SETUP.md](./ENVIRONMENT-SETUP.md) |
 
-| Your Situation | Recommended Reading |
-|----------------|-------------------|
-| 🤔 Evaluating options | Start with FREE-DEPLOYMENT-PLAN.md |
-| 🚀 Ready to deploy now | Jump to QUICK-START-GUIDE.md |
-| 💻 Need technical details | Refer to CODE-CHANGES-REQUIRED.md |
-| 🐛 Troubleshooting issues | Check QUICK-START-GUIDE.md → Troubleshooting |
-| 💰 Planning budget | See FREE-DEPLOYMENT-PLAN.md → Cost sections |
-| 📈 Scaling after demo | Review FREE-DEPLOYMENT-PLAN.md → Upgrade Path |
+---
+
+## 📊 Infrastructure Tiers Comparison
+
+| Tier | Cost/Month | Best For | Documentation |
+|------|------------|----------|---------------|
+| **Free Tier** | $0 | Demo, MVP validation, learning | [FREE-DEPLOYMENT-PLAN.md](./FREE-DEPLOYMENT-PLAN.md) |
+| **Starter** | ~$102 | Early customers, small user base | [SCALING-GUIDE.md](./SCALING-GUIDE.md#phase-2-starter-production) |
+| **Growth** | ~$368 | Growing business, 1K-10K users | [SCALING-GUIDE.md](./SCALING-GUIDE.md#phase-3-growth-production) |
+| **Enterprise** | $1,000+ | Mission-critical, 10K+ users | [SCALING-GUIDE.md](./SCALING-GUIDE.md#phase-4-enterprise-scale) |
 
 ---
 
 ## 🏗️ Architecture Summary
 
+### Production Stack
+
 ```
-┌──────────────┐
-│   CLIENT     │
-└──────┬───────┘
-       │
-       ▼
-┌─────────────────────┐
-│  VERCEL (Free)      │
-│  - Next.js App      │
-│  - API Routes       │
-│  - Auth             │
-└───┬─────────┬───────┘
-    │         │
-    ▼         ▼
-┌────────┐  ┌────────────┐
-│ NEON   │  │  UPSTASH   │
-│ (Free) │  │  (Free)    │
-│ 0.5GB  │  │  10K/day   │
-└────────┘  └─────┬──────┘
-                  │
-                  ▼
-            ┌──────────────┐
-            │  RENDER      │
-            │  (Free)      │
-            │  Worker      │
-            └──────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                         INTERNET                             │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    VERCEL EDGE NETWORK                       │
+│  - Global CDN                                                │
+│  - DDoS Protection                                           │
+│  - Auto-scaling                                              │
+└───┬──────────────────────────────────────┬──────────────────┘
+    │                                      │
+    ▼                                      ▼
+┌─────────────────┐              ┌──────────────────┐
+│  NEXT.JS APP    │              │   EDGE FUNCTIONS │
+│  - SSR/SSG      │              │   - API Routes   │
+│  - App Router   │              │   - Middleware   │
+│  - React        │              │   - Auth         │
+└────┬────────────┘              └────┬─────────────┘
+     │                                │
+     │    ┌───────────────────────────┤
+     │    │                           │
+     ▼    ▼                           ▼
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│ NEON         │  │ UPSTASH      │  │ RESEND       │
+│ PostgreSQL   │  │ Redis        │  │ Email        │
+│ - Serverless │  │ - Queue      │  │ - Transactional│
+│ - Pooling    │  │ - Cache      │  │ - Marketing  │
+│ - Auto-scale │  │ - Pub/Sub    │  │ - Analytics  │
+└──────────────┘  └──────┬───────┘  └──────────────┘
+                         │
+                         ▼
+                  ┌──────────────┐
+                  │ WORKER       │
+                  │ (Optional)   │
+                  │ - Scraping   │
+                  │ - Processing │
+                  │ - Jobs       │
+                  └──────────────┘
 ```
 
-**All services: $0/month** ✅
+### Key Features
+
+✅ **Serverless-First**: Pay only for what you use  
+✅ **Auto-Scaling**: Handles traffic spikes automatically  
+✅ **Global CDN**: Fast response times worldwide  
+✅ **Zero Downtime**: Atomic deployments  
+✅ **Type-Safe**: TypeScript end-to-end  
+✅ **Modern Stack**: Latest Next.js, Prisma, React
 
 ---
 
-## 📊 Service Breakdown
+## � Technology Stack
 
-| Service | Purpose | Free Tier Limits | Sign Up |
-|---------|---------|-----------------|---------|
-| **Vercel** | Next.js hosting | 100GB bandwidth/month | [vercel.com](https://vercel.com) |
-| **Neon** | PostgreSQL | 0.5GB storage | [neon.tech](https://neon.tech) |
-| **Upstash** | Redis queue | 10K commands/day | [upstash.com](https://upstash.com) |
-| **Render** | Worker process | 750 hours/month | [render.com](https://render.com) |
-| **Cron-job.org** | Scheduled tasks | Unlimited | [cron-job.org](https://cron-job.org) |
+| Category | Technology | Purpose | Tier |
+|----------|-----------|---------|------|
+| **Frontend** | Next.js 16, React 19, TypeScript | UI and SSR | - |
+| **Hosting** | Vercel | Serverless hosting | Free → $20/mo |
+| **Database** | Neon PostgreSQL | Primary data store | Free → $19/mo |
+| **ORM** | Prisma 7 | Database toolkit | Free |
+| **Cache/Queue** | Upstash Redis | Cache & job queue | Free → $10/mo |
+| **Auth** | NextAuth 5 (Auth.js) | Authentication | Free |
+| **Email** | Resend | Transactional emails | Free → $20/mo |
+| **Worker** | Render/Railway | Background jobs | Free → $7/mo |
+| **Monitoring** | Sentry | Error tracking | Free → $26/mo |
+| **Analytics** | Vercel Analytics | Performance monitoring | Free |
+| **Scraping** | Crawlee, Cheerio | Web scraping | Free |
+
+**Total Cost**: $0/month (Free tier) → $102/month (Production starter)
 
 ---
 
 ## ⏱️ Time Estimates
 
-| Phase | Duration | Description |
-|-------|----------|-------------|
-| **Reading** | 30 min | Understand architecture and plan |
-| **Account Setup** | 20 min | Create accounts on all services |
-| **Code Changes** | 30 min | Implement required modifications |
-| **Deployment** | 30 min | Deploy to Vercel and Render |
-| **Configuration** | 20 min | Setup cron jobs and test |
-| **Testing** | 20 min | End-to-end validation |
-| **TOTAL** | **~2.5 hours** | From zero to deployed demo |
+| Task | Duration | Description |
+|------|----------|-------------|
+| **Reading Documentation** | 1-2 hours | Understand architecture and plan |
+| **Account Setup** | 30 min | Create accounts on all services |
+| **Database Setup** | 30 min | Neon project and migrations |
+| **Redis Setup** | 15 min | Upstash database |
+| **Email Setup** | 15 min | Resend API and domain |
+| **Vercel Deployment** | 30 min | Deploy application |
+| **Worker Setup** | 30 min | Optional background worker |
+| **Monitoring Setup** | 30 min | Sentry and alerts |
+| **Testing** | 30 min | End-to-end validation |
+| **TOTAL** | **3-5 hours** | From zero to production |
 
 ---
 
 ## ✅ Pre-Deployment Checklist
 
-Before you start, ensure you have:
+Before starting deployment, ensure you have:
 
-- [ ] GitHub account (for all service sign-ups)
-- [ ] Git installed locally
+### Accounts
+- [ ] GitHub account
+- [ ] Vercel account (sign up with GitHub)
+- [ ] Neon account (sign up with GitHub)
+- [ ] Upstash account (sign up with GitHub)
+- [ ] Resend account
+- [ ] (Optional) Render/Railway account
+- [ ] (Optional) Sentry account
+
+### Local Environment
 - [ ] Node.js 20+ installed
 - [ ] pnpm installed (`npm install -g pnpm`)
-- [ ] Code pushed to GitHub repository
-- [ ] 2-3 hours of focused time
-- [ ] Coffee ☕ (optional but recommended)
+- [ ] Git installed and configured
+- [ ] Code editor (VS Code recommended)
+- [ ] Terminal/Command line access
+
+### Repository
+- [ ] Code pushed to GitHub
+- [ ] Branch protection configured (optional)
+- [ ] .gitignore properly set
+
+### Knowledge
+- [ ] Familiar with Next.js basics
+- [ ] Understanding of Prisma ORM
+- [ ] Basic PostgreSQL knowledge
+- [ ] Redis concepts (cache, queue)
+
+### Time & Resources
+- [ ] 3-5 hours available
+- [ ] Internet connection stable
+- [ ] Credit card ready (for paid tiers, optional)
 
 ---
 
@@ -141,157 +335,192 @@ Before you start, ensure you have:
 
 Your deployment is successful when:
 
-- ✅ Can access app at https://your-app.vercel.app
-- ✅ Database connected (check Neon console)
-- ✅ Redis connected (check Upstash console)
-- ✅ Can login as admin
-- ✅ Manual scraping works
-- ✅ Worker processes jobs (may have cold start)
-- ✅ Cron jobs configured
-- ✅ No errors in logs
+### Functionality
+- ✅ Application accessible at production URL
+- ✅ User authentication working (all OAuth providers)
+- ✅ Database connected and migrations applied
+- ✅ Redis queue functional
+- ✅ Email delivery working
+- ✅ Admin panel accessible
+- ✅ API routes responding
+- ✅ Background jobs processing (if worker deployed)
+
+### Performance
+- ✅ Page load time < 2 seconds
+- ✅ API response time < 500ms
+- ✅ Core Web Vitals in "Good" range
+- ✅ No console errors
+
+### Monitoring
+- ✅ Sentry receiving errors (test with intentional error)
+- ✅ Vercel Analytics tracking pageviews
+- ✅ Uptime monitoring active
+- ✅ Alert channels configured
+
+### Documentation
+- ✅ Environment variables documented
+- ✅ Deployment process documented
+- ✅ Team trained on monitoring
+- ✅ Incident response plan ready
 
 ---
 
-## 🚨 Common Pitfalls
+## 🚨 Common Pitfalls & Solutions
 
 ### 1. Environment Variables
-❌ **Mistake**: Not setting all required env vars
-✅ **Solution**: Use .env.example as checklist
+❌ **Mistake**: Missing or incorrect environment variables  
+✅ **Solution**: Use [ENVIRONMENT-SETUP.md](./ENVIRONMENT-SETUP.md) checklist
 
 ### 2. Database Connection
-❌ **Mistake**: Missing `?sslmode=require` in Neon URL
-✅ **Solution**: Always use connection string from Neon dashboard
+❌ **Mistake**: Forgetting `?sslmode=require` in connection string  
+✅ **Solution**: Always copy connection string from Neon dashboard
 
-### 3. Redis Connection
-❌ **Mistake**: Not enabling TLS for Upstash
-✅ **Solution**: Use connection details from Upstash console exactly
+### 3. Redis TLS
+❌ **Mistake**: Not enabling TLS for Upstash Redis  
+✅ **Solution**: Include `tls: {}` in Redis client configuration
 
-### 4. Worker Sleeping
-❌ **Mistake**: Expecting instant worker response
-✅ **Solution**: Accept 30s cold start, or setup keep-alive ping
+### 4. Prisma Client
+❌ **Mistake**: Not generating Prisma client before build  
+✅ **Solution**: Add `"postinstall": "prisma generate"` to package.json
 
-### 5. Cron Jobs
-❌ **Mistake**: Trying to use Vercel cron on free tier
-✅ **Solution**: Use external service (Cron-job.org or GitHub Actions)
+### 5. Worker Cold Starts
+❌ **Mistake**: Expecting instant worker response on free tier  
+✅ **Solution**: Accept 15-30s cold start or upgrade to paid tier
+
+### 6. OAuth Redirect URIs
+❌ **Mistake**: Wrong redirect URIs in OAuth providers  
+✅ **Solution**: Must match exactly: `https://yourdomain.com/api/auth/callback/[provider]`
+
+### 7. Cron Jobs
+❌ **Mistake**: Trying to use Vercel cron on Hobby tier  
+✅ **Solution**: Upgrade to Pro or use external cron service
+
+### 8. Email Spam
+❌ **Mistake**: Emails going to spam folder  
+✅ **Solution**: Verify domain with SPF/DKIM/DMARC records
 
 ---
 
 ## 📈 Performance Expectations
 
-### Free Tier Performance:
+### Free Tier Performance
 
 | Metric | Expected Value | Notes |
 |--------|---------------|-------|
-| **Page Load** | < 2 seconds | With CDN edge caching |
-| **API Response** | < 500ms | For simple queries |
-| **Worker Cold Start** | 15-30 seconds | First job after sleep |
-| **Worker Warm** | < 5 seconds | When already running |
-| **Scraping Speed** | 5-10 products/min | Limited by free tier |
+| **Page Load Time** | < 2 seconds | With edge caching |
+| **API Response** | < 500ms | Simple queries |
+| **TTFB** | < 800ms | Time to first byte |
+| **Database Query** | < 200ms | With proper indexes |
+| **Worker Cold Start** | 15-30 seconds | Free tier auto-sleep |
+| **Worker Warm** | < 5 seconds | Already running |
+| **Scraping Speed** | 5-10 products/min | Rate-limited |
 | **Concurrent Users** | 50-100 | Good for demo |
+| **Uptime** | 99%+ | No SLA |
 
-### Suitable For:
-- ✅ Customer demos
-- ✅ MVP validation
-- ✅ Small user base (< 100 users)
-- ✅ Low-traffic period testing
-- ✅ Prototype presentations
+### Production Tier Performance
 
-### Not Suitable For:
-- ❌ Production with high traffic
-- ❌ Real-time intensive scraping
-- ❌ Large data volumes (> 0.5GB)
-- ❌ Mission-critical operations
+| Metric | Expected Value | Improvement |
+|--------|---------------|-------------|
+| **Page Load Time** | < 1 second | **2x faster** |
+| **API Response** | < 200ms | **2.5x faster** |
+| **TTFB** | < 200ms | **4x faster** |
+| **Database Query** | < 80ms | **2.5x faster** |
+| **Worker Response** | Instant | **No cold start** |
+| **Scraping Speed** | 50-100 products/min | **10x faster** |
+| **Concurrent Users** | 500-1,000 | **10x more** |
+| **Uptime** | 99.9%+ | Better reliability |
 
 ---
 
 ## 🔄 Deployment Workflow
 
+### Initial Deployment
+
 ```bash
-# 1. Clone and setup
-git clone https://github.com/Vietphu1211/goodseed-app-vercel.git
-cd goodseed-app-vercel
-pnpm install
+# 1. Setup accounts and services
+→ See DEPLOYMENT-GUIDE.md Phase 1
 
-# 2. Create accounts (follow QUICK-START-GUIDE.md)
-# - Neon
-# - Upstash  
-# - Vercel
-# - Render
+# 2. Configure environment variables
+→ See ENVIRONMENT-SETUP.md
 
-# 3. Configure environment
-cp .env.example .env.local
-# Fill in credentials from step 2
-
-# 4. Test locally
-npx prisma db push
-npm run dev
-
-# 5. Deploy
+# 3. Deploy to Vercel
 git push origin main
-# Vercel and Render auto-deploy
+→ Vercel auto-deploys
 
-# 6. Configure cron jobs
-# Setup on Cron-job.org or GitHub Actions
+# 4. Run database migrations
+→ See DEPLOYMENT-GUIDE.md Phase 2
 
-# 7. Test deployment
-curl https://your-app.vercel.app/api/health
+# 5. Setup monitoring
+→ See MONITORING.md
+
+# 6. Test everything
+→ See DEPLOYMENT-GUIDE.md Phase 6
+```
+
+### Continuous Deployment
+
+```bash
+# Every git push to main triggers:
+1. Vercel build
+2. Run tests (if configured)
+3. Deploy to production
+4. Invalidate CDN cache
+5. Send deployment notification
+
+# Rollback if needed:
+→ Vercel Dashboard → Deployments → Promote previous version
 ```
 
 ---
 
 ## 🆘 Getting Help
 
-### Documentation Issues
-If documentation is unclear:
-1. Check all three guides (they complement each other)
-2. Search for error message in troubleshooting sections
+### Documentation Hierarchy
+```
+1. Check TROUBLESHOOTING.md for your specific issue
+2. Review relevant component documentation
 3. Check service-specific documentation
+4. Search community forums
+5. Contact support (paid tiers)
+```
 
-### Service-Specific Issues
-- **Vercel**: https://vercel.com/docs
-- **Neon**: https://neon.tech/docs  
-- **Upstash**: https://upstash.com/docs
-- **Render**: https://render.com/docs
+### Service-Specific Help
+- **Vercel**: https://vercel.com/docs | https://vercel.com/support
+- **Neon**: https://neon.tech/docs | Community Discord
+- **Upstash**: https://upstash.com/docs | Support email
+- **Resend**: https://resend.com/docs | Support chat
+- **Next.js**: https://nextjs.org/docs | GitHub Discussions
+- **Prisma**: https://prisma.io/docs | Discord community
 
-### Common Questions
-
-**Q: How long can I use free tier?**
-A: Indefinitely, as long as you stay within limits.
-
-**Q: What happens if I exceed free limits?**
-A: Most services will throttle or pause (not charge). Upstash stops working after daily limit.
-
-**Q: Can I upgrade later?**
-A: Yes! All services have easy upgrade paths. See upgrade section in main plan.
-
-**Q: Is this production-ready?**
-A: For **demo/MVP only**. Upgrade before going to production.
-
-**Q: Will worker sleep during demo?**
-A: Possibly, but setup keep-alive ping to prevent this (see guides).
+### Community Resources
+- Vercel Discord: https://vercel.com/discord
+- Prisma Discord: https://pris.ly/discord
+- Next.js GitHub: https://github.com/vercel/next.js/discussions
+- Reddit: r/nextjs, r/webdev
 
 ---
 
 ## 💡 Pro Tips
 
-### Before Demo:
-1. ✅ Test everything 24 hours before
-2. ✅ Ping worker 10 minutes before demo
-3. ✅ Pre-load some product data
-4. ✅ Clear browser cache
-5. ✅ Have backup plan if service is down
+### Before Demo/Launch
+1. ✅ Test everything 24-48 hours before
+2. ✅ Ping worker service 10 minutes before demo (warm up)
+3. ✅ Pre-load some data (don't start with empty database)
+4. ✅ Clear browser cache before demo
+5. ✅ Have screenshots ready as backup
+6. ✅ Test on fresh browser/incognito mode
 
-### During Demo:
+### During Demo
 1. 🎯 Focus on features, not infrastructure
 2. 🎯 Accept cold start delays gracefully
-3. 🎯 Have cached screenshots as backup
-4. 🎯 Explain "free tier" if issues occur
+3. 🎯 Explain "free tier" if issues occur
+4. 🎯 Have backup plan (screenshots, video)
 
-### After Demo:
+### After Demo
 1. 📊 Check all service dashboards for usage
 2. 📊 Note any errors or issues
 3. 📊 Gather customer feedback
-4. 📊 Plan upgrade if demo succeeds
+4. 📊 Plan next steps (upgrade, optimize, etc.)
 
 ---
 
@@ -299,40 +528,42 @@ A: Possibly, but setup keep-alive ping to prevent this (see guides).
 
 After successful deployment:
 
-### Immediate (Day 1):
+### Immediate (Day 1)
 - [ ] Test all features end-to-end
 - [ ] Share demo link with team
 - [ ] Monitor service dashboards
+- [ ] Document any issues encountered
 
-### Short-term (Week 1):
+### Short-term (Week 1)
 - [ ] Conduct customer demos
 - [ ] Gather feedback
-- [ ] Document issues
+- [ ] Fix critical bugs
+- [ ] Optimize performance
 
-### Long-term (Month 1):
+### Mid-term (Month 1)
 - [ ] Analyze usage patterns
-- [ ] Decide on upgrade path
-- [ ] Plan scaling strategy
+- [ ] Decide on upgrade path (see [SCALING-GUIDE.md](./SCALING-GUIDE.md))
+- [ ] Plan feature roadmap
+- [ ] Set up CI/CD pipeline (if not already)
 
----
-
-## 📞 Support
-
-Need help with deployment?
-
-1. **Check Documentation**: All answers are in these three guides
-2. **Service Support**: Contact individual service support
-3. **Community**: Ask in relevant Discord/Slack communities
+### Long-term (Month 3+)
+- [ ] Scale infrastructure based on growth
+- [ ] Implement advanced features
+- [ ] Optimize costs
+- [ ] Prepare for compliance/security audits
 
 ---
 
 ## 🚀 Ready to Deploy?
 
-1. Start with: [FREE-DEPLOYMENT-PLAN.md](./FREE-DEPLOYMENT-PLAN.md)
-2. Then follow: [QUICK-START-GUIDE.md](./QUICK-START-GUIDE.md)
-3. Reference: [CODE-CHANGES-REQUIRED.md](./CODE-CHANGES-REQUIRED.md)
+### For Production Deployment:
+**Start here**: [DEPLOYMENT-GUIDE.md](./DEPLOYMENT-GUIDE.md)
 
-**Time to build something awesome!** 🎊
+### For Free Tier Demo:
+**Start here**: [FREE-DEPLOYMENT-PLAN.md](./FREE-DEPLOYMENT-PLAN.md)
+
+### Just Learning?
+**Start here**: [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ---
 
@@ -340,11 +571,21 @@ Need help with deployment?
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | 2026-01-28 | Initial documentation |
+| 2.0 | 2026-01-28 | Complete rewrite with new structure |
+| | | Added ARCHITECTURE.md |
+| | | Added SCALING-GUIDE.md with comparison table |
+| | | Added MONITORING.md |
+| | | Added TROUBLESHOOTING.md |
+| | | Updated README with better navigation |
+| 1.0 | 2026-01-27 | Initial free tier documentation |
 
 ---
 
 ## 📄 License
 
-This documentation is part of the GoodSeed App project.
+This documentation is part of the GoodSeed App project.  
 See LICENSE.txt in the root directory.
+
+---
+
+**Time to build something awesome!** 🎊
