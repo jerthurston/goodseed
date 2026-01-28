@@ -7,6 +7,8 @@ import {
   DashboardSidebarItem,
   AutoScraperTabContent,
   ContentManagementTabContent,
+  AdminPanelBottomActions,
+  AdminBreadcrumb,
 } from "../(components)"
 
 import DashboardOverview from "../(components)/DashboardOverview"
@@ -17,10 +19,12 @@ import UserManagementTabContent from "../(components)/UserManagementTabContent"
 import { useFetchScraperSites, useFetchSellers } from "@/hooks/seller"
 import { useRouter } from "next/navigation"
 import styles from "../(components)/dashboardAdmin.module.css"
+import { getAdminBreadcrumbs } from "../(components)/utils/breadcrumbHelpers"
 
 import { AlertTriangle, Menu, User, X, FileText } from "lucide-react"
 import { faChartLine, faUser, faStore, faRobot } from '@fortawesome/free-solid-svg-icons'
 import { AlertTabContent } from "../(components)/AlertTabContent"
+import { BeatLoaderSpinner } from "@/components/custom/loading"
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"sellers" | "scraper" | "overview" | "auto-scraper" | "alert" | "user-management" | "content-management" | "cms-homepage" | "cms-faq">(
@@ -128,8 +132,8 @@ export default function AdminDashboard() {
               </div>
               
               {/* Mobile Navigation - giống style desktop */}
-              <div className="flex-1 overflow-y-auto" style={{ padding: '1.5rem' }}>
-                <nav className={`${styles.sidebarNav}`}>
+              <div className="flex-1 overflow-y-auto flex flex-col" style={{ padding: '1.5rem' }}>
+                <nav className={`${styles.sidebarNav} flex-1`}>
                   {/* Overview */}
                   <DashboardSidebarItem
                     icon={<FontAwesomeIcon icon={faChartLine} className="text-lg" />}
@@ -230,6 +234,9 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 </nav>
+
+                {/* Mobile Bottom Actions */}
+                <AdminPanelBottomActions />
               </div>
             </div>
           </div>
@@ -338,24 +345,25 @@ export default function AdminDashboard() {
               )}
             </div>
 
+            {/* Bottom Action Buttons Component */}
+            <AdminPanelBottomActions />
           </DashboardSidebar>
         }
     >
       {isLoading ? (
         <div className="flex items-center justify-center h-screen inset-0">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-(--brand-primary) mx-auto"></div>
-            <p className="mt-4 font-['Poppins'] text-(--text-primary-muted)">
-              Loading...
-            </p>
-          </div>
+          <BeatLoaderSpinner />
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* Overview */}
-          {activeTab === "overview" && (
-            <DashboardOverview sellers={sellers} />
-        )}
+        <>
+          {/* Breadcrumb Navigation */}
+          <AdminBreadcrumb items={getAdminBreadcrumbs(activeTab)} />
+          
+          <div className="space-y-6">
+            {/* Overview */}
+            {activeTab === "overview" && (
+              <DashboardOverview sellers={sellers} />
+          )}
         {/* Sellers Management */}
         {activeTab === "sellers" && (
           <DashboardSellersTabContent
@@ -389,7 +397,8 @@ export default function AdminDashboard() {
         {activeTab === "cms-faq" && (
           <ContentManagementTabContent activeContentTab="faq" />
         )}
-        </div>
+          </div>
+        </>
       )}
     </DashboardLayout>
     </div>

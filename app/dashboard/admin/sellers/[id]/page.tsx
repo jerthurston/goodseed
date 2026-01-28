@@ -2,11 +2,12 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faArrowLeft, faStore, faEdit, faTrash, faEye, faPlay, faStop, faRefresh, faAdd, faRobot, faToolbox, faWaveSquare, faClipboardList, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faStore, faEdit, faTrash, faEye, faPlay, faStop, faRefresh, faAdd, faRobot, faToolbox, faWaveSquare, faClipboardList, faSpinner, faLink, faHandsClapping, faHands, faHandPointLeft, faTools, faCheck, faBug, faLinkSlash, faAdjust } from '@fortawesome/free-solid-svg-icons'
 import {
   DashboardCard,
   DashboardButton,
   DashboardToggle,
+  AdminBreadcrumb,
 } from "../../../(components)"
 import { AutoScraperSection } from "@/components/custom/auto-scraper"
 import { useFetchSellerById } from "@/hooks/seller"
@@ -18,6 +19,9 @@ import { toast } from "sonner"
 import { useScraperOperations } from "@/hooks/scraper-site/useScraperOperations"
 import { apiLogger } from "@/lib/helpers/api-logger"
 import SellerScrapeJobLogs from "@/components/custom/scraper-job/SellerScrapeJobLogs"
+import JobStatusCard from "@/components/custom/scraper-job/JobStatusCard"
+import { useFetchJobDetail } from "@/hooks/admin/scrape-job"
+import { getSellerDetailBreadcrumbs } from "../../../(components)/utils/breadcrumbHelpers"
 
 import style from '../../../(components)/dashboardAdmin.module.css'
 import ManageScrapingSourcesModal from "@/components/custom/modals/ManageScrapingSourcesModal"
@@ -25,21 +29,34 @@ import ActionConfirmModal from "@/components/custom/modals/ActionConfirmModal"
 import UpdateSellerModal from "@/components/custom/modals/UpdateSellerModal"
 import { useEffect, useState } from "react"
 import { getActiveJob } from "@/lib/helpers/client/get-active-job"
-import { Clock} from "lucide-react"
+import { Clock } from "lucide-react"
+import { BeatLoaderSpinner } from "@/components/custom/loading"
 
 export default function AdminSellerDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const sellerId = params.id as string
+  const sellerId = params?.id as string
 
   // Separate loading states for different operations
   const [isQuickTestLoading, setIsQuickTestLoading] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
+  const [showStopJobModal, setShowStopJobModal] = useState(false)
 
   // ALL HOOKS MUST BE CALLED AT THE TOP - BEFORE ANY CONDITIONAL RETURNS
   const { seller, isLoading, isError, error, refetch: refetchSeller } = useFetchSellerById(sellerId);
   const [activeScrapeJobId, setActiveScrapeJobId] = useState<string | undefined>();
+
+  // Fetch active job detail with real-time polling
+  const {
+    job: activeJobDetail,
+    isLoading: isJobDetailLoading,
+    refetch: refetchJobDetail
+  } = useFetchJobDetail({
+    jobId: activeScrapeJobId,
+    sellerId,
+    enablePolling: true // Enable 5s polling for active jobs
+  });
 
   // Use seller operations hook for toggle status
   const { toggleSellerStatus, isUpdating, updateError } = useSellerOperations(refetchSeller);
@@ -83,35 +100,47 @@ export default function AdminSellerDetailPage() {
     // Lấy job đang được thêm vào (pending) từ thông tin của seller có được
     const pendingScrapeJob = getActiveJob(seller);
     const jobId = pendingScrapeJob?.jobId; // ✅ Lấy thông tin jobId trong queue bull để bỏ
-    // console.log("🔍 Active scrape job:", pendingScrapeJob);
-    // console.log("🔍 Active job ID:", jobId);
     setActiveScrapeJobId(jobId);
   }, [seller]) // ✅ Thêm seller vào dependency
 
-  //Function cancel Job - chỉ xóa khỏi hàng chờ - không cancel được khi đã worker đã running
+  // Function to show stop job confirmation modal
   const handleStopJob = async (sellerId: string) => {
+    if (!activeScrapeJobId) {
+      toast.error("No active job found for this seller.");
+      return;
+    }
+    // Show confirmation modal instead of stopping directly
+    setShowStopJobModal(true);
+  }
+
+  // Function to actually stop the job after confirmation
+  const handleConfirmStopJob = async () => {
+    if (!activeScrapeJobId) {
+      toast.error("No active job found.");
+      setShowStopJobModal(false);
+      return;
+    }
+
     try {
-      // console.log("🔍 handleStopJob - activeScrapeJobId:", activeScrapeJobId);
-      if (!activeScrapeJobId) {
-        toast.error("No active job found for this seller.");
-        return;
-      }
       // Show loading toast
-      toast.loading(`Stopping job ${activeScrapeJobId}...`, {
+      toast.loading(`Stopping job ${activeScrapeJobId.slice(0, 8)}...`, {
         id: `stop-${sellerId}`
       });
+
       // Call stop job function
       await useStopManualScrape(sellerId, activeScrapeJobId);
 
-      // Clear state sau khi stop thành công
+      // Clear state after successful stop
       setActiveScrapeJobId(undefined);
 
       toast.dismiss(`stop-${sellerId}`);
-      toast.success(`Stopped job for ${sellerId}`);
+      toast.success(`Job stopped successfully`);
     } catch (error) {
       toast.dismiss(`stop-${sellerId}`);
-      toast.error(`Failed to stop job for ${sellerId}`);
+      // Error toast already shown by hook's onError handler
       apiLogger.logError("Failed to stop job:", error as Error, { sellerId });
+    } finally {
+      setShowStopJobModal(false);
     }
   }
 
@@ -134,11 +163,10 @@ export default function AdminSellerDetailPage() {
         description: "Check the jobs panel for progress updates"
       });
 
-      // Refetch seller data để update scrapeJobs
+      // Refetch seller data to update UI with new job
       setTimeout(() => {
-        // Force refetch seller data to get updated job status
-        window.location.reload(); // Simple solution for now
-      }, 2000);
+        refetchSeller();
+      }, 1000);
 
     } catch (error) {
       // Dismiss loading toast
@@ -180,6 +208,11 @@ export default function AdminSellerDetailPage() {
 
       setIsQuickTestLoading(false);
 
+      // Refetch seller data to update UI with new job
+      setTimeout(() => {
+        refetchSeller();
+      }, 1000);
+
     } catch (error) {
       // Dismiss loading toast
       toast.dismiss(`test-${sellerId}`);
@@ -189,7 +222,7 @@ export default function AdminSellerDetailPage() {
         description: error instanceof Error ? error.message : "Unknown error occurred"
       });
 
-      console.error("Quick test failed:", error);
+      apiLogger.logError("Quick test failed:", error as Error);
       setIsQuickTestLoading(false)
     }
   }
@@ -201,7 +234,7 @@ export default function AdminSellerDetailPage() {
       });
       return;
     }
-    
+
     try {
       if (currentIsAutoEnabled) {
         // Disable: set autoScrapeInterval to null
@@ -229,7 +262,7 @@ export default function AdminSellerDetailPage() {
       });
       return;
     }
-    
+
     try {
       await updateSellerInterval.mutateAsync({
         sellerId,
@@ -252,7 +285,7 @@ export default function AdminSellerDetailPage() {
 
   const handleConfirmToggle = async () => {
     if (!seller) return;
-    
+
     try {
       await toggleSellerStatus(seller.id, seller.isActive);
       setShowConfirmModal(false);
@@ -280,7 +313,7 @@ export default function AdminSellerDetailPage() {
   const handleUpdateSellerSuccess = () => {
     // Refetch seller data after successful update
     refetchSeller();
-    
+
     // Show success toast
     toast.success('Seller Updated', {
       description: 'The seller has been updated successfully',
@@ -307,12 +340,7 @@ export default function AdminSellerDetailPage() {
     return (
       <div className="max-w-360 w-full min-h-screen bg-(--bg-main) p-6">
         <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-(--brand-primary) mx-auto"></div>
-            <p className="mt-4 font-['Poppins'] text-(--text-primary-muted)">
-              Loading seller details...
-            </p>
-          </div>
+         <BeatLoaderSpinner />
         </div>
       </div>
     )
@@ -332,10 +360,13 @@ export default function AdminSellerDetailPage() {
             }
           </p>
           <DashboardButton
+            variant="outline"
             onClick={() => router.push("/dashboard/admin")}
           >
             <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
-            Back to Dashboard
+            <span className="hidden lg:block">
+              Back to Dashboard
+            </span>
           </DashboardButton>
         </div>
       </div>
@@ -344,10 +375,13 @@ export default function AdminSellerDetailPage() {
 
   return (
     <div className="max-w-360 mx-auto w-full min-h-screen bg-(--bg-main) p-1 lg:p-6">
+      {/* Breadcrumb Navigation */}
+      <AdminBreadcrumb items={getSellerDetailBreadcrumbs(currentSeller.name)} />
+      
       {/* Header */}
       <div className="mb-8 flex flex-col-reverse gap-4 lg:flex-row items-start lg:items-center justify-between">
         <div>
-          <h1 className="font-['Archivo_Black'] sm:text-3xl lg:text-4xl uppercase text-(--brand-primary) tracking-tight mb-2">
+          <h1 className="text-3xl lg:text-4xl uppercase text-(--brand-primary) tracking-tight mb-2">
             {currentSeller.name}
           </h1>
           <p className="font-['Poppins'] text-(--text-primary-muted)">
@@ -356,47 +390,114 @@ export default function AdminSellerDetailPage() {
         </div>
         {/* Back to Button */}
         <DashboardButton
+          variant="outline"
           onClick={() => router.push("/dashboard/admin")}
         >
-          <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
-          Back to Dashboard
+          <FontAwesomeIcon icon={faArrowLeft} className="mr-0 lg:mr-2" />
+          <span className="hidden lg:block">
+            Back to Dashboard
+          </span>
         </DashboardButton>
       </div>
 
       <div className="space-y-6">
-        {/* Safety Warning when job is running */}
-        {hasActiveJob && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-            <div className="flex items-center">
-              <FontAwesomeIcon icon={faSpinner} className="text-yellow-400 animate-spin mr-3" />
-              <div>
-                <h3 className="text-yellow-800 font-medium">Job Currently Running</h3>
-                <p className="text-yellow-700 text-sm">
-                  All seller operations are disabled for data safety while scraping job <strong>#{activeScrapeJobId}</strong> is running. 
-                  Please wait for completion or stop the job to resume operations.
-                </p>
-              </div>
+
+
+        {/*--> Seller Configuration section */}
+        <DashboardCard>
+          <div className={styles.cardHeader}>
+            <div className="flex items-center gap-3">
+              <FontAwesomeIcon icon={faAdjust} className="text-xl text-(--brand-primary)" />
+              <h2 className="font-['Archivo_Black'] text-xl uppercase text-(--text-primary)">
+                Configuration
+              </h2>
             </div>
           </div>
-        )}
+          <div className="flex flex-col lg:flex-row w-full gap-2">
+            {/* Scraping Sources Button */}
+            <DashboardButton
+              onClick={handleConfigSource}
+              disabled={hasActiveJob}
+              className={`flex flex-row items-center justify-start${hasActiveJob ? 'opacity-50 cursor-not-allowed' : ''}  `}
+            >
+              <FontAwesomeIcon icon={faLink} className={`mr-2 ${hasActiveJob ? 'opacity-50' : ''}`} />
+              {hasActiveJob ? 'Scraping Sources (Job Running)' : 'Scraping Sources'}
+            </DashboardButton>
+            {/* Hidden/ Deactivate seed product of seller in /seeds */}
+            <DashboardButton
+              variant="outline"
+              onClick={handleToggleStatus}
+              disabled={isAnyOperationInProgress}
+              className={`flex flex-row items-center justify-start ${isAnyOperationInProgress ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <FontAwesomeIcon icon={currentSeller.isActive ? faStop : faPlay} className={`mr-2 ${isAnyOperationInProgress ? 'opacity-50' : ''}`} />
+              {isAnyOperationInProgress
+                ? (currentSeller.isActive ? 'Deactivate (Job Running)' : 'Activate (Job Running)')
+                : (currentSeller.isActive ? 'Deactivate' : 'Activate')
+              }
+            </DashboardButton>
+            {/* Edit Seller Button */}
+            <DashboardButton
+              variant="outline"
+              onClick={() => handleEditSeller(currentSeller.id)}
+              disabled={hasActiveJob}
+              className={`flex flex-row items-center justify-start ${hasActiveJob ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <FontAwesomeIcon icon={faEdit} className={`mr-2 ${hasActiveJob ? 'opacity-50' : ''}`} />
+              <span className="whitespace-nowrap">
+                {hasActiveJob ? 'Edit Seller (Job Running)' : 'Edit Seller'}
+              </span>
+            </DashboardButton>
+          </div>
+        </DashboardCard>
 
-        {/* Scraper Actions */}
+        {/* Scraper Actions section */}
         <DashboardCard key={currentSeller.id}>
           <div className="flex flex-col lg:flex-row items-start justify-between gap-2 mb-4">
             <div>
-              <h3 className="font-['Poppins'] font-bold lg:text-lg text-(--text-primary) mb-1">
-                {currentSeller.name}
-              </h3>
-              <p className="font-['Poppins'] text-sm text-(--text-primary-muted)">
+              <h2 className="font-['Archivo_Black'] text-xl uppercase text-(--text-primary)">
+                Scraping Actions
+              </h2>
+              {/* <p className="underline text-sm text-(--text-primary-muted)">
+                <FontAwesomeIcon icon={faLink} className="mr-1" />
                 {currentSeller.url}
-              </p>
-              <p className="font-['Poppins'] text-xs text-(--text-primary-muted) mt-2 flex items-center gap-1">
+              </p> */}
+              {/* <p className="font-['Poppins'] text-xs text-(--text-primary-muted) mt-2 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 Last scraped: {currentSeller.lastScraped}
-              </p>
+              </p> */}
             </div>
+
+          </div>
+
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 pt-4 border-t-[3px] border-(--border-color)  overflow-hidden w-full">
+            <div className="flex flex-col lg:flex-row items-start gap-4 w-full">
+              <DashboardToggle
+                label="Auto Scrape"
+                isActive={currentSeller.isAutoEnabled}
+                onChange={() => handleToggleAutoScrape(currentSeller.id, currentSeller.isAutoEnabled)}
+                disabled={isAnyOperationInProgress}
+              />
+
+              {currentSeller.isAutoEnabled && (
+                <div className="flex items-center gap-2">
+                  <span className={style.toggleLabel}>
+                    Interval:
+                  </span>
+                  <select
+                    value={currentSeller.autoScrapeInterval || 6}
+                    onChange={(e) => handleIntervalChange(currentSeller.id, Number(e.target.value))}
+                    disabled={isAnyOperationInProgress}
+                    className={style.selectInterval}
+                  >
+                    <option value={6}>Every 6 hours</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
             {/* Manual Scrape Button trigger */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 w-full lg:w-60">
               {activeScrapeJobId ? (
                 // Stop button - khi có job đang chạy
                 <DashboardButton
@@ -411,17 +512,20 @@ export default function AdminSellerDetailPage() {
                       Stopping...
                     </>
                   ) : (
-                    <div className="flex flex-col lg:flex-row gap-1">
+                    <div className="flex flex-row lg:flex-row gap-1 items-center">
                       <FontAwesomeIcon icon={faStop} className="h-4 w-4" />
-                      <span>
-                        Stop Job ({activeScrapeJobId})
+                      <div className="w-full">
+                        Stop Job
+                        <span className="hidden lg:block">
+                          (#{activeScrapeJobId.slice(0, 8)})
                         </span>
+                      </div>
                     </div>
                   )}
                 </DashboardButton>
-
               ) : (
-                <div className="flex flex-row gap-2">
+                // Khi không có job chạy. Hiển thị Manula scraper và Test Quick button
+                <div className="flex flex-col gap-2">
                   {/* // Start button - khi không có job đang chạy */}
                   <DashboardButton
                     variant="secondary"
@@ -435,18 +539,20 @@ export default function AdminSellerDetailPage() {
                         Starting Manual...
                       </>
                     ) : hasActiveJob ? (
-                      <div className="flex flex-col lg:flex-row gap-1">
-                        <FontAwesomeIcon icon={faRobot} className="h-3 w-3 opacity-50" />
-                        <span>
+                      <div className="flex flex-row gap-1 items-center">
+                        <FontAwesomeIcon icon={faToolbox} className="h-3 w-3 opacity-50" />
+                        <div className="w-0 h-5 border border-(--border-color)"></div>
+                        <span className="whitespace-nowrap">
                           Manual Scrape (Job Running)
-                          </span>
+                        </span>
                       </div>
                     ) : (
-                       <div className="flex flex-col lg:flex-row gap-1 items-center">
-                        <FontAwesomeIcon icon={faRobot} className="h-3 w-3" />
-                        <span>
+                      <div className="flex flex-row items-center gap-2">
+                        <FontAwesomeIcon icon={faToolbox} size="lg" />
+                        <div className="w-0 h-5 border border-(--border-color)"></div>
+                        <span className="whitespace-nowrap">
                           Manual Scrape
-                          </span>
+                        </span>
                       </div>
                     )}
                   </DashboardButton>
@@ -455,9 +561,8 @@ export default function AdminSellerDetailPage() {
                     variant="outline"
                     onClick={() => handleQuickTest(currentSeller.id, currentSeller.name)}
                     disabled={isAnyOperationInProgress}
-                    className={`flex items-center gap-2 text-sm transition-all duration-200 ${
-                      isAnyOperationInProgress ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-50'
-                    }`}
+                    className={`flex items-center gap-2 text-sm transition-all duration-200 ${isAnyOperationInProgress ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-50'
+                      }`}
                   >
                     {isQuickTestLoading ? (
                       <>
@@ -465,31 +570,30 @@ export default function AdminSellerDetailPage() {
                         Testing...
                       </>
                     ) : hasActiveJob ? (
-                      <div className="flex flex-col lg:flex-row gap-1 items-center flex-1/2">
-                        <FontAwesomeIcon icon={faToolbox} className="h-3 w-3 opacity-50" />
-                        <span>
+                      <div className="flex flex-col gap-1 items-center flex-1/2">
+                        <FontAwesomeIcon icon={faBug} size="lg" className="opacity-50" />
+                        <div className="w-0 h-5 border border-(--border-color)"></div>
+                        <span className="whitespace-break-spaces">
                           Quick Test (Job Running)
-                          </span>
+                        </span>
                       </div>
                     ) : (
-                     <div className="flex flex-col lg:flex-row gap-1 items-center w-17.5 lg:w-full">
-                        <FontAwesomeIcon icon={faToolbox} className="h-3 w-3" />
-                        Quick Test <span className="hidden lg:block">2 pages</span>
+                      <div className="flex flex-row items-center gap-2">
+                        <FontAwesomeIcon icon={faBug} size="lg" />
+                        <div className="w-0 h-5 border border-(--border-color)"></div>
+                        <span className="whitespace-nowrap">Quick Test</span>
                       </div>
                     )}
                   </DashboardButton>
 
                 </div>
-
               )}
-
-
 
               {/* Show job status badge - when active job exists */}
               {activeScrapeJobId && (
                 <div className="flex items-center gap-2 text-sm text-blue-600">
                   <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
-                  Active Job ID: {activeScrapeJobId}
+                  Active Job: #{activeScrapeJobId.slice(0, 8)}
                 </div>
               )}
 
@@ -512,78 +616,9 @@ export default function AdminSellerDetailPage() {
               )}
             </div>
           </div>
-
-          <div className="flex flex-col lg:flex-row items-start justify-start gap-6 pt-4 border-t-[3px] border-(--border-color)  overflow-hidden w-full">
-            <DashboardToggle
-              label="Auto Scrape"
-              isActive={currentSeller.isAutoEnabled}
-              onChange={() => handleToggleAutoScrape(currentSeller.id, currentSeller.isAutoEnabled)}
-              disabled={isAnyOperationInProgress}
-            />
-
-            {currentSeller.isAutoEnabled && (
-              <div className="flex items-center gap-2 w-full">
-                <span className={style.toggleLabel}>
-                  Interval:
-                </span>
-                <select
-                  value={currentSeller.autoScrapeInterval || 6}
-                  onChange={(e) => handleIntervalChange(currentSeller.id, Number(e.target.value))}
-                  disabled={isAnyOperationInProgress}
-                  className={style.selectInterval}
-                >
-                  <option value={6}>Every 6 hours</option>
-                </select>
-              </div>
-            )}
-          </div>
         </DashboardCard>
 
-        {/*--> Seller Configuration */}
-        <DashboardCard>
-          <div className={styles.cardHeader}>
-            <div className="flex items-center gap-3">
-              <FontAwesomeIcon icon={faPlay} className="text-xl text-(--brand-primary)" />
-              <h2 className="font-['Archivo_Black'] text-xl uppercase text-(--text-primary)">
-                Configuration
-              </h2>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <DashboardButton
-              onClick={handleConfigSource}
-              disabled={hasActiveJob}
-              className={`${hasActiveJob ? 'opacity-50 cursor-not-allowed' : ''} shrink-0 w-full `}
-            >
-              <FontAwesomeIcon icon={faAdd} className={`mr-2 ${hasActiveJob ? 'opacity-50' : ''}`} />
-              {hasActiveJob ? 'Scraping Sources (Job Running)' : 'Scraping Sources'}
-            </DashboardButton>
-
-            <DashboardButton
-              variant="outline"
-              onClick={handleToggleStatus}
-              disabled={isAnyOperationInProgress}
-              className={`text-sm px-4 py-2 ${isAnyOperationInProgress ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <FontAwesomeIcon icon={currentSeller.isActive ? faStop : faPlay} className={`mr-2 ${isAnyOperationInProgress ? 'opacity-50' : ''}`} />
-              {isAnyOperationInProgress 
-                ? (currentSeller.isActive ? 'Deactivate (Job Running)' : 'Activate (Job Running)')
-                : (currentSeller.isActive ? 'Deactivate' : 'Activate')
-              }
-            </DashboardButton>
-
-            <DashboardButton
-              onClick={() => handleEditSeller(currentSeller.id)}
-              disabled={hasActiveJob}
-              className={hasActiveJob ? 'opacity-50 cursor-not-allowed' : ''}
-            >
-              <FontAwesomeIcon icon={faEdit} className={`mr-2 ${hasActiveJob ? 'opacity-50' : ''}`} />
-              {hasActiveJob ? 'Edit Seller (Job Running)' : 'Edit Seller'}
-            </DashboardButton>
-          </div>
-        </DashboardCard>
-
-        {/*--> AUTO SCRAPER SCHEDULE INFORMATION SECTION */}
+        {/*--> Auto-scraper status section */}
         <AutoScraperSection
           seller={{
             id: currentSeller.id,
@@ -607,8 +642,17 @@ export default function AdminSellerDetailPage() {
               </h2>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Column 1: Basic Info */}
             <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-(--text-primary-muted)">
+                  Seller ID
+                </label>
+                <p className="font-mono text-(--text-primary) text-xs">
+                  {currentSeller.id}
+                </p>
+              </div>
               <div>
                 <label className="text-sm font-medium text-(--text-primary-muted)">
                   Seller Name
@@ -634,14 +678,45 @@ export default function AdminSellerDetailPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-(--text-primary-muted)">
+                  Affiliate Tag
+                </label>
+                <p className="font-['Poppins'] text-(--text-primary)">
+                  {currentSeller.affiliateTag || (
+                    <span className="text-(--text-primary-muted) italic">Not set</span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* Column 2: Status & Scraping Info */}
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-(--text-primary-muted)">
                   Status
                 </label>
                 <p className={`font-['Poppins'] font-semibold ${currentSeller.isActive ? 'text-(--brand-primary)' : 'text-(--danger-color)'}`}>
                   {currentSeller.isActive ? 'Active' : 'Inactive'}
                 </p>
               </div>
-            </div>
-            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-(--text-primary-muted)">
+                  Last Scrape Status
+                </label>
+                <p className="text-(--text-primary)">
+                  {currentSeller.status ? (
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${currentSeller.status === 'COMPLETED'
+                        ? 'bg-green-100 text-green-800'
+                        : currentSeller.status === 'FAILED'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                      {currentSeller.status}
+                    </span>
+                  ) : (
+                    <span className="text-(--text-primary-muted) italic">No scrapes yet</span>
+                  )}
+                </p>
+              </div>
               <div>
                 <label className="text-sm font-medium text-(--text-primary-muted)">
                   Last Scraped
@@ -652,10 +727,30 @@ export default function AdminSellerDetailPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-(--text-primary-muted)">
+                  Auto Scrape Interval
+                </label>
+                <p className="font-['Poppins'] text-(--text-primary)">
+                  {currentSeller.autoScrapeInterval
+                    ? `Every ${currentSeller.autoScrapeInterval} hours`
+                    : (
+                      <span className="text-(--text-primary-muted) italic">Disabled</span>
+                    )
+                  }
+                </p>
+              </div>
+            </div>
+
+            {/* Column 3: Statistics & Timestamps */}
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-(--text-primary-muted)">
                   Success Rate
                 </label>
                 <p className="font-['Poppins'] text-(--text-primary) font-semibold">
                   {currentSeller.stats.successRate.toFixed(1)}%
+                </p>
+                <p className="text-xs text-(--text-primary-muted) mt-1 italic">
+                  Completed / Finished jobs
                 </p>
               </div>
               <div>
@@ -666,12 +761,39 @@ export default function AdminSellerDetailPage() {
                   {currentSeller.stats.productsScraped?.toLocaleString()}
                 </p>
               </div>
+              <div>
+                <label className="text-sm font-medium text-(--text-primary-muted)">
+                  Total Runs
+                </label>
+                <p className="font-['Poppins'] text-(--text-primary) font-semibold">
+                  {currentSeller.stats.totalRuns}
+                </p>
+                <p className="text-xs text-(--text-primary-muted) mt-1 italic">
+                  Finished jobs only
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-(--text-primary-muted)">
+                  Created At
+                </label>
+                <p className="font-['Poppins'] text-(--text-primary) text-sm">
+                  {currentSeller.createdAt}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-(--text-primary-muted)">
+                  Last Updated
+                </label>
+                <p className="font-['Poppins'] text-(--text-primary) text-sm">
+                  {currentSeller.updatedAt}
+                </p>
+              </div>
             </div>
           </div>
         </DashboardCard>
 
         {/* Statistics Card */}
-        <DashboardCard>
+        {/* <DashboardCard>
           <div className={styles.cardHeader}>
             <div className="flex items-center gap-3">
               <FontAwesomeIcon icon={faRefresh} className="text-xl text-(--brand-primary)" />
@@ -700,10 +822,10 @@ export default function AdminSellerDetailPage() {
               <p className="text-(--text-primary-muted)">Success Rate</p>
             </div>
           </div>
-        </DashboardCard>
+        </DashboardCard> */}
 
-          {/* Scrape Job Logs - Using SellerScrapeJobLogs component */}
-          <SellerScrapeJobLogs sellerId={sellerId} />
+        {/* Scrape Job Logs - Using SellerScrapeJobLogs component */}
+        <SellerScrapeJobLogs sellerId={sellerId} />
 
       </div>
 
@@ -730,6 +852,17 @@ export default function AdminSellerDetailPage() {
         actionType={currentSeller.isActive ? 'deactivate' : 'activate'}
         sellerName={currentSeller.name}
         isLoading={isUpdating}
+      />
+
+      {/* Stop Job Confirmation Modal */}
+      <ActionConfirmModal
+        isOpen={showStopJobModal}
+        onClose={() => setShowStopJobModal(false)}
+        onConfirm={handleConfirmStopJob}
+        actionType="stop-job"
+        sellerName={currentSeller.name}
+        jobId={activeScrapeJobId}
+        isLoading={isStoppingJob}
       />
 
       {/* Update Seller Modal */}

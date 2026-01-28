@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 export interface UseScraperOperationsResult {
     // Manual scrape operation
-    useTriggerScrape: (id: string, scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number, mode?: 'manual' | 'auto' | 'test' }) => Promise<void>
+    useTriggerScrape: (id: string, scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number, mode?: 'manual' | 'auto' | 'test' }) => Promise<any>
     isTriggering: boolean;
     triggerError: Error | null;
     activeJobs: Map<string, string>;
@@ -62,17 +62,8 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
                 const { jobId, sellerName, estimatedDuration } = response.data;
                 // track active job
                 setActiveJobs(prev => new Map(prev).set(sellerId, jobId))
-                // kết quả cảu setActiveJobs là gì: 1 Map có key là sellerId và value là jobId
-                // activeJobs sẽ có giá trị là 1 Map chứa các sellerId và jobId tương ứng. Để làm gì?  Để theo dõi các job đang chạy và có thể hủy bỏ chúng nếu cần thiết.
-
-                toast.success(`Manual scrape started for ${sellerName}`, {
-                    description: `Job ID: ${jobId} • Estimated: ${estimatedDuration}`,
-                    action: {
-                        label: "Track Progress",
-                        onClick: () => window.open(response.data.statusUrl, '_blank')
-                    },
-                    duration: 5000
-                });
+                // Note: Toast notification handled by page component
+                // Removed duplicate toast to avoid conflicts
             } else {
                 // TODO: viết error handling sau - (function handleScraperError)
                  handleScraperError(response.error, sellerId);
@@ -170,9 +161,19 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
 
         onError: (error: Error, { sellerId }) => {
             apiLogger.logError("useScraperOperation.stopJob", error, { sellerId });
-            toast.error("Job stop failed", {
-                description: "Failed to stop the scraping job. Please try again.",
-                duration: 5000
+            
+            // Show specific error message from API
+            const errorMessage = error.message || "Failed to stop the scraping job. Please try again.";
+            
+            // Check if it's the "cannot stop active job" error
+            const isActiveJobError = errorMessage.includes("Worker is currently processing") || 
+                                      errorMessage.includes("Cannot stop job");
+            
+            toast.error(isActiveJobError ? "Cannot Stop Active Job" : "Job stop failed", {
+                description: isActiveJobError 
+                    ? "The worker is actively processing this job and cannot be interrupted. The job will complete naturally in a few moments."
+                    : errorMessage,
+                duration: isActiveJobError ? 8000 : 7000 // Longer duration for important message
             });
         },
     })
@@ -188,7 +189,8 @@ export function useScraperOperations(refetchScraperSites: () => void): UseScrape
     return {
         //Manual scrape operation
         useTriggerScrape: async (id: string, scrapingConfig: { fullSiteCrawl?: boolean; startPage?: number; endPage?: number; mode?: 'manual' | 'auto' | 'test' }) => {
-            await triggerMutation.mutateAsync({ id, scrapingConfig });
+            const result = await triggerMutation.mutateAsync({ id, scrapingConfig });
+            return result;
         },
         isTriggering: triggerMutation.isPending,
         triggerError: triggerMutation.error,

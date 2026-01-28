@@ -206,6 +206,7 @@ export class ScraperOperationService {
      * Stop/cancel a running manual scrape job
      * @param sellerId - The ID of the seller
      * @param jobId - The ID of the job to stop
+     * @throws Error if job is actively processing and cannot be stopped
      */
     public static async stopManualScrape(sellerId: string, jobId: string) {
         try {
@@ -213,18 +214,50 @@ export class ScraperOperationService {
             const response = await api.post(`/admin/sellers/${sellerId}/scraper/cancel`, { jobId });
             apiLogger.logResponse("ScraperOperationService.stopManualScrape", { response });
 
+            // Check if API returned canStop: false (job is actively processing)
+            if (response.data.canStop === false) {
+                const errorMessage = response.data.message || 'Cannot stop job: Worker is currently processing.';
+                apiLogger.warn("ScraperOperationService.stopManualScrape - Cannot stop active job", {
+                    sellerId,
+                    jobId,
+                    status: response.data.status,
+                    message: errorMessage,
+                    recommendation: response.data.recommendation
+                });
+                
+                throw new Error(errorMessage);
+            }
+
             return {
                 success: true,
                 data: response.data,
             }
-        } catch (error) {
-            apiLogger.logError("ScraperOperationService.stopManualScrape", error as Error);
-            return {
-                success: false,
-                error: "Failed to stop manual scrape"
+        } catch (error: any) {
+            // Handle axios error with response data
+            if (error.response?.data) {
+                const errorData = error.response.data;
+                const errorMessage = errorData.message || errorData.error || 'Failed to stop job';
+                
+                apiLogger.logError("ScraperOperationService.stopManualScrape - API Error", error, {
+                    sellerId,
+                    jobId,
+                    status: error.response.status,
+                    errorData
+                });
+                
+                throw new Error(errorMessage);
             }
+            
+            // Handle regular errors
+            apiLogger.logError("ScraperOperationService.stopManualScrape", error as Error);
+            
+            // Re-throw error with original message if available
+            if (error instanceof Error) {
+                throw error;
+            }
+            
+            throw new Error("Failed to stop manual scrape");
         }
     }
-
 
 }

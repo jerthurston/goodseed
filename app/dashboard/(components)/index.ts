@@ -39,6 +39,8 @@ export {
 // Layout Components
 export { DashboardLayout } from "./DashboardLayout"
 export { DashboardSidebar, DashboardSidebarItem } from "./DashboardSidebar"
+export { AdminPanelBottomActions } from "./AdminPanelBottomActions"
+export { AdminBreadcrumb } from "./AdminBreadcrumb"
 
 // Feature Components
 export { SellerCard } from "./SellerCard"

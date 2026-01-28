@@ -3,19 +3,35 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 
 export interface ScrapeJob {
   id: string;
+  jobId: string; // External job ID (cuid)
   sellerId: string;
   sellerName: string;
   status: 'CREATED' | 'WAITING' | 'DELAYED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
   mode: 'manual' | 'batch' | 'auto' | 'test';
+  
+  // Progress tracking
+  currentPage?: number | null;
+  totalPages?: number | null;
   productsScraped: number;
   productsSaved: number;
   productsUpdated: number;
-  errorMessage?: string;
+  errors: number;
+  
+  // Timing
+  startedAt?: Date | string | null;
+  completedAt?: Date | string | null;
+  duration?: number | null;
+  
+  // Error details
+  errorMessage?: string | null;
+  
+  // Metadata
   createdAt: Date;
   updatedAt: Date;
+  
+  // Legacy fields for backward compatibility
   startTime?: Date;
   endTime?: Date;
-  duration?: number;
 }
 
 export interface FetchScrapeJobsParams {

@@ -27,9 +27,27 @@ interface AxiosError extends Error {
 
 /**
  * Global flag để tắt/bật console logs trong development
- * Set thành false để tắt hoàn toàn console logs ngay cả trong development
+ * Có thể điều khiển qua environment variable: ENABLE_DEV_LOGGING
+ * 
+ * Priority:
+ * 1. Environment variable: ENABLE_DEV_LOGGING=true/false
+ * 2. Default: true (nếu không set)
+ * 
+ * @example
+ * # .env.local - Tắt hoàn toàn dev logging
+ * ENABLE_DEV_LOGGING=false
+ * 
+ * # .env.local - Bật dev logging (default)
+ * ENABLE_DEV_LOGGING=true
  */
-const ENABLE_DEV_LOGGING = true;
+const getEnableDevLogging = (): boolean => {
+    // Check environment variable first
+    if (process.env.ENABLE_DEV_LOGGING !== undefined) {
+        return process.env.ENABLE_DEV_LOGGING === 'true';
+    }
+    // Default: true for development
+    return true;
+};
 
 /**
  * Kiểm tra xem có nên log hay không dựa trên environment và flag
@@ -39,7 +57,7 @@ const shouldLog = (level: 'dev' | 'prod' = 'dev'): boolean => {
         return true; // Error logs luôn được log
     }
 
-    return process.env.NODE_ENV === 'development' && ENABLE_DEV_LOGGING;
+    return process.env.NODE_ENV === 'development' && getEnableDevLogging();
 };
 
 // Declare global interface để TypeScript hiểu
@@ -330,11 +348,14 @@ export const apiLogger = {
     /**
      * Utility để thay đổi flag logging trong runtime
      * Chỉ hoạt động trong development
+     * Note: Thay đổi này chỉ tồn tại trong runtime, không persist
      */
     toggleDevLogging: () => {
         if (process.env.NODE_ENV === 'development') {
-            globalThis.ENABLE_DEV_LOGGING = !globalThis.ENABLE_DEV_LOGGING;
-            const newState = globalThis.ENABLE_DEV_LOGGING;
+            const currentState = getEnableDevLogging();
+            // Toggle environment variable
+            process.env.ENABLE_DEV_LOGGING = (!currentState).toString();
+            const newState = getEnableDevLogging();
             console.log(`[API-LOGGER] Development logging ${newState ? 'ENABLED' : 'DISABLED'}`);
             return newState;
         } else {
@@ -349,10 +370,197 @@ export const apiLogger = {
     getLoggingStatus: () => {
         return {
             environment: process.env.NODE_ENV,
-            devLoggingEnabled: ENABLE_DEV_LOGGING,
+            enableDevLogging: getEnableDevLogging(),
+            scraperVerbose: process.env.SCRAPER_VERBOSE === 'true',
             shouldLogDev: shouldLog('dev'),
             shouldLogProd: shouldLog('prod')
         };
+    },
+
+    /**
+     * ============================================================================
+     * SCRAPER-SPECIFIC AGGREGATE LOGGING METHODS
+     * ============================================================================
+     * These methods reduce log spam in scrapers by aggregating repetitive logs
+     * Controlled by SCRAPER_VERBOSE environment variable
+     */
+
+    /**
+     * Check if verbose mode is enabled (for detailed logs)
+     * Uses same ENABLE_DEV_LOGGING flag for consistency
+     * 
+     * Verbose logs include:
+     * - Product samples
+     * - URL lists
+     * - Crawl delays
+     * - Debug details
+     * 
+     * Summary logs (always shown):
+     * - Page progress counts
+     * - Batch operation results
+     * - Error logs
+     */
+    isVerbose: (): boolean => {
+        // Verbose mode enabled when:
+        // 1. ENABLE_DEV_LOGGING=true (explicit) OR
+        // 2. NODE_ENV=development AND ENABLE_DEV_LOGGING not set to false
+        return getEnableDevLogging() && process.env.NODE_ENV === 'development';
+    },
+
+    /**
+     * Log URL filtering summary instead of individual URLs
+     * Reduces 100+ individual logs to 1 summary log
+     * 
+     * @example
+     * // Instead of:
+     * urls.forEach(url => console.log(`Skipping: ${url}`)); // 100+ logs
+     * 
+     * // Use:
+     * apiLogger.logUrlFiltering({
+     *   totalUrls: 150,
+     *   validUrls: 120,
+     *   invalidUrls: ['url1', 'url2', ...],
+     *   context: 'Canuk Seeds'
+     * }); // 1 log
+     */
+    logUrlFiltering: (params: {
+        totalUrls: number;
+        validUrls: number;
+        invalidUrls: string[];
+        context: string;
+    }) => {
+        const { totalUrls, validUrls, invalidUrls, context } = params;
+        
+        // Always log summary
+        console.log(
+            `🔍 [${context}] URL Filtering: ${validUrls} valid / ${totalUrls} total (${invalidUrls.length} skipped)`
+        );
+
+        // Only log details in verbose mode
+        if (apiLogger.isVerbose() && invalidUrls.length > 0) {
+            console.log(`   Skipped URLs (showing first 5):`);
+            invalidUrls.slice(0, 5).forEach((url, i) => {
+                console.log(`   ${i + 1}. ${url}`);
+            });
+            if (invalidUrls.length > 5) {
+                console.log(`   ... and ${invalidUrls.length - 5} more`);
+            }
+        }
+    },
+
+    /**
+     * Log page processing progress with aggregated metrics
+     * Shows progress through pagination without spamming logs
+     * 
+     * @example
+     * apiLogger.logPageProgress({
+     *   page: 154,
+     *   totalPages: 154,
+     *   productsFound: 87,
+     *   totalProductsSoFar: 13398,
+     *   url: 'https://...'
+     * });
+     * // Output: 📊 Page 154/154: Found 87 products. Total: 13,398
+     */
+    logPageProgress: (params: {
+        page: number;
+        totalPages: number;
+        productsFound: number;
+        totalProductsSoFar: number;
+        url: string;
+    }) => {
+        const { page, totalPages, productsFound, totalProductsSoFar, url } = params;
+        
+        // Always show page progress (important for monitoring)
+        console.log(
+            `📊 Page ${page}/${totalPages}: Found ${productsFound} products. Total: ${totalProductsSoFar.toLocaleString()}`
+        );
+
+        // Only show URL in verbose mode
+        if (apiLogger.isVerbose()) {
+            console.log(`   URL: ${url}`);
+        }
+    },
+
+    /**
+     * Log product extraction with sampling
+     * Supports both string URLs and product objects
+     * 
+     * @example
+     * apiLogger.logProductExtraction({
+     *   products: [{ name: 'Product 1' }, ...],
+     *   context: 'Canuk Seeds',
+     *   additionalInfo: { category: 'Feminized' }
+     * });
+     */
+    logProductExtraction: (params: {
+        products: string[] | any[];
+        context: string;
+        additionalInfo?: Record<string, any>;
+    }) => {
+        const { products, context, additionalInfo } = params;
+        
+        // Always log count
+        console.log(`✅ [${context}] Extracted ${products.length} products`);
+
+        // Log additional info if provided
+        if (additionalInfo && Object.keys(additionalInfo).length > 0) {
+            console.log(`   Additional Info:`, JSON.stringify(additionalInfo, null, 2));
+        }
+
+        // Only log samples in verbose mode
+        if (apiLogger.isVerbose() && products.length > 0) {
+            console.log(`   Sample products (first 3):`);
+            products.slice(0, 3).forEach((product, i) => {
+                // Handle both string URLs and objects
+                const displayValue = typeof product === 'string' 
+                    ? product 
+                    : product.name || product.url || JSON.stringify(product).substring(0, 100);
+                console.log(`   ${i + 1}. ${displayValue}`);
+            });
+            if (products.length > 3) {
+                console.log(`   ... and ${products.length - 3} more`);
+            }
+        }
+    },
+
+    /**
+     * Log batch operation summary
+     * Useful for save/update operations
+     * 
+     * @example
+     * apiLogger.logBatchSummary({
+     *   operation: 'Save Products',
+     *   total: 150,
+     *   successful: 145,
+     *   failed: 5,
+     *   duration: 12500
+     * });
+     * // Output: 📦 [Save Products] Completed: 145/150 successful, 5 failed in 12.5s
+     */
+    logBatchSummary: (params: {
+        operation: string;
+        total: number;
+        successful: number;
+        failed: number;
+        duration?: number;
+    }) => {
+        const { operation, total, successful, failed, duration } = params;
+        
+        const durationStr = duration ? ` in ${(duration / 1000).toFixed(1)}s` : '';
+        console.log(
+            `📦 [${operation}] Completed: ${successful}/${total} successful, ${failed} failed${durationStr}`
+        );
+    },
+
+    /**
+     * Log crawl delay application
+     * Only shown in verbose mode
+     */
+    logCrawlDelay: (delayMs: number, reason: string) => {
+        if (apiLogger.isVerbose()) {
+            console.log(`⏱️ [Crawl Delay] Waiting ${delayMs}ms (${reason})`);
+        }
     }
 };
 

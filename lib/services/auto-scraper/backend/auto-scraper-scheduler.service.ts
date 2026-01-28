@@ -25,28 +25,31 @@ export class AutoScraperScheduler {
    * - API endpoint /api/admin/scraper/schedule-all (POST)
    * - Worker initialization khi server start
    * - Admin dashboard "Start All" button
+   * 
+   * @param customStartTime - Optional custom start time for the first run (overrides cron schedule)
    */
-  static async initializeAllAutoJobs() {
+  static async initializeAllAutoJobs(customStartTime?: Date) {
     try {
-      apiLogger.info('[Auto Scheduler] Starting bulk auto jobs initialization');
+      apiLogger.info('[Auto Scheduler] Starting bulk auto jobs initialization', {
+        customStartTime: customStartTime?.toISOString()
+      });
 
-      // 1. Lấy tất cả active sellers (bao gồm cả những sellers chưa có autoScrapeInterval)
+      // 1. Lấy chỉ những sellers có auto scrape enabled (isActive AND autoScrapeInterval > 0)
       const activeSellers = await prisma.seller.findMany({
         where: {
           isActive: true,
+          autoScrapeInterval: {
+            gt: 0 // Only sellers with autoScrapeInterval > 0 (auto scraping enabled)
+          }
         },
         include: {
           scrapingSources: true,
         }
       });
 
-      // 2. Filter và setup default interval cho sellers eligible for auto scraping
+      // 2. Filter sellers with scraping sources (no default interval assignment)
       const eligibleSellers = activeSellers
-        .filter(seller => seller.scrapingSources.length > 0) // Chỉ sellers có scraping sources
-        .map(seller => ({
-          ...seller,
-          autoScrapeInterval: seller.autoScrapeInterval || 8 // Default 8h nếu null
-        }));
+        .filter(seller => seller.scrapingSources.length > 0); // Chỉ sellers có scraping sources
 
       apiLogger.info('[Auto Scheduler] Found eligible sellers after filtering', { 
         total: activeSellers.length,
@@ -70,14 +73,6 @@ export class AutoScraperScheduler {
       
       for (const seller of eligibleSellers) {
         try {
-          // Update seller interval in database if it was null
-          if (!activeSellers.find(s => s.id === seller.id)?.autoScrapeInterval) {
-            await prisma.seller.update({
-              where: { id: seller.id },
-              data: { autoScrapeInterval: seller.autoScrapeInterval }
-            });
-          }
-
           // Schedule auto job using helper function
           const result = await createScheduleAutoScrapeJob({
             sellerId: seller.id,
@@ -92,6 +87,7 @@ export class AutoScraperScheduler {
               fullSiteCrawl: true, // Auto mode luôn full site crawl
             },
             targetCategoryId: null, // Auto mode không giới hạn category
+            customStartTime, // Pass custom start time to helper
           });
 
           results.push({

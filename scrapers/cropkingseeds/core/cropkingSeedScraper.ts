@@ -21,6 +21,7 @@ import { CheerioAPI, CheerioCrawlingContext, Log } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { CommonCrawler, CommonScrapingContext, SiteSpecificRequestHandler } from '@/scrapers/(common)/CommonCrawler';
 
+
 /**
  * CropKingSeedsScraper - Site-specific implementation using CommonCrawler
  * 
@@ -77,7 +78,7 @@ export async function CropKingSeedsScraper(
         // Update maxPages from first page
         if (pageNumber === 1 && result.maxPages) {
             sharedData.maxPages.value = result.maxPages;
-            log.info(`[Crop King Seeds] Detected ${result.maxPages} total pages from WooCommerce pagination`);
+            apiLogger.info(`[Crop King Seeds] Detected ${result.maxPages} total pages from WooCommerce pagination`);
         }
         
         // Add products to shared collection
@@ -85,7 +86,13 @@ export async function CropKingSeedsScraper(
         sharedData.totalProducts.value += result.products.length;
         sharedData.actualPages.value++;
 
-        log.info(`[Crop King Seeds] Page ${pageNumber}: Found ${result.products.length} products`);
+        apiLogger.logPageProgress({
+            page: pageNumber,
+            totalPages: sharedData.maxPages.value || sharedData.endPage || 1,
+            productsFound: result.products.length,
+            totalProductsSoFar: sharedData.totalProducts.value,
+            url: request.url
+        });
 
         // Save page data to dataset
         await sharedData.dataset.pushData({
@@ -102,15 +109,15 @@ export async function CropKingSeedsScraper(
             sharedData.endPage !== null && sharedData.endPage !== undefined) {
             // Test mode: crawl specific range
             shouldContinue = pageNumber < sharedData.endPage;
-            log.info(`[Crop King Seeds] Test mode: Page ${pageNumber}/${sharedData.endPage}`);
+            apiLogger.debug(`[Crop King Seeds] Test mode: Page ${pageNumber}/${sharedData.endPage}`);
         } else if (sharedData.maxPages.value && sharedData.maxPages.value > 0) {
             // Auto/Manual mode: crawl to detected max pages
             shouldContinue = pageNumber < sharedData.maxPages.value;
-            log.info(`[Crop King Seeds] Auto mode: Page ${pageNumber}/${sharedData.maxPages.value}`);
+            apiLogger.debug(`[Crop King Seeds] Auto mode: Page ${pageNumber}/${sharedData.maxPages.value}`);
         } else {
             // Fallback: stop after first page if no pagination detected
             shouldContinue = false;
-            log.info(`[Crop King Seeds] No pagination detected, stopping after page ${pageNumber}`);
+            apiLogger.debug(`[Crop King Seeds] No pagination detected, stopping after page ${pageNumber}`);
         }
 
         // Add next page to queue if needed
@@ -123,7 +130,7 @@ export async function CropKingSeedsScraper(
                 userData: { pageNumber: nextPageNumber }
             });
             
-            log.info(`[Crop King Seeds] Added next page to queue: ${nextPageNumber}`);
+            apiLogger.debug(`[Crop King Seeds] Added next page to queue: ${nextPageNumber}`);
         }
     };
 

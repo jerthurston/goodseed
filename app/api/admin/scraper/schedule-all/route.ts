@@ -21,8 +21,12 @@ export async function POST (req:NextRequest) {
             body = {};
         }
         const action = body?.action || 'start'; // Default to start nếu không có action
+        const startTime = body?.startTime ? new Date(body.startTime) : undefined; // Parse ISO string to Date
         
-        apiLogger.info('[API] Auto scraper bulk operation requested', { action });
+        apiLogger.info('[API] Auto scraper bulk operation requested', { 
+            action,
+            startTime: startTime?.toISOString()
+        });
 
         let results;
         let operationType;
@@ -34,8 +38,8 @@ export async function POST (req:NextRequest) {
             operationType = 'stop';
         } else {
             // Start operation (default)
-            apiLogger.info('[API] Scheduling all sellers for auto scraping...');
-            results = await AutoScraperScheduler.initializeAllAutoJobs();
+            apiLogger.info('[API] Scheduling all sellers for auto scraping...', { startTime: startTime?.toISOString() });
+            results = await AutoScraperScheduler.initializeAllAutoJobs(startTime);
             operationType = 'start';
         }
 

@@ -5,7 +5,7 @@ import { AlertTriangle, CheckCircle, Trash2, Edit, EyeOff, Eye } from 'lucide-re
 import { DashboardButton } from '@/app/dashboard/(components)/DashboardButton'
 import styles from '../../../app/dashboard/(components)/dashboardAdmin.module.css'
 
-export type ActionType = 'update' | 'delete' | 'deactivate' | 'activate'
+export type ActionType = 'update' | 'delete' | 'deactivate' | 'activate' | 'stop-job'
 
 interface ActionConfirmModalProps {
     isOpen: boolean
@@ -14,6 +14,7 @@ interface ActionConfirmModalProps {
     actionType: ActionType
     sellerName?: string
     isLoading?: boolean
+    jobId?: string // Optional job ID for stop-job action
 }
 
 const ActionConfirmModal: React.FC<ActionConfirmModalProps> = ({
@@ -22,7 +23,8 @@ const ActionConfirmModal: React.FC<ActionConfirmModalProps> = ({
     onConfirm,
     actionType,
     sellerName = 'this seller',
-    isLoading = false
+    isLoading = false,
+    jobId
 }) => {
     if (!isOpen) return null
 
@@ -67,6 +69,16 @@ const ActionConfirmModal: React.FC<ActionConfirmModalProps> = ({
                     confirmText: isLoading ? 'Activating...' : 'Yes, Activate',
                     confirmVariant: 'primary' as const,
                     alertVariant: 'info' as const
+                }
+            case 'stop-job':
+                return {
+                    icon: <AlertTriangle className="w-6 h-6" />,
+                    title: 'Confirm Stop Job',
+                    message: jobId ? `Stop job #${jobId.slice(0, 8)}?` : 'Stop this scraping job?',
+                    description: 'This will attempt to cancel the job from the queue. However, if the worker is already actively processing, the job will complete naturally as workers cannot be interrupted mid-execution.',
+                    confirmText: isLoading ? 'Stopping...' : 'Yes, Stop Job',
+                    confirmVariant: 'danger' as const,
+                    alertVariant: 'warning' as const
                 }
             default:
                 return {
@@ -116,6 +128,7 @@ const ActionConfirmModal: React.FC<ActionConfirmModalProps> = ({
                             actionType === 'delete' ? 'bg-red-100' : 
                             actionType === 'deactivate' ? 'bg-orange-100' :
                             actionType === 'activate' ? 'bg-green-100' :
+                            actionType === 'stop-job' ? 'bg-yellow-100' :
                             'bg-blue-100'
                         }`}>
                             {config.icon}

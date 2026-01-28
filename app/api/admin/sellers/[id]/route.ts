@@ -35,12 +35,18 @@ export async function GET(
           take: 1, // Get latest scrape log
         },
         scrapeJobs: {
+          // Get ALL jobs for statistics calculation (not just active ones)
           orderBy: { createdAt: "desc" },
-          take: 10, // Get last 10 jobs for stats
+          take: 100, // Get last 100 jobs for accurate statistics
         },
         seedCategories: {
           include: {
             seedProducts: true,
+          },
+        },
+        seedProducts: {
+          select: {
+            id: true,
           },
         },
       },

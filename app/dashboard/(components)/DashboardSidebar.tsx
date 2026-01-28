@@ -12,7 +12,7 @@ export function DashboardSidebar({ children, title }: DashboardSidebarProps) {
   return (
     <div className={styles.sidebar}>
       {title && <h2 className={styles.sidebarTitle}>{title}</h2>}
-      <nav className={`${styles.sidebarNav}`}>{children}</nav>
+      <nav className={`${styles.sidebarNav} flex flex-col min-h-[calc(100vh-12rem)]`}>{children}</nav>
     </div>
   )
 }

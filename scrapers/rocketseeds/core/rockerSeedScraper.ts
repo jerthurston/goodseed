@@ -17,7 +17,8 @@ import { extractProductFromDetailHTML, extractProductUrlsFromSitemap } from '@/s
 import { ProductCardDataFromCrawling, ProductsDataResultFromCrawling } from '@/types/crawl.type';
 import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, ErrorHandler, Log, RequestQueue, Dataset, Dictionary } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
-import { apiLogger } from '@/lib/helpers/api-logger';
+import { apiLogger } from '@/lib/helpers/api-logger'
+;
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
 import { ACCEPTLANGUAGE, USERAGENT } from '@/scrapers/(common)/constants';
 

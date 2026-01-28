@@ -1,5 +1,6 @@
 import { SiteConfig } from "@/lib/factories/scraper-factory";
-import { apiLogger } from "@/lib/helpers/api-logger";
+import { apiLogger } from "@/lib/helpers/api-logger"
+;
 import { SimplePoliteCrawler } from "@/lib/utils/polite-crawler";
 import { ACCEPTLANGUAGE, USERAGENT } from "@/scrapers/(common)/constants";
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from "@/types/crawl.type";
@@ -86,7 +87,7 @@ export async function truenorthSeedScraper(
             
             for (let i = 0; i < catLinkArr.length; i++) {
                 const catLink = catLinkArr[i];
-                apiLogger.info(`📂 Processing category ${i + 1}/${catLinkArr.length}: ${catLink}`);
+                apiLogger.debug(`📂 Processing category ${i + 1}/${catLinkArr.length}: ${catLink}`);
                 
                 try {
                     const productUrls = await extractProductUrlsFromCatLink(catLink, sourceContext?.dbMaxPage, robotsRules);
@@ -152,7 +153,7 @@ export async function truenorthSeedScraper(
             
             requestHandler: async ({ $, request }) => {
                 try {
-                    apiLogger.info(`🌐 Processing product: ${request.url}`);
+                    apiLogger.debug(`🌐 Processing product: ${request.url}`);
                     
                     // Reduced wait time since most content loads within 2s
                     if (!isTestQuickMode) {
@@ -169,7 +170,7 @@ export async function truenorthSeedScraper(
                     if (productData) {
                         products.push(productData);
                         successCount++;
-                        apiLogger.info(`✅ Successfully extracted product: ${productData.name}`);
+                        apiLogger.debug(`✅ Successfully extracted product: ${productData.name}`);
                     } else {
                         errorCount++;
                         apiLogger.warn(`⚠️ Failed to extract product data from: ${request.url}`);

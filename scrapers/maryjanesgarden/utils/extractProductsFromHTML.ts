@@ -19,7 +19,8 @@
  */
 
 import { SiteConfig } from '@/lib/factories/scraper-factory';
-import { apiLogger } from '@/lib/helpers/api-logger';
+import { apiLogger } from '@/lib/helpers/api-logger'
+;
 import { ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { MAXPAGE_PAGINATION } from '../core/selector';
 

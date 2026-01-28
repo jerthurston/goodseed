@@ -16,7 +16,8 @@
 import type { CategoryMetadataFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { PrismaClient, ScrapeJobStatus, Seller, StockStatus } from '@prisma/client';
 import { parseCannabisType, parseSeedType } from '../utils/data-mappers';
-import { apiLogger } from '@/lib/helpers/api-logger';
+import { apiLogger } from '@/lib/helpers/api-logger'
+;
 import { ISaveDbService } from '@/lib/factories/scraper-factory';
 import { prisma } from '@/lib/prisma';
 
