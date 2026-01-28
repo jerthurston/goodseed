@@ -116,20 +116,29 @@ Start here to understand the system design and technology choices.
 
 ---
 
-### 📋 **Legacy Documentation (Free Tier Focus)**
+## 🗺️ Documentation Roadmap
 
-These documents focus on 100% free tier deployment for demos/MVP:
+### For First-Time Deployment
 
-#### [FREE-DEPLOYMENT-PLAN.md](./FREE-DEPLOYMENT-PLAN.md)
-Complete free tier architecture and strategy
-
-#### [QUICK-START-GUIDE.md](./QUICK-START-GUIDE.md)
-Quick deployment in 1 hour
-
-#### [CODE-CHANGES-REQUIRED.md](./CODE-CHANGES-REQUIRED.md)
-Technical implementation for free tier
-
----
+```
+1. Read ARCHITECTURE.md
+   ↓ Understand the system design
+   
+2. Follow DEPLOYMENT-GUIDE.md
+   ↓ Deploy all services (2-3 hours)
+   
+3. Configure ENVIRONMENT-SETUP.md
+   ↓ Set all environment variables
+   
+4. Setup BACKGROUND-WORKERS.md (optional)
+   ↓ Deploy worker service
+   
+5. Configure MONITORING.md
+   ↓ Setup monitoring and alerts
+   
+6. Keep TROUBLESHOOTING.md handy
+   ↓ Reference when issues arise
+```
 
 ## 🗺️ Documentation Roadmap
 
@@ -179,7 +188,7 @@ Technical implementation for free tier
 |----------------|------------------|
 | 🆕 **New to the project** | Start with [ARCHITECTURE.md](./ARCHITECTURE.md) |
 | 🚀 **Ready to deploy production** | Follow [DEPLOYMENT-GUIDE.md](./DEPLOYMENT-GUIDE.md) |
-| 💰 **Planning free tier demo** | Use [FREE-DEPLOYMENT-PLAN.md](./FREE-DEPLOYMENT-PLAN.md) |
+| 💰 **Planning free tier demo** | Use free tier in [SCALING-GUIDE.md](./SCALING-GUIDE.md#phase-1-free-tier-mvpdemo) |
 | ⚙️ **Need background workers** | Setup [BACKGROUND-WORKERS.md](./BACKGROUND-WORKERS.md) |
 | 📈 **Ready to scale** | Review [SCALING-GUIDE.md](./SCALING-GUIDE.md) |
 | 📊 **Setup monitoring** | Configure [MONITORING.md](./MONITORING.md) |
@@ -192,7 +201,7 @@ Technical implementation for free tier
 
 | Tier | Cost/Month | Best For | Documentation |
 |------|------------|----------|---------------|
-| **Free Tier** | $0 | Demo, MVP validation, learning | [FREE-DEPLOYMENT-PLAN.md](./FREE-DEPLOYMENT-PLAN.md) |
+| **Free Tier** | $0 | Demo, MVP validation, learning | [SCALING-GUIDE.md](./SCALING-GUIDE.md#phase-1-free-tier-mvpdemo) |
 | **Starter** | ~$102 | Early customers, small user base | [SCALING-GUIDE.md](./SCALING-GUIDE.md#phase-2-starter-production) |
 | **Growth** | ~$368 | Growing business, 1K-10K users | [SCALING-GUIDE.md](./SCALING-GUIDE.md#phase-3-growth-production) |
 | **Enterprise** | $1,000+ | Mission-critical, 10K+ users | [SCALING-GUIDE.md](./SCALING-GUIDE.md#phase-4-enterprise-scale) |
@@ -560,7 +569,7 @@ After successful deployment:
 **Start here**: [DEPLOYMENT-GUIDE.md](./DEPLOYMENT-GUIDE.md)
 
 ### For Free Tier Demo:
-**Start here**: [FREE-DEPLOYMENT-PLAN.md](./FREE-DEPLOYMENT-PLAN.md)
+**Start here**: [SCALING-GUIDE.md](./SCALING-GUIDE.md#phase-1-free-tier-mvpdemo)
 
 ### Just Learning?
 **Start here**: [ARCHITECTURE.md](./ARCHITECTURE.md)
