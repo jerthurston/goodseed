@@ -20,6 +20,7 @@ import { ProductsDataResultFromCrawling } from '@/types/crawl.type';
 import { CheerioAPI, CheerioCrawlingContext, Log } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { CommonCrawler, CommonScrapingContext, SiteSpecificRequestHandler } from '@/scrapers/(common)/CommonCrawler';
+import { apiLogger } from '@/lib/helpers/api-logger';
 
 
 /**
