@@ -1,0 +1,900 @@
+# Production Deployment Guide
+
+## Overview
+
+This guide provides step-by-step instructions for deploying the GoodSeed Cannabis App to production using Vercel, Neon PostgreSQL, Upstash Redis, and Resend email service.
+
+**Total Deployment Time**: ~2-3 hours (first time)
+
+---
+
+## Prerequisites
+
+### Required Accounts
+- [ ] GitHub account (code repository)
+- [ ] Vercel account (hosting)
+- [ ] Neon account (database)
+- [ ] Upstash account (Redis cache/queue)
+- [ ] Resend account (email service)
+- [ ] Domain name (optional, recommended)
+
+### Local Development Setup
+- [ ] Node.js 20+ installed
+- [ ] pnpm package manager (`npm install -g pnpm`)
+- [ ] Git installed and configured
+- [ ] Code editor (VS Code recommended)
+- [ ] Terminal/Command line access
+
+### Knowledge Requirements
+- Basic understanding of Git/GitHub
+- Familiarity with environment variables
+- Basic command line usage
+- Understanding of DNS (if using custom domain)
+
+---
+
+## Deployment Tiers
+
+Choose the tier that matches your needs:
+
+| Tier | Cost | Use Case | Setup Time |
+|------|------|----------|------------|
+| **Free** | $0/month | Demo, MVP testing | 1-2 hours |
+| **Production** | ~$95/month | Live application, moderate traffic | 2-3 hours |
+| **Enterprise** | $500+/month | High traffic, SLA requirements | 3-4 hours |
+
+---
+
+## Phase 1: Service Setup (60 minutes)
+
+### Step 1: Neon PostgreSQL Setup (15 min)
+
+#### 1.1 Create Neon Account
+```bash
+1. Visit: https://neon.tech/
+2. Click "Sign up" → "Continue with GitHub"
+3. Authorize Neon to access your GitHub account
+4. Complete registration
+```
+
+#### 1.2 Create Production Database
+```bash
+# In Neon Console:
+1. Click "Create a project"
+2. Configure:
+   Project name: goodseed-production
+   Region: us-east-2 (Ohio) or closest to your users
+   Postgres version: 16
+   Compute: Select appropriate tier
+      - Free: 0.5GB storage (demo)
+      - Launch: 10GB storage (production) - $19/month
+      - Scale: 50GB storage (high-traffic) - $69/month
+3. Click "Create project"
+```
+
+#### 1.3 Get Connection Strings
+```bash
+# After project creation:
+1. Go to Dashboard → Connection Details
+2. Copy both connection strings:
+
+# Pooled connection (for application)
+DATABASE_URL="postgresql://user:password@ep-xxx-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
+# Direct connection (for migrations)
+DIRECT_URL="postgresql://user:password@ep-xxx-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
+3. Save these securely (we'll use them later)
+```
+
+#### 1.4 Configure Database Settings (Optional)
+```bash
+# In Neon Console → Settings:
+1. Autosuspend delay: 5 minutes (recommended for production)
+2. Enable connection pooling: Yes
+3. Max connections: 100 (adjust based on tier)
+4. Point-in-time recovery: Enable (7-30 days)
+```
+
+---
+
+### Step 2: Upstash Redis Setup (10 min)
+
+#### 2.1 Create Upstash Account
+```bash
+1. Visit: https://upstash.com/
+2. Click "Sign up" → "Continue with GitHub"
+3. Authorize Upstash
+4. Complete registration
+```
+
+#### 2.2 Create Redis Database
+```bash
+# In Upstash Console:
+1. Click "Create Database"
+2. Configure:
+   Name: goodseed-production
+   Type: Regional (cheaper, sufficient for most cases)
+   Region: us-east-1 (or same as Neon for low latency)
+   Plan:
+      - Free: 10K commands/day (demo)
+      - Pay-as-you-go: ~$10/month (production)
+      - Pro: $50/month (high-traffic)
+   Enable TLS: Yes (required)
+   Enable Eviction: No (we handle cleanup)
+3. Click "Create"
+```
+
+#### 2.3 Get Redis Credentials
+```bash
+# In Database Details page:
+1. Copy connection details:
+
+REDIS_HOST="xxx-xxx-12345.c-2.us-east-1.aws.upstash.io"
+REDIS_PORT="6379"
+REDIS_PASSWORD="your-password-here"
+
+# Alternative: REST API (for serverless-friendly access)
+UPSTASH_REDIS_REST_URL="https://xxx-12345.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="AXXXaaabbbccc..."
+
+2. Save these credentials
+```
+
+#### 2.3 Configure Redis Settings
+```bash
+# In Database Settings:
+1. Max database size: Unlimited (pay-as-you-go)
+2. Max connection: 100
+3. Enable multiZone: Optional (for high availability)
+```
+
+---
+
+### Step 3: Resend Email Setup (10 min)
+
+#### 3.1 Create Resend Account
+```bash
+1. Visit: https://resend.com/
+2. Click "Sign up"
+3. Verify your email
+4. Complete registration
+```
+
+#### 3.2 Get API Key
+```bash
+# In Resend Dashboard:
+1. Go to "API Keys"
+2. Click "Create API Key"
+3. Name: "goodseed-production"
+4. Permissions: Full access
+5. Click "Create"
+6. Copy the API key (shown only once!)
+
+RESEND_API_KEY="re_xxxxxxxxxxxx"
+
+7. Save this securely
+```
+
+#### 3.3 Verify Domain (Recommended for Production)
+```bash
+# For sending emails from your domain:
+1. Go to "Domains" → "Add Domain"
+2. Enter your domain: lembooking.com
+3. Add DNS records (provided by Resend):
+   
+   Type: TXT
+   Name: resend._domainkey
+   Value: [provided by Resend]
+   
+   Type: TXT
+   Name: _dmarc
+   Value: [provided by Resend]
+   
+4. Wait for verification (5-30 minutes)
+5. Use verified domain in emails:
+   RESEND_FROM_EMAIL="noreply@lembooking.com"
+```
+
+**Note**: For demo, you can use Resend's test email:
+```bash
+RESEND_FROM_EMAIL="onboarding@resend.dev"
+```
+
+#### 3.4 Choose Plan
+```bash
+Plans:
+- Free: 100 emails/day, 3,000/month (demo)
+- Pro: $20/month, 50,000 emails/month (production)
+- Business: $80/month, 1,000,000 emails/month (high-volume)
+```
+
+---
+
+### Step 4: Vercel Setup (15 min)
+
+#### 4.1 Create Vercel Account
+```bash
+1. Visit: https://vercel.com/
+2. Click "Sign up" → "Continue with GitHub"
+3. Authorize Vercel to access your GitHub account
+4. Complete registration
+```
+
+#### 4.2 Import GitHub Repository
+```bash
+# In Vercel Dashboard:
+1. Click "Add New..." → "Project"
+2. Import GitHub repository:
+   - Repository: goodseed-app-vercel
+   - Owner: Vietphu1211
+3. Click "Import"
+```
+
+#### 4.3 Configure Build Settings
+```bash
+# In project configuration:
+Framework Preset: Next.js
+Root Directory: ./
+Build Command: pnpm build
+Output Directory: .next
+Install Command: pnpm install --frozen-lockfile
+Node.js Version: 20.x
+
+# Click "Continue"
+```
+
+#### 4.4 DO NOT DEPLOY YET
+```bash
+# We need to add environment variables first
+Click "Environment Variables" tab
+```
+
+---
+
+### Step 5: Environment Variables Configuration (20 min)
+
+#### 5.1 Generate Secrets
+```bash
+# Generate secure secrets:
+
+# For NEXTAUTH_SECRET and AUTH_SECRET:
+openssl rand -base64 32
+
+# For CRON_SECRET:
+openssl rand -base64 32
+
+# Save these generated values
+```
+
+#### 5.2 Add Environment Variables to Vercel
+
+In Vercel project settings → Environment Variables, add ALL of these:
+
+```bash
+# ===== DATABASE (Neon) =====
+DATABASE_URL=postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+DIRECT_URL=postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+
+# ===== REDIS (Upstash) =====
+REDIS_HOST=xxx-12345.upstash.io
+REDIS_PORT=6379
+REDIS_PASSWORD=your-redis-password
+
+# ===== AUTHENTICATION =====
+# Your Vercel URL will be: https://your-project.vercel.app
+NEXTAUTH_URL=https://your-project.vercel.app
+NEXTAUTH_SECRET=generated-secret-from-step-5.1
+AUTH_URL=https://your-project.vercel.app
+AUTH_SECRET=generated-secret-from-step-5.1
+AUTH_TRUST_HOST=true
+
+# ===== EMAIL (Resend) =====
+RESEND_API_KEY=re_xxxxxxxxxxxx
+RESEND_FROM_EMAIL=noreply@lembooking.com
+
+# ===== OAUTH PROVIDERS (Optional) =====
+AUTH_GOOGLE_ID=your-google-client-id
+AUTH_GOOGLE_SECRET=your-google-client-secret
+AUTH_FACEBOOK_ID=your-facebook-app-id
+AUTH_FACEBOOK_SECRET=your-facebook-app-secret
+
+# ===== SECURITY =====
+CRON_SECRET=generated-secret-from-step-5.1
+
+# ===== ENVIRONMENT =====
+NODE_ENV=production
+
+# ===== OPTIONAL: MONITORING =====
+SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
+SENTRY_ORG=your-org
+SENTRY_PROJECT=goodseed-app
+
+# ===== OPTIONAL: WORKER =====
+WORKER_HEALTH_URL=https://goodseed-worker.onrender.com/health
+
+# ===== OPTIONAL: FEATURES =====
+SCRAPER_VERBOSE=false
+NEXT_PUBLIC_DEMO_PASSWORD=your-demo-password
+```
+
+**Important**: 
+- Set environment for: Production, Preview, Development (check all three)
+- Vercel will encrypt these automatically
+
+---
+
+## Phase 2: Database Migration (15 minutes)
+
+### Step 6: Run Database Migrations
+
+#### 6.1 Local Setup
+```bash
+# Clone repository (if not already)
+git clone https://github.com/Vietphu1211/goodseed-app-vercel.git
+cd goodseed-app-vercel
+
+# Install dependencies
+pnpm install
+
+# Create .env.local with Neon credentials
+cp .env.example .env.local
+# Edit .env.local with your Neon DATABASE_URL
+```
+
+#### 6.2 Generate Prisma Client
+```bash
+# Set environment variable and generate
+export DATABASE_URL="your-neon-connection-string"
+npx prisma generate
+```
+
+#### 6.3 Push Schema to Neon
+```bash
+# Option A: Using db push (recommended for new database)
+npx prisma db push
+
+# Option B: Using migrations (for production)
+npx prisma migrate deploy
+```
+
+#### 6.4 Verify Database
+```bash
+# Open Prisma Studio to verify
+npx prisma studio
+
+# Or check in Neon Console:
+# Tables → Should see all tables created
+```
+
+#### 6.5 Seed Initial Data (Optional)
+```bash
+# Add initial sellers/data
+npx tsx scripts/seed-dispensaries.ts
+
+# Or create your own seed script
+```
+
+---
+
+## Phase 3: Deployment (30 minutes)
+
+### Step 7: Deploy to Vercel
+
+#### 7.1 First Deployment
+```bash
+# In Vercel Dashboard:
+1. Go to your project
+2. Click "Deploy"
+3. Wait for build to complete (3-5 minutes)
+4. Check build logs for any errors
+```
+
+#### 7.2 Verify Deployment
+```bash
+# After deployment:
+1. Click on deployment URL: https://your-project.vercel.app
+2. Test homepage loads
+3. Try to sign in/register
+4. Check API routes: https://your-project.vercel.app/api/health
+```
+
+#### 7.3 Common Build Errors
+
+**Error: Prisma Client not generated**
+```bash
+Solution: Add postinstall script to package.json
+"scripts": {
+  "postinstall": "prisma generate"
+}
+```
+
+**Error: Environment variable not found**
+```bash
+Solution: Check Environment Variables in Vercel settings
+- Ensure all required vars are set
+- Restart deployment
+```
+
+**Error: Database connection failed**
+```bash
+Solution: Verify Neon connection string
+- Must include ?sslmode=require
+- Check username/password
+- Verify database is not paused
+```
+
+---
+
+### Step 8: Configure Custom Domain (Optional)
+
+#### 8.1 Add Domain to Vercel
+```bash
+# In Vercel project settings:
+1. Go to "Domains"
+2. Click "Add"
+3. Enter your domain: goodseed.lembooking.com
+4. Vercel provides DNS records
+```
+
+#### 8.2 Update DNS Settings
+```bash
+# In your DNS provider (Cloudflare):
+1. Add CNAME record:
+   Type: CNAME
+   Name: goodseed (or @ for root)
+   Value: cname.vercel-dns.com
+   TTL: Auto
+   Proxy: Disabled (important!)
+
+2. Wait for DNS propagation (5-60 minutes)
+```
+
+#### 8.3 Update Environment Variables
+```bash
+# Update in Vercel settings:
+NEXTAUTH_URL=https://goodseed.lembooking.com
+AUTH_URL=https://goodseed.lembooking.com
+
+# Redeploy for changes to take effect
+```
+
+---
+
+### Step 9: Configure Vercel Cron Jobs
+
+**Note**: Cron jobs require Vercel Pro plan ($20/month)
+
+#### 9.1 Create vercel.json
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/scraper",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-jobs",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/send-emails",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
+```
+
+#### 9.2 Commit and Deploy
+```bash
+git add vercel.json
+git commit -m "Add Vercel cron configuration"
+git push origin main
+
+# Vercel auto-deploys
+```
+
+#### 9.3 Alternative: External Cron Service (Free)
+
+If using Vercel Hobby (free), use external cron:
+
+**Option A: Cron-job.org**
+```bash
+1. Visit: https://cron-job.org/
+2. Create account
+3. Add cron jobs:
+   URL: https://your-app.vercel.app/api/cron/trigger?secret=YOUR_CRON_SECRET
+   Schedule: 0 2 * * * (daily at 2 AM)
+```
+
+**Option B: GitHub Actions**
+```yaml
+# .github/workflows/cron-jobs.yml
+name: Scheduled Jobs
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-scraping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Scraping
+        run: |
+          curl "${{ secrets.APP_URL }}/api/cron/trigger?secret=${{ secrets.CRON_SECRET }}"
+```
+
+---
+
+## Phase 4: Worker Setup (Optional, 30 minutes)
+
+For long-running scraping tasks, deploy a separate worker service.
+
+### Step 10: Deploy Worker to Render
+
+#### 10.1 Create Dockerfile.worker
+```dockerfile
+FROM node:20-alpine
+
+# Install Chromium for Crawlee
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates
+
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+WORKDIR /app
+
+COPY package*.json pnpm-lock.yaml ./
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
+
+COPY . .
+RUN npx prisma generate
+
+EXPOSE 3001
+HEALTHCHECK CMD node -e "require('http').get('http://localhost:3001/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+
+CMD ["pnpm", "run", "worker:scraper"]
+```
+
+#### 10.2 Create Render Account
+```bash
+1. Visit: https://render.com/
+2. Sign up with GitHub
+3. Authorize Render
+```
+
+#### 10.3 Create Background Worker
+```bash
+# In Render Dashboard:
+1. Click "New +" → "Background Worker"
+2. Connect GitHub repository
+3. Configure:
+   Name: goodseed-worker
+   Environment: Docker
+   Dockerfile Path: ./Dockerfile.worker
+   Plan:
+      - Free: $0 (with sleep after 15 min)
+      - Starter: $7/month (always-on)
+4. Add environment variables (same as Vercel)
+5. Click "Create Background Worker"
+```
+
+#### 10.4 Add Worker Health Check
+```bash
+# Update WORKER_HEALTH_URL in Vercel:
+WORKER_HEALTH_URL=https://goodseed-worker.onrender.com/health
+```
+
+---
+
+## Phase 5: Monitoring Setup (15 minutes)
+
+### Step 11: Configure Sentry (Optional but Recommended)
+
+#### 11.1 Create Sentry Account
+```bash
+1. Visit: https://sentry.io/
+2. Sign up with GitHub
+3. Create organization and project
+```
+
+#### 11.2 Install Sentry
+```bash
+# In your project:
+pnpm add @sentry/nextjs
+
+# Run wizard:
+npx @sentry/wizard@latest -i nextjs
+```
+
+#### 11.3 Add to Environment Variables
+```bash
+# In Vercel:
+SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
+SENTRY_ORG=your-organization
+SENTRY_PROJECT=goodseed-app
+```
+
+---
+
+## Phase 6: Testing & Verification (30 minutes)
+
+### Step 12: Comprehensive Testing
+
+#### 12.1 Functional Testing
+```bash
+# Test these features:
+□ Homepage loads correctly
+□ User registration works
+□ Email verification received
+□ User login successful
+□ Product listing displays
+□ Search functionality works
+□ Product details page loads
+□ Admin dashboard accessible (if admin)
+□ Manual scraping trigger works
+□ Job status updates correctly
+```
+
+#### 12.2 Performance Testing
+```bash
+# Use tools:
+1. Google PageSpeed Insights: https://pagespeed.web.dev/
+   Target: > 90 score
+
+2. WebPageTest: https://www.webpagetest.org/
+   Target: < 2s load time
+
+3. Vercel Analytics (in dashboard)
+   Monitor: Core Web Vitals
+```
+
+#### 12.3 Security Testing
+```bash
+# Verify:
+□ HTTPS enabled (automatic with Vercel)
+□ Environment variables not exposed
+□ API routes protected
+□ CORS configured correctly
+□ Rate limiting works
+□ Authentication enforced
+```
+
+#### 12.4 Email Testing
+```bash
+# Test emails:
+□ Registration email received
+□ Password reset works
+□ Notification emails sent
+□ Email formatting correct
+□ Links in emails work
+```
+
+---
+
+## Phase 7: Post-Deployment (Ongoing)
+
+### Step 13: Monitoring & Maintenance
+
+#### 13.1 Set Up Alerts
+```bash
+# Vercel:
+1. Go to Project Settings → Notifications
+2. Enable:
+   - Deployment failures
+   - Build errors
+   - Performance issues
+
+# Sentry:
+1. Configure alert rules
+2. Set up Slack/email notifications
+
+# Uptime Monitoring:
+Consider: UptimeRobot, Pingdom, or StatusPage
+```
+
+#### 13.2 Regular Maintenance Tasks
+```bash
+# Daily:
+- Check error logs (Sentry)
+- Monitor scraping jobs
+- Review email delivery rates
+
+# Weekly:
+- Check database size (Neon console)
+- Review Redis usage (Upstash console)
+- Analyze performance (Vercel Analytics)
+- Update dependencies
+
+# Monthly:
+- Review costs
+- Optimize database queries
+- Clean up old data
+- Update documentation
+```
+
+---
+
+## Troubleshooting Common Issues
+
+### Issue: Build Fails on Vercel
+```bash
+# Check build logs in Vercel dashboard
+# Common causes:
+1. Missing environment variables
+2. Prisma client not generated
+3. TypeScript errors
+4. Missing dependencies
+
+# Solutions:
+- Add "postinstall": "prisma generate" to package.json
+- Fix TypeScript errors locally first
+- Verify all env vars are set
+```
+
+### Issue: Database Connection Fails
+```bash
+# Verify:
+1. Connection string format correct
+2. Database not paused (Neon auto-suspends)
+3. SSL mode included: ?sslmode=require
+4. Correct credentials
+
+# Test connection locally:
+npx prisma db push
+```
+
+### Issue: Redis Connection Timeout
+```bash
+# Check:
+1. Redis host/port/password correct
+2. TLS enabled (required for Upstash)
+3. Network connectivity
+4. Redis not hitting limits
+
+# Test:
+node -e "const Redis = require('ioredis'); const r = new Redis(process.env.REDIS_URL); r.ping().then(console.log);"
+```
+
+### Issue: Emails Not Sending
+```bash
+# Verify:
+1. RESEND_API_KEY is correct
+2. Domain is verified (if using custom domain)
+3. Email address format correct
+4. Not hitting rate limits
+
+# Check Resend dashboard for:
+- Delivery status
+- Bounce/spam rates
+- Error messages
+```
+
+### Issue: Worker Not Processing Jobs
+```bash
+# Check:
+1. Worker is running (Render logs)
+2. Redis connection successful
+3. Environment variables set correctly
+4. Worker not crashed
+
+# Debug:
+- Check Render logs
+- Verify job added to queue
+- Test worker locally
+```
+
+---
+
+## Rollback Procedure
+
+If deployment has critical issues:
+
+### Quick Rollback
+```bash
+# In Vercel Dashboard:
+1. Go to Deployments
+2. Find last working deployment
+3. Click "..." → "Promote to Production"
+4. Confirm rollback
+```
+
+### Database Rollback
+```bash
+# In Neon Console:
+1. Go to "Restore"
+2. Select point in time
+3. Create branch from backup
+4. Update DATABASE_URL to new branch
+5. Redeploy with new connection string
+```
+
+---
+
+## Success Checklist
+
+Before considering deployment complete:
+
+- [ ] Application accessible at production URL
+- [ ] Database connected and migrations run
+- [ ] Redis queue working
+- [ ] Email service sending emails
+- [ ] Authentication working (all providers)
+- [ ] Admin panel accessible
+- [ ] Scraping functionality working
+- [ ] Cron jobs configured (or alternative)
+- [ ] Worker deployed (if using separate service)
+- [ ] Monitoring/alerts configured
+- [ ] Performance targets met
+- [ ] Security checklist completed
+- [ ] Backup strategy in place
+- [ ] Documentation updated
+- [ ] Team trained on deployment process
+
+---
+
+## Cost Summary
+
+### Estimated Monthly Costs
+
+**Demo/MVP** (Free Tier):
+```
+Vercel Hobby:     $0
+Neon Free:        $0
+Upstash Free:     $0
+Resend Free:      $0
+Total:            $0/month
+```
+
+**Production** (Recommended):
+```
+Vercel Pro:       $20/month
+Neon Launch:      $19/month
+Upstash:          $10/month
+Resend Pro:       $20/month
+Sentry Team:      $26/month
+Worker (Render):  $7/month
+Total:            $102/month
+```
+
+**Enterprise**:
+```
+Vercel Enterprise: $300+/month
+Neon Scale:        $69/month
+Upstash Pro:       $50/month
+Resend Business:   $80/month
+Sentry Business:   $99/month
+Workers:           $50+/month
+Total:             $648+/month
+```
+
+---
+
+## Next Steps
+
+After successful deployment:
+
+1. **Documentation**: Update README with production URLs
+2. **Team Training**: Train team on deployment process
+3. **Monitoring**: Set up regular monitoring routines
+4. **Optimization**: Identify and fix performance bottlenecks
+5. **Scaling**: Plan for traffic growth
+6. **Backups**: Verify backup procedures work
+7. **Security**: Schedule security audits
+8. **Compliance**: Ensure regulatory compliance
+
+---
+
+## Support
+
+Need help? Check these resources:
+
+- **Documentation**: See other files in `docs/infrastructure(v2)/`
+- **Troubleshooting**: [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
+- **Architecture**: [ARCHITECTURE.md](./ARCHITECTURE.md)
+- **Service Docs**: Individual service documentation files
+
+---
+
+**Congratulations! 🎉** You've successfully deployed the GoodSeed Cannabis App to production!
