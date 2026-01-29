@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
+    "postinstall": "prisma generate",
     "# Production Scripts": "",
     "cron:start": "tsx scripts/cron/cron-server.ts",
     "db:seed:dispensaries": "tsx scripts/seed-dispensaries.ts",
