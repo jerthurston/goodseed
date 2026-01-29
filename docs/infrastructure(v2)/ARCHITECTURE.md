@@ -31,79 +31,93 @@ The GoodSeed Cannabis App uses a modern, serverless-first architecture designed 
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                     VERCEL (Next.js Application)                              │
-│  ┌────────────────────────────────────────────────────────────────────┐                    │
-│  │  PRESENTATION LAYER (Next.js 16 - App Router)                      │  │
-│  │  ┌──────────────────┐  ┌──────────────────┐  ┌─────────────────┐  │  │
-│  │  │ Server Components│  │  Client Components│  │  Middleware(proxy.ts)     │  │  │
-│  │  │ • SSR Pages      │  │  • Interactive UI │  │  • Auth Check   │  │  │
-│  │  │ • SEO Optimized  │  │  • React Query    │  │  • Rate Limit   │  │  │
-│  │  │ • Streaming      │  │  • State Mgmt     │  │  • Logging      │  │  │
-│  │  └──────────────────┘  └──────────────────┘  └─────────────────┘  │  │
-│  └────────────────────────────────────────────────────────────────────┘  │
-│  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │  API LAYER (Serverless Functions)                                  │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐   │  │
-│  │  │ /api/auth/*  │  │ /api/seeds/* │  │ /api/scraper/*         │   │  │
-│  │  │ Authentication│  │ Product CRUD │  │ Job Management         │   │  │
-│  │  └──────────────┘  └──────────────┘  └────────────────────────┘   │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐   │  │
-│  │  │ /api/cron/*  │  │ /api/admin/* │  │ /api/webhooks/*        │   │  │
-│  │  │ Scheduled    │  │ Admin Panel  │  │ External Integrations  │   │  │
-│  │  └──────────────┘  └──────────────┘  └────────────────────────┘   │  │
-│  └────────────────────────────────────────────────────────────────────┘  │
-│  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │  EDGE FUNCTIONS (Ultra-low latency)                                │  │
-│  │  • Geolocation-based content                                        │  │
-│  │  • A/B Testing                                                       │  │
-│  │  • Feature Flags                                                     │  │
-│  └────────────────────────────────────────────────────────────────────┘  │
-└────┬──────────┬─────────────┬──────────────┬─────────────┬──────────────┘
+│                     VERCEL (Next.js Application)                            │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  PRESENTATION LAYER (Next.js 16 - App Router)                       │    │
+│  │  ┌──────────────────┐  ┌──────────────────┐    ┌─────────────────┐  │    │
+│  │  │ Server Components│  │  Client Components│   │  Middleware     │  │    │
+│  │  │ • SSR Pages      │  │  • Interactive UI │   │  • Auth Check   │  │    │
+│  │  │ • SEO Optimized  │  │  • React Query    │   │  • Rate Limit   │  │    │
+│  │  │ • Streaming      │  │  • State Mgmt     │   │  • Logging      │  │    │
+│  │  └──────────────────┘  └──────────────────┘    └─────────────────┘  │    │
+│  └────────────────────────────────────────────────────────────────────┘     │
+│  ┌────────────────────────────────────────────────────────────────────┐     │
+│  │  API LAYER (Serverless Functions)                                  │     │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐    │     │
+│  │  │ /api/auth/*  │  │ /api/seeds/* │  │ /api/scraper/*         │    │     │ 
+│  │  │ Authentication│  │ Product CRUD │  │ Job Management         │   │     │
+│  │  └──────────────┘  └──────────────┘  └────────────────────────┘    │     │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐    │     │
+│  │  │ /api/cron/*  │  │ /api/admin/* │  │ /api/webhooks/*        │    │     │
+│  │  │ Scheduled    │  │ Admin Panel  │  │ External Integrations  │    │     │
+│  │  └──────────────┘  └──────────────┘  └────────────────────────┘    │     │
+│  └────────────────────────────────────────────────────────────────────┘     │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  EDGE FUNCTIONS (Ultra-low latency)                                  │   │
+│  │  • Geolocation-based content                                         │   │
+│  │  • A/B Testing                                                       │   │
+│  │  • Feature Flags                                                     │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+└────┬──────────┬─────────────┬──────────────┬─────────────┬──────────────────┘
      │          │             │              │             │
      │          │             │              │             │
      ▼          ▼             ▼              ▼             ▼
-┌─────────┐ ┌──────────┐ ┌──────────┐ ┌───────────┐ ┌──────────────┐
-│  NEON   │ │ UPSTASH  │ │ RESEND   │ │  VERCEL   │ │   SENTRY     │
-│  (DB)   │ │ (Redis)  │ │ (Email)  │ │   Cron    │ │  (Errors)    │
-└────┬────┘ └────┬─────┘ └────┬─────┘ └─────┬─────┘ └──────────────┘
+┌─────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐ ┌──────────────┐
+│  NEON   │ │ UPSTASH  │ │ RESEND   │ │  GITHUB    │ │   SENTRY     │
+│  (DB)   │ │ (Redis)  │ │ (Email)  │ │  ACTIONS   │ │  (Errors)    │
+└────┬────┘ └────┬─────┘ └────┬─────┘ └─────┬──────┘ └──────────────┘
      │           │            │             │
-     │           │            │             │ Trigger
+     │           │            │             │ Cron Trigger (Cleanup Only)
+     │           │            │             │ • Weekly Sunday 2 AM UTC
      │           │            │             ▼
-     │           │            │      ┌──────────────────┐
-     │           │            │      │  CRON TRIGGERS   │
-     │           │            │      │  • Daily Scrape  │
-     │           │            │      │  • Cleanup Jobs  │
-     │           │            │      │  • Email Queue   │
-     │           │            │      └────────┬─────────┘
-     │           │            │               │
-     │           ▼            │               ▼
-     │    ┌──────────────┐   │        ┌─────────────────┐
-     │    │  BULL QUEUE  │   │        │  WORKER PROCESS │
-     │    │  (Job Queue) │◄──┼────────│  (Serverless)   │
-     │    │              │   │        │  • Job Processor│
-     │    │  Job Types:  │   │        │  • Error Handle │
-     │    │  • Scraping  │   │        │  • Retry Logic  │
-     │    │  • Email     │   │        └────────┬────────┘
-     │    │  • Cleanup   │   │                 │
-     │    │  • Reports   │   │                 │
-     │    └──────┬───────┘   │                 │
-     │           │            │                 │
-     │           ▼            │                 ▼
-     │    ┌──────────────┐   │         ┌──────────────────┐
-     │    │   WORKER     │   │         │  EXTERNAL SITES  │
-     │    │  SCRAPER     │◄──┼─────────│  • Seed Banks    │
-     │    │  • Crawlee   │   │         │  • Product Data  │
-     │    │  • Cheerio   │   │         │  • Pricing Info  │
-     │    │  • Puppeteer │   │         └──────────────────┘
-     │    └──────┬───────┘   │
+     │           │            │      ┌───────────────────────────┐
+     │           │            │      │  /api/cron/cleanup-*      │
+     │           │            │      │  (Vercel API Routes)      │
+     │           │            │      │  • cleanup-stuck-jobs     │
+     │           │            │      │  • cleanup-rate-limits    │
+     │           │            │      │  (Short-term tasks only)  │
+     │           │            │      └───────────────────────────┘
      │           │            │
-     │           ▼            ▼
-     │    ┌──────────────────────────┐
-     │    │   EMAIL WORKER           │
-     │    │   • User Notifications   │
-     │    │   • Job Alerts           │
-     │    │   • System Emails        │
-     │    └──────────────────────────┘
+     │           ▼            │                 
+     │    ┌──────────────┐    │                 
+     │    │  BULL QUEUE  │◄───┼─── Dashboard RUN Button (PRIMARY)
+     │    │  (Upstash)   │    │    Admin schedules repeatable jobs
+     │    │              │    │    POST /api/admin/scraper/schedule-all
+     │    │  Job Types:  │    │
+     │    │  • Scraping  │    │
+     │    │  • Email     │    │
+     │    │  • Reports   │    │
+     │    └──────┬───────┘    │
+     │           │            │
+     │           │ Pick Jobs  │
+     │           ▼            │
+     │    ┌─────────────────────────────────────────────────┐
+     │    │   RENDER WORKER SERVICE (Background Worker)     │
+     │    │   Docker Container - Always Running             │
+     │    │  ┌──────────────────────────────────────────┐   │
+     │    │  │  Scraper Worker (lib/workers/scraper-    │   │
+     │    │  │  worker.ts)                              │   │
+     │    │  │  • Pick jobs from Bull Queue             │   │
+     │    │  │  • Process with Crawlee/Cheerio          │   │
+     │    │  │  • Normalize & validate data             │   │
+     │    │  │  • Save to Neon DB                       │   │
+     │    │  │  • Update job status                     │   │
+     │    │  │  • Send notification emails              │   │
+     │    │  │  • Error handling & retry logic          │   │
+     │    │  └──────────────────┬───────────────────────┘   │
+     │    │                     │                           │
+     │    │  Health Endpoint:   │                           │
+     │    │  GET /health → 200 OK                           │
+     │    └─────────────────────┼───────────────────────────┘
+     │                          │
+     │                          │ Scrape
+     │                          ▼
+     │                   ┌──────────────────┐
+     │                   │  EXTERNAL SITES  │
+     │                   │  • Seed Banks    │
+     │                   │  • Product Data  │
+     │                   │  • Pricing Info  │
+     │                   └──────────────────┘
      │
      ▼
 ┌──────────────────────────────────────┐
@@ -308,13 +322,286 @@ await resend.emails.send({
 
 ---
 
-### 5. Background Workers
+### 5. Render Worker Service
 
-**Purpose**: Process long-running tasks asynchronously
+**Purpose**: Process long-running scraping jobs from Bull Queue
 
-**Implementation Options**:
+**⚠️ CRITICAL REQUIREMENT: Render Starter Plan ($7/month) is REQUIRED for production**
 
-#### Option A: Vercel Serverless Functions (Current)
+**Why Starter Plan is Mandatory:**
+- ✅ **Always-On**: Worker runs 24/7, no auto-sleep
+- ✅ **Instant Processing**: No cold start delays (30s on free tier)
+- ✅ **Scheduled Jobs**: Dashboard RUN button creates repeatable jobs that require always-on worker
+- ✅ **Reliable**: Free tier auto-sleeps after 15 minutes → jobs stuck in queue
+- ❌ **Free Tier NOT Supported**: Auto-sleep breaks Bull Queue repeatable jobs
+
+**Key Features**:
+- **Always-On Workers**: No cold starts, always ready to process jobs
+- **Docker Support**: Custom environment with Chromium for scraping
+- **Auto-Deploy**: Deploys automatically from GitHub on push
+- **Health Monitoring**: Built-in health checks and auto-restart
+- **Persistent Disk**: Optional disk storage for large files
+
+**Pricing Tiers**:
+```
+❌ Free Tier ($0/month):
+- 750 hours/month
+- Auto-sleep after 15 min inactivity
+- NOT SUITABLE: Breaks scheduled jobs, requires wake-up mechanism
+- Use only for: Development/testing
+
+✅ Starter ($7/month) - REQUIRED FOR PRODUCTION:
+- Always-on, no sleep
+- 512MB RAM
+- Shared CPU
+- Perfect for: Production workloads with scheduled jobs
+
+Standard ($25/month):
+- 2GB RAM
+- Faster processing
+- Suitable for: Medium traffic
+
+Pro ($85/month):
+- 4GB RAM
+- Dedicated CPU
+- Auto-scaling
+- Suitable for: High traffic, enterprise
+```
+
+**Worker Implementation**:
+```typescript
+// lib/workers/scraper-worker.ts
+import { scraperQueue } from '@/lib/queue/scraper-queue';
+import { apiLogger } from '@/lib/helpers/api-logger';
+import express from 'express';
+
+// Health check HTTP server (required for Render monitoring)
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+app.get('/health', async (req, res) => {
+  const queueStats = {
+    waiting: await scraperQueue.getWaitingCount(),
+    active: await scraperQueue.getActiveCount(),
+    completed: await scraperQueue.getCompletedCount(),
+    failed: await scraperQueue.getFailedCount()
+  };
+  
+  res.status(200).json({ 
+    status: 'healthy',
+    uptime: process.uptime(),
+    queue: queueStats,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Start HTTP server for health checks
+app.listen(PORT, () => {
+  apiLogger.info(`[Worker] Health endpoint running on port ${PORT}`);
+});
+
+// Process jobs from Bull Queue (always running on Starter plan)
+scraperQueue.process(async (job) => {
+  const { jobId, sellerId, scrapingSources } = job.data;
+  
+  apiLogger.info(`[Worker] Processing job ${jobId} for seller ${sellerId}`);
+  
+  try {
+    // 1. Update job status to PROCESSING
+    await updateJobStatus(jobId, 'PROCESSING');
+    
+    // 2. Run scraper with Crawlee
+    const scrapedData = await runCrawlee({
+      sellerId,
+      sources: scrapingSources
+    });
+    
+    // 3. Normalize and validate data
+    const normalizedData = normalizeProducts(scrapedData);
+    
+    // 4. Save to Neon database
+    await saveProductsToDatabase(normalizedData);
+    
+    // 5. Update job status to COMPLETED
+    await updateJobStatus(jobId, 'COMPLETED', {
+      productsScraped: normalizedData.length,
+      completedAt: new Date()
+    });
+    
+    // 6. Send notification email
+    await sendJobCompleteEmail(jobId, sellerId);
+    
+    apiLogger.info(`[Worker] Job ${jobId} completed successfully`);
+    
+  } catch (error) {
+    apiLogger.logError(`[Worker] Job ${jobId} failed`, error);
+    
+    // Update job status to FAILED
+    await updateJobStatus(jobId, 'FAILED', {
+      error: error.message
+    });
+    
+    // Bull will retry based on job options
+    throw error;
+  }
+});
+
+apiLogger.info('[Worker] Scraper worker started and listening for jobs');
+```
+
+**Dockerfile Configuration**:
+```dockerfile
+FROM node:20-alpine
+
+# Install Chromium for Crawlee/Puppeteer
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# Set Puppeteer to use system Chromium
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+WORKDIR /app
+
+# Install dependencies
+COPY package.json pnpm-lock.yaml ./
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
+
+# Copy application code
+COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Expose health check port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3001/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+
+# Start worker
+CMD ["pnpm", "run", "worker:scraper"]
+```
+
+**Deployment Steps**:
+1. Create Render account (free signup)
+2. Connect GitHub repository
+3. Create "Background Worker" service
+4. **Select Starter Plan ($7/month)** - REQUIRED
+5. Configure environment variables (same as Vercel)
+6. Select Dockerfile deployment
+7. Deploy and verify health endpoint
+
+**Monitoring**:
+- **Health Checks**: Automatic via `/health` endpoint every 30 seconds
+- **Logs**: Real-time logs in Render dashboard
+- **Metrics**: CPU, memory, network usage
+- **Alerts**: Email/Slack notifications on failures
+- **Uptime**: 99.9% SLA on Starter plan and above
+
+**Integration with Dashboard**:
+```typescript
+// Admin Dashboard → RUN Button Flow
+// app/dashboard/(components)/AutoScraperTabContent.tsx
+
+Admin clicks RUN button
+         ↓
+POST /api/admin/scraper/schedule-all
+         ↓
+AutoScraperScheduler.initializeAllAutoJobs()
+         ↓
+Query sellers: WHERE isActive=true AND autoScrapeInterval > 0
+         ↓
+For each eligible seller:
+  - Create repeatable job in Bull Queue (Upstash Redis)
+  - Schedule pattern: `0 */${autoScrapeInterval} * * *`
+  - Example: Seller A (6h), Seller B (24h)
+         ↓
+Render Worker (ALWAYS RUNNING on Starter plan):
+  - Picks up jobs immediately from queue
+  - Processes according to schedule
+  - Repeats automatically every interval
+  - No sleep, no wake-up needed
+```
+
+**Why Dashboard RUN is Primary Method**:
+- ✅ Admin full control over scheduling
+- ✅ Per-seller interval configuration (6h, 24h, etc.)
+- ✅ Repeatable jobs work perfectly with always-on worker
+- ✅ Instant job processing (no cold start)
+- ✅ Real-time monitoring in dashboard
+- ✅ Easy to start/stop individual sellers or all at once
+
+---
+
+### 6. GitHub Actions (Cron Scheduler)
+
+**Purpose**: Scheduled cleanup and monitoring tasks (NOT for scraping trigger)
+
+**⚠️ NOTE: Scraping is controlled via Dashboard RUN button, not GitHub Actions**
+
+**Key Features**:
+- **100% Free**: Unlimited for public repositories
+- **Reliable Scheduling**: Industry-standard cron syntax
+- **Manual Triggers**: Can trigger workflows manually
+- **Secrets Management**: Secure environment variables
+- **Workflow History**: Full audit log of all runs
+
+**Configuration** (`.github/workflows/cron-jobs.yml`):
+```yaml
+name: Cleanup & Monitoring Jobs
+on:
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly on Sunday at 2 AM UTC
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  cleanup-stuck-jobs:
+    name: Cleanup Stuck Scraping Jobs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup Jobs Older Than 30 Minutes
+        run: |
+          curl -X GET "${{ secrets.APP_URL }}/api/cron/cleanup-stuck-jobs" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+      
+  cleanup-rate-limits:
+    name: Cleanup Old Rate Limit Records
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup Records Older Than 7 Days
+        run: |
+          curl -X GET "${{ secrets.APP_URL }}/api/cron/cleanup-rate-limits" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+```
+
+**Secrets Setup**:
+1. Go to GitHub repository → Settings → Secrets and variables → Actions
+2. Add secrets:
+   - `APP_URL`: `https://your-app.vercel.app`
+   - `CRON_SECRET`: Your CRON_SECRET from .env.production
+
+**Jobs Handled by GitHub Actions**:
+- ✅ **Cleanup Stuck Jobs**: Remove jobs stuck in WAITING status
+- ✅ **Cleanup Rate Limits**: Remove old rate limit records
+- ✅ **Health Monitoring**: Optional health checks (can be added)
+- ❌ **Scraping Trigger**: NOT handled here (use Dashboard RUN button)
+
+**Why NOT Use GitHub Actions for Scraping:**
+- ❌ Less flexible than dashboard control
+- ❌ Admin can't adjust schedules easily
+- ❌ Can't control per-seller intervals
+- ✅ Dashboard RUN button is primary method with Render Starter
+
+---
+
+### 7. Background Workers (Legacy - Deprecated)
 ```typescript
 // API Route: /api/scraper/process
 export async function POST(request: Request) {

@@ -856,6 +856,203 @@ scraperQueue.process(async (job) => {
 
 ---
 
+## Production Deployment Requirements
+
+### ⚠️ CRITICAL: Render Starter Required
+
+**Render Free Tier is NOT suitable for production worker service.**
+
+#### Why Render Starter ($7/month) is Required:
+
+```
+Render Free Tier Issues:
+❌ Auto-sleep after 15 minutes of inactivity
+❌ Cold start delay (30 seconds to wake up)
+❌ Bull Queue worker cannot wake from sleep (no HTTP trigger)
+❌ Scheduled/repeatable jobs will fail when worker sleeps
+❌ Dashboard RUN button won't work properly
+❌ Memory limit (512MB) insufficient for Chromium scraping
+
+Render Starter ($7/month) Benefits:
+✅ Always-on worker (no auto-sleep)
+✅ No cold start delays
+✅ Bull Queue worker always listening
+✅ Dashboard RUN button works perfectly
+✅ Repeatable jobs work as expected (every 6h, 24h, etc)
+✅ Sufficient memory (512MB dedicated)
+✅ Faster processing (dedicated CPU)
+```
+
+#### Deployment Architecture (Production):
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ADMIN DASHBOARD (Primary Control)                      │
+│  - Admin clicks RUN button                              │
+│  - POST /api/admin/scraper/schedule-all                 │
+│  - Creates repeatable jobs in Bull Queue                │
+│  - Worker (Render Starter) processes continuously       │
+│  - Jobs auto-repeat per seller's autoScrapeInterval     │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│  GITHUB ACTIONS (Secondary - Cleanup Only)              │
+│  - Daily cleanup-stuck-jobs (2 AM UTC)                  │
+│  - Daily cleanup-rate-limits (2 AM UTC)                 │
+│  - NO scraping triggers (dashboard handles this)        │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│  RENDER STARTER WORKER ($7/month - REQUIRED)            │
+│  - Always-on, always listening to Bull Queue            │
+│  - Processes scraping jobs immediately                  │
+│  - Handles repeatable jobs (6h, 24h intervals)          │
+│  - No sleep, no cold starts                             │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Deployment Steps (Render Starter)
+
+#### Step 1: Create Render Account
+```bash
+1. Visit: https://render.com/
+2. Sign up with GitHub
+3. Authorize Render to access your repository
+```
+
+#### Step 2: Create Background Worker
+```bash
+1. Click "New +" → "Background Worker"
+2. Connect GitHub repository: goodseed-app-vercel
+3. Configure:
+   Name: goodseed-worker
+   Region: Oregon (US West) - Closest to Neon/Upstash
+   Branch: main
+   Root Directory: ./
+   
+4. Build Command: 
+   pnpm install && npx prisma generate
+   
+5. Start Command:
+   pnpm run worker:scraper
+   
+6. Plan: Starter ($7/month) ⚠️ REQUIRED
+   
+7. Environment Variables:
+   Copy all from .env.production (same as Vercel)
+```
+
+#### Step 3: Configure Environment Variables
+```bash
+# Database (Neon)
+DATABASE_URL=postgresql://...
+DIRECT_URL=postgresql://...
+
+# Redis (Upstash) 
+REDIS_HOST=xxx-12345.upstash.io
+REDIS_PORT=6379
+REDIS_PASSWORD=AXXXbbbccc...
+REDIS_URL=rediss://default:AXXXbbbccc...@xxx-12345.upstash.io:6379
+
+# Email (Resend)
+RESEND_API_KEY=re_xxxxxxxxxxxx
+RESEND_FROM_EMAIL=noreply@lembooking.com
+
+# Authentication
+AUTH_SECRET=your-secret-here
+CRON_SECRET=your-cron-secret
+
+# Monitoring
+NEXT_PUBLIC_SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
+
+# Node Environment
+NODE_ENV=production
+```
+
+#### Step 4: Deploy Worker
+```bash
+1. Click "Create Background Worker"
+2. Wait for initial deployment (3-5 minutes)
+3. Check logs for "Worker started successfully"
+4. Verify health endpoint: https://goodseed-worker.onrender.com/health
+```
+
+#### Step 5: Verify Worker is Running
+```bash
+# Check worker logs in Render dashboard
+[Worker] Bull Queue worker started
+[Worker] Connected to Redis: xxx-12345.upstash.io
+[Worker] Listening for jobs...
+[Worker] Worker is healthy and ready to process jobs
+```
+
+### Testing the Setup
+
+#### Test 1: Dashboard RUN Button
+```bash
+1. Login to admin dashboard
+2. Go to Auto Scraper tab
+3. Enable auto scraper for a seller (set interval = 6h)
+4. Click RUN button
+5. Check Render logs → Should see job processing immediately
+6. Job should repeat every 6 hours automatically
+```
+
+#### Test 2: Manual Job Trigger
+```bash
+1. Go to specific seller page
+2. Click "Manual Scrape" button
+3. Check Render logs → Job picked up and processing
+4. Check dashboard → Job status updates in real-time
+```
+
+#### Test 3: Repeatable Jobs
+```bash
+1. After clicking RUN, wait for first job to complete
+2. Check Bull Queue in Redis → Should see "repeat" job scheduled
+3. Wait for next interval (e.g., 6 hours)
+4. Job should automatically trigger without any manual action
+```
+
+### Cost Breakdown
+
+```
+Production Setup (Required):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Vercel Hobby:        $0/month (Free tier OK for app)
+Neon Launch:         $19/month (10GB storage, production DB)
+Upstash:             $10/month (Pay-as-you-go, production Redis)
+Resend Pro:          $20/month (50K emails/month)
+Render Starter:      $7/month (Always-on worker - REQUIRED)
+Sentry Developer:    $0/month (5K errors/month free)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Total:               $56/month
+
+Optional Add-ons:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Vercel Pro:          +$20/month (Better performance, cron jobs)
+GitHub Copilot:      +$10/month (AI assistance)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Free Tier Alternative (Development Only)
+
+**⚠️ NOT recommended for production, only for development/testing:**
+
+```bash
+# If you MUST use free tier (development only):
+1. Use GitHub Actions to wake worker before triggering jobs
+2. Add /wake endpoint to worker
+3. GitHub Actions calls /wake first, then triggers scraping
+4. Expect 30-second cold start delay
+5. Dashboard RUN button won't work (worker sleeps)
+6. Manual intervention required
+
+See: DEVELOPMENT-SETUP.md for free tier instructions
+```
+
+---
+
 ## Related Documentation
 
 - [Architecture Overview](./ARCHITECTURE.md)
@@ -863,7 +1060,9 @@ scraperQueue.process(async (job) => {
 - [Upstash Redis Setup](./UPSTASH-REDIS.md)
 - [Monitoring Guide](./MONITORING.md)
 - [Troubleshooting](./TROUBLESHOOTING.md)
+- [Scaling Guide](./SCALING-GUIDE.md)
 
 ---
 
-**Last Updated**: 2026-01-28
+**Last Updated**: 2026-01-28  
+**Critical Note**: Render Starter ($7/month) is REQUIRED for production worker service.
