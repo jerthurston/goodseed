@@ -67,25 +67,25 @@ The GoodSeed Cannabis App uses a modern, serverless-first architecture designed 
 │  (DB)   │ │ (Redis)  │ │ (Email)  │ │  ACTIONS   │ │  (Errors)    │
 └────┬────┘ └────┬─────┘ └────┬─────┘ └─────┬──────┘ └──────────────┘
      │           │            │             │
-     │           │            │             │ Cron Trigger (Free)
-     │           │            │             │ • Daily 2 AM UTC
+     │           │            │             │ Cron Trigger (Cleanup Only)
+     │           │            │             │ • Weekly Sunday 2 AM UTC
      │           │            │             ▼
-     │           │            │      ┌──────────────────────┐
-     │           │            │      │  /api/cron/scraper   │
-     │           │            │      │  (Vercel API Route)  │
-     │           │            │      │  • Create jobs       │
-     │           │            │      │  • Add to queue      │
-     │           │            │      └──────────┬───────────┘
-     │           │            │                 │
-     │           ▼            │                 │ Add Jobs
-     │    ┌──────────────┐    │                 │
-     │    │  BULL QUEUE  │◄───┼─────────────────┘
-     │    │  (Upstash)   │    │
-     │    │              │    │
+     │           │            │      ┌───────────────────────────┐
+     │           │            │      │  /api/cron/cleanup-*      │
+     │           │            │      │  (Vercel API Routes)      │
+     │           │            │      │  • cleanup-stuck-jobs     │
+     │           │            │      │  • cleanup-rate-limits    │
+     │           │            │      │  (Short-term tasks only)  │
+     │           │            │      └───────────────────────────┘
+     │           │            │
+     │           ▼            │                 
+     │    ┌──────────────┐    │                 
+     │    │  BULL QUEUE  │◄───┼─── Dashboard RUN Button (PRIMARY)
+     │    │  (Upstash)   │    │    Admin schedules repeatable jobs
+     │    │              │    │    POST /api/admin/scraper/schedule-all
      │    │  Job Types:  │    │
      │    │  • Scraping  │    │
      │    │  • Email     │    │
-     │    │  • Cleanup   │    │
      │    │  • Reports   │    │
      │    └──────┬───────┘    │
      │           │            │
@@ -326,32 +326,35 @@ await resend.emails.send({
 
 **Purpose**: Process long-running scraping jobs from Bull Queue
 
+**⚠️ CRITICAL REQUIREMENT: Render Starter Plan ($7/month) is REQUIRED for production**
+
+**Why Starter Plan is Mandatory:**
+- ✅ **Always-On**: Worker runs 24/7, no auto-sleep
+- ✅ **Instant Processing**: No cold start delays (30s on free tier)
+- ✅ **Scheduled Jobs**: Dashboard RUN button creates repeatable jobs that require always-on worker
+- ✅ **Reliable**: Free tier auto-sleeps after 15 minutes → jobs stuck in queue
+- ❌ **Free Tier NOT Supported**: Auto-sleep breaks Bull Queue repeatable jobs
+
 **Key Features**:
 - **Always-On Workers**: No cold starts, always ready to process jobs
 - **Docker Support**: Custom environment with Chromium for scraping
 - **Auto-Deploy**: Deploys automatically from GitHub on push
 - **Health Monitoring**: Built-in health checks and auto-restart
 - **Persistent Disk**: Optional disk storage for large files
-- **Free Tier Available**: 750 hours/month free (with auto-sleep after 15 min inactivity)
-
-**Service Configuration**:
-- **Service Type**: Background Worker
-- **Runtime**: Docker (Node.js 20 Alpine + Chromium)
-- **Memory**: 512MB (Starter) - 4GB (Pro)
-- **CPU**: Shared (Starter) - Dedicated (Pro)
-- **Auto-Scaling**: Available on Pro plans
 
 **Pricing Tiers**:
 ```
-Free Tier:
+❌ Free Tier ($0/month):
 - 750 hours/month
 - Auto-sleep after 15 min inactivity
-- Suitable for: Development, low-traffic demos
+- NOT SUITABLE: Breaks scheduled jobs, requires wake-up mechanism
+- Use only for: Development/testing
 
-Starter ($7/month):
+✅ Starter ($7/month) - REQUIRED FOR PRODUCTION:
 - Always-on, no sleep
 - 512MB RAM
-- Suitable for: Small production workloads
+- Shared CPU
+- Perfect for: Production workloads with scheduled jobs
 
 Standard ($25/month):
 - 2GB RAM
@@ -370,8 +373,34 @@ Pro ($85/month):
 // lib/workers/scraper-worker.ts
 import { scraperQueue } from '@/lib/queue/scraper-queue';
 import { apiLogger } from '@/lib/helpers/api-logger';
+import express from 'express';
 
-// Process jobs from Bull Queue
+// Health check HTTP server (required for Render monitoring)
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+app.get('/health', async (req, res) => {
+  const queueStats = {
+    waiting: await scraperQueue.getWaitingCount(),
+    active: await scraperQueue.getActiveCount(),
+    completed: await scraperQueue.getCompletedCount(),
+    failed: await scraperQueue.getFailedCount()
+  };
+  
+  res.status(200).json({ 
+    status: 'healthy',
+    uptime: process.uptime(),
+    queue: queueStats,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Start HTTP server for health checks
+app.listen(PORT, () => {
+  apiLogger.info(`[Worker] Health endpoint running on port ${PORT}`);
+});
+
+// Process jobs from Bull Queue (always running on Starter plan)
 scraperQueue.process(async (job) => {
   const { jobId, sellerId, scrapingSources } = job.data;
   
@@ -417,14 +446,7 @@ scraperQueue.process(async (job) => {
   }
 });
 
-// Health check endpoint for Render monitoring
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy',
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString()
-  });
-});
+apiLogger.info('[Worker] Scraper worker started and listening for jobs');
 ```
 
 **Dockerfile Configuration**:
@@ -468,45 +490,61 @@ CMD ["pnpm", "run", "worker:scraper"]
 ```
 
 **Deployment Steps**:
-1. Create Render account (free)
+1. Create Render account (free signup)
 2. Connect GitHub repository
 3. Create "Background Worker" service
-4. Configure environment variables (same as Vercel)
-5. Select Dockerfile deployment
-6. Deploy and monitor health endpoint
+4. **Select Starter Plan ($7/month)** - REQUIRED
+5. Configure environment variables (same as Vercel)
+6. Select Dockerfile deployment
+7. Deploy and verify health endpoint
 
 **Monitoring**:
-- **Health Checks**: Automatic via `/health` endpoint
+- **Health Checks**: Automatic via `/health` endpoint every 30 seconds
 - **Logs**: Real-time logs in Render dashboard
 - **Metrics**: CPU, memory, network usage
 - **Alerts**: Email/Slack notifications on failures
+- **Uptime**: 99.9% SLA on Starter plan and above
 
-**Integration with Vercel**:
+**Integration with Dashboard**:
 ```typescript
-// Vercel API Route: /api/scraper/trigger
-export async function POST(request: Request) {
-  const { sellerId } = await request.json();
-  
-  // Add job to Bull Queue (Upstash Redis)
-  const job = await scraperQueue.add({
-    jobId: crypto.randomUUID(),
-    sellerId,
-    scrapingSources: await getScrapingSources(sellerId)
-  });
-  
-  // Render Worker automatically picks up job from queue
-  return Response.json({ 
-    jobId: job.id,
-    message: 'Job queued for processing'
-  });
-}
+// Admin Dashboard → RUN Button Flow
+// app/dashboard/(components)/AutoScraperTabContent.tsx
+
+Admin clicks RUN button
+         ↓
+POST /api/admin/scraper/schedule-all
+         ↓
+AutoScraperScheduler.initializeAllAutoJobs()
+         ↓
+Query sellers: WHERE isActive=true AND autoScrapeInterval > 0
+         ↓
+For each eligible seller:
+  - Create repeatable job in Bull Queue (Upstash Redis)
+  - Schedule pattern: `0 */${autoScrapeInterval} * * *`
+  - Example: Seller A (6h), Seller B (24h)
+         ↓
+Render Worker (ALWAYS RUNNING on Starter plan):
+  - Picks up jobs immediately from queue
+  - Processes according to schedule
+  - Repeats automatically every interval
+  - No sleep, no wake-up needed
 ```
+
+**Why Dashboard RUN is Primary Method**:
+- ✅ Admin full control over scheduling
+- ✅ Per-seller interval configuration (6h, 24h, etc.)
+- ✅ Repeatable jobs work perfectly with always-on worker
+- ✅ Instant job processing (no cold start)
+- ✅ Real-time monitoring in dashboard
+- ✅ Easy to start/stop individual sellers or all at once
 
 ---
 
 ### 6. GitHub Actions (Cron Scheduler)
 
-**Purpose**: Free cron job scheduler (alternative to Vercel Cron Pro)
+**Purpose**: Scheduled cleanup and monitoring tasks (NOT for scraping trigger)
+
+**⚠️ NOTE: Scraping is controlled via Dashboard RUN button, not GitHub Actions**
 
 **Key Features**:
 - **100% Free**: Unlimited for public repositories
@@ -517,27 +555,27 @@ export async function POST(request: Request) {
 
 **Configuration** (`.github/workflows/cron-jobs.yml`):
 ```yaml
-name: Scheduled Cron Jobs
+name: Cleanup & Monitoring Jobs
 on:
   schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+    - cron: '0 2 * * 0'  # Weekly on Sunday at 2 AM UTC
   workflow_dispatch:  # Manual trigger
 
 jobs:
-  trigger-scraper:
+  cleanup-stuck-jobs:
+    name: Cleanup Stuck Scraping Jobs
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Scraper
-        run: |
-          curl -X GET "${{ secrets.APP_URL }}/api/cron/scraper" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
-      
-      - name: Cleanup Stuck Jobs
+      - name: Cleanup Jobs Older Than 30 Minutes
         run: |
           curl -X GET "${{ secrets.APP_URL }}/api/cron/cleanup-stuck-jobs" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
       
-      - name: Cleanup Rate Limits
+  cleanup-rate-limits:
+    name: Cleanup Old Rate Limit Records
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup Records Older Than 7 Days
         run: |
           curl -X GET "${{ secrets.APP_URL }}/api/cron/cleanup-rate-limits" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
@@ -549,12 +587,17 @@ jobs:
    - `APP_URL`: `https://your-app.vercel.app`
    - `CRON_SECRET`: Your CRON_SECRET from .env.production
 
-**Benefits over Vercel Cron**:
-- ✅ **Free**: No $20/month Vercel Pro required
-- ✅ **Flexible**: Can run multiple jobs in sequence
-- ✅ **Reliable**: GitHub's infrastructure
-- ✅ **Auditable**: Full workflow history
-- ✅ **Testable**: Manual workflow_dispatch trigger
+**Jobs Handled by GitHub Actions**:
+- ✅ **Cleanup Stuck Jobs**: Remove jobs stuck in WAITING status
+- ✅ **Cleanup Rate Limits**: Remove old rate limit records
+- ✅ **Health Monitoring**: Optional health checks (can be added)
+- ❌ **Scraping Trigger**: NOT handled here (use Dashboard RUN button)
+
+**Why NOT Use GitHub Actions for Scraping:**
+- ❌ Less flexible than dashboard control
+- ❌ Admin can't adjust schedules easily
+- ❌ Can't control per-seller intervals
+- ✅ Dashboard RUN button is primary method with Render Starter
 
 ---
 

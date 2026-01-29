@@ -1,8 +1,12 @@
-name: Scheduled Cron Jobs
+name: Cleanup & Monitoring Jobs
+
+# Purpose: Scheduled cleanup and monitoring tasks
+# NOTE: Scraping is controlled via Dashboard RUN button with Render Starter worker
+# This workflow only handles maintenance tasks
 
 on:
   schedule:
-    # Cleanup stuck jobs: Every Sunday at 2 AM UTC
+    # Weekly cleanup on Sunday at 2 AM UTC
     - cron: '0 2 * * 0'
   
   # Allow manual trigger from GitHub UI
@@ -10,10 +14,10 @@ on:
 
 jobs:
   cleanup-stuck-jobs:
-    name: Cleanup Stuck Jobs
+    name: Cleanup Stuck Scraping Jobs
     runs-on: ubuntu-latest
     steps:
-      - name: Cleanup Stuck Scraping Jobs
+      - name: Cleanup Stuck Jobs (>30 min in WAITING status)
         run: |
           response=$(curl -s -w "\n%{http_code}" -X GET "${{ secrets.APP_URL }}/api/cron/cleanup-stuck-jobs" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
@@ -29,13 +33,13 @@ jobs:
             exit 1
           fi
           
-          echo "✅ Cleanup completed successfully"
+          echo "✅ Stuck jobs cleanup completed successfully"
 
   cleanup-rate-limits:
-    name: Cleanup Rate Limits
+    name: Cleanup Rate Limit Records
     runs-on: ubuntu-latest
     steps:
-      - name: Cleanup Old Rate Limit Records
+      - name: Cleanup Old Rate Limit Records (>7 days)
         run: |
           response=$(curl -s -w "\n%{http_code}" -X GET "${{ secrets.APP_URL }}/api/cron/cleanup-rate-limits" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
@@ -52,27 +56,3 @@ jobs:
           fi
           
           echo "✅ Rate limit cleanup completed successfully"
-
-  trigger-scraper:
-    name: Trigger Daily Scraping
-    runs-on: ubuntu-latest
-    # Only run on Sunday at 2 AM (same schedule as cleanup)
-    # You can adjust this schedule independently if needed
-    steps:
-      - name: Trigger Automated Scraping
-        run: |
-          response=$(curl -s -w "\n%{http_code}" -X GET "${{ secrets.APP_URL }}/api/cron/scraper" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
-          
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
-          
-          echo "HTTP Status: $http_code"
-          echo "Response: $body"
-          
-          if [ "$http_code" != "200" ]; then
-            echo "❌ Scraper trigger failed with status $http_code"
-            exit 1
-          fi
-          
-          echo "✅ Scraper triggered successfully"
