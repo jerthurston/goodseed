@@ -1,29 +1,49 @@
 /**
- * Triiger tự động cho tất cả sellers có schedule bật
- * Cron endpoint for automated daily scraping
- * Triggered by AWS EventBridge or other schedulers
+ * Cron endpoint for automated scraping (triggered by GitHub Actions or external scheduler)
  * 
- * Authorization: Requires CRON_SECRET header
+ * Purpose: Trigger scraping jobs for ALL sellers with auto scraper ENABLED by admin
+ * 
+ * Authorization: Requires CRON_SECRET in Authorization header (Bearer token)
  * 
  * Flow:
- * 1. Verify authorization
- * 2. Query all active sellers
- * 3. Queue scraping job for each seller
- * 4. Return summary
+ * 1. Verify authorization (Bearer token with CRON_SECRET)
+ * 2. Query sellers with auto scraper enabled:
+ *    - isActive = true
+ *    - autoScrapeInterval > 0 (configured by admin in dashboard)
+ * 3. For each eligible seller:
+ *    - Create ScrapeJob record with mode='auto'
+ *    - Add job to Bull Queue (Upstash Redis)
+ *    - Use seller's configured scrapingSources
+ * 4. Return summary of queued jobs
  * 
- * Response:
+ * Admin Control Flow:
+ * - Admin enables auto scraper: autoScrapeInterval = 6 (hours) → Included in cron
+ * - Admin disables auto scraper: autoScrapeInterval = null → Excluded from cron
+ * 
+ * Scheduler Options:
+ * - GitHub Actions (Free): .github/workflows/cron-jobs.yml (Daily at 2 AM UTC)
+ * - Vercel Cron (Pro $20/month): vercel.json crons config
+ * - External: cron-job.org, AWS EventBridge, etc.
+ * 
+ * Response Example:
  * {
  *   "success": true,
  *   "data": {
- *     "totalSellers": 1,
- *     "jobsQueued": 1,
+ *     "totalSellers": 2,
+ *     "jobsQueued": 2,
  *     "sellers": [
  *       {
- *         "sellerId": "xxx",
+ *         "sellerId": "cm5abc123",
  *         "sellerName": "Vancouver Seed Bank",
- *         "jobId": "scrape_xyz"
+ *         "jobId": "scrape_xyz-789"
+ *       },
+ *       {
+ *         "sellerId": "cm5def456",
+ *         "sellerName": "Crop King Seeds",
+ *         "jobId": "scrape_abc-456"
  *       }
- *     ]
+ *     ],
+ *     "timestamp": "2026-01-28T02:00:00.000Z"
  *   }
  * }
  */
@@ -99,18 +119,32 @@ export async function GET(req: NextRequest): Promise<NextResponse<CronResponse>>
 
         apiLogger.info('[Cron API] Authorized cron request received');
 
-        // 2. Query all active sellers
+        // 2. Query only sellers with auto scraper ENABLED by admin
+        // Auto scraper is enabled when: isActive=true AND autoScrapeInterval > 0
         const sellers = await prisma.seller.findMany({
-            where: { isActive: true },
+            where: { 
+                isActive: true,
+                autoScrapeInterval: {
+                    not: null,         // Must have interval configured
+                    gt: 0              // Interval must be greater than 0 (enabled by admin)
+                }
+            },
             select: {
                 id: true,
                 name: true,
-                scrapingSources:true
+                autoScrapeInterval: true,  // Get interval config for logging
+                scrapingSources: {
+                    select: {
+                        scrapingSourceUrl: true,
+                        scrapingSourceName: true,
+                        maxPage: true
+                    }
+                }
             },
         });
 
         if (sellers.length === 0) {
-            apiLogger.warn('[Cron API] No active sellers found');
+            apiLogger.warn('[Cron API] No active sellers with auto scraper enabled found');
             return NextResponse.json({
                 success: true,
                 data: {
@@ -122,7 +156,14 @@ export async function GET(req: NextRequest): Promise<NextResponse<CronResponse>>
             });
         }
 
-        apiLogger.info('[Cron API] Found active sellers', { count: sellers.length });
+        apiLogger.info('[Cron API] Found active sellers with auto scraper enabled', { 
+            count: sellers.length,
+            sellers: sellers.map(s => ({
+                name: s.name,
+                interval: `${s.autoScrapeInterval}h`,
+                sourcesCount: s.scrapingSources.length
+            }))
+        });
 
         // 3. Queue job for each seller
         const queuedJobs: CronResponseData['sellers'] = [];
@@ -130,7 +171,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<CronResponse>>
         for (const seller of sellers) {
             const jobId = `scrape_${randomUUID()}`;
 
-            // Create ScrapeJob record
+            // Create ScrapeJob record in database
             await prisma.scrapeJob.create({
                 data: {
                     jobId,
@@ -147,7 +188,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<CronResponse>>
                 },
             });
 
-            // Add to queue
+            // Add to queue bull
             await addScraperJob({
                 jobId,
                 sellerId: seller.id,
@@ -170,6 +211,8 @@ export async function GET(req: NextRequest): Promise<NextResponse<CronResponse>>
                 sellerId: seller.id,
                 sellerName: seller.name,
                 jobId,
+                autoScrapeInterval: `${seller.autoScrapeInterval}h`,
+                scrapingSourcesCount: seller.scrapingSources.length
             });
         }
 

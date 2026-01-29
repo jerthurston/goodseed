@@ -474,16 +474,16 @@ AUTH_URL=https://goodseed.lembooking.com
       "schedule": "0 2 * * *"
     },
     {
-      "path": "/api/cron/cleanup-jobs",
-      "schedule": "*/30 * * * *"
-    },
-    {
-      "path": "/api/cron/send-emails",
-      "schedule": "*/5 * * * *"
+      "path": "/api/cron/cleanup-rate-limits",
+      "schedule": "0 2 * * *"
     }
   ]
 }
 ```
+
+**Cron Jobs Explained:**
+- `/api/cron/scraper`: Triggers automated scraping for all active sellers (Daily at 2 AM UTC)
+- `/api/cron/cleanup-rate-limits`: Cleans up old rate limit records older than 7 days (Daily at 2 AM UTC)
 
 #### 9.2 Commit and Deploy
 ```bash
@@ -503,27 +503,49 @@ If using Vercel Hobby (free), use external cron:
 1. Visit: https://cron-job.org/
 2. Create account
 3. Add cron jobs:
-   URL: https://your-app.vercel.app/api/cron/trigger?secret=YOUR_CRON_SECRET
+   
+   Job 1 - Scraper:
+   URL: https://your-app.vercel.app/api/cron/scraper
    Schedule: 0 2 * * * (daily at 2 AM)
+   Headers: Authorization: Bearer YOUR_CRON_SECRET
+   
+   Job 2 - Cleanup:
+   URL: https://your-app.vercel.app/api/cron/cleanup-rate-limits
+   Schedule: 0 2 * * * (daily at 2 AM)
+   Headers: Authorization: Bearer YOUR_CRON_SECRET
 ```
 
-**Option B: GitHub Actions**
+**Option B: GitHub Actions (Recommended for Free Tier)**
 ```yaml
 # .github/workflows/cron-jobs.yml
 name: Scheduled Jobs
 on:
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
   workflow_dispatch:
 
 jobs:
   trigger-scraping:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Scraping
+      - name: Trigger Scraper
         run: |
-          curl "${{ secrets.APP_URL }}/api/cron/trigger?secret=${{ secrets.CRON_SECRET }}"
+          curl -X GET "${{ secrets.APP_URL }}/api/cron/scraper" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+      
+      - name: Trigger Cleanup
+        run: |
+          curl -X GET "${{ secrets.APP_URL }}/api/cron/cleanup-rate-limits" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
 ```
+
+**Setup GitHub Actions:**
+1. Go to GitHub repository → Settings → Secrets and variables → Actions
+2. Add secrets:
+   - `APP_URL`: `https://your-app.vercel.app`
+   - `CRON_SECRET`: Your CRON_SECRET value from .env.production
+3. Commit `.github/workflows/cron-jobs.yml` to repository
+4. GitHub will automatically run daily at 2 AM UTC
 
 ---
 
@@ -896,5 +918,3 @@ Need help? Check these resources:
 - **Service Docs**: Individual service documentation files
 
 ---
-
-**Congratulations! 🎉** You've successfully deployed the GoodSeed Cannabis App to production!
