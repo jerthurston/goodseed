@@ -575,3 +575,23 @@ model FaqPageSettings {
   
   @@map("faq_page_settings")
 }
+
+// Contact Submission - Store contact form submissions
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  category  String   // e.g., "general", "support", "business", "feedback"
+  message   String   @db.Text
+  status    String   @default("new") // "new", "read", "replied", "closed"
+  ipAddress String?
+  userAgent String?  @db.Text
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@map("contact_submissions")
+}

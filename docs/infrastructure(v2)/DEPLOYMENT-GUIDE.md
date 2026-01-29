@@ -113,7 +113,7 @@ DIRECT_URL="postgresql://user:password@ep-xxx-xxx.us-east-2.aws.neon.tech/neondb
 # In Upstash Console:
 1. Click "Create Database"
 2. Configure:
-   Name: goodseed-production
+   Name: goodseed-upstash-redis
    Type: Regional (cheaper, sufficient for most cases)
    Region: us-east-1 (or same as Neon for low latency)
    Plan:
@@ -147,6 +147,116 @@ UPSTASH_REDIS_REST_TOKEN="AXXXaaabbbccc..."
 1. Max database size: Unlimited (pay-as-you-go)
 2. Max connection: 100
 3. Enable multiZone: Optional (for high availability)
+```
+
+#### 2.4 Integrate Upstash with Vercel (Recommended)
+
+**Option A: Direct Integration (Easiest)**
+```bash
+# In Vercel Project Dashboard:
+1. Go to "Integrations" → Search "Upstash"
+2. Click "Add Integration" → Select your project
+3. Choose Upstash Redis database: goodseed-upstash-redis
+4. Configure:
+   Environments: ✓ Production, ✓ Preview, ✓ Development
+   Custom Prefix: (leave empty) ← RECOMMENDED
+   
+   # If REDIS_URL already exists:
+   - Delete existing REDIS_URL in Environment Variables first
+   - Then add integration with empty prefix
+   
+   # OR use different prefix:
+   - Custom Prefix: UPSTASH
+   - Update code to use UPSTASH_REDIS_URL
+5. Click "Add Integration"
+6. Upstash automatically creates:
+   - REDIS_URL (or UPSTASH_REDIS_URL)
+   - REDIS_HOST
+   - REDIS_PORT
+   - REDIS_PASSWORD
+```
+
+
+
+**Verify Integration:**
+```bash
+# After integration:
+1. Go to Vercel → Settings → Environment Variables
+2. Check REDIS_* variables are created
+3. Redeploy to apply changes
+```
+
+#### 2.5 Setup Redis Client Locally
+
+**Step 1: Login to Vercel CLI**
+```bash
+# Login to Vercel
+vercel login
+
+# Link your project
+cd /path/to/goodseed-app-vercel
+vercel link
+
+# Pull environment variables from Vercel
+vercel env pull .env.development.local
+```
+
+**Step 2: Install Upstash Redis SDK**
+```bash
+# Install the SDK
+pnpm add @upstash/redis
+
+# Verify installation
+grep "@upstash/redis" package.json
+```
+
+**Step 3: Verify Redis Client**
+```bash
+# Check lib/redis.ts exists with both clients:
+# 1. ioredis (for Bull queue)
+# 2. upstashRedis (for serverless caching)
+
+# File should export:
+# - redisConfig: Configuration object
+# - ioredis: IORedis client for Bull
+# - upstashRedis: Upstash client for REST API
+# - default: ioredis instance
+```
+
+**Step 4: Test Redis Connection**
+```bash
+# Start dev server
+pnpm dev
+
+# Check console logs for:
+# [Redis] Configuration: { host, port, tls, hasPassword, hasUpstash }
+
+# If you see connection errors:
+# 1. Verify REDIS_URL format in .env.development.local
+# 2. Check TLS is enabled (rediss:// not redis://)
+# 3. Ensure Upstash database is not paused
+```
+
+**Architecture:**
+```
+┌─────────────────────────────────────────────┐
+│  Application Layer                          │
+├─────────────────────────────────────────────┤
+│  Bull Queue (ioredis)  │  API Cache         │
+│  ├─ scraper-queue.ts   │  (upstashRedis)    │
+│  ├─ Job processing     │  ├─ Rate limiting  │
+│  └─ Worker management  │  └─ Session cache  │
+├─────────────────────────────────────────────┤
+│  lib/redis.ts (Client Manager)              │
+│  ├─ redisConfig (parsed from env)           │
+│  ├─ ioredis (TCP connection for Bull)       │
+│  └─ upstashRedis (REST API for serverless)  │
+├─────────────────────────────────────────────┤
+│  Environment Variables                      │
+│  ├─ REDIS_URL (rediss://...)                │
+│  ├─ KV_REST_API_URL (https://...)           │
+│  └─ KV_REST_API_TOKEN                       │
+└─────────────────────────────────────────────┘
 ```
 
 ---

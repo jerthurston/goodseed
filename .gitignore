@@ -135,3 +135,13 @@ build/
 next-env.d.ts
 
 /app/generated/prisma
+
+#scripts - Ignore specific sensitive scripts but keep utilities
+# scripts/
+scripts/test-*.ts
+scripts/*-local-*.ts
+scripts/temp-*.ts
+
+#database-backup
+backups/
+.env*.local

@@ -10,11 +10,7 @@ import { apiLogger } from '../helpers/api-logger';
 import { ScrapeJobConfig } from '@/types/scrapeJob.type';
 import { prisma } from '../prisma';
 import { ScrapeJobStatus } from '@prisma/client';
-
-// Redis connection configuration
-const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
-const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379');
-const REDIS_PASSWORD = process.env.REDIS_PASSWORD || undefined;
+import { redisConfig } from '../redis';
 
 // Job data interface
 export interface ScraperJobData {
@@ -52,9 +48,15 @@ export interface RepeatJobOptions {
  */
 const queueOptions: QueueOptions = {
   redis: {
-    host: REDIS_HOST,
-    port: REDIS_PORT,
-    password: REDIS_PASSWORD,
+    host: redisConfig.host,
+    port: redisConfig.port,
+    password: redisConfig.password,
+    // Enable TLS for Upstash Redis (rediss://)
+    ...(redisConfig.tls && {
+      tls: {
+        rejectUnauthorized: false, // Required for Upstash
+      },
+    }),
     // Tối ưu connection
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
