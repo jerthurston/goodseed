@@ -3,45 +3,89 @@
 import { faHandshake, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Link from 'next/link';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
+import { useContactSubmission } from '@/hooks/submission-contact/useContactSubmission';
+import { contactCategories, ContactSubmissionInput } from '@/schemas/contact-submission.schema';
+import { z } from 'zod';
+import { contactSubmissionSchema } from '@/schemas/contact-submission.schema';
+import { useFetchCurrentUser } from '@/hooks/client-user/useFetchCurrentUser';
+import { apiLogger } from '@/lib/helpers/api-logger';
 
 export default function ContactPage() {
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<ContactSubmissionInput>({
         name: '',
         email: '',
-        category: '',
+        category: 'general',
         message: ''
     });
-    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+    
+    const { mutate, isPending, isSuccess, error } = useContactSubmission();
+    const { data: user, isLoading: isLoadingUser } = useFetchCurrentUser();
+
+    // Auto-fill user info if authenticated
+    useEffect(() => {
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                name: user.name || '',
+                email: user.email || '',
+            }));
+        }
+    }, [user]);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setValidationErrors({});
 
-        // TODO: Implement actual form submission logic
-        console.log('Form submitted:', formData);
+        try {
+            // Validate form data with Zod before submission
+            const validatedData = contactSubmissionSchema.parse(formData);
 
-        // Show confirmation message
-        setIsSubmitted(true);
-
-        // Reset form
-        setFormData({
-            name: '',
-            email: '',
-            category: '',
-            message: ''
-        });
-
-        // Hide confirmation after 5 seconds
-        setTimeout(() => {
-            setIsSubmitted(false);
-        }, 5000);
+            // Submit form using TanStack Query mutation
+            mutate(validatedData, {
+                onSuccess: (response) => {
+                    apiLogger.info('✅ Form submitted successfully:');
+                    
+                    // Reset only message and category, keep user info
+                    setFormData(prev => ({
+                        ...prev,
+                        category: 'general',
+                        message: ''
+                    }));
+                },
+                onError: (error) => {
+                    apiLogger.logError('❌ Form submission failed:', error);
+                }
+            });
+        } catch (err) {
+            // Handle Zod validation errors
+            if (err instanceof z.ZodError) {
+                const errors: Record<string, string> = {};
+                err.issues.forEach((issue) => {
+                    const field = issue.path[0] as string;
+                    errors[field] = issue.message;
+                });
+                setValidationErrors(errors);
+            }
+        }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+        
+        // Clear validation error for this field when user types
+        if (validationErrors[name]) {
+            setValidationErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[name];
+                return newErrors;
+            });
+        }
     };
 
     return (
@@ -72,7 +116,11 @@ export default function ContactPage() {
                                 value={formData.name}
                                 onChange={handleChange}
                                 required
+                                disabled={isPending}
                             />
+                            {validationErrors.name && (
+                                <p className="text-red-600 text-sm mt-1">{validationErrors.name}</p>
+                            )}
                         </div>
 
                         <div className="form-group">
@@ -85,7 +133,11 @@ export default function ContactPage() {
                                 value={formData.email}
                                 onChange={handleChange}
                                 required
+                                disabled={isPending}
                             />
+                            {validationErrors.email && (
+                                <p className="text-red-600 text-sm mt-1">{validationErrors.email}</p>
+                            )}
                         </div>
 
                         <div className="form-group">
@@ -97,14 +149,17 @@ export default function ContactPage() {
                                 value={formData.category}
                                 onChange={handleChange}
                                 required
+                                disabled={isPending}
                             >
-                                <option value="" disabled>Select a category...</option>
-                                <option value="general">General Question</option>
-                                <option value="bug">Bug Report</option>
-                                <option value="feedback">Feedback</option>
-                                <option value="business">Business / Seller Inquiry</option>
-                                <option value="other">Something Else</option>
+                                {contactCategories.map((cat) => (
+                                    <option key={cat.value} value={cat.value}>
+                                        {cat.label}
+                                    </option>
+                                ))}
                             </select>
+                            {validationErrors.category && (
+                                <p className="text-red-600 text-sm mt-1">{validationErrors.category}</p>
+                            )}
                         </div>
 
                         <div className="form-group">
@@ -117,23 +172,31 @@ export default function ContactPage() {
                                 value={formData.message}
                                 onChange={handleChange}
                                 required
+                                disabled={isPending}
                             />
+                            {validationErrors.message && (
+                                <p className="text-red-600 text-sm mt-1">{validationErrors.message}</p>
+                            )}
                         </div>
 
-                        <div className="form-group">
-                            <div className="cf-turnstile" data-sitekey="YOUR_SITE_KEY" data-theme="light"></div>
-                            {/* TODO: Replace YOUR_SITE_KEY with actual Cloudflare Turnstile Site Key */}
-                        </div>
-
-                        <button type="submit" className="submit-btn">Send Message</button>
+                        <button type="submit" className="submit-btn" disabled={isPending}>
+                            {isPending ? 'Sending...' : 'Send Message'}
+                        </button>
                     </form>
 
-                    <div
-                        id="formConfirmationMessage"
-                        className={`confirmation-message ${isSubmitted ? '' : 'hidden'}`}
-                    >
-                        <p>✅ Thanks for reaching out — we&apos;ve received your message and will get back to you as soon as we can.</p>
-                    </div>
+                    {/* Success Message */}
+                    {isSuccess && (
+                        <div id="formConfirmationMessage" className="confirmation-message">
+                            <p>✅ Thanks for reaching out — we&apos;ve received your message and will get back to you as soon as we can.</p>
+                        </div>
+                    )}
+
+                    {/* Error Message */}
+                    {error && (
+                        <div className="confirmation-message" style={{ backgroundColor: '#fee2e2', borderColor: '#ef4444' }}>
+                            <p>❌ {error.message}</p>
+                        </div>
+                    )}
                 </section>
 
                 <section className="business-inquiries-box">

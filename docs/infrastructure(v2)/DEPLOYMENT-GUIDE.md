@@ -113,10 +113,7 @@ DIRECT_URL="postgresql://user:password@ep-xxx-xxx.us-east-2.aws.neon.tech/neondb
 # In Upstash Console:
 1. Click "Create Database"
 2. Configure:
-   Name: goodseed-redis-prod  # Create 3 databases:
-                              # - goodseed-redis-dev (development)
-                              # - goodseed-redis-preview (preview/staging)
-                              # - goodseed-redis-prod (production)
+   Name: goodseed-upstash-redis
    Type: Regional (cheaper, sufficient for most cases)
    Region: us-east-1 (or same as Neon for low latency)
    Plan:
@@ -126,14 +123,7 @@ DIRECT_URL="postgresql://user:password@ep-xxx-xxx.us-east-2.aws.neon.tech/neondb
    Enable TLS: Yes (required)
    Enable Eviction: No (we handle cleanup)
 3. Click "Create"
-4. Repeat for development and preview environments
 ```
-
-**Best Practice:**
-- Create separate databases for each environment
-- Use consistent naming: `{project}-redis-{env}`
-- Free tier sufficient for dev/preview
-- Production uses pay-as-you-go or Pro
 
 #### 2.3 Get Redis Credentials
 ```bash
@@ -161,44 +151,29 @@ UPSTASH_REDIS_REST_TOKEN="AXXXaaabbbccc..."
 
 #### 2.4 Integrate Upstash with Vercel (Recommended)
 
-**Important: Create Separate Databases for Each Environment**
-
-Before integration, ensure you have 3 Redis databases:
-- `goodseed-redis-dev` (Development)
-- `goodseed-redis-preview` (Preview/Staging)
-- `goodseed-redis-prod` (Production)
-
 **Option A: Direct Integration (Easiest)**
 ```bash
 # In Vercel Project Dashboard:
 1. Go to "Integrations" → Search "Upstash"
 2. Click "Add Integration" → Select your project
-
-# For PRODUCTION environment:
-3. Choose database: goodseed-redis-prod
+3. Choose Upstash Redis database: goodseed-upstash-redis
 4. Configure:
-   Environments: ✓ Production only
-   Custom Prefix: (leave empty)
+   Environments: ✓ Production, ✓ Preview, ✓ Development
+   Custom Prefix: (leave empty) ← RECOMMENDED
+   
+   # If REDIS_URL already exists:
+   - Delete existing REDIS_URL in Environment Variables first
+   - Then add integration with empty prefix
+   
+   # OR use different prefix:
+   - Custom Prefix: UPSTASH
+   - Update code to use UPSTASH_REDIS_URL
 5. Click "Add Integration"
-
-# Repeat for PREVIEW environment:
-6. Add integration again
-7. Choose database: goodseed-redis-preview
-8. Configure:
-   Environments: ✓ Preview only
-   Custom Prefix: (leave empty)
-
-# Repeat for DEVELOPMENT environment:
-9. Add integration again
-10. Choose database: goodseed-redis-dev
-11. Configure:
-    Environments: ✓ Development only
-    Custom Prefix: (leave empty)
-
-Result: Each environment has isolated Redis with auto-created vars:
-- REDIS_URL
-- KV_REST_API_URL
-- KV_REST_API_TOKEN
+6. Upstash automatically creates:
+   - REDIS_URL (or UPSTASH_REDIS_URL)
+   - REDIS_HOST
+   - REDIS_PORT
+   - REDIS_PASSWORD
 ```
 
 
@@ -255,8 +230,6 @@ pnpm dev
 
 # Check console logs for:
 # [Redis] Configuration: { host, port, tls, hasPassword, hasUpstash }
-# [Redis] ✅ IORedis connection successful
-# [Redis] ✅ Upstash REST API connection successful (if KV_REST_API_URL is set)
 
 # If you see connection errors:
 # 1. Verify REDIS_URL format in .env.development.local
