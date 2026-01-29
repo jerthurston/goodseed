@@ -13,25 +13,43 @@ import { apiLogger } from './helpers/api-logger';
 
 // Parse Redis configuration from environment variables
 function getRedisConfig() {
-  let host = process.env.REDIS_HOST || 'localhost';
-  let port = parseInt(process.env.REDIS_PORT || '6379');
-  let password = process.env.REDIS_PASSWORD || undefined;
-  let tls = false;
-
-  // Parse REDIS_URL if provided (format: rediss://default:password@host:port)
-  if (process.env.REDIS_URL && !process.env.REDIS_HOST) {
+  // Always prefer REDIS_URL if available (Upstash/Vercel provides this)
+  if (process.env.REDIS_URL) {
     try {
       const redisUrl = new URL(process.env.REDIS_URL);
-      host = redisUrl.hostname;
-      port = parseInt(redisUrl.port || '6379');
-      password = redisUrl.password || undefined;
-      tls = redisUrl.protocol === 'rediss:'; // TLS enabled for 'rediss://'
+      const config = {
+        host: redisUrl.hostname,
+        port: parseInt(redisUrl.port || '6379', 10),
+        password: redisUrl.password || undefined,
+        tls: redisUrl.protocol === 'rediss:', // TLS enabled for 'rediss://'
+      };
+
+      apiLogger.info('[Redis] ✅ Parsed config from REDIS_URL', {
+        host: config.host,
+        port: config.port,
+        tls: config.tls,
+        protocol: redisUrl.protocol,
+      });
+      return config;
     } catch (err) {
-      console.error('Failed to parse REDIS_URL:', err);
+      apiLogger.logError('[Redis]', err instanceof Error ? err : new Error('Failed to parse REDIS_URL'));
     }
   }
 
-  return { host, port, password, tls };
+  // Fallback to individual env vars (for local Docker setup)
+  const config = {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    password: process.env.REDIS_PASSWORD || undefined,
+    tls: process.env.REDIS_TLS === 'true',
+  };
+
+  apiLogger.info('[Redis] Using individual env vars (fallback)', {
+    host: config.host,
+    port: config.port,
+    tls: config.tls,
+  });
+  return config;
 }
 
 // Export Redis configuration for Bull queue and other uses
@@ -66,15 +84,24 @@ export const upstashRedis = process.env.KV_REST_API_URL && process.env.KV_REST_A
     })
   : null;
 
-// Log connection info (only in development)
-if (process.env.NODE_ENV === 'development') {
-  apiLogger.debug('[Redis] Configuration:', {
-    host: redisConfig.host,
-    port: redisConfig.port,
-    tls: redisConfig.tls,
-    hasPassword: !!redisConfig.password,
-    hasUpstash: !!upstashRedis,
-  });
+// Log connection info
+apiLogger.info('[Redis] Configuration:', {
+  host: redisConfig.host,
+  port: redisConfig.port,
+  tls: redisConfig.tls,
+  hasPassword: !!redisConfig.password,
+  hasUpstash: !!upstashRedis,
+});
+
+// Test connection on startup
+ioredis.ping()
+  .then(() => apiLogger.info('[Redis] ✅ IORedis connection successful'))
+  .catch((err) => apiLogger.logError('[Redis] ❌ IORedis connection failed', err));
+
+if (upstashRedis) {
+  upstashRedis.ping()
+    .then(() => apiLogger.info('[Redis] ✅ Upstash REST API connection successful'))
+    .catch((err) => apiLogger.logError('[Redis] ❌ Upstash REST API connection failed', err));
 }
 
 // Graceful shutdown
