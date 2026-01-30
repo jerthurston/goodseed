@@ -1,7 +1,6 @@
 /**
- * ALB Liveness Check - Simple and Fast
- * Used by AWS ALB target group health checks
- * Should NEVER fail unless process is dead
+ * Health Check Endpoint
+ * Used for monitoring application health and uptime
  */
 
 import { NextResponse } from 'next/server';

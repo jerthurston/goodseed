@@ -31,10 +31,10 @@ app/api/
 │   └── route.ts                    # GET/POST: Search products với filters (price per seed, types, THC/CBD, etc.)
 │                                   # Params: page, limit, search, minPrice, maxPrice, types[], thcMin, etc.
 │
-└── cron/                           # API nội bộ cho scheduled scraping (chỉ AWS EventBridge gọi)
+└── cron/                           # Internal API for scheduled scraping (Vercel Cron Jobs)
     └── scraper/
-        └── route.ts                # GET: Trigger tự động cho tất cả sellers có schedule bật
-                                    # Bảo vệ bằng CRON_SECRET header
+        └── route.ts                # GET: Automatic trigger for all sellers with schedule enabled
+                                    # Protected by CRON_SECRET header
 
 
 Route,Method,Mục Đích,Liên Kết Với Tài Liệu
@@ -46,5 +46,5 @@ GET /api/admin/sellers/[id]/logs,GET,"Xem lịch sử scrape của seller (last 
 GET /api/admin/scraper,GET,Tổng quan tất cả scrape jobs (toàn hệ thống),Admin monitoring
 GET /api/admin/scraper/status/[jobId],GET,"Theo dõi tiến độ một job cụ thể (progress, current page, etc.)",Real-time status
 POST /api/admin/scraper/schedule-all,POST,Set lịch tự động cho tất cả sellers,Scheduled scraping
-GET /api/cron/scraper,GET,Endpoint nội bộ cho EventBridge/Lambda gọi hàng ngày,Automated run
-GET/POST /api/search,GET/POST,Public API cho frontend/template tìm kiếm với filters,2.3 Backend Search + 2.4 Filters
+GET /api/cron/scraper,GET,Internal endpoint for Vercel Cron to call daily,Automated run
+GET/POST /api/search,GET/POST,Public API for frontend/template search with filters,2.3 Backend Search + 2.4 Filters
