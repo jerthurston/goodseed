@@ -403,3 +403,26 @@ apiLogger.info('[Scraper Worker] Worker ready, waiting for jobs...');
 
 // Comprehensive Worker Initialization
 initializeWorkerSync();
+
+// Health check endpoint for Render
+import http from 'http';
+
+const healthServer = http.createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'ok',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      worker: 'scraper-worker',
+      queueStatus: 'active'
+    }));
+  } else {
+    res.writeHead(404);
+    res.end('Not Found');
+  }
+});
+
+healthServer.listen(3001, () => {
+  apiLogger.info('[Scraper Worker] Health check server running on port 3001');
+});

@@ -661,61 +661,503 @@ jobs:
 
 ## Phase 4: Worker Setup (Optional, 30 minutes)
 
-For long-running scraping tasks, deploy a separate worker service.
+For long-running scraping tasks, deploy a separate worker service on Render.com.
 
-### Step 10: Deploy Worker to Render
+**Why Use a Separate Worker?**
+- Scraping tasks can run for 10+ minutes (Vercel has 10s timeout on Hobby, 5min on Pro)
+- Chromium requires significant memory (512MB+)
+- Background processing doesn't block main application
+- Better resource management and scaling
 
-#### 10.1 Create Dockerfile.worker
+---
+
+### Step 10: Prepare Worker Files
+
+#### 10.1 Verify Dockerfile.worker Exists
+
+The project should already have `Dockerfile.worker` in the root directory. If not, create it:
+
 ```dockerfile
 FROM node:20-alpine
 
-# Install Chromium for Crawlee
-RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates
+# Install dependencies required for Crawlee and Chromium
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    font-noto-emoji
 
+# Tell Puppeteer to use installed Chromium
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV CHROME_BIN=/usr/bin/chromium-browser
+ENV CHROME_PATH=/usr/lib/chromium/
 
+# Set working directory
 WORKDIR /app
 
-COPY package*.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+# Install pnpm
+RUN npm install -g pnpm
 
+# Copy dependency files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy application code
 COPY . .
+
+# Copy Prisma schema and generate client
+COPY prisma ./prisma
 RUN npx prisma generate
 
+# Expose health check port
 EXPOSE 3001
-HEALTHCHECK CMD node -e "require('http').get('http://localhost:3001/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
+# Add health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"
+
+# Start worker
 CMD ["pnpm", "run", "worker:scraper"]
 ```
 
-#### 10.2 Create Render Account
-```bash
-1. Visit: https://render.com/
-2. Sign up with GitHub
-3. Authorize Render
+**Key Points:**
+- Uses Alpine Linux for smaller image size
+- Installs Chromium and required fonts
+- Health check on port 3001
+- Runs `pnpm run worker:scraper` command
+
+#### 10.2 Verify Worker Script
+
+Check that `lib/workers/scraper-worker.ts` has health check endpoint:
+
+```typescript
+// At the end of the file:
+import http from 'http';
+
+const healthServer = http.createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'ok',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      worker: 'scraper-worker',
+      queueStatus: 'active'
+    }));
+  } else {
+    res.writeHead(404);
+    res.end('Not Found');
+  }
+});
+
+healthServer.listen(3001, () => {
+  apiLogger.info('[Scraper Worker] Health check server running on port 3001');
+});
 ```
 
-#### 10.3 Create Background Worker
+#### 10.3 Create render.yaml (Optional)
+
+For easier deployment, create `render.yaml` in project root:
+
+```yaml
+services:
+  - type: worker
+    name: goodseed-worker
+    env: docker
+    dockerfilePath: ./Dockerfile.worker
+    dockerContext: .
+    region: oregon # Choose: oregon, frankfurt, singapore
+    plan: starter # starter ($7/mo) or free (sleeps after 15min)
+    branch: main
+    
+    healthCheckPath: /health
+    autoDeploy: true
+    
+    envVars:
+      - key: NODE_ENV
+        value: production
+      
+      - key: DATABASE_URL
+        sync: false # Set manually in dashboard
+      
+      - key: DIRECT_URL
+        sync: false
+      
+      - key: REDIS_HOST
+        sync: false
+      
+      - key: REDIS_PORT
+        value: 6379
+      
+      - key: REDIS_PASSWORD
+        sync: false
+      
+      - key: CRON_SECRET
+        sync: false
+      
+      - key: WORKER_CONCURRENCY
+        value: 1
+```
+
+---
+
+### Step 11: Deploy to Render
+
+#### 11.1 Create Render Account
+
+```bash
+1. Visit: https://render.com/
+2. Click "Get Started" → "Sign up with GitHub"
+3. Authorize Render to access your GitHub
+4. Complete registration
+```
+
+#### 11.2 Connect GitHub Repository
+
 ```bash
 # In Render Dashboard:
 1. Click "New +" → "Background Worker"
-2. Connect GitHub repository
-3. Configure:
-   Name: goodseed-worker
-   Environment: Docker
-   Dockerfile Path: ./Dockerfile.worker
-   Plan:
-      - Free: $0 (with sleep after 15 min)
-      - Starter: $7/month (always-on)
-4. Add environment variables (same as Vercel)
-5. Click "Create Background Worker"
+2. Select "Build and deploy from a Git repository"
+3. Connect to GitHub: goodseed-app-vercel
+4. Select branch: main (or develop for testing)
+5. Click "Connect"
 ```
 
-#### 10.4 Add Worker Health Check
+#### 11.3 Configure Worker Settings
+
+```yaml
+# Worker Configuration:
+Name: goodseed-worker
+Environment: Docker
+Dockerfile Path: ./Dockerfile.worker
+Docker Context Path: . (root directory)
+Docker Command: (leave empty - uses CMD from Dockerfile)
+
+Region: 
+  - Oregon (US West) - recommended for US users
+  - Frankfurt (EU) - for European users
+  - Singapore (Asia) - for Asian users
+  
+Plan Selection:
+  - Free: $0/month
+    • Sleeps after 15min of inactivity ❌ Not recommended
+    • 512MB RAM
+    • Use only for testing
+  
+  - Starter: $7/month ✅ Recommended for MVP
+    • Always on
+    • 512MB RAM
+    • Sufficient for moderate scraping
+  
+  - Standard: $25/month
+    • 1GB RAM
+    • Better for high-volume scraping
+    • Multiple concurrent jobs
+```
+
+**Important**: Choose **Starter** or higher for production. Free tier sleeps after 15min inactivity!
+
+#### 11.4 Add Environment Variables
+
+In Render Dashboard → Environment tab, add these variables:
+
 ```bash
-# Update WORKER_HEALTH_URL in Vercel:
+# ===== CRITICAL: DATABASE =====
+DATABASE_URL=postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+DIRECT_URL=postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+
+# ===== CRITICAL: REDIS =====
+# IMPORTANT: Use hostname only, NO rediss:// prefix
+REDIS_HOST=xxx-12345.upstash.io
+REDIS_PORT=6379
+REDIS_PASSWORD=your-redis-password
+
+# ===== WORKER CONFIGURATION =====
+NODE_ENV=production
+WORKER_CONCURRENCY=1
+SCRAPER_VERBOSE=true
+
+# ===== CHROMIUM (Auto-set by Dockerfile) =====
+PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+# ===== SECURITY =====
+CRON_SECRET=your-cron-secret
+```
+
+**Critical Notes:**
+- ✅ **REDIS_HOST**: Must be hostname only (e.g., `xxx.upstash.io`)
+- ❌ **NOT**: `rediss://xxx.upstash.io` or `redis://xxx.upstash.io`
+- ✅ Copy exact values from Vercel environment variables
+- ✅ Use SAME Redis and Database as main application
+
+#### 11.5 Deploy Worker
+
+```bash
+1. Click "Create Background Worker"
+2. Wait for build process (5-10 minutes first time)
+3. Monitor build logs for:
+   - ✓ Dependencies installed
+   - ✓ Prisma client generated
+   - ✓ Docker image built successfully
+   - ✓ Worker started
+```
+
+**Expected Build Output:**
+```
+==> Building image from Dockerfile.worker
+==> Installing dependencies with pnpm...
+==> Generating Prisma Client...
+==> Building Docker image...
+==> Starting worker...
+[Scraper Worker] Starting worker process...
+[Scraper Worker] Worker ready, waiting for jobs...
+[Scraper Worker] Health check server running on port 3001
+```
+
+---
+
+### Step 12: Verify Worker Deployment
+
+#### 12.1 Check Health Endpoint
+
+```bash
+# Get worker URL from Render dashboard
+# Example: goodseed-worker.onrender.com
+
+curl https://goodseed-worker.onrender.com/health
+
+# Expected response:
+{
+  "status": "ok",
+  "uptime": 123.456,
+  "timestamp": "2026-01-30T12:00:00.000Z",
+  "worker": "scraper-worker",
+  "queueStatus": "active"
+}
+```
+
+**If health check fails:**
+- Check Render logs for errors
+- Verify port 3001 is exposed
+- Ensure worker started successfully
+
+#### 12.2 Check Worker Logs
+
+```bash
+# In Render Dashboard → Logs tab:
+
+Expected logs:
+✓ [Scraper Worker] Starting worker process...
+✓ [Redis] Connected to Redis
+✓ [Prisma] Database connection established
+✓ [Scraper Worker] Worker ready, waiting for jobs...
+✓ [Scraper Worker] Health check server running on port 3001
+
+❌ Watch out for:
+✗ Redis connection failed
+✗ Database connection timeout
+✗ Chromium launch failed
+```
+
+#### 12.3 Test Scraping Job
+
+Test the worker with a manual scraping job:
+
+```bash
+# Step 1: In your main app (Vercel)
+1. Go to: https://your-app.vercel.app/dashboard/admin/sellers
+2. Click on a seller
+3. Click "Trigger Manual Scrape"
+
+# Step 2: Check Render worker logs
+- Look for: "[INFO WORKER] Starting job..."
+- Monitor progress logs
+- Verify: "[INFO WORKER] Job completed successfully"
+
+# Step 3: Check results
+- Go back to admin dashboard
+- Check scrape job status changed to "COMPLETED"
+- Verify products were saved to database
+```
+
+#### 12.4 Update Main Application
+
+After successful worker deployment, update Vercel environment variable:
+
+```bash
+# In Vercel → Settings → Environment Variables:
 WORKER_HEALTH_URL=https://goodseed-worker.onrender.com/health
+
+# Redeploy Vercel to apply changes
+```
+
+---
+
+### Step 13: Worker Monitoring & Maintenance
+
+#### 13.1 Set Up Health Monitoring
+
+**Option A: UptimeRobot (Free)**
+```bash
+1. Visit: https://uptimerobot.com/
+2. Create account
+3. Add new monitor:
+   Type: HTTP(s)
+   URL: https://goodseed-worker.onrender.com/health
+   Interval: 5 minutes
+   Alert contacts: your-email@example.com
+```
+
+**Option B: Render Built-in Monitoring**
+```bash
+# In Render Dashboard:
+1. Go to worker → Metrics
+2. View:
+   - CPU usage
+   - Memory usage
+   - Response time
+   - Health check status
+```
+
+#### 13.2 Monitor Key Metrics
+
+**Resource Usage:**
+- **Memory**: Should stay < 80% (upgrade if consistently high)
+- **CPU**: Should average < 50% (spikes are normal during scraping)
+- **Network**: Monitor bandwidth usage
+
+**Job Processing:**
+- **Jobs completed per hour**: Track throughput
+- **Average job duration**: Should be consistent (5-15 minutes)
+- **Failed jobs rate**: Should be < 5%
+- **Queue wait time**: Should be < 5 minutes
+
+**Health Status:**
+- **Uptime**: Target 99.9%
+- **Health check response**: Should be < 100ms
+- **Last restart**: Track unexpected restarts
+
+#### 13.3 Common Issues & Solutions
+
+**Issue: Worker Keeps Restarting**
+```bash
+Causes:
+- Out of memory (upgrade to Standard plan)
+- Unhandled errors in worker code
+- Database connection issues
+
+Debug:
+1. Check Render logs for crash reason
+2. Look for "SIGKILL" or "OOM" messages
+3. Upgrade plan if memory-related
+```
+
+**Issue: Jobs Not Processing**
+```bash
+Causes:
+- Redis connection failed
+- Worker crashed
+- Queue not connected
+
+Solutions:
+1. Verify REDIS_HOST has no prefix
+2. Check worker logs for connection errors
+3. Restart worker in Render dashboard
+4. Test Redis connection:
+   curl https://goodseed-worker.onrender.com/health
+```
+
+**Issue: Chromium Launch Failed**
+```bash
+Error: "Failed to launch the browser process"
+
+Solutions:
+1. Verify all dependencies in Dockerfile:
+   - chromium
+   - nss
+   - freetype
+   - harfbuzz
+2. Check PUPPETEER_EXECUTABLE_PATH is set
+3. Rebuild worker with:
+   Manual Deploy → Clear build cache
+```
+
+**Issue: High Memory Usage**
+```bash
+Symptoms:
+- Memory usage > 80%
+- Worker restarts frequently
+- Jobs fail with OOM errors
+
+Solutions:
+1. Upgrade to Standard plan (1GB RAM)
+2. Reduce concurrency:
+   WORKER_CONCURRENCY=1
+3. Add memory limit:
+   NODE_OPTIONS=--max-old-space-size=512
+4. Optimize scraping code
+```
+
+---
+
+### Step 14: Worker Scaling (Optional)
+
+When you need to handle more scraping volume:
+
+#### 14.1 Vertical Scaling (Upgrade Plan)
+
+```bash
+Plans comparison:
+- Starter: $7/mo, 512MB RAM → ~5-10 jobs/hour
+- Standard: $25/mo, 1GB RAM → ~20-30 jobs/hour
+- Pro: $85/mo, 4GB RAM → ~50+ jobs/hour
+
+When to upgrade:
+- Jobs waiting > 5 minutes regularly
+- Memory usage consistently > 80%
+- Need faster processing
+```
+
+#### 14.2 Horizontal Scaling (Multiple Workers)
+
+```bash
+# Deploy multiple workers for parallel processing:
+
+1. Create worker-2:
+   - Same configuration as worker-1
+   - Different name: goodseed-worker-2
+   - Same Redis connection
+
+2. Create worker-3, worker-4, etc.
+
+Benefits:
+- Process jobs in parallel
+- Higher throughput
+- Redundancy if one worker fails
+
+Cost: $7/month per worker (Starter plan)
+```
+
+#### 14.3 Load Balancing
+
+```bash
+# Workers automatically load balance via Redis queue:
+- Bull queue distributes jobs evenly
+- Each worker processes one job at a time
+- No additional configuration needed
+
+Example with 3 workers:
+- Worker 1: Processing seller A
+- Worker 2: Processing seller B
+- Worker 3: Processing seller C
+- Total: 3x faster processing
 ```
 
 ---

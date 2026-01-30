@@ -1,0 +1,53 @@
+# Render.com Configuration for GoodSeed Worker
+services:
+  - type: worker
+    name: goodseed-worker
+    env: docker
+    dockerfilePath: ./Dockerfile.worker
+    dockerContext: .
+    region: oregon # Choose: oregon, frankfurt, singapore
+    plan: starter # starter ($7/mo) or free (sleeps after 15min)
+    branch: main
+    
+    # Health check configuration
+    healthCheckPath: /health
+    
+    # Auto-deploy on push
+    autoDeploy: true
+    
+    # Environment variables (add these in Render Dashboard)
+    envVars:
+      - key: NODE_ENV
+        value: production
+      
+      - key: DATABASE_URL
+        sync: false # Set manually in dashboard
+      
+      - key: DIRECT_URL
+        sync: false
+      
+      - key: REDIS_HOST
+        sync: false
+      
+      - key: REDIS_PORT
+        value: 6379
+      
+      - key: REDIS_PASSWORD
+        sync: false
+      
+      - key: CRON_SECRET
+        sync: false
+      
+      # Chromium settings for Crawlee
+      - key: PUPPETEER_EXECUTABLE_PATH
+        value: /usr/bin/chromium-browser
+      
+      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
+        value: true
+      
+      # Worker specific settings
+      - key: WORKER_CONCURRENCY
+        value: 1
+      
+      - key: SCRAPER_VERBOSE
+        value: true

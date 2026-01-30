@@ -1,3 +1,3 @@
 <!-- 
-API nội bộ cho scheduled scraping (only calling by AWS EventBridge )
+Internal API for scheduled scraping (called by Vercel Cron Jobs)
  -->
