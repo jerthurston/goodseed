@@ -1,53 +1,303 @@
-# Render.com Configuration for GoodSeed Worker
+# ============================================================================
+# Render.com Configuration for GoodSeed Scraper Worker
+# ============================================================================
+# This file defines the infrastructure-as-code for deploying the background
+# worker service that processes scraping jobs from the Redis queue.
+#
+# Usage:
+#   1. Commit this file to your repository
+#   2. In Render Dashboard: New + → Blueprint → Connect Repository
+#   3. Render will automatically detect and deploy based on this config
+#
+# Alternative: Manual deployment via Render Dashboard (ignore this file)
+# ============================================================================
+
 services:
+  # ===== Background Worker Service =====
+  # Processes long-running scraping tasks that exceed Vercel's timeout limits
   - type: worker
+    # Worker type: Runs continuously in background, no HTTP endpoint (except health check)
+    # Unlike web services, workers don't need public URLs
+    
     name: goodseed-worker
+    # Service name in Render Dashboard
+    # Will be accessible at: goodseed-worker.onrender.com (for health check only)
+    
     env: docker
+    # Deployment method: Use Docker container
+    # Render will build image from Dockerfile.worker
+    # Alternative: 'native' (uses buildpacks, not recommended for our setup)
+    
     dockerfilePath: ./Dockerfile.worker
+    # Path to Dockerfile relative to repository root
+    # This Dockerfile includes Chromium and all dependencies for web scraping
+    
     dockerContext: .
-    region: oregon # Choose: oregon, frankfurt, singapore
-    plan: starter # starter ($7/mo) or free (sleeps after 15min)
+    # Build context for Docker (current directory = repository root)
+    # Allows Dockerfile to access all project files (package.json, prisma/, etc.)
+    
+    region: oregon
+    # Data center location for deployment
+    # Options:
+    #   - oregon (US West) - Best for US users, lowest latency to Vercel US
+    #   - frankfurt (EU) - Best for European users
+    #   - singapore (Asia) - Best for Asian users
+    # Choose based on: 1) User location, 2) Database location (Neon region)
+    
+    plan: starter
+    # Pricing tier:
+    #   - free: $0/month, 512MB RAM, SLEEPS after 15min inactivity ❌
+    #   - starter: $7/month, 512MB RAM, always-on ✅ Recommended for MVP
+    #   - standard: $25/month, 1GB RAM, better for production
+    #   - pro: $85/month, 4GB RAM, high-volume scraping
+    # Note: Free tier NOT suitable for production (worker will miss jobs while sleeping)
+    
     branch: main
+    # Git branch to deploy from
+    # Change to 'develop' for staging environment
+    # Auto-deploys when this branch receives new commits (if autoDeploy: true)
     
-    # Health check configuration
+    # ===== Health Check Configuration =====
     healthCheckPath: /health
+    # HTTP endpoint for Render to monitor worker health
+    # Worker exposes health check server on port 3001 (see scraper-worker.ts)
+    # Render pings this every 30s to ensure worker is responsive
+    # If health check fails 3+ times, Render will restart the worker
     
-    # Auto-deploy on push
+    # ===== Auto-Deploy Configuration =====
     autoDeploy: true
+    # Automatically deploy when code is pushed to specified branch
+    # Set to false if you want manual deployments only
+    # Useful for: CI/CD pipelines, automatic updates
     
-    # Environment variables (add these in Render Dashboard)
+    # ===== Environment Variables =====
+    # Variables marked with 'sync: false' must be set manually in Render Dashboard
+    # Why? Because they contain secrets that shouldn't be in git
     envVars:
+      # --- Application Environment ---
       - key: NODE_ENV
         value: production
+        # Sets Node.js environment mode
+        # Affects: logging level, error handling, optimizations
+        # In production: disables verbose logs, enables performance optimizations
       
+      # --- Database Configuration (Neon PostgreSQL) ---
       - key: DATABASE_URL
-        sync: false # Set manually in dashboard
+        sync: false
+        # Pooled connection string for application queries
+        # Format: postgresql://user:password@host:5432/dbname?sslmode=require
+        # Must match Vercel's DATABASE_URL (same database)
+        # ⚠️ Set manually in Render Dashboard → Environment tab
       
       - key: DIRECT_URL
         sync: false
+        # Direct connection string for Prisma migrations
+        # Same as DATABASE_URL but uses direct connection (not pooled)
+        # Required for: schema migrations, Prisma Studio
+        # ⚠️ Set manually in Render Dashboard → Environment tab
       
+      # --- Redis Configuration (Upstash) ---
       - key: REDIS_HOST
         sync: false
+        # Redis hostname WITHOUT protocol prefix
+        # ✅ Correct: xxx-12345.upstash.io
+        # ❌ Wrong: rediss://xxx-12345.upstash.io
+        # Used by Bull queue to connect to Redis for job processing
+        # Must match Vercel's REDIS_HOST (same Redis instance)
+        # ⚠️ Set manually in Render Dashboard → Environment tab
       
       - key: REDIS_PORT
         value: 6379
+        # Standard Redis port (TLS enabled via connection library)
+        # Upstash uses 6379 with TLS, not 6380
       
       - key: REDIS_PASSWORD
         sync: false
+        # Redis authentication password
+        # Must match Vercel's REDIS_PASSWORD
+        # ⚠️ Set manually in Render Dashboard → Environment tab
       
+      # --- Security ---
       - key: CRON_SECRET
         sync: false
+        # Secret token for authenticating cron job triggers
+        # Used to prevent unauthorized scraping job triggers
+        # Must match Vercel's CRON_SECRET
+        # ⚠️ Set manually in Render Dashboard → Environment tab
       
-      # Chromium settings for Crawlee
+      # --- Chromium/Puppeteer Configuration ---
+      # These settings tell Puppeteer to use system-installed Chromium
+      # instead of downloading its own copy (saves ~170MB disk space)
       - key: PUPPETEER_EXECUTABLE_PATH
         value: /usr/bin/chromium-browser
+        # Path to system Chromium installed by Dockerfile
+        # Dockerfile installs via: apk add chromium
+        # Puppeteer will use this binary instead of bundled version
       
       - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
         value: true
+        # Prevents Puppeteer from downloading Chromium during npm install
+        # Saves: ~170MB download, ~5 minutes build time
+        # Required because we use system Chromium from Alpine package
       
-      # Worker specific settings
+      # --- Worker-Specific Settings ---
       - key: WORKER_CONCURRENCY
         value: 1
+        # Number of jobs to process simultaneously
+        # 1 = Process one scraping job at a time (recommended for Starter plan)
+        # Higher values require more RAM:
+        #   - 1 job: ~300-400MB RAM
+        #   - 2 jobs: ~500-600MB RAM (may crash on Starter plan)
+        #   - 3+ jobs: Requires Standard plan or higher (1GB+ RAM)
+        # Each job runs Chromium which is memory-intensive
       
       - key: SCRAPER_VERBOSE
         value: true
+        # Enable detailed logging for scraping operations
+        # true: Logs each product scraped, page visited, etc.
+        # false: Only logs job start/completion
+        # Useful for debugging but creates more log volume
+        # Set to false in production to reduce log storage costs
+
+# ============================================================================
+# Deployment Process:
+# ============================================================================
+# 1. Render detects render.yaml in repository
+# 2. Creates Background Worker with specified settings
+# 3. Builds Docker image from Dockerfile.worker
+# 4. Injects environment variables
+# 5. Starts container with CMD from Dockerfile: pnpm run worker:scraper
+# 6. Monitors health via /health endpoint
+# 7. Auto-restarts if health checks fail or container crashes
+#
+# To update:
+# 1. Push changes to specified branch (main/develop)
+# 2. Render auto-deploys if autoDeploy: true
+# 3. Zero-downtime: Render starts new container before stopping old one
+#
+# Manual deployment:
+# 1. Go to Render Dashboard → goodseed-worker
+# 2. Click "Manual Deploy" → "Deploy latest commit"
+#
+# Monitoring:
+# - Logs: Render Dashboard → goodseed-worker → Logs
+# - Metrics: Render Dashboard → goodseed-worker → Metrics
+# - Health: https://goodseed-worker.onrender.com/health
+# ============================================================================
+
+# ============================================================================
+# FUTURE: Marketing Worker Service (Email Campaigns, Notifications)
+# ============================================================================
+# Uncomment this section when ready to deploy marketing worker
+#
+# - type: worker
+#   name: goodseed-marketing-worker
+#   env: docker
+#   dockerfilePath: ./Dockerfile.marketing-worker
+#   dockerContext: .
+#   region: oregon
+#   plan: starter # $7/month - upgrade to standard if high email volume
+#   branch: main
+#   
+#   healthCheckPath: /health
+#   autoDeploy: true
+#   
+#   envVars:
+#     # --- Application Environment ---
+#     - key: NODE_ENV
+#       value: production
+#     
+#     # --- Database (Same as scraper worker) ---
+#     - key: DATABASE_URL
+#       sync: false
+#     
+#     - key: DIRECT_URL
+#       sync: false
+#     
+#     # --- Redis (Same instance, different queue) ---
+#     - key: REDIS_HOST
+#       sync: false
+#     
+#     - key: REDIS_PORT
+#       value: 6379
+#     
+#     - key: REDIS_PASSWORD
+#       sync: false
+#     
+#     # --- Email Service (Resend) ---
+#     - key: RESEND_API_KEY
+#       sync: false
+#       # API key for sending emails via Resend
+#       # Get from: https://resend.com/api-keys
+#     
+#     - key: RESEND_FROM_EMAIL
+#       sync: false
+#       # Sender email address
+#       # Format: noreply@yourdomain.com or use Resend test email
+#     
+#     # --- Marketing Worker Settings ---
+#     - key: WORKER_TYPE
+#       value: marketing
+#       # Identifies this as marketing worker (vs scraper worker)
+#     
+#     - key: WORKER_CONCURRENCY
+#       value: 5
+#       # Can process more jobs simultaneously (email is less resource-intensive)
+#       # 5 = Send up to 5 emails in parallel
+#     
+#     - key: EMAIL_BATCH_SIZE
+#       value: 100
+#       # Number of emails to send per batch
+#       # Adjust based on Resend rate limits
+#     
+#     - key: EMAIL_RATE_LIMIT
+#       value: 100
+#       # Max emails per minute (check Resend plan limits)
+#       # Free: 100/day, Pro: 50,000/month
+#     
+#     - key: CAMPAIGN_QUEUE_NAME
+#       value: marketing-campaigns
+#       # Redis queue name for email campaigns
+#       # Different from scraper queue: 'scraper-jobs'
+#
+# ============================================================================
+# Setup Instructions for Marketing Worker:
+# ============================================================================
+# 
+# 1. Create Marketing Worker Script:
+#    - File: lib/workers/marketing-worker.ts
+#    - Similar to scraper-worker.ts
+#    - Process jobs from 'marketing-campaigns' queue
+#
+# 2. Create Dockerfile:
+#    - File: Dockerfile.marketing-worker
+#    - No need for Chromium (lighter than scraper worker)
+#    - Only needs Node.js + dependencies
+#
+# 3. Create Marketing Queue:
+#    - File: lib/queue/marketing-queue.ts
+#    - Similar to scraper-queue.ts
+#    - Queue name: 'marketing-campaigns'
+#
+# 4. Update package.json:
+#    Add script: "worker:marketing": "tsx lib/workers/marketing-worker.ts"
+#
+# 5. Use Cases:
+#    - Welcome emails for new users
+#    - Weekly product digest emails
+#    - Promotional campaigns
+#    - Re-engagement emails
+#    - Newsletter distribution
+#
+# 6. Benefits of Separate Worker:
+#    - Independent scaling (email vs scraping have different resource needs)
+#    - Isolated failures (scraper issues don't affect emails)
+#    - Different concurrency settings (email can handle more parallel jobs)
+#    - Easier monitoring and debugging
+#
+# 7. Cost Considerations:
+#    - Starter plan: $7/month (sufficient for < 10K emails/month)
+#    - Standard plan: $25/month (for high-volume campaigns)
+#    - Resend pricing: Free (100/day), Pro $20/month (50K/month)
+#
+# ============================================================================

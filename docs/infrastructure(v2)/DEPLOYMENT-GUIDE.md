@@ -675,7 +675,7 @@ For long-running scraping tasks, deploy a separate worker service on Render.com.
 
 #### 10.1 Verify Dockerfile.worker Exists
 
-The project should already have `Dockerfile.worker` in the root directory. If not, create it:
+The project should already have `Dockerfile.scraper-worker` in the root directory. If not, create it:
 
 ```dockerfile
 FROM node:20-alpine
