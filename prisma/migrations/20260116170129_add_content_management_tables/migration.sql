@@ -10,25 +10,56 @@
   - Added the required column `identifier` to the `VerificationToken` table without a default value. This is not possible if the table is not empty.
 
 */
--- AlterEnum
-ALTER TYPE "UserRole" ADD VALUE 'BANNED';
+-- AlterEnum (Idempotent - only add if not exists)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum 
+    WHERE enumlabel = 'BANNED' 
+    AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'UserRole')
+  ) THEN
+    ALTER TYPE "UserRole" ADD VALUE 'BANNED';
+  END IF;
+END $$;
 
--- DropIndex
-DROP INDEX "VerificationToken_email_token_key";
+-- DropIndex (Idempotent - only drop if exists)
+DROP INDEX IF EXISTS "VerificationToken_email_token_key";
 
--- AlterTable
-ALTER TABLE "User" DROP COLUMN "email_verified",
-ADD COLUMN     "emailVerified" TIMESTAMP(3),
-ALTER COLUMN "email" SET NOT NULL;
+-- AlterTable (Idempotent User table changes)
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'User' AND column_name = 'email_verified') THEN
+    ALTER TABLE "User" DROP COLUMN "email_verified";
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'User' AND column_name = 'emailVerified') THEN
+    ALTER TABLE "User" ADD COLUMN "emailVerified" TIMESTAMP(3);
+  END IF;
+  ALTER TABLE "User" ALTER COLUMN "email" SET NOT NULL;
+END $$;
 
--- AlterTable
-ALTER TABLE "VerificationToken" DROP CONSTRAINT "VerificationToken_pkey",
-DROP COLUMN "email",
-DROP COLUMN "id",
-ADD COLUMN     "identifier" TEXT NOT NULL;
+-- AlterTable (Idempotent VerificationToken changes)
+DO $$ BEGIN
+  -- Drop primary key constraint if exists
+  IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'VerificationToken_pkey') THEN
+    ALTER TABLE "VerificationToken" DROP CONSTRAINT "VerificationToken_pkey";
+  END IF;
+  
+  -- Drop columns if they exist
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'VerificationToken' AND column_name = 'email') THEN
+    ALTER TABLE "VerificationToken" DROP COLUMN "email";
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'VerificationToken' AND column_name = 'id') THEN
+    ALTER TABLE "VerificationToken" DROP COLUMN "id";
+  END IF;
+  
+  -- Add identifier column if not exists
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'VerificationToken' AND column_name = 'identifier') THEN
+    ALTER TABLE "VerificationToken" ADD COLUMN "identifier" TEXT NOT NULL DEFAULT '';
+    -- Remove default after adding
+    ALTER TABLE "VerificationToken" ALTER COLUMN "identifier" DROP DEFAULT;
+  END IF;
+END $$;
 
--- CreateTable
-CREATE TABLE "PasswordResetToken" (
+-- CreateTable (Idempotent)
+CREATE TABLE IF NOT EXISTS "PasswordResetToken" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "token" TEXT NOT NULL,
@@ -37,8 +68,8 @@ CREATE TABLE "PasswordResetToken" (
     CONSTRAINT "PasswordResetToken_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "MagicLinkRateLimit" (
+-- CreateTable (Idempotent)
+CREATE TABLE IF NOT EXISTS "MagicLinkRateLimit" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "ipAddress" TEXT,
@@ -51,8 +82,8 @@ CREATE TABLE "MagicLinkRateLimit" (
     CONSTRAINT "MagicLinkRateLimit_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "NotificationPreference" (
+-- CreateTable (Idempotent)
+CREATE TABLE IF NOT EXISTS "NotificationPreference" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "receiveSpecialOffers" BOOLEAN NOT NULL DEFAULT false,
@@ -65,7 +96,7 @@ CREATE TABLE "NotificationPreference" (
 );
 
 -- CreateTable
-CREATE TABLE "Wishlist" (
+CREATE TABLE IF NOT EXISTS "Wishlist" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "seedId" TEXT NOT NULL,
@@ -76,7 +107,7 @@ CREATE TABLE "Wishlist" (
 );
 
 -- CreateTable
-CREATE TABLE "WishlistFolder" (
+CREATE TABLE IF NOT EXISTS "WishlistFolder" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -88,7 +119,7 @@ CREATE TABLE "WishlistFolder" (
 );
 
 -- CreateTable
-CREATE TABLE "homepage_content" (
+CREATE TABLE IF NOT EXISTS "homepage_content" (
     "id" TEXT NOT NULL,
     "heroTitle" TEXT NOT NULL,
     "heroDescription" TEXT NOT NULL,
@@ -110,7 +141,7 @@ CREATE TABLE "homepage_content" (
 );
 
 -- CreateTable
-CREATE TABLE "faq_categories" (
+CREATE TABLE IF NOT EXISTS "faq_categories" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "icon" TEXT NOT NULL,
@@ -123,7 +154,7 @@ CREATE TABLE "faq_categories" (
 );
 
 -- CreateTable
-CREATE TABLE "faqs" (
+CREATE TABLE IF NOT EXISTS "faqs" (
     "id" TEXT NOT NULL,
     "question" TEXT NOT NULL,
     "answer" TEXT NOT NULL,
@@ -137,7 +168,7 @@ CREATE TABLE "faqs" (
 );
 
 -- CreateTable
-CREATE TABLE "faq_page_settings" (
+CREATE TABLE IF NOT EXISTS "faq_page_settings" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL DEFAULT 'Frequently Asked Questions',
     "description" TEXT NOT NULL DEFAULT 'Find answers to the most common questions about our services.',
@@ -152,52 +183,76 @@ CREATE TABLE "faq_page_settings" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PasswordResetToken_token_key" ON "PasswordResetToken"("token");
+CREATE UNIQUE INDEX IF NOT EXISTS "PasswordResetToken_token_key" ON "PasswordResetToken"("token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PasswordResetToken_email_token_key" ON "PasswordResetToken"("email", "token");
+CREATE UNIQUE INDEX IF NOT EXISTS "PasswordResetToken_email_token_key" ON "PasswordResetToken"("email", "token");
 
 -- CreateIndex
-CREATE INDEX "MagicLinkRateLimit_email_cooldownUntil_idx" ON "MagicLinkRateLimit"("email", "cooldownUntil");
+CREATE INDEX IF NOT EXISTS "MagicLinkRateLimit_email_cooldownUntil_idx" ON "MagicLinkRateLimit"("email", "cooldownUntil");
 
 -- CreateIndex
-CREATE INDEX "MagicLinkRateLimit_createdAt_idx" ON "MagicLinkRateLimit"("createdAt");
+CREATE INDEX IF NOT EXISTS "MagicLinkRateLimit_createdAt_idx" ON "MagicLinkRateLimit"("createdAt");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "MagicLinkRateLimit_email_key" ON "MagicLinkRateLimit"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "MagicLinkRateLimit_email_key" ON "MagicLinkRateLimit"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "NotificationPreference_userId_key" ON "NotificationPreference"("userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "NotificationPreference_userId_key" ON "NotificationPreference"("userId");
 
 -- CreateIndex
-CREATE INDEX "NotificationPreference_userId_idx" ON "NotificationPreference"("userId");
+CREATE INDEX IF NOT EXISTS "NotificationPreference_userId_idx" ON "NotificationPreference"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Wishlist_userId_seedId_key" ON "Wishlist"("userId", "seedId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Wishlist_userId_seedId_key" ON "Wishlist"("userId", "seedId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "WishlistFolder_userId_name_key" ON "WishlistFolder"("userId", "name");
+CREATE UNIQUE INDEX IF NOT EXISTS "WishlistFolder_userId_name_key" ON "WishlistFolder"("userId", "name");
 
 -- CreateIndex
-CREATE INDEX "faqs_categoryId_order_idx" ON "faqs"("categoryId", "order");
+CREATE INDEX IF NOT EXISTS "faqs_categoryId_order_idx" ON "faqs"("categoryId", "order");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
+CREATE UNIQUE INDEX IF NOT EXISTS "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
 
--- AddForeignKey
-ALTER TABLE "NotificationPreference" ADD CONSTRAINT "NotificationPreference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (Idempotent)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'NotificationPreference_userId_fkey') THEN
+    ALTER TABLE "NotificationPreference" ADD CONSTRAINT "NotificationPreference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "Wishlist" ADD CONSTRAINT "Wishlist_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (Idempotent)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Wishlist_userId_fkey') THEN
+    ALTER TABLE "Wishlist" ADD CONSTRAINT "Wishlist_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "Wishlist" ADD CONSTRAINT "Wishlist_seedId_fkey" FOREIGN KEY ("seedId") REFERENCES "SeedProduct"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (Idempotent)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Wishlist_seedId_fkey') THEN
+    ALTER TABLE "Wishlist" ADD CONSTRAINT "Wishlist_seedId_fkey" FOREIGN KEY ("seedId") REFERENCES "SeedProduct"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "Wishlist" ADD CONSTRAINT "Wishlist_folderId_fkey" FOREIGN KEY ("folderId") REFERENCES "WishlistFolder"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+-- AddForeignKey (Idempotent) - SKIP: folderId column removed in later migration
+-- DO $$ BEGIN
+--   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Wishlist_folderId_fkey') THEN
+--     ALTER TABLE "Wishlist" ADD CONSTRAINT "Wishlist_folderId_fkey" FOREIGN KEY ("folderId") REFERENCES "WishlistFolder"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+--   END IF;
+-- END $$;
 
--- AddForeignKey
-ALTER TABLE "WishlistFolder" ADD CONSTRAINT "WishlistFolder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (Idempotent)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'WishlistFolder_userId_fkey') THEN
+    ALTER TABLE "WishlistFolder" ADD CONSTRAINT "WishlistFolder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "faqs" ADD CONSTRAINT "faqs_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "faq_categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (Idempotent)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'faqs_categoryId_fkey') THEN
+    ALTER TABLE "faqs" ADD CONSTRAINT "faqs_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "faq_categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
