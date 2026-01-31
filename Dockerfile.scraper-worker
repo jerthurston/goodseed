@@ -1,20 +1,9 @@
 FROM node:20-alpine
 
-# Install dependencies required for Crawlee and Chromium
+# Install only required dependencies for Crawlee + Cheerio
+# Note: Chromium is NOT needed since we use CheerioCrawler (HTML parsing only)
 RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    font-noto-emoji
-
-# Tell Puppeteer to use installed Chromium
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV CHROME_BIN=/usr/bin/chromium-browser
-ENV CHROME_PATH=/usr/lib/chromium/
+    ca-certificates
 
 # Set working directory
 WORKDIR /app
