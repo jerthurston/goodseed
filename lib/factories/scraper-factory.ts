@@ -8,9 +8,9 @@
 import { PrismaClient } from '@prisma/client';
 
 // Database services (retained for data persistence)
-import { SaveDbService as VancouverSaveDbService } from '@/scrapers/vancouverseedbank/core/save-db-service';
-import { SaveDbService as SunWestSaveDbService } from '@/scrapers/sunwestgenetics/core/save-db-service';
-import { SaveDbService as SonomaSeedsDbService } from '@/scrapers/sonomaseeds/core/save-db-service';
+// import { SaveDbService as VancouverSaveDbService } from '@/scrapers/vancouverseedbank/core/save-db-service';
+// import { SaveDbService as SunWestSaveDbService } from '@/scrapers/sunwestgenetics/core/save-db-service';
+// import { SaveDbService as SonomaSeedsDbService } from '@/scrapers/sonomaseeds/core/save-db-service';
 import { SaveDbService as CommonSaveDbService } from '@/scrapers/(common)/save-db-service';
 
 // Product List Scrapers (core implementations)
