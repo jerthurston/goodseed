@@ -12,7 +12,7 @@
  */
 
 import { apiLogger } from '@/lib/helpers/api-logger';
-import type { PriceChange } from '@/lib/services/marketing/price-alert/detectPriceChanges';
+import type { PriceChange } from '@/lib/services/price-alert/detectPriceChanges';
 
 // ============================================================================
 // TYPE DEFINITIONS

@@ -6,93 +6,31 @@
  * - Price alert jobs (price change detection, email notifications)
  * - Future: Newsletter jobs, analytics jobs, etc.
  * 
+ * Architecture:
+ * - Worker logic is separated into modules (scraper.worker.ts, price-alert.worker.ts)
+ * - Main worker orchestrates initialization and graceful shutdown
+ * - Single process = cost-effective ($7/month on Render)
+ * 
  * Benefits:
- * - Single worker process = cost-effective ($7/month on Render)
+ * - Clean separation of concerns
+ * - Easy to test individual worker logic
  * - Unified monitoring and health checks
  * - Consistent environment configuration
  * - Easy to scale horizontally
  * 
  * @usage
  * Development: pnpm run worker
- * Production: docker-compose up worker
+ * Production: docker-compose up worker (local) or Render worker (production)
  */
 
 import http from 'http';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
-// Import queues
-import { scraperQueue, processScraperJob } from '@/lib/queue/scraper-queue';
-import { priceAlertQueue, processPriceAlertJob } from '@/lib/queue/price-change-alert';
-
-// Import startup/cleanup utilities
-import { initializeWorkerSync, cleanupWorkerSync } from './worker-initialization';
+// Import worker modules
+import { initializeScraperWorker, cleanupScraperWorker } from './scraper.worker';
+import { initializePriceAlertWorker, cleanupPriceAlertWorker } from './price-alert.worker';
 
 apiLogger.info('[Main Worker] 🚀 Starting unified worker process...');
-
-/**
- * Initialize Scraper Queue Processor
- */
-async function initializeScraperProcessor() {
-  try {
-    apiLogger.info('[Main Worker] 🔧 Initializing scraper queue processor...');
-    
-    scraperQueue.process(processScraperJob);
-    
-    // Scraper queue event handlers
-    scraperQueue.on('completed', (job, result) => {
-      apiLogger.info('[Scraper Queue] Job completed', {
-        jobId: job.id,
-        result
-      });
-    });
-
-    scraperQueue.on('failed', (job, error) => {
-      apiLogger.logError('[Scraper Queue] Job failed', new Error(error.message), {
-        jobId: job?.id
-      });
-    });
-
-    scraperQueue.on('error', (error) => {
-      apiLogger.logError('[Scraper Queue] Queue error', new Error(error.message));
-    });
-    
-    apiLogger.info('[Main Worker] ✅ Scraper queue processor initialized');
-  } catch (error) {
-    apiLogger.logError('[Main Worker] ❌ Failed to initialize scraper processor', error instanceof Error ? error : new Error(String(error)));
-    throw error;
-  }
-}
-
-/**
- * Initialize Price Alert Queue Processor
- */
-async function initializePriceAlertProcessor() {
-  try {
-    apiLogger.info('[Main Worker] 🔧 Initializing price-alert queue processor...');
-    
-    priceAlertQueue.process(processPriceAlertJob);
-    
-    // Price alert queue event handlers (already defined in queue, but add worker-level logging)
-    priceAlertQueue.on('completed', (job) => {
-      apiLogger.info('[Price Alert Queue] Job completed', {
-        jobId: job.id,
-        type: job.data.type
-      });
-    });
-
-    priceAlertQueue.on('failed', (job, err) => {
-      apiLogger.logError('[Price Alert Queue] Job failed', err, {
-        jobId: job?.id,
-        type: job?.data.type
-      });
-    });
-    
-    apiLogger.info('[Main Worker] ✅ Price-alert queue processor initialized');
-  } catch (error) {
-    apiLogger.logError('[Main Worker] ❌ Failed to initialize price-alert processor', error instanceof Error ? error : new Error(String(error)));
-    throw error;
-  }
-}
 
 /**
  * Health Check Server
@@ -122,18 +60,17 @@ healthServer.listen(3001, () => {
 });
 
 /**
- * Initialize All Processors
+ * Initialize All Worker Processors
  */
 async function startWorker() {
   try {
-    // Initialize scraper-specific services (auto-scheduler, job sync, etc.)
-    await initializeWorkerSync();
+    // Initialize scraper worker (includes auto-scheduler, job sync, queue processor)
+    await initializeScraperWorker();
     
-    // Initialize queue processors
-    await initializeScraperProcessor();
-    await initializePriceAlertProcessor();
+    // Initialize price alert worker (queue processor and event handlers)
+    await initializePriceAlertWorker();
     
-    apiLogger.info('[Main Worker] ✅ All processors initialized successfully');
+    apiLogger.info('[Main Worker] ✅ All workers initialized successfully');
     apiLogger.info('[Main Worker] 👂 Waiting for jobs...');
   } catch (error) {
     apiLogger.logError('[Main Worker] ❌ Failed to start worker', error instanceof Error ? error : new Error(String(error)));
@@ -148,13 +85,10 @@ async function startWorker() {
 process.on('SIGTERM', async () => {
   apiLogger.info('[Main Worker] 🛑 Received SIGTERM, shutting down gracefully...');
   
-  // Cleanup scraper-specific services
-  await cleanupWorkerSync();
-  
-  // Close queues
+  // Cleanup all workers
   await Promise.all([
-    scraperQueue.close(),
-    priceAlertQueue.close(),
+    cleanupScraperWorker(),
+    cleanupPriceAlertWorker(),
   ]);
   
   // Close health server
@@ -167,13 +101,10 @@ process.on('SIGTERM', async () => {
 process.on('SIGINT', async () => {
   apiLogger.info('[Main Worker] 🛑 Received SIGINT, shutting down gracefully...');
   
-  // Cleanup scraper-specific services
-  await cleanupWorkerSync();
-  
-  // Close queues
+  // Cleanup all workers
   await Promise.all([
-    scraperQueue.close(),
-    priceAlertQueue.close(),
+    cleanupScraperWorker(),
+    cleanupPriceAlertWorker(),
   ]);
   
   // Close health server

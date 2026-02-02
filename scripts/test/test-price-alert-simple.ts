@@ -14,7 +14,7 @@
 import { prisma } from '@/lib/prisma';
 import { priceAlertQueue, createDetectPriceChangesJob } from '@/lib/queue/price-change-alert';
 import { apiLogger } from '@/lib/helpers/api-logger';
-import type { ScrapedProductWithSeller } from '@/lib/services/marketing/price-alert/detectPriceChanges';
+import type { ScrapedProductWithSeller } from '@/lib/services/price-alert/detectPriceChanges';
 
 async function main() {
   console.log('\n🧪 ===== PRICE ALERT TEST =====\n');

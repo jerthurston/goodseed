@@ -29,7 +29,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createDetectPriceChangesJob } from '@/lib/services/marketing/price-alert/priceAlertJobCreator';
+import { createDetectPriceChangesJob } from '@/lib/queue/price-change-alert';
 import { prisma } from '@/lib/prisma';
 import { apiLogger } from '@/lib/helpers/api-logger';
 

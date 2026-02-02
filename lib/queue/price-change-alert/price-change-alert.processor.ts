@@ -13,7 +13,7 @@ import {
   findUsersToNotify,
   type ScrapedProductWithSeller,
   type PriceChange,
-} from '@/lib/services/marketing/price-alert/detectPriceChanges';
+} from '@/lib/services/price-alert/detectPriceChanges';
 import { 
   PriceAlertJobData, 
   DetectPriceChangesJobData,
