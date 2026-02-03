@@ -42,12 +42,21 @@ export async function canukSeedScraper(
     const politeCrawler = new SimplePoliteCrawler({
         userAgent:USERAGENT,
         acceptLanguage:ACCEPTLANGUAGE,
-        minDelay:2000,
-        maxDelay:5000
+        // minDelay:2000,
+        // maxDelay:5000
     });
 
     const robotsRules = await politeCrawler.parseRobots(baseUrl);
-    const { crawlDelay, disallowedPaths, allowedPaths, userAgent } = robotsRules;
+    const { crawlDelay, disallowedPaths, allowedPaths, userAgent, hasExplicitCrawlDelay } = robotsRules;
+
+    // Log robots.txt rules for debugging
+    apiLogger.info(`[CanukSeedsScraper] Robots.txt rules loaded:`, {
+        crawlDelay: `${crawlDelay}ms`,
+        hasExplicitCrawlDelay,
+        disallowedCount: disallowedPaths.length,
+        allowedCount: allowedPaths.length,
+        userAgent
+    });
 
     // Initialize constants
     let actualPages = 0;
@@ -62,51 +71,51 @@ export async function canukSeedScraper(
     try {
         // 1.1 Lấy được array product url từ việc extract các category link ở header
         const catLinkArr = await extractCategoryLinksFromHomepage(siteConfig , robotsRules);
-        log.info(`[CanukSeedsScraper] extracted category links: ${JSON.stringify(catLinkArr)}`);
+        apiLogger.info(`[CanukSeedsScraper] extracted ${catLinkArr.length} category links`);
         
-        if (isTestQuickMode) {
-            // Test Quick Mode: Only crawl specific pages of ONE category
-            const pagesToCrawl = endPage! - startPage! + 1;
-            const testCategory = catLinkArr[0]; // Use first category for testing
+        // Determine how many categories to crawl
+        // Test mode: Only first category with limited pages
+        // Auto/Manual mode: All categories
+        const categoriesToCrawl = isTestQuickMode ? [catLinkArr[0]] : catLinkArr;
+        const maxPagesPerCategory = isTestQuickMode 
+            ? (endPage! - startPage! + 1)  // Test: Use startPage/endPage range
+            : sourceContext?.dbMaxPage;     // Auto/Manual: Use dbMaxPage from config
+        
+        apiLogger.info(`[CanukSeedsScraper] Crawling mode: ${isTestQuickMode ? '🧪 TEST' : '🚀 AUTO/MANUAL'}`, {
+            totalCategories: catLinkArr.length,
+            categoriesToCrawl: categoriesToCrawl.length,
+            maxPagesPerCategory,
+            pageRange: isTestQuickMode ? `${startPage}-${endPage}` : 'all'
+        });
+        
+        // Process categories
+        for (let i = 0; i < categoriesToCrawl.length; i++) {
+            const catLink = categoriesToCrawl[i];
+            apiLogger.debug(`📂 Processing category ${i + 1}/${categoriesToCrawl.length}: ${catLink}`);
             
-            apiLogger.info(`🧪 [TEST QUICK MODE] Crawling ${pagesToCrawl} pages (${startPage}-${endPage}) of category: ${testCategory}`);
-            
-            // Use the pagination-aware function with page limits
-            const productUrls = await extractProductUrlsFromCatLink(
-                testCategory, 
-                pagesToCrawl, // maxPages = number of pages to crawl
-                robotsRules
-            );
-            
-            urlsToProcess.push(...productUrls);
-            apiLogger.info(`✅ [TEST QUICK MODE] Found ${productUrls.length} products from ${pagesToCrawl} pages`);
-            
-        } else {
-            // Auto, Manual Mode: Crawl all categories with default page limits
-            apiLogger.info(`🚀 [NORMAL MODE] Starting to extract product URLs from ${catLinkArr.length} categories`);
-            
-            for (let i = 0; i < catLinkArr.length; i++) {
-                const catLink = catLinkArr[i];
-                apiLogger.debug(`📂 Processing category ${i + 1}/${catLinkArr.length}: ${catLink}`);
-                
-                try {
-                    const productUrls = await extractProductUrlsFromCatLink(catLink, sourceContext?.dbMaxPage, robotsRules);
+            try {
+                const productUrls = await extractProductUrlsFromCatLink(
+                    catLink, 
+                    maxPagesPerCategory, 
+                    robotsRules
+                );
 
-                    // Add unique URLs to processing list
-                    const newUrls = productUrls.filter(url => !urlsToProcess.includes(url));
-                    urlsToProcess.push(...newUrls);
-                    
-                    apiLogger.info(`✅ Category ${i + 1} completed. Found ${productUrls.length} products (${newUrls.length} new). Total: ${urlsToProcess.length}`);
-                    
-                    // Polite delay between categories
-                    if (i < catLinkArr.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                    }
-                    
-                } catch (categoryError) {
-                    console.warn(`⚠️ Failed to process category ${catLink}:`, categoryError);
-                    // Continue with next category
+                // Add unique URLs to processing list
+                const newUrls = productUrls.filter(url => !urlsToProcess.includes(url));
+                urlsToProcess.push(...newUrls);
+                
+                apiLogger.info(`✅ Category ${i + 1} completed. Found ${productUrls.length} products (${newUrls.length} new). Total: ${urlsToProcess.length}`);
+                
+                // Polite delay between categories (skip for last category)
+                if (i < categoriesToCrawl.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 }
+                
+            } catch (categoryError) {
+                apiLogger.warn(`⚠️ Failed to process category ${catLink}:`, { 
+                    error: categoryError instanceof Error ? categoryError.message : String(categoryError) 
+                });
+                // Continue with next category
             }
         }
         
@@ -144,25 +153,46 @@ export async function canukSeedScraper(
     try {
         apiLogger.info(`🔄 [CanukSeedsScraper] Starting product data extraction from ${urlsToProcess.length} URLs`);
         
+        // Calculate optimal maxRequestsPerMinute based on robots.txt crawlDelay
+        // Priority: robots.txt Crawl-delay > intelligent defaults
+        // If robots.txt has explicit Crawl-delay, we MUST respect it (polite crawling)
+        // If no explicit delay, we can be more aggressive while staying polite
+        
+        // Calculate rate limit based on crawl delay
+        // Formula: maxRate = 60000ms / crawlDelay (convert to requests per minute)
+        // Example: crawlDelay=1000ms → maxRate=60 req/min
+        const calculatedMaxRate = hasExplicitCrawlDelay 
+            ? Math.floor(60000 / crawlDelay)  // ✅ PRIORITY: Respect robots.txt
+            : 40;                               // Intelligent default when no explicit limit
+        
+        const maxConcurrency = 2; // 2 concurrent requests for better throughput (same for all modes)
+        
+        apiLogger.info(`[CanukSeedsScraper] Crawler settings (respecting robots.txt):`, {
+            crawlDelayMs: crawlDelay,
+            hasExplicitCrawlDelay,
+            maxRequestsPerMinute: calculatedMaxRate,
+            maxConcurrency,
+            mode: isTestQuickMode ? 'test' : 'auto',
+            strategy: hasExplicitCrawlDelay ? '🤖 robots.txt enforced' : '🧠 intelligent default'
+        });
+        
         // Create crawler for product data extraction with optimized settings
         const productCrawler = new CheerioCrawler({
-            requestHandlerTimeoutSecs: 90, // Reduced from 120s based on logs showing ~4.2s average
-            maxRequestRetries: 2, // Reduced retries since success rate is 100%
-            maxConcurrency: 1, // Keep it polite
-            maxRequestsPerMinute: isTestQuickMode ? 30 : 20, // Higher rate for test mode
+            requestHandlerTimeoutSecs: 90,
+            maxRequestRetries: 2,
+            maxConcurrency: maxConcurrency, // ✅ Use calculated value
+            maxRequestsPerMinute: calculatedMaxRate, // ✅ Use calculated rate from robots.txt
             
             requestHandler: async ({ $, request }) => {
                 try {
                     apiLogger.debug(`🌐 Processing product: ${request.url}`);
                     
-                    // Reduced wait time since most content loads within 2s
-                    if (!isTestQuickMode) {
-                        apiLogger.debug(`⏱️ Waiting 2s for dynamic content to load...`);
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                    } else {
-                        // Minimal wait for test mode
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
+                    // ✅ ALWAYS use crawlDelay from robots.txt parsing
+                    // If robots.txt has Crawl-delay → crawlDelay = explicit value
+                    // If no Crawl-delay → crawlDelay = random delay (2000-5000ms from getRandomDelay())
+                    const delaySource = hasExplicitCrawlDelay ? 'robots.txt Crawl-delay' : `intelligent default (${crawlDelay}ms random)`;
+                    apiLogger.debug(`⏱️ Applying polite delay: ${crawlDelay}ms (from ${delaySource})`);
+                    await new Promise(resolve => setTimeout(resolve, crawlDelay));
                     
                     // Extract product data using our existing function
                     const productData = extractProductFromDetailHTML($, siteConfig, request.url);

@@ -14,9 +14,11 @@ export interface PriceChange {
     productName: string;
     productSlug: string;
     productImage: string;
+    productUrl: string; // URL on vendor's website
     sellerId: string;
     sellerName: string;
     sellerWebsite: string;
+    affiliateTag?: string; // Seller's affiliate tag
     variantPackSize: number;
     oldPrice: number;
     newPrice: number;
@@ -122,11 +124,13 @@ export async function detectPriceChanges(
                     productId: existingProduct.id,
                     productName: existingProduct.name,
                     productSlug: existingProduct.slug,
+                    productUrl: existingProduct.url, // URL on vendor's website
                     // Ảnh
                     productImage: existingProduct.productImages[0]?.image.url || scrapedSeedProduct.imageUrl || '',
                     sellerId: scrapedSeedProduct.sellerId,
                     sellerName: scrapedSeedProduct.sellerName,
                     sellerWebsite: scrapedSeedProduct.sellerWebsite,
+                    affiliateTag: existingProduct.seller.affiliateTag || undefined,
                     
                     // Chi tiết giá
                     variantPackSize: scrapedPricing.packSize,

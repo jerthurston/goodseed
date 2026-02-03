@@ -8,7 +8,11 @@
  */
 
 // Queue instance & configuration
-export { scraperQueue, default as scraperQueueInstance } from './scraper.queue';
+export { 
+  scraperQueue, 
+  SCRAPER_CONCURRENCY,
+  default as scraperQueueInstance 
+} from './scraper.queue';
 
 // Type definitions
 export type { ScraperJobData, RepeatJobOptions } from './scraper.jobs';

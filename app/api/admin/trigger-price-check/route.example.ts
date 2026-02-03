@@ -29,7 +29,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createDetectPriceChangesJob } from '@/lib/queue/price-change-alert';
+import { createDetectPriceChangesJob } from '@/lib/queue/detect-price-changes';
 import { prisma } from '@/lib/prisma';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
           totalPrice: pricing.totalPrice,
         })),
       })),
+      scrapedAt: new Date(),
     });
 
     apiLogger.info('[API] Manual price check triggered', {
@@ -109,7 +110,10 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    apiLogger.logError('[API] Failed to trigger price check', error);
+    apiLogger.logError(
+      '[API] Failed to trigger price check', 
+      error instanceof Error ? error : new Error(String(error))
+    );
     
     return NextResponse.json(
       { 

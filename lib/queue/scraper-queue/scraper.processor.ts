@@ -216,12 +216,16 @@ export async function processScraperJob(job: Job<ScraperJobData>) {
 
     apiLogger.info('[INFO WORKER] Job completed successfully', { jobId });
 
+    // Return result with seller info for price change detection
     return {
       success: true,
       jobId,
+      sellerId,
+      sellerName: scraperSourceName, // Will be used for price alert
       totalProducts: aggregatedResult.totalProducts,
       saved: saveResult.saved,
       updated: saveResult.updated,
+      products: aggregatedResult.products, // Include scraped products
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

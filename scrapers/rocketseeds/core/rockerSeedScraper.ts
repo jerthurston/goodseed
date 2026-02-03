@@ -70,8 +70,8 @@ export async function RocketSeedsScraper(
     const politeCrawler = new SimplePoliteCrawler({
         userAgent: USERAGENT,
         acceptLanguage: ACCEPTLANGUAGE,
-        minDelay: 2000,
-        maxDelay: 5000
+        // Using default MIN_DELAY_DEFAULT (1000ms) and MAX_DELAY_DEFAULT (2500ms) from constants
+        // Override here if Rocket Seeds needs specific delays
     });
 
     let actualPages = 0;

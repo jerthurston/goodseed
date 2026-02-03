@@ -14,13 +14,23 @@
 import Bull, { Queue, QueueOptions } from 'bull';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { redisConfig } from '@/lib/redis';
-
 // Re-export types from scraper.jobs.ts
 export type { ScraperJobData, RepeatJobOptions } from './scraper.jobs';
 
 // ============================================================================
 // QUEUE CONFIGURATION
 // ============================================================================
+
+/**
+ * Worker concurrency configuration
+ * Controls how many scraper jobs can run simultaneously
+ * 
+ * @example
+ * - 1: Process one seller at a time (sequential)
+ * - 2: Process two sellers simultaneously
+ * - 3+: Process multiple sellers in parallel (may increase resource usage)
+ */
+export const SCRAPER_CONCURRENCY = 2;
 
 /**
  * Queue options configuration
@@ -94,8 +104,15 @@ scraperQueue.on('failed', (job, error) => {
   apiLogger.logError(`[Scraper Queue] Job ${job.id} failed:`, { error });
 });
 
-scraperQueue.on('completed', (job) => {
-  apiLogger.info(`[Scraper Queue] Job ${job.id} completed successfully`);
+scraperQueue.on('completed', (job, result) => {
+  apiLogger.info(`[Scraper Queue] Job ${job.id} completed successfully`, {
+    sellerId: result?.sellerId,
+    productsScraped: result?.totalProducts,
+    saved: result?.saved,
+    updated: result?.updated,
+  });
+  // Note: Price detection job will be emitted by scraper worker
+  // See: lib/workers/scraper.worker.ts
 });
 
 scraperQueue.on('active', (job) => {

@@ -12,7 +12,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { priceAlertQueue, createDetectPriceChangesJob } from '@/lib/queue/price-change-alert';
+import { detectPriceChangesQueue, createDetectPriceChangesJob } from '@/lib/queue/detect-price-changes';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import type { ScrapedProductWithSeller } from '@/lib/services/price-alert/detectPriceChanges';
 
@@ -68,17 +68,24 @@ async function main() {
 
     // Create job
     console.log('\n🚀 Creating price detection job...');
-    const jobId = await createDetectPriceChangesJob(priceAlertQueue, {
+    const jobId = await createDetectPriceChangesJob({
       sellerId: product.seller.id,
       sellerName: product.seller.name,
-      scrapedProducts: scrapedProducts,
+      scrapedProducts: scrapedProducts.map(p => ({
+        seedId: p.seedId,
+        name: p.name,
+        slug: p.slug,
+        imageUrl: p.imageUrl,
+        pricings: p.pricings,
+      })),
+      scrapedAt: new Date(),
     });
 
     console.log(`✅ Job created: ${jobId}`);
 
     // Monitor job
     console.log('\n⏳ Waiting for job processing...');
-    const job = await priceAlertQueue.getJob(jobId);
+    const job = await detectPriceChangesQueue.getJob(jobId);
     
     if (!job) {
       console.log('❌ Job not found in queue');
@@ -110,25 +117,39 @@ async function main() {
       console.log('⏰ Timeout - job still processing');
     }
 
-    // Check for email jobs
+    // Check for email jobs (from send-price-alert queue)
     console.log('\n📧 Checking for email jobs...');
-    const emailJobs = await priceAlertQueue.getJobs(['waiting', 'active']);
-    const emailJobCount = emailJobs.filter(j => j.data.type === 'send-price-alert-email').length;
-    console.log(`Found ${emailJobCount} email job(s)`);
+    const { sendPriceAlertQueue } = await import('@/lib/queue/send-price-alert');
+    const emailJobs = await sendPriceAlertQueue.getJobs(['waiting', 'active']);
+    console.log(`Found ${emailJobs.length} email job(s)`);
 
     // Queue stats
-    const [waiting, active, completed, failed] = await Promise.all([
-      priceAlertQueue.getWaitingCount(),
-      priceAlertQueue.getActiveCount(),
-      priceAlertQueue.getCompletedCount(),
-      priceAlertQueue.getFailedCount(),
+    const [detectWaiting, detectActive, detectCompleted, detectFailed] = await Promise.all([
+      detectPriceChangesQueue.getWaitingCount(),
+      detectPriceChangesQueue.getActiveCount(),
+      detectPriceChangesQueue.getCompletedCount(),
+      detectPriceChangesQueue.getFailedCount(),
     ]);
 
-    console.log('\n📊 Queue Stats:', {
-      waiting,
-      active,
-      completed,
-      failed
+    const [emailWaiting, emailActive, emailCompleted, emailFailed] = await Promise.all([
+      sendPriceAlertQueue.getWaitingCount(),
+      sendPriceAlertQueue.getActiveCount(),
+      sendPriceAlertQueue.getCompletedCount(),
+      sendPriceAlertQueue.getFailedCount(),
+    ]);
+
+    console.log('\n📊 Queue Stats:');
+    console.log('  Detect Price Changes Queue:', {
+      waiting: detectWaiting,
+      active: detectActive,
+      completed: detectCompleted,
+      failed: detectFailed,
+    });
+    console.log('  Send Email Queue:', {
+      waiting: emailWaiting,
+      active: emailActive,
+      completed: emailCompleted,
+      failed: emailFailed,
     });
 
     console.log('\n✅ Test completed!');
@@ -137,12 +158,15 @@ async function main() {
     console.log('2. Watch logs: docker logs goodseed-worker --follow');
     console.log('3. Email jobs will be processed automatically\n');
 
+    // Cleanup
+    await sendPriceAlertQueue.close();
+
   } catch (error) {
     console.error('\n❌ Test failed:', error);
     throw error;
   } finally {
     await prisma.$disconnect();
-    await priceAlertQueue.close();
+    await detectPriceChangesQueue.close();
   }
 }
 
