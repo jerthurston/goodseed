@@ -20,7 +20,6 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 import { 
   detectPriceChanges, 
   findUsersToNotify,
-  type ScrapedProductWithSeller,
 } from '@/lib/services/price-alert/detectPriceChanges';
 import { batchCreatePriceAlertEmailJobs } from '@/lib/queue/send-price-alert';
 import type { DetectPriceChangesJobData } from './detect-price-changes.jobs';
@@ -53,25 +52,34 @@ export async function processDetectPriceChangesJob(
   });
 
   try {
-    // Step 1: Format scraped products with seller info
-    const productsWithSeller: ScrapedProductWithSeller[] = scrapedProducts.map(p => ({
-      name: p.name,
-      url: p.url || '',
-      slug: p.slug,
-      imageUrl: p.imageUrl,
-      seedId: p.seedId,
-      pricings: p.pricings.map(pricing => ({
-        packSize: pricing.packSize,
-        totalPrice: pricing.totalPrice,
-        pricePerSeed: pricing.totalPrice / pricing.packSize,
-      })),
+    // Step 1: Extract seed IDs from scraped products
+    const seedIds = scrapedProducts
+      .map(p => p.seedId)
+      .filter((id): id is string => id !== undefined);
+
+    if (seedIds.length === 0) {
+      apiLogger.warn(`[Detect Price Changes Processor] No valid seed IDs found`, {
+        jobId: job.id,
+        sellerId,
+        sellerName,
+      });
+      return {
+        priceChangesDetected: 0,
+        usersToNotify: 0,
+        emailJobsCreated: 0,
+      };
+    }
+
+    apiLogger.info(`[Detect Price Changes Processor] Detecting price changes`, {
+      jobId: job.id,
       sellerId,
       sellerName,
-      sellerWebsite: '', // TODO: Load from database if needed
-    }));
+      seedCount: seedIds.length,
+    });
 
     // Step 2: Detect price changes (≥5% drops)
-    const priceChanges = await detectPriceChanges(productsWithSeller);
+    // Compares current DB prices (just updated by scraper) with historical prices
+    const priceChanges = await detectPriceChanges(seedIds);
 
     if (priceChanges.length === 0) {
       apiLogger.info(`[Detect Price Changes Processor] No significant price changes found`, {

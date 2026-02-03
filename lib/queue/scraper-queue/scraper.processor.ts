@@ -197,6 +197,36 @@ export async function processScraperJob(job: Job<ScraperJobData>) {
       duration: aggregatedResult.duration,
     });
 
+    // 5.1. Populate seedId for price detection
+    // Query DB to get seedProduct IDs by slug
+    const productSlugs = aggregatedResult.products.map(p => p.slug);
+    const savedProducts = await prisma.seedProduct.findMany({
+      where: {
+        slug: { in: productSlugs },
+        sellerId,
+      },
+      select: {
+        id: true,
+        slug: true,
+      },
+    });
+
+    const slugToIdMap = new Map(savedProducts.map(p => [p.slug, p.id]));
+
+    // Populate seedId into products array
+    for (const product of aggregatedResult.products) {
+      const seedId = slugToIdMap.get(product.slug);
+      if (seedId) {
+        (product as any).seedId = seedId;
+      }
+    }
+
+    apiLogger.debug('[DEBUG WORKER] Populated seedIds for price detection', {
+      jobId,
+      totalProducts: aggregatedResult.products.length,
+      productsWithIds: aggregatedResult.products.filter((p: any) => p.seedId).length,
+    });
+
     // 6. Update job COMPLETED
     await prisma.scrapeJob.update({
       where: { jobId },
