@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getQueueStats, getScheduledAutoJobs } from '@/lib/queue/scraper-queue';
-import scraperQueue from '@/lib/queue/scraper-queue';
+import { getScraperQueueStats, getScheduledAutoJobs, scraperQueue } from '@/lib/queue/scraper-queue';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
 /**
@@ -17,7 +16,7 @@ export async function GET() {
     apiLogger.info('[Debug Queue] Status check requested');
 
     // 1. Get comprehensive queue stats
-    const queueStats = await getQueueStats();
+    const queueStats = await getScraperQueueStats();
 
     // 2. Get scheduled auto jobs
     const scheduledJobs = await getScheduledAutoJobs();

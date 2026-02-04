@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiLogger } from "@/lib/helpers/api-logger";
-import { getJob } from "@/lib/queue/scraper-queue";
+import { getScraperJob } from "@/lib/queue/scraper-queue";
 
 /**
  * GET /api/admin/scraper/scrape-job/[jobId] - Get specific scrape job details
@@ -101,7 +101,7 @@ export async function GET(
     // Try to get Bull queue job status (for active jobs)
     let queueJobStatus = null;
     try {
-      const queueJob = await getJob(jobId);
+      const queueJob = await getScraperJob(jobId);
       if (queueJob) {
         queueJobStatus = {
           id: queueJob.id,
@@ -219,7 +219,7 @@ export async function DELETE(
     // Try to cancel Bull queue job if it's active (before deleting)
     let queueCancelled = false;
     try {
-      const queueJob = await getJob(jobId);
+      const queueJob = await getScraperJob(jobId);
       if (queueJob && !queueJob.finishedOn) {
         await queueJob.remove();
         queueCancelled = true;

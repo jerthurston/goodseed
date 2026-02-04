@@ -42,9 +42,10 @@ interface RobotsCache {
  */
 export interface RobotsRules {
     crawlDelay: number;
-        disallowedPaths: string[];
-        allowedPaths: string[];
-        userAgent: string;
+    disallowedPaths: string[];
+    allowedPaths: string[];
+    userAgent: string;
+    hasExplicitCrawlDelay: boolean; // True if Crawl-delay directive exists in robots.txt
 } 
 
 export class SimplePoliteCrawler {
@@ -115,7 +116,8 @@ export class SimplePoliteCrawler {
                     crawlDelay: this.getRandomDelay(),
                     disallowedPaths: [],
                     allowedPaths: ['*'],
-                    userAgent: this.userAgent
+                    userAgent: this.userAgent,
+                    hasExplicitCrawlDelay: false // No robots.txt found
                 };
             }
             
@@ -165,9 +167,10 @@ export class SimplePoliteCrawler {
             }
             
             const crawlDelayMs = crawlDelaySeconds > 0 ? crawlDelaySeconds * 1000 : this.getRandomDelay();
+            const hasExplicitCrawlDelay = crawlDelaySeconds > 0; // True if Crawl-delay found in robots.txt
             
             apiLogger.info(`📋 Robots.txt parsed cho ${origin}:`);
-            apiLogger.info(`   ⏱️ Crawl delay: ${crawlDelayMs}ms`);
+            apiLogger.info(`   ⏱️ Crawl delay: ${crawlDelayMs}ms ${hasExplicitCrawlDelay ? '(from robots.txt)' : '(default)'}`);
             apiLogger.info(`   ❌ Disallowed paths: ${disallowedPaths.length}`);
             apiLogger.info(`   ✅ Allowed paths: ${allowedPaths.length}`);
             
@@ -175,7 +178,8 @@ export class SimplePoliteCrawler {
                 crawlDelay: crawlDelayMs,
                 disallowedPaths,
                 allowedPaths,
-                userAgent: this.userAgent
+                userAgent: this.userAgent,
+                hasExplicitCrawlDelay
             };
             
         } catch (error) {
@@ -184,7 +188,8 @@ export class SimplePoliteCrawler {
                 crawlDelay: this.getRandomDelay(),
                 disallowedPaths: [],
                 allowedPaths: ['*'],
-                userAgent: this.userAgent
+                userAgent: this.userAgent,
+                hasExplicitCrawlDelay: false // Error occurred, use default
             };
         }
     }
