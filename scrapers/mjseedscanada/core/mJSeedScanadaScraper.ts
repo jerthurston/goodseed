@@ -1,43 +1,43 @@
 /**
- * Beaver Seed Product List Scraper (Refactored with CommonCrawler)
+ * MJ Seeds Canada Scraper (Refactored with BC Bud Depot Pattern)
  * 
  * KIẾN TRÚC TỔNG QUAN:
- * - Uses CommonCrawler infrastructure for reusability
- * - Focuses only on Beaver Seed-specific extraction logic
- * - Uses jet-smart-filters pagination handling
- * - All common functionality delegated to CommonCrawler
+ * - Sitemap-based scraper following polite crawler best practices
+ * - Parse robots.txt BEFORE crawling
+ * - Filter URLs against robots.txt BEFORE adding to queue
+ * - Dynamic rate limiting based on robots.txt
+ * - Consistent delays from robots.txt
  * 
- * DIFFERENCES FROM VANCOUVER SEED BANK:
- * - Uses jet-smart-filters pagination instead of WooCommerce standard
- * - Same WooCommerce product structure, different pagination handling
+ * PATTERN: Same as BC Bud Depot
+ * - Step 0: Parse robots.txt
+ * - Step 1: Extract URLs from sitemap
+ * - Step 2: Filter URLs against robots.txt
+ * - Step 3: Add filtered URLs to queue
+ * - Step 4: Crawl with dynamic rate limiting
  */
 
 import { extractProductFromDetailHTML, extractProductUrlsFromSitemap } from '@/scrapers/mjseedscanada/utils/index';
 import { ProductCardDataFromCrawling, ProductsDataResultFromCrawling } from '@/types/crawl.type';
 import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, Dictionary, ErrorHandler, Log, RequestQueue } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
-import { apiLogger } from '@/lib/helpers/api-logger'
-;
+import { apiLogger } from '@/lib/helpers/api-logger';
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
 import { ACCEPTLANGUAGE, USERAGENT } from '@/scrapers/(common)/constants';
 
-
-
 /**
- * BeaverSeedProductListScraper - Site-specific implementation using CommonCrawler
+ * MJ Seeds Canada Scraper - Sitemap-based with polite crawler compliance
  * 
  * NHIỆM VỤ:
- * 1. 🕷️ Extract sản phẩm từ Beaver Seed (product listing pages)  
- * 2. 📄 Hỗ trợ jet-smart-filters pagination
- * 3. 📋 Extract cannabis-specific data với WooCommerce structure
- * 4. ⚡ Sử dụng CommonCrawler infrastructure
+ * 1. 🕷️ Extract products from MJ Seeds Canada (via sitemap)
+ * 2. 🤖 Parse robots.txt BEFORE crawling
+ * 3. 📋 Filter URLs against robots.txt rules
+ * 4. ⚡ Apply dynamic rate limiting
  */
 
 export async function MJSeedCanadaScraper(
     siteConfig: SiteConfig,
     startPage?: number | null,
     endPage?: number | null,
-    // fullSiteCrawl?: boolean | null,
     sourceContext?: {
         scrapingSourceUrl: string;
         sourceName: string;
@@ -45,12 +45,11 @@ export async function MJSeedCanadaScraper(
     }
 ): Promise<ProductsDataResultFromCrawling> {
 
-   
     const startTime = Date.now();
     const { baseUrl } = siteConfig;
 
-    //Debug log
-    apiLogger.debug('[MJ Seed Canada Scraper] Starting with siteConfig', {
+    // Debug log
+    apiLogger.info('[MJ Seeds Canada] Starting with siteConfig', {
         name: siteConfig.name,
         baseUrl,
         isImplemented: siteConfig.isImplemented,
@@ -58,47 +57,85 @@ export async function MJSeedCanadaScraper(
     });
 
     if (!sourceContext?.scrapingSourceUrl) {
-        throw new Error('[MJ Seed Canada Scraper]  scrapingSourceUrl is required in sourceContext');
+        throw new Error('[MJ Seeds Canada] scrapingSourceUrl is required in sourceContext');
     }
 
-    // initialize request queue
+    // Initialize dataset and request queue
     const runId = Date.now();
-    const requestQueue = await RequestQueue.open(`mj-seed-canada-queue-${runId}`)
-    //initialize dataset
-    const datasetName = `mjseedcanada-${runId}`;
+    const datasetName = `mjseedscanada-${runId}`;
     const dataset = await Dataset.open(datasetName);
-    //initialize polited crawler policy
+    const requestQueue = await RequestQueue.open(`mj-seed-canada-queue-${runId}`);
+
+    // ✅ STEP 0: Initialize polite crawler and parse robots.txt FIRST
     const politeCrawler = new SimplePoliteCrawler({
         userAgent: USERAGENT,
         acceptLanguage: ACCEPTLANGUAGE,
-        minDelay: 2000,
-        maxDelay: 5000
+    });
+
+    const robotsRules = await politeCrawler.parseRobots(baseUrl);
+    const { crawlDelay, disallowedPaths, allowedPaths, userAgent, hasExplicitCrawlDelay } = robotsRules;
+
+    // Log robots.txt rules for debugging
+    apiLogger.info(`[MJ Seeds Canada] Robots.txt rules loaded:`, {
+        crawlDelay: `${crawlDelay}ms`,
+        hasExplicitCrawlDelay,
+        disallowedCount: disallowedPaths.length,
+        allowedCount: allowedPaths.length,
+        userAgent
     });
 
     let actualPages = 0;
     let productUrls: string[] = [];
     let urlsToProcess: string[] = [];
-    // Step 1: Add product URLs to request queue
+
+    // ✅ STEP 1: Extract product URLs from sitemap
+    apiLogger.info('[MJ Seeds Canada] Step 1: Loading sitemap to extract product URLs...');
+    
     try {
         productUrls = await extractProductUrlsFromSitemap(sourceContext.scrapingSourceUrl);
-        // sourceContext.scrapingSourceUrl: link sitemap được lấy từ database ở scrapingSource[0]
-
-        apiLogger.info(`[MJ Seed Canada Scraper] extracted ${productUrls.length} product URLs form sitemap`);
-
-        // Calculate number of products to process based on startPage and endPage
-         // Chỉ áp dụng cho mode = test. Chỉ test 5 productUrl (startPage = 1, và endPage =6. số lượng 5 url)
-        endPage = 6
-        urlsToProcess = productUrls;
+        apiLogger.info(`[MJ Seeds Canada] Extracted ${productUrls.length} product URLs from sitemap`);
+        
+        // ✅ STEP 2: Filter URLs against robots.txt BEFORE adding to queue
+        const allowedUrls: string[] = [];
+        const blockedUrls: string[] = [];
+        
+        for (const url of productUrls) {
+            const urlPath = new URL(url).pathname;
+            
+            // Check if URL is allowed by robots.txt
+            let isAllowed = true;
+            for (const disallowedPath of disallowedPaths) {
+                if (urlPath.startsWith(disallowedPath)) {
+                    isAllowed = false;
+                    blockedUrls.push(url);
+                    break;
+                }
+            }
+            
+            if (isAllowed) {
+                allowedUrls.push(url);
+            }
+        }
+        
+        apiLogger.info(`[MJ Seeds Canada] Robots.txt filtering results:`, { 
+            total: productUrls.length, 
+            allowed: allowedUrls.length, 
+            blocked: blockedUrls.length 
+        });
+        
+        // Use filtered URLs
+        urlsToProcess = allowedUrls;
+        
+        // ✅ STEP 3: Apply test mode limits (if applicable)
         if (startPage !== null && startPage !== undefined && endPage !== null && endPage !== undefined) {
             const pageRange = endPage - startPage;
-            const limitedCount = Math.max(1, pageRange); // Ensure at least 1 product
-            urlsToProcess = productUrls.slice(0, limitedCount);
+            const limitedCount = Math.max(1, pageRange);
+            urlsToProcess = allowedUrls.slice(0, limitedCount);
             
-            apiLogger.info(`[MJ Seed Canada Scraper] Limited processing to ${limitedCount} products (startPage: ${startPage}, endPage: ${endPage}, range: ${pageRange})`);
+            apiLogger.info(`[MJ Seeds Canada] Limited processing to ${limitedCount} products (startPage: ${startPage}, endPage: ${endPage}, range: ${pageRange})`);
         }
-        //==== Code này dành cho Quick testing scraper.
-
-        // Add product URLs to queue for crawling. Nếu không truyền vào startPage hoặc endPage tức là manual hoặc auto mode sẽ lần lượt for qua tất cả url thay vì 5 url như trên
+        
+        // Add filtered URLs to queue
         for (const productUrl of urlsToProcess) {
             await requestQueue.addRequest({
                 url: productUrl,
@@ -107,14 +144,14 @@ export async function MJSeedCanadaScraper(
         }
 
     } catch (error) {
-        apiLogger.logError('[BC Bud Depot Scraper] Failed to load sitemap:', {
+        apiLogger.logError('[MJ Seeds Canada] Failed to load sitemap:', {
             error,
             sitemapUrl: sourceContext.scrapingSourceUrl
         });
         throw new Error(`Failed to load sitemap: ${error}`);
     }
 
-    // Step 2: Request handler
+    // ✅ STEP 4: Request handler (URLs already filtered, no redundant checks needed)
     async function mjSeedCanadaRequestHandler(context: CheerioCrawlingContext): Promise<void> {
         const {
             $,
@@ -125,75 +162,28 @@ export async function MJSeedCanadaScraper(
                 log: Log;
             } = context;
 
-        log.info(`[MJ Seed Canada Scraper] Processing product page: ${request.url}`)
-
-
-        // 2.1 crawling check robots.txt with polite crawler
-        const isAllowed = await politeCrawler.isAllowed(request.url);
-        if (!isAllowed) {
-            log.error(`[MJ Seed Canada Scraper] BLOCKED by robots.txt: ${request.url}`);
-            throw new Error(`robots.txt blocked access to ${request.url}`);
-        }
-
-        //2.2 Extract product data from detail product page
+        // URLs are already filtered by robots.txt, no need for isAllowed() check
+        // Extract product data from detail product page
         if (request.userData?.type === 'product') {
             const product = extractProductFromDetailHTML($, siteConfig, request.url);
             if (product) {
-                /**
-                 *  const product: ProductCardDataFromCrawling = {
-            name,
-            url: productUrl,
-            slug,
-            imageUrl: finalImageUrl,
-            seedType,
-            cannabisType,
-            badge,
-            rating: undefined,
-            reviewCount: undefined,
-            thcLevel,
-            thcMin,
-            thcMax,
-            cbdLevel,
-            cbdMin,
-            cbdMax,
-            floweringTime,
-            growingLevel: undefined,
-            pricings,
-        };
-                 */
-                log.info(`[MJ Seed Canada Scraper] Successfully extracted product: ${product.name}`);
-                log.info(`[MJ Seed Canada Scraper] Successfully extracted product url: ${product.url}`);
-                log.info(`[MJ Seed Canada Scraper] Successfully extracted product image: ${product.imageUrl}`);
-                log.info(`[MJ Seed Canada Scraper] Successfully extracted product price: ${product.pricings}`);
-                log.info(`[MJ Seed Canada Scraper] Successfully extracted product thcLevel: ${product.thcLevel}`);
-                log.info(`[MJ Seed Canada Scraper] Successfully extracted product thcMin: ${product.thcMin}`);
-                log.info(`[MJ Seed Canada Scraper] Successfully extracted product thcMax: ${product.thcMax}`);
-                log.info(`[MJ Seed Canada Scraper] Successfully extracted product cbdLevel: ${product.cbdLevel}`);
-                log.info(`[MJ Seed Canada Scraper] Successfully extracted product cbdMin: ${product.cbdMin}`);
-                log.info(`[MJ Seed Canada Scraper] Successfully extracted product cbdMax: ${product.cbdMax}`);
-                log.info(`[MJ Seed Canada Scraper] Successfully extracted product floweringTime: ${product.floweringTime}`);
-                log.info(`[MJ Seed Canada Scraper] Successfully extracted product growingLevel: ${product.growingLevel}`);
-
                 // Save product to dataset
                 await dataset.pushData({
                     product,
                     url: request.url,
                     extractedAt: new Date().toISOString()
                 });
+                
                 // Increment actual pages count
                 actualPages++;
-            } else {
-                log.info(`[MJ Seed Canada Scraper] Failed to extract product from: ${request.url}`);
             }
         }
 
-        //2.3 Delay to follow Polite crawling guidelines. params nhận vào là url và hàm getCrawlDelay sẽ phân tích và lấy delayMs từ robots.txt
-        const delayMs = await politeCrawler.getCrawlDelay(request.url);
-        log.info(`[MJ Seed Canada Scraper] Using polite crawl delay: ${delayMs}ms for ${request.url}`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        // ✅ Use parsed crawlDelay value (no need to call getCrawlDelay() per request)
+        await new Promise(resolve => setTimeout(resolve, crawlDelay));
     }
 
-    // Step 3: Error handling
+    // ✅ STEP 5: Error handling
     const mjSeedCanadaErrorHandler: ErrorHandler<CheerioCrawlingContext> = async (context: CheerioCrawlingContext, error: Error): Promise<void> => {
         const { request, log }: {
             request: CheerioCrawlingContext['request'];
@@ -219,14 +209,25 @@ export async function MJSeedCanadaScraper(
         }
     }
 
-    // Step 4: Create and run CommonCrawler with MJ Seed Canada-specific logic
+    // ✅ STEP 6: Calculate dynamic rate limiting based on robots.txt
+    const calculatedMaxRate = hasExplicitCrawlDelay 
+        ? Math.floor(60000 / crawlDelay)
+        : 15; // Default 15 req/min if no explicit delay
+    
+    apiLogger.info(`[MJ Seeds Canada] Dynamic rate limiting:`, {
+        crawlDelay: `${crawlDelay}ms`,
+        hasExplicitCrawlDelay,
+        maxRequestsPerMinute: calculatedMaxRate
+    });
+
+    // ✅ STEP 7: Create and run crawler with optimized configuration
     const crawler = new CheerioCrawler(
         {
             requestQueue,
             requestHandler: mjSeedCanadaRequestHandler,
             errorHandler: mjSeedCanadaErrorHandler,
-            maxConcurrency: 1, // Sequential requests. request đơn lập
-            maxRequestsPerMinute: 15,
+            maxConcurrency: 1, // Sequential requests for polite crawling
+            maxRequestsPerMinute: calculatedMaxRate, // Dynamic rate based on robots.txt
             maxRequestRetries: 3,
             preNavigationHooks: [
                 async (requestAsBrowserOptions) => {
@@ -237,35 +238,28 @@ export async function MJSeedCanadaScraper(
         }
     );
 
-    // Step 5: Run main crawler
-    apiLogger.info(`[MJ Seed Canada Scraper] Starting main crawler`);
+    // ✅ STEP 8: Run main crawler
+    apiLogger.info(`[MJ Seeds Canada] Starting main crawler...`);
     await crawler.run();
 
-    //STEP 7: Extract products form dataset
-    apiLogger.info(`[MJ Seed Canada Scraper] Getting data from dataset`);
-    // --> 7.1 Get data form dataset
-    const data = await dataset.getData();
-    //--> 7.2 Extract products from dataset
-    const products: ProductCardDataFromCrawling[] = [];
-    data.items.forEach((item: Dictionary) => {
-        if (item.product) {
-            products.push(item.product);
+    // ✅ STEP 9: Collect results and log summary
+    const products = (await dataset.getData()).items.map(item => item.product);
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+
+    apiLogger.info(`[MJ Seeds Canada] ✅ Scraping completed successfully:`, {
+        scraped: products.length,
+        saved: actualPages,
+        duration: `${(duration / 1000).toFixed(2)}s`,
+        robotsCompliance: {
+            crawlDelay: `${crawlDelay}ms`,
+            hasExplicitCrawlDelay,
+            maxRequestsPerMinute: calculatedMaxRate,
+            urlsFiltered: productUrls.length - urlsToProcess.length,
+            urlsProcessed: urlsToProcess.length
         }
     });
-    apiLogger.info(`[MJ Seed Canada Scraper] Extracted ${products.length} products from dataset`);
-
-    //STEP 8: Return Result for factory scraper
-    const duration = Date.now() - startTime;
-
-    apiLogger.info(`[MJ Seed Canada Scraper] Finished in ${duration}ms`);
-    apiLogger.debug(`[MJ Seed Canada Scraper] Crawling completed:`, {
-        totalProducts: products.length,
-        totalPages: actualPages,
-        duration: `${duration}ms`,
-        sitemapUrl: sourceContext.scrapingSourceUrl,
-        productUrlsFound: productUrls.length,
-        productUrlsProcessed: urlsToProcess.length
-    });
+    
     return {
         totalProducts: products.length,
         totalPages: actualPages,

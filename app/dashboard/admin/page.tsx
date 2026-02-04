@@ -21,10 +21,11 @@ import { useRouter } from "next/navigation"
 import styles from "../(components)/dashboardAdmin.module.css"
 import { getAdminBreadcrumbs } from "../(components)/utils/breadcrumbHelpers"
 
-import { AlertTriangle, Menu, User, X, FileText } from "lucide-react"
-import { faChartLine, faUser, faStore, faRobot } from '@fortawesome/free-solid-svg-icons'
+// import { AlertTriangle, Menu, User, X, FileText } from "lucide-react"
+import { faChartLine, faUser, faStore, faRobot, faHamburger, faGripLines, faBars, faClose, faPen, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { AlertTabContent } from "../(components)/AlertTabContent"
 import { BeatLoaderSpinner } from "@/components/custom/loading"
+import { faFileText } from "@fortawesome/free-regular-svg-icons"
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"sellers" | "scraper" | "overview" | "auto-scraper" | "alert" | "user-management" | "content-management" | "cms-homepage" | "cms-faq">(
@@ -41,20 +42,21 @@ export default function AdminDashboard() {
     isLoading: isSellersLoading,
     refetch: refetchSellers,
   } = useFetchSellers();
-    // Transform raw seller data to UI format
+
+  // Transform raw seller data to UI format
   const sellers = useMemo(() => {
     if (!rawSellers || rawSellers.length === 0) return []
     return SellerTransformer.toUIList(rawSellers)
   }, [rawSellers])
 
-  const {
-    scraperSites,
-    isLoading: isScraperSitesLoading,
-    refetch: refetchScraperSites,
-  } = useFetchScraperSites()
+  // const {
+  //   scraperSites,
+  //   isLoading: isScraperSitesLoading,
+  //   refetch: refetchScraperSites,
+  // } = useFetchScraperSites()
 
   // consistent loading state
-  const isLoading = isSellersLoading || isScraperSitesLoading
+  const isLoading = isSellersLoading;
 
   const handleSellerTabClick = () => {
     setActiveTab("sellers")
@@ -95,14 +97,15 @@ export default function AdminDashboard() {
       {/* Mobile Header - Only visible on mobile */}
       <div className="lg:hidden bg-(--bg-main) border-b-3 border-(--border-color) px-4 py-3 sticky top-0 z-40">
         <div className="flex items-center justify-between">
-          <h1 className="font-['Archivo_Black'] text-xl uppercase text-(--brand-primary) tracking-tight">
+          <h1 className="text-3xl uppercase text-(--brand-primary) tracking-tight">
             Admin Panel
           </h1>
           <button
             onClick={() => setIsMobileSidebarOpen(true)}
             className="p-2 border-3 border-(--border-color) bg-(--bg-main) hover:bg-(--bg-section) transition-all duration-200"
           >
-            <Menu className="w-5 h-5 text-(--text-primary)" />
+            {/* <Menu className="w-5 h-5 text-(--text-primary)" /> */}
+            <FontAwesomeIcon icon={faBars} size="xl" />
           </button>
         </div>
       </div>
@@ -127,7 +130,8 @@ export default function AdminDashboard() {
                   onClick={() => setIsMobileSidebarOpen(false)}
                   className="p-2 border-3 border-(--border-color) bg-(--bg-main) hover:bg-(--bg-section) transition-all duration-200"
                 >
-                  <X className="w-4 h-4 text-(--text-primary)" />
+                  {/* <X className="w-4 h-4 text-(--text-primary)" /> */}
+                  <FontAwesomeIcon icon={faClose} className="w-4 h-4 text-(--text-primary)" />
                 </button>
               </div>
               
@@ -184,7 +188,7 @@ export default function AdminDashboard() {
 
                   {/* Error and Success Alerts */}
                   <DashboardSidebarItem
-                    icon={<AlertTriangle className="text-lg"/>}
+                    icon={<FontAwesomeIcon icon={faTriangleExclamation} className="text-lg"/>}
                     isActive={activeTab === "alert"}
                     onClick={() => handleTabChange("alert")}
                   >
@@ -193,7 +197,7 @@ export default function AdminDashboard() {
 
                   {/* User Management */}
                   <DashboardSidebarItem
-                    icon={<AlertTriangle className="text-lg"/>}
+                    icon={<FontAwesomeIcon icon={faUser} className="text-lg"/>}
                     isActive={activeTab === "user-management"}
                     onClick={() => handleTabChange("user-management")}
                   >
@@ -203,7 +207,7 @@ export default function AdminDashboard() {
                   {/* Content Management */}
                   <div className="space-y-1">
                     <DashboardSidebarItem
-                      icon={<FileText className="text-lg"/>}
+                      icon={<FontAwesomeIcon icon={faPen} className="text-lg"/>}
                       isActive={activeTab === "content-management" || activeTab === "cms-homepage" || activeTab === "cms-faq"}
                       onClick={handleContentTabClick}
                       className={styles.sidebarItem}
@@ -220,14 +224,14 @@ export default function AdminDashboard() {
                           onClick={() => handleContentItemClick("cms-homepage")}
                           className={`${styles.sidebarDropdownItem} ${activeTab === "cms-homepage" ? styles.sidebarDropdownItemActive : ''}`}
                         >
-                          <FileText className="text-xs" />
+                          <FontAwesomeIcon icon={faFileText} size="xs"/>
                           <span className="truncate">Homepage Content</span>
                         </div>
                         <div
                           onClick={() => handleContentItemClick("cms-faq")}
                           className={`${styles.sidebarDropdownItem} ${activeTab === "cms-faq" ? styles.sidebarDropdownItemActive : ''}`}
                         >
-                          <FileText className="text-xs" />
+                          <FontAwesomeIcon icon={faFileText} size="xs"/>
                           <span className="truncate">FAQ Page</span>
                         </div>
                       </div>
@@ -297,7 +301,7 @@ export default function AdminDashboard() {
             </DashboardSidebarItem>
             {/* Error and Success Alerts */}
             <DashboardSidebarItem
-              icon={<AlertTriangle className="text-lg"/>}
+              icon={<FontAwesomeIcon icon={faTriangleExclamation} className="text-lg"/>}
               isActive={activeTab === "alert"}
               onClick={() => handleTabChange("alert")}
             >
@@ -305,7 +309,7 @@ export default function AdminDashboard() {
             </DashboardSidebarItem>
             {/* User Management */}
             <DashboardSidebarItem
-              icon={<User className="text-lg"/>}
+              icon={<FontAwesomeIcon icon={faUser} className="text-lg"/>}
               isActive={activeTab === "user-management"}
               onClick={() => handleTabChange("user-management")}
             >
@@ -314,7 +318,7 @@ export default function AdminDashboard() {
             {/* Content Management */}
             <div className="space-y-1">
               <DashboardSidebarItem
-                icon={<FileText className="text-lg"/>}
+                icon={<FontAwesomeIcon icon={faFileText} className="text-lg"/>}
                 isActive={activeTab === "content-management" || activeTab === "cms-homepage" || activeTab === "cms-faq"}
                 onClick={handleContentTabClick}
                 className={styles.sidebarItem}
@@ -331,14 +335,14 @@ export default function AdminDashboard() {
                     onClick={() => handleContentItemClick("cms-homepage")}
                     className={`${styles.sidebarDropdownItem} ${activeTab === "cms-homepage" ? styles.sidebarDropdownItemActive : ''}`}
                   >
-                    <FileText className="text-xs" />
+                    <FontAwesomeIcon icon={faFileText} className="text-xs" />
                     <span className="truncate">Homepage Content</span>
                   </div>
                   <div
                     onClick={() => handleContentItemClick("cms-faq")}
                     className={`${styles.sidebarDropdownItem} ${activeTab === "cms-faq" ? styles.sidebarDropdownItemActive : ''}`}
                   >
-                    <FileText className="text-xs" />
+                    <FontAwesomeIcon icon={faFileText} className="text-xs" />
                     <span className="truncate">FAQ Page</span>
                   </div>
                 </div>

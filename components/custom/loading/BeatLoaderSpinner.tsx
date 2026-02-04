@@ -27,7 +27,7 @@ export const BeatLoaderSpinner: React.FC<LoadingSpinnerProps> = ({
 }) => {
     return (
         <div className={cn(
-            "flex items-center justify-center min-h-[400px]",
+            "flex items-center justify-center min-h-100",
             className
         )}>
             {/* <div className="text-center"> */}

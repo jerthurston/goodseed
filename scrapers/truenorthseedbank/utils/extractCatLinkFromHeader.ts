@@ -123,23 +123,28 @@ export async function extractCategoryLinksFromHomepage(
             maxRequestRetries: 3
         });
         
-        // Add homepage URL as request với robots.txt compliant headers
-        crawler.addRequests([{ 
-            url: siteConfig.baseUrl,
-            headers: {
-                'User-Agent': robotsRules?.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            }
-        }]);
-        
-        // Apply robots.txt crawl delay trước khi run
+        // Apply robots.txt crawl delay BEFORE adding request
         if (robotsRules?.crawlDelay) {
             console.log(`⏱️ Applying robots.txt crawl delay: ${robotsRules.crawlDelay}ms`);
             await new Promise(resolve => setTimeout(resolve, robotsRules.crawlDelay));
         }
         
-        // Run crawler
-        crawler.run().catch(async (error) => {
-            console.error('Crawler failed:', error);
+        // Add homepage URL as request với robots.txt compliant headers
+        console.log(`📥 Adding homepage request: ${siteConfig.baseUrl}`);
+        await crawler.addRequests([{ 
+            url: siteConfig.baseUrl,
+            headers: {
+                'User-Agent': robotsRules?.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+        }]);
+        console.log(`✅ Homepage request added successfully`);
+        
+        // Run crawler and AWAIT completion
+        console.log(`🚀 Starting crawler...`);
+        await crawler.run().catch(async (error) => {
+            console.error('❌ Crawler failed:', error);
+            resolve([]); // Resolve with empty array on error
         });
+        console.log(`✅ Crawler completed`);
     });
 }

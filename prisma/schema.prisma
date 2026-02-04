@@ -300,6 +300,7 @@ model SeedProduct {
   category      SeedProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   productImages SeedProductImage[]
   pricings      Pricing[]
+  priceHistory  PricingHistory[]    // Historical price snapshots
   wishlists     Wishlist[]
 
   @@unique([categoryId, slug])
@@ -314,18 +315,40 @@ model SeedProduct {
 }
 
 model Pricing {
-  id            String @id @default(cuid())
+  id            String   @id @default(cuid())
   seedProductId String
   totalPrice    Float
-  packSize      Int    @default(5)
-  pricePerSeed  Float // Calculated: totalPrice / packSize
-
-  //Cần thêm metadata như scrapedAt. Sẽ làm sau.
+  packSize      Int      @default(5)
+  pricePerSeed  Float    // Calculated: totalPrice / packSize
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relations
   seedProduct SeedProduct @relation(fields: [seedProductId], references: [id], onDelete: Cascade)
 
   @@index([pricePerSeed])
+  @@index([seedProductId, packSize])
+}
+
+// PricingHistory - Track price changes over time
+// Purpose: Preserve historical price snapshots for price drop detection
+// Design: Direct relation to SeedProduct (stable entity) not Pricing (unstable event)
+// Why: Pricing records can be deleted when products go out of stock, but history must persist
+model PricingHistory {
+  id            String      @id @default(cuid())
+  seedProductId String      // Stable reference to product
+  packSize      Int         // Which pack size (5, 10, 25 seeds)
+  totalPrice    Float       // Historical price snapshot
+  pricePerSeed  Float       // Historical price per seed
+  scrapedAt     DateTime    @default(now()) // When this price was recorded
+  source        String?     @default("scraper") // Source: "scraper", "manual", "import"
+
+  // Relations
+  seedProduct SeedProduct @relation(fields: [seedProductId], references: [id], onDelete: Cascade)
+
+  @@index([seedProductId, packSize, scrapedAt]) // Optimize product history queries
+  @@index([scrapedAt]) // For time-based cleanup and analysis
+  @@map("PricingHistory")
 }
 
 // Image (Hình ảnh sản phẩm)
