@@ -47,16 +47,40 @@ export async function truenorthSeedScraper(
     });
 
     const robotsRules = await politeCrawler.parseRobots(baseUrl);
-    const { crawlDelay, disallowedPaths, allowedPaths, userAgent } = robotsRules;
+    const { crawlDelay, disallowedPaths, allowedPaths, hasExplicitCrawlDelay, userAgent } = robotsRules;
+
+    // Check if this is test quick mode (startPage & endPage provided)
+    const isTestQuickMode = startPage !== null && startPage !== undefined && 
+                           endPage !== null && endPage !== undefined;
+
+    // ✅ Log robots.txt compliance
+    apiLogger.info('[True North] 🤖 Robots.txt compliance', {
+        crawlDelay: `${crawlDelay}ms`,
+        hasExplicitCrawlDelay,
+        disallowedPaths: disallowedPaths.length,
+        allowedPaths: allowedPaths.length,
+        strategy: hasExplicitCrawlDelay ? 'robots.txt enforced' : 'intelligent default'
+    });
+
+    // ✅ Calculate dynamic rate limiting based on robots.txt
+    const calculatedMaxRate = hasExplicitCrawlDelay 
+        ? Math.floor(60000 / crawlDelay)  // Respect robots.txt
+        : 15;                              // Intelligent default
+
+    const maxConcurrency = 1; // Sequential for same site
+
+    apiLogger.info('[True North] ⚙️ Crawler configuration', {
+        crawlDelayMs: crawlDelay,
+        maxRequestsPerMinute: calculatedMaxRate,
+        maxConcurrency,
+        hasExplicitCrawlDelay,
+        mode: isTestQuickMode ? 'TEST' : 'AUTO'
+    });
 
     // Initialize constants
     let actualPages = 0;
     let productUrls: string[] = [];
     let urlsToProcess: string[] = [];
-
-    // Check if this is test quick mode (startPage & endPage provided)
-    const isTestQuickMode = startPage !== null && startPage !== undefined && 
-                           endPage !== null && endPage !== undefined;
 
     // Step 1: Add product URLs to request queue
     try {
@@ -148,8 +172,8 @@ export async function truenorthSeedScraper(
         const productCrawler = new CheerioCrawler({
             requestHandlerTimeoutSecs: 90, // Reduced from 120s based on logs showing ~4.2s average
             maxRequestRetries: 2, // Reduced retries since success rate is 100%
-            maxConcurrency: 1, // Keep it polite
-            maxRequestsPerMinute: isTestQuickMode ? 30 : 20, // Higher rate for test mode
+            maxConcurrency: maxConcurrency, // ✅ Use calculated value
+            maxRequestsPerMinute: calculatedMaxRate, // ✅ Dynamic from robots.txt
             
             requestHandler: async ({ $, request }) => {
                 try {
@@ -203,6 +227,17 @@ export async function truenorthSeedScraper(
     // Step 4: Return results
     const endTime = Date.now();
     const processingTime = endTime - startTime;
+    
+    // ✅ Aggregated completion logging
+    apiLogger.info('[True North] ✅ Crawling completed', {
+        '📊 Products': products.length,
+        '📄 URLs Processed': urlsToProcess.length,
+        '✅ Success': successCount,
+        '❌ Errors': errorCount,
+        '⏱️ Duration': `${(processingTime / 1000).toFixed(2)}s`,
+        '🤖 Robots.txt': hasExplicitCrawlDelay ? 'enforced' : 'default',
+        '🚀 Rate': `${calculatedMaxRate} req/min`
+    });
     
     return {
         products,

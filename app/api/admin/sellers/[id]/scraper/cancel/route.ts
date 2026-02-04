@@ -7,7 +7,7 @@
 
 import { apiLogger } from "@/lib/helpers/api-logger";
 import { prisma } from "@/lib/prisma";
-import { getJob } from "@/lib/queue/scraper-queue";
+import { getScraperJob } from "@/lib/queue/scraper-queue";
 import { ScrapeJobStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -106,7 +106,7 @@ export async function POST(
 
     // Step 3: Cancel job in Bull Queue (if exists)
     try {
-        const bullJob = await getJob(unfinishedJob.jobId);
+        const bullJob = await getScraperJob(unfinishedJob.jobId);
         if(bullJob) {
             // Step 3.1: Check if worker is actively processing
             const isActivelyProcessing = bullJob.processedOn && !bullJob.finishedOn;

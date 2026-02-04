@@ -261,6 +261,7 @@ export class SaveDbService {
                 });
 
                 // Upsert all pricing variations (5 seeds, 10 seeds, 25 seeds)
+                // IMPORTANT: Save OLD prices to PricingHistory BEFORE updating
                 if (product.pricings && product.pricings.length > 0) {
                     for (const pricing of product.pricings) {
                         const existingPricing = await this.prisma.pricing.findFirst({
@@ -271,6 +272,19 @@ export class SaveDbService {
                         });
 
                         if (existingPricing) {
+                            // Save OLD price to history BEFORE updating
+                            await this.prisma.pricingHistory.create({
+                                data: {
+                                    seedProductId: savedProduct.id,
+                                    packSize: existingPricing.packSize,
+                                    totalPrice: existingPricing.totalPrice,
+                                    pricePerSeed: existingPricing.pricePerSeed,
+                                    scrapedAt: new Date(),
+                                    source: 'scraper',
+                                }
+                            });
+
+                            // Update to NEW price
                             await this.prisma.pricing.update({
                                 where: { id: existingPricing.id },
                                 data: {
@@ -280,6 +294,7 @@ export class SaveDbService {
                                 }
                             });
                         } else {
+                            // New pricing variant, just create
                             await this.prisma.pricing.create({
                                 data: {
                                     seedProductId: savedProduct.id,

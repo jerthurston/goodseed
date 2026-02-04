@@ -186,18 +186,120 @@ services:
 # ============================================================================
 
 # ============================================================================
-# FUTURE: Marketing Worker Service (Email Campaigns, Notifications)
+# FUTURE: Price Alert Worker Service (Price Change Detection & Email Alerts)
 # ============================================================================
-# Uncomment this section when ready to deploy marketing worker
+# Uncomment this section when ready to deploy price alert worker as a separate service
 #
 # - type: worker
-#   name: goodseed-marketing-worker
+#   name: goodseed-price-alert-worker
 #   env: docker
-#   dockerfilePath: ./Dockerfile.marketing-worker
+#   dockerfilePath: ./Dockerfile.price-alert-worker
 #   dockerContext: .
 #   region: oregon
-#   plan: starter # $7/month - upgrade to standard if high email volume
+#   plan: starter # $7/month - upgrade to standard if high volume
 #   branch: main
+#   
+#   healthCheckPath: /health
+#   autoDeploy: true
+#   
+#   envVars:
+#     # --- Application Environment ---
+#     - key: NODE_ENV
+#       value: production
+#     
+#     # --- Database (Same as scraper worker) ---
+#     - key: DATABASE_URL
+#       sync: false
+#     
+#     - key: DIRECT_URL
+#       sync: false
+#     
+#     # --- Redis (Same instance, different queue) ---
+#     - key: REDIS_HOST
+#       sync: false
+#     
+#     - key: REDIS_PORT
+#       value: 6379
+#     
+#     - key: REDIS_PASSWORD
+#       sync: false
+#     
+#     # --- Email Service (Resend) ---
+#     - key: RESEND_API_KEY
+#       sync: false
+#       # API key for sending price alert emails via Resend
+#       # Get from: https://resend.com/api-keys
+#     
+#     - key: RESEND_FROM_EMAIL
+#       sync: false
+#       # Sender email address for price alerts
+#       # Format: alerts@yourdomain.com or use Resend test email
+#     
+#     # --- Price Alert Worker Settings ---
+#     - key: WORKER_TYPE
+#       value: price-alert
+#       # Identifies this as price alert worker (vs scraper worker)
+#     
+#     - key: WORKER_CONCURRENCY
+#       value: 5
+#       # Can process more jobs simultaneously (email is less resource-intensive)
+#       # 5 = Send up to 5 price alert emails in parallel
+#     
+#     - key: EMAIL_BATCH_SIZE
+#       value: 100
+#       # Number of emails to send per batch
+#       # Adjust based on Resend rate limits
+#     
+#     - key: EMAIL_RATE_LIMIT
+#       value: 100
+#       # Max emails per minute (check Resend plan limits)
+#       # Free: 100/day, Pro: 50,000/month
+#     
+#     - key: PRICE_ALERT_QUEUE_NAME
+#       value: price-alert-jobs
+#       # Redis queue name for price alert jobs
+#       # Different from scraper queue: 'scraper-jobs'
+#
+# ============================================================================
+# Setup Instructions for Price Alert Worker:
+# ============================================================================
+# 
+# 1. Create Price Alert Worker Script:
+#    - File: lib/workers/price-alert-worker.ts
+#    - Similar to scraper-worker.ts
+#    - Process jobs from 'price-alert-jobs' queue
+#
+# 2. Create Dockerfile:
+#    - File: Dockerfile.price-alert-worker
+#    - No need for Chromium (lighter than scraper worker)
+#    - Only needs Node.js + dependencies
+#
+# 3. Price Alert Queue:
+#    - File: lib/queue/price-change-alert/
+#    - Queue name: 'price-alert-jobs'
+#
+# 4. Update package.json:
+#    Add script: "worker:price-alert": "tsx lib/workers/price-alert-worker.ts"
+#
+# 5. Use Cases:
+#    - Detect price changes from scraping results
+#    - Send price drop alerts to users
+#    - Send price increase notifications
+#    - Back-in-stock alerts
+#    - Wishlist price tracking
+#
+# 6. Benefits of Separate Worker:
+#    - Independent scaling (price alerts vs scraping have different resource needs)
+#    - Isolated failures (scraper issues don't affect price alerts)
+#    - Different concurrency settings (email can handle more parallel jobs)
+#    - Easier monitoring and debugging
+#
+# 7. Cost Considerations:
+#    - Starter plan: $7/month (sufficient for < 10K alerts/month)
+#    - Standard plan: $25/month (for high-volume price tracking)
+#    - Resend pricing: Free (100/day), Pro $20/month (50K/month)
+#
+# ============================================================================
 #   
 #   healthCheckPath: /health
 #   autoDeploy: true

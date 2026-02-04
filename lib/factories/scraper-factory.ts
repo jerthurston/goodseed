@@ -7,22 +7,16 @@
 
 import { PrismaClient } from '@prisma/client';
 
-// Database services (retained for data persistence)
-import { SaveDbService as VancouverSaveDbService } from '@/scrapers/vancouverseedbank/core/save-db-service';
-import { SaveDbService as SunWestSaveDbService } from '@/scrapers/sunwestgenetics/core/save-db-service';
-import { SaveDbService as SonomaSeedsDbService } from '@/scrapers/sonomaseeds/core/save-db-service';
+// Database service - Common for all scrapers
 import { SaveDbService as CommonSaveDbService } from '@/scrapers/(common)/save-db-service';
-
-// Product List Scrapers (core implementations)
-
+// Selector
 import { VANCOUVERSEEDBANK_PRODUCT_CARD_SELECTORS } from '@/scrapers/vancouverseedbank/core/selectors';
 import { SUNWESTGENETICS_SELECTORS } from '@/scrapers/sunwestgenetics/core/selectors';
 import { SONOMASEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/sonomaseeds/core/selectors';
 import { BEAVERSEED_PRODUCT_CARD_SELECTORS } from '@/scrapers/beaverseed/core/selector';
-
-
+// Product List Scrapers (core implementations)
 import { vancouverProductListScraper } from '@/scrapers/vancouverseedbank/core/vancouver-product-list-scraper';
-import { sunwestgeneticsProductListScraper } from '@/scrapers/sunwestgenetics/core/sunwestgenetics-scrape-product-list';
+import { sunwestgeneticsScraper } from '@/scrapers/sunwestgenetics/core/sunwestgeneticsScraper';
 import { sonomaSeedsProductListScraper } from '@/scrapers/sonomaseeds/core/sonomaseeds-product-list-scraper';
 import { BeaverseedScraper } from '@/scrapers/beaverseed/core/beaverseed-scraper';
 import { BCBUDDEPOT_PRODUCT_DETAIL_SELECTORS } from '@/scrapers/bcbuddepot/core/selector';
@@ -40,8 +34,6 @@ import { canukSeedScraper } from '@/scrapers/canukseeds/core/canukseedsScraper';
 import TRUENORTH_SEEDBANK_PRODUCT_SELECTORS from '@/scrapers/truenorthseedbank/core/selectors';
 import { truenorthSeedScraper } from '@/scrapers/truenorthseedbank/core/truenorthSeedScraper';
 
-
-
 /**
  * Supported scraper sources - easily extensible for new sites
  */
@@ -57,8 +49,6 @@ export type SupportedScraperSourceName =
   | 'cropkingseeds'
   | 'canukseeds'
   | 'truenorthseedbank';
-
-
 
 export interface ISaveDbService {
   // Initialize seller in the database
@@ -286,9 +276,9 @@ export class ScraperFactory {
       case 'vancouverseedbank':
         return vancouverProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext); // Support startPage/endPage and fullSiteCrawl
       case 'sunwestgenetics':
-        return sunwestgeneticsProductListScraper(siteConfig, dbMaxPage, startPage || undefined, endPage || undefined);
+        return sunwestgeneticsScraper(siteConfig, dbMaxPage, startPage || undefined, endPage || undefined);
       case 'sonomaseeds':
-        return sonomaSeedsProductListScraper(siteConfig, dbMaxPage); // Sonoma Seeds doesn't support startPage/endPage yet
+        return sonomaSeedsProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext); // Now supports startPage/endPage
       case 'beaverseed':
         return BeaverseedScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
       case 'maryjanesgarden':

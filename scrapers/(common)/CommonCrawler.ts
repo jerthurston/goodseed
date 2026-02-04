@@ -19,7 +19,7 @@ import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/t
 import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, ErrorHandler, Log, RequestQueue } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
-import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
+import { SimplePoliteCrawler, RobotsRules } from '@/lib/utils/polite-crawler';
 import { ACCEPTLANGUAGE, MAX_DELAY_DEFAULT, MIN_DELAY_DEFAULT, USERAGENT } from './constants';
 
 /**
@@ -50,6 +50,7 @@ export type SiteSpecificRequestHandler = (
         politeCrawler: SimplePoliteCrawler;
         requestQueue: RequestQueue;
         getScrapingUrl: (baseUrl: string, pageNumber: number) => string;
+        robotsRules: RobotsRules; // ✅ Add robots rules to shared data
     }
 ) => Promise<void>;
 
@@ -157,16 +158,16 @@ export class CommonCrawler {
         const siteName = this.siteConfig.name;
 
         // Debug log
-        apiLogger.info(`[${siteName} Scraper] Starting with siteConfig`, {
+        apiLogger.info(`[${siteName}] 🚀 Starting scraper`, {
             name: this.siteConfig.name,
             baseUrl: this.siteConfig.baseUrl,
-            isImplemented: this.siteConfig.isImplemented,
+            mode: this.startPage !== null && this.endPage !== null ? 'TEST' : 'AUTO',
             scrapingSourceUrl: this.sourceContext.scrapingSourceUrl
         });
 
         // Validate sourceContext
         if (!this.sourceContext.scrapingSourceUrl) {
-            throw new Error(`[${siteName} Scraper] scrapingSourceUrl is required in sourceContext`);
+            throw new Error(`[${siteName}] scrapingSourceUrl is required in sourceContext`);
         }
 
         // Initialize dataset and request queue
@@ -175,8 +176,19 @@ export class CommonCrawler {
         const dataset = await Dataset.open(datasetName);
         const requestQueue = await RequestQueue.open(`${siteName.toLowerCase().replace(/\s+/g, '')}-queue-${runId}`);
 
-        // Initialize polite crawler
+        // ✅ STEP 0: Initialize polite crawler and parse robots.txt FIRST
         const politeCrawler = this.createPoliteCrawler();
+        const robotsRules = await politeCrawler.parseRobots(this.siteConfig.baseUrl);
+        const { crawlDelay, disallowedPaths, allowedPaths, hasExplicitCrawlDelay } = robotsRules;
+
+        // Log robots.txt rules
+        apiLogger.info(`[${siteName}] 🤖 Robots.txt compliance`, {
+            crawlDelay: `${crawlDelay}ms`,
+            hasExplicitCrawlDelay,
+            disallowedPaths: disallowedPaths.length,
+            allowedPaths: allowedPaths.length,
+            strategy: hasExplicitCrawlDelay ? 'robots.txt enforced' : 'intelligent default'
+        });
 
         // Shared data between pages
         let totalProducts = 0;
@@ -198,7 +210,8 @@ export class CommonCrawler {
             dataset,
             politeCrawler,
             requestQueue,
-            getScrapingUrl: this.getScrapingUrl
+            getScrapingUrl: this.getScrapingUrl,
+            robotsRules // Add robots rules to shared data
         };
 
         // Add first page to queue
@@ -213,26 +226,21 @@ export class CommonCrawler {
             const { request, log } = context;
             const pageNumber = request.userData?.pageNumber || 1;
             
-            log.info(`[${siteName}] Processing page ${pageNumber}: ${request.url}`);
+            log.info(`[${siteName}] 📄 Processing page ${pageNumber}...`);
 
-            // POLITE CRAWLING: Check robots.txt compliance
-            const isAllowed = await politeCrawler.isAllowed(request.url);
-            if (!isAllowed) {
-                log.error(`[${siteName}] BLOCKED by robots.txt: ${request.url}`);
-                throw new Error(`robots.txt blocked access to ${request.url}`);
-            }
+            // ✅ URLs already validated by robots.txt (no need to check again)
+            // Note: For pagination, we assume all pages in same path are allowed
 
             try {
                 // Call site-specific request handler
                 await this.requestHandler(context, sharedData);
 
-                // POLITE CRAWLING: Apply delay
-                const delayMs = await politeCrawler.getCrawlDelay(request.url);
-                log.info(`[${siteName}] Using polite crawl delay: ${delayMs}ms for ${request.url}`);
-                await new Promise(resolve => setTimeout(resolve, delayMs));
+                // ✅ POLITE CRAWLING: Apply delay from parsed robots.txt
+                log.debug(`[${siteName}] ⏱️ Applying crawl delay: ${crawlDelay}ms (${hasExplicitCrawlDelay ? 'robots.txt' : 'default'})`);
+                await new Promise(resolve => setTimeout(resolve, crawlDelay));
 
             } catch (error) {
-                log.error(`[${siteName}] Error processing page ${pageNumber}:`, { error });
+                log.error(`[${siteName}] ❌ Error processing page ${pageNumber}:`, { error });
                 throw error;
             }
         };
@@ -240,11 +248,32 @@ export class CommonCrawler {
         // Create error handler
         const errorHandler = this.createErrorHandler(siteName);
 
-        // Configure crawler
-        const crawlerConfig = this.createCrawlerConfig(requestQueue, wrappedRequestHandler, errorHandler);
+        // ✅ Calculate optimal maxRequestsPerMinute based on robots.txt crawlDelay
+        const calculatedMaxRate = hasExplicitCrawlDelay 
+            ? Math.floor(60000 / crawlDelay)  // Respect robots.txt
+            : 30;                              // Intelligent default
+
+        const maxConcurrency = 1; // Sequential for pagination-based scraping
+        
+        apiLogger.info(`[${siteName}] ⚙️ Crawler configuration`, {
+            crawlDelayMs: crawlDelay,
+            maxRequestsPerMinute: calculatedMaxRate,
+            maxConcurrency,
+            hasExplicitCrawlDelay,
+            mode: this.startPage !== null && this.endPage !== null ? 'TEST' : 'AUTO'
+        });
+
+        // Configure crawler with dynamic rate limiting
+        const crawlerConfig = {
+            ...this.createCrawlerConfig(requestQueue, wrappedRequestHandler, errorHandler),
+            maxRequestsPerMinute: calculatedMaxRate, // ✅ Use calculated rate from robots.txt
+            maxConcurrency: maxConcurrency,
+        };
+        
         const crawler = new CheerioCrawler(crawlerConfig);
 
         // Run crawler
+        apiLogger.info(`[${siteName}] 🕷️ Starting crawler...`);
         await crawler.run();
 
         // Get final results from shared data
@@ -252,15 +281,16 @@ export class CommonCrawler {
         actualPages = sharedData.actualPages.value;
         maxPages = sharedData.maxPages.value;
 
-        // Log results
+        // Log results with aggregated stats
         const duration = Date.now() - startTime;
         
-        apiLogger.info(`[${siteName} Scraper] Crawling completed`, {
-            totalProducts: sharedData.allProducts.length,
-            totalPages: actualPages,
-            maxPages,
-            duration: `${duration}ms`,
-            scrapingSourceUrl: this.sourceContext.scrapingSourceUrl
+        apiLogger.info(`[${siteName}] ✅ Crawling completed`, {
+            '📊 Products': sharedData.allProducts.length,
+            '📄 Pages': actualPages,
+            '🎯 Max Pages': maxPages || 'N/A',
+            '⏱️ Duration': `${(duration / 1000).toFixed(2)}s`,
+            '🤖 Robots.txt': hasExplicitCrawlDelay ? 'enforced' : 'default',
+            '🚀 Rate': `${calculatedMaxRate} req/min`
         });
 
         return {

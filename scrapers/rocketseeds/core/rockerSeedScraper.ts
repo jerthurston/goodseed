@@ -69,36 +69,74 @@ export async function RocketSeedsScraper(
     // Initialize polite crawler policy
     const politeCrawler = new SimplePoliteCrawler({
         userAgent: USERAGENT,
-        acceptLanguage: ACCEPTLANGUAGE,
-        minDelay: 2000,
-        maxDelay: 5000
+        acceptLanguage: ACCEPTLANGUAGE
+    });
+
+    // ✅ Parse robots.txt FIRST for polite crawling compliance
+    const robotsRules = await politeCrawler.parseRobots(baseUrl);
+    const { crawlDelay, disallowedPaths, allowedPaths, hasExplicitCrawlDelay } = robotsRules;
+
+    apiLogger.info(`[Rocket Seeds] Robots.txt rules loaded:`, {
+        crawlDelay: `${crawlDelay}ms`,
+        hasExplicitCrawlDelay,
+        disallowedCount: disallowedPaths.length,
+        allowedCount: allowedPaths.length,
+        userAgent: USERAGENT
     });
 
     let actualPages = 0;
     let productUrls: string[] = [];
     let urlsToProcess: string[] = [];
     
-    // Step 1: Add product URLs to request queue
+    // Step 1: Extract and filter product URLs
     try {
         productUrls = await extractProductUrlsFromSitemap(sourceContext.scrapingSourceUrl);
-        // sourceContext.scrapingSourceUrl: link sitemap được lấy từ database ở scrapingSource[0]
 
-        apiLogger.info(`[Rocket Seeds Scraper] extracted ${productUrls.length} product URLs from sitemap`);
+        apiLogger.info(`[Rocket Seeds] Extracted ${productUrls.length} product URLs from sitemap`);
+
+        // ✅ Filter URLs against robots.txt BEFORE adding to queue
+        const allowedUrls: string[] = [];
+        const blockedUrls: string[] = [];
+        
+        for (const url of productUrls) {
+            const urlPath = new URL(url).pathname;
+            
+            // Check if URL is allowed by robots.txt
+            let isAllowed = true;
+            for (const disallowedPath of disallowedPaths) {
+                if (urlPath.startsWith(disallowedPath)) {
+                    isAllowed = false;
+                    blockedUrls.push(url);
+                    break;
+                }
+            }
+            
+            if (isAllowed) {
+                allowedUrls.push(url);
+            }
+        }
+        
+        apiLogger.info(`[Rocket Seeds] Robots.txt filtering results:`, { 
+            total: productUrls.length, 
+            allowed: allowedUrls.length, 
+            blocked: blockedUrls.length 
+        });
+        
+        // Use filtered URLs
+        urlsToProcess = allowedUrls;
 
         // Calculate number of products to process based on startPage and endPage
         // Chỉ áp dụng cho mode = test. Chỉ test 5 productUrl (startPage = 1, và endPage = 6. số lượng 5 url)
-        endPage = 6;
-        urlsToProcess = productUrls;
         if (startPage !== null && startPage !== undefined && endPage !== null && endPage !== undefined) {
             const pageRange = endPage - startPage;
             const limitedCount = Math.max(1, pageRange); // Ensure at least 1 product
-            urlsToProcess = productUrls.slice(0, limitedCount);
+            urlsToProcess = allowedUrls.slice(0, limitedCount);
             
-            apiLogger.info(`[Rocket Seeds Scraper] Limited processing to ${limitedCount} products (startPage: ${startPage}, endPage: ${endPage}, range: ${pageRange})`);
+            apiLogger.info(`[Rocket Seeds] Limited processing to ${limitedCount} products (startPage: ${startPage}, endPage: ${endPage}, range: ${pageRange})`);
         }
         // ==== Code này dành cho Quick testing scraper.
 
-        // Add product URLs to queue for crawling. Nếu không truyền vào startPage hoặc endPage tức là manual hoặc auto mode sẽ lần lượt for qua tất cả url thay vì 5 url như trên
+        // Add filtered URLs to queue for crawling
         for (const productUrl of urlsToProcess) {
             await requestQueue.addRequest({
                 url: productUrl,
@@ -107,14 +145,14 @@ export async function RocketSeedsScraper(
         }
 
     } catch (error) {
-        apiLogger.logError('[Rocket Seeds Scraper] Failed to load sitemap:', {
+        apiLogger.logError('[Rocket Seeds] Failed to load sitemap:', {
             error,
             sitemapUrl: sourceContext.scrapingSourceUrl
         });
         throw new Error(`Failed to load sitemap: ${error}`);
     }
 
-    // Step 2: Request handler
+    // Step 2: Request handler (URLs already filtered, no redundant checks)
     async function rocketSeedsRequestHandler(context: CheerioCrawlingContext): Promise<void> {
         const {
             $,
@@ -126,16 +164,8 @@ export async function RocketSeedsScraper(
             log: Log;
         } = context;
 
-        log.info(`[Rocket Seeds Scraper] Processing product page: ${request.url}`);
-
-        // 2.1 Crawling check robots.txt with polite crawler
-        const isAllowed = await politeCrawler.isAllowed(request.url);
-        if (!isAllowed) {
-            log.error(`[Rocket Seeds Scraper] BLOCKED by robots.txt: ${request.url}`);
-            throw new Error(`robots.txt blocked access to ${request.url}`);
-        }
-
-        // 2.2 Extract product data from detail product page
+        // ✅ URLs already filtered by robots.txt, no need for isAllowed() check
+        // Extract product data from detail product page
         if (request.userData?.type === 'product') {
             const product = extractProductFromDetailHTML($, siteConfig, request.url);
             if (product) {
@@ -148,19 +178,6 @@ export async function RocketSeedsScraper(
                  * - Yield info from indoor/outdoor yield icons
                  * - Pricing from pvtfw_variant_table_block
                  */
-                log.info(`[Rocket Seeds Scraper] Successfully extracted product: ${product.name}`);
-                log.info(`[Rocket Seeds Scraper] Successfully extracted product url: ${product.url}`);
-                log.info(`[Rocket Seeds Scraper] Successfully extracted product image: ${product.imageUrl}`);
-                log.info(`[Rocket Seeds Scraper] Successfully extracted product price: ${product.pricings}`);
-                log.info(`[Rocket Seeds Scraper] Successfully extracted product thcLevel: ${product.thcLevel}`);
-                log.info(`[Rocket Seeds Scraper] Successfully extracted product thcMin: ${product.thcMin}`);
-                log.info(`[Rocket Seeds Scraper] Successfully extracted product thcMax: ${product.thcMax}`);
-                log.info(`[Rocket Seeds Scraper] Successfully extracted product cbdLevel: ${product.cbdLevel}`);
-                log.info(`[Rocket Seeds Scraper] Successfully extracted product cbdMin: ${product.cbdMin}`);
-                log.info(`[Rocket Seeds Scraper] Successfully extracted product cbdMax: ${product.cbdMax}`);
-                log.info(`[Rocket Seeds Scraper] Successfully extracted product floweringTime: ${product.floweringTime}`);
-                log.info(`[Rocket Seeds Scraper] Successfully extracted product growingLevel: ${product.growingLevel}`);
-
                 // Save product to dataset
                 await dataset.pushData({
                     product,
@@ -169,15 +186,11 @@ export async function RocketSeedsScraper(
                 });
                 // Increment actual pages count
                 actualPages++;
-            } else {
-                log.info(`[Rocket Seeds Scraper] Failed to extract product from: ${request.url}`);
             }
         }
 
-        // 2.3 Delay to follow Polite crawling guidelines. params nhận vào là url và hàm getCrawlDelay sẽ phân tích và lấy delayMs từ robots.txt
-        const delayMs = await politeCrawler.getCrawlDelay(request.url);
-        log.info(`[Rocket Seeds Scraper] Using polite crawl delay: ${delayMs}ms for ${request.url}`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        // ✅ Use parsed crawlDelay value (no need to call getCrawlDelay() per request)
+        await new Promise(resolve => setTimeout(resolve, crawlDelay));
     }
 
     // Step 3: Error handling
@@ -206,13 +219,24 @@ export async function RocketSeedsScraper(
         }
     };
 
-    // Step 4: Create and run CommonCrawler with Rocket Seeds-specific logic
+    // ✅ Step 4: Calculate dynamic rate limiting based on robots.txt
+    const calculatedMaxRate = hasExplicitCrawlDelay 
+        ? Math.floor(60000 / crawlDelay)
+        : 15; // Default 15 req/min if no explicit delay
+    
+    apiLogger.info(`[Rocket Seeds] Dynamic rate limiting:`, {
+        crawlDelay: `${crawlDelay}ms`,
+        hasExplicitCrawlDelay,
+        maxRequestsPerMinute: calculatedMaxRate
+    });
+
+    // Step 5: Create and run crawler with optimized configuration
     const crawler = new CheerioCrawler({
         requestQueue,
         requestHandler: rocketSeedsRequestHandler,
         errorHandler: rocketSeedsErrorHandler,
-        maxConcurrency: 1, // Sequential requests. request đơn lập
-        maxRequestsPerMinute: 15,
+        maxConcurrency: 1, // Sequential requests for polite crawling
+        maxRequestsPerMinute: calculatedMaxRate, // ✅ Dynamic rate based on robots.txt
         maxRequestRetries: 3,
         preNavigationHooks: [
             async (requestAsBrowserOptions) => {
@@ -222,34 +246,26 @@ export async function RocketSeedsScraper(
         ]
     });
 
-    // Step 5: Run main crawler
-    apiLogger.info(`[Rocket Seeds Scraper] Starting main crawler`);
+    // Step 6: Run main crawler
+    apiLogger.info(`[Rocket Seeds] Starting main crawler...`);
     await crawler.run();
 
-    // STEP 7: Extract products from dataset
-    apiLogger.info(`[Rocket Seeds Scraper] Getting data from dataset`);
-    // --> 7.1 Get data from dataset
-    const data = await dataset.getData();
-    // --> 7.2 Extract products from dataset
-    const products: ProductCardDataFromCrawling[] = [];
-    data.items.forEach((item: Dictionary) => {
-        if (item.product) {
-            products.push(item.product);
+    // Step 7: Extract products and log summary
+    const products = (await dataset.getData()).items.map(item => item.product);
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+
+    apiLogger.info(`[Rocket Seeds] ✅ Scraping completed successfully:`, {
+        scraped: products.length,
+        saved: actualPages,
+        duration: `${(duration / 1000).toFixed(2)}s`,
+        robotsCompliance: {
+            crawlDelay: `${crawlDelay}ms`,
+            hasExplicitCrawlDelay,
+            maxRequestsPerMinute: calculatedMaxRate,
+            urlsFiltered: productUrls.length - urlsToProcess.length,
+            urlsProcessed: urlsToProcess.length
         }
-    });
-    apiLogger.info(`[Rocket Seeds Scraper] Extracted ${products.length} products from dataset`);
-
-    // STEP 8: Return Result for factory scraper
-    const duration = Date.now() - startTime;
-
-    apiLogger.info(`[Rocket Seeds Scraper] Finished in ${duration}ms`);
-    apiLogger.debug(`[Rocket Seeds Scraper] Crawling completed:`, {
-        totalProducts: products.length,
-        totalPages: actualPages,
-        duration: `${duration}ms`,
-        sitemapUrl: sourceContext.scrapingSourceUrl,
-        productUrlsFound: productUrls.length,
-        productUrlsProcessed: urlsToProcess.length
     });
     
     return {
