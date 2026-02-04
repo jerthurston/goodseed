@@ -135,8 +135,42 @@ export async function vancouverProductListScraper(
         maxDelay: 5000
     });
 
+    // ✅ Parse robots.txt ONCE at initialization
+    const robotsRules = await politeCrawler.parseRobots(baseUrl);
+    const { crawlDelay, disallowedPaths, allowedPaths, hasExplicitCrawlDelay, userAgent } = robotsRules;
+
+    // Check if this is test mode
+    const isTestMode = startPage !== null && startPage !== undefined && 
+                       endPage !== null && endPage !== undefined;
+
+    // ✅ Log robots.txt compliance
+    apiLogger.info('[Vancouver] 🤖 Robots.txt compliance', {
+        crawlDelay: `${crawlDelay}ms`,
+        hasExplicitCrawlDelay,
+        disallowedPaths: disallowedPaths.length,
+        allowedPaths: allowedPaths.length,
+        strategy: hasExplicitCrawlDelay ? 'robots.txt enforced' : 'intelligent default'
+    });
+
+    // ✅ Calculate optimal maxRequestsPerMinute based on crawlDelay
+    const calculatedMaxRate = hasExplicitCrawlDelay 
+        ? Math.floor(60000 / crawlDelay)  // Respect explicit robots.txt delay
+        : 15;                              // Intelligent default
+
+    const maxConcurrency = 1; // Sequential for same site
+
+    apiLogger.info('[Vancouver] ⚙️ Crawler configuration', {
+        crawlDelayMs: crawlDelay,
+        maxRequestsPerMinute: calculatedMaxRate,
+        maxConcurrency,
+        hasExplicitCrawlDelay,
+        mode: isTestMode ? 'TEST' : 'AUTO'
+    });
+
     let actualPages = 0;
     const emptyPages = new Set<string>();
+    let successCount = 0;
+    let errorCount = 0;
 
     // Initialize requestHandler with proper TypeScript types
     async function requestHandler(context: CheerioCrawlingContext): Promise<void> {
@@ -148,9 +182,10 @@ export async function vancouverProductListScraper(
         
         log.info(`[Product List] Scraping: ${request.url}`);
 
-        // POLITE CRAWLING: Check robots.txt compliance
+        // POLITE CRAWLING: Check robots.txt compliance (already parsed at initialization)
         const isAllowed = await politeCrawler.isAllowed(request.url);
         if (!isAllowed) {
+            errorCount++;
             log.error(`[Product List] BLOCKED by robots.txt: ${request.url}`);
             throw new Error(`robots.txt blocked access to ${request.url}`);
         }
@@ -172,6 +207,9 @@ export async function vancouverProductListScraper(
             url: request.url
         });
 
+        // Track success
+        successCount += products.length;
+
         // Track empty pages
         if (products.length === 0) {
             emptyPages.add(request.url);
@@ -189,10 +227,8 @@ export async function vancouverProductListScraper(
             maxPages: maxPages // Include maxPages in dataset
         });
 
-        // POLITE CRAWLING: Use polite crawler for delays and robots.txt compliance
-        const delayMs = await politeCrawler.getCrawlDelay(request.url);
-        apiLogger.debug(`[Product List] Using polite crawl delay: ${delayMs}ms for ${request.url}`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        // POLITE CRAWLING: Delay is handled by crawler configuration (maxRequestsPerMinute)
+        // No need for manual delay here since we use calculatedMaxRate
     }
 
     // Initialize errorHandler with proper TypeScript types
@@ -201,6 +237,8 @@ export async function vancouverProductListScraper(
             request: CheerioCrawlingContext['request'];
             log: Log;
         } = context;
+        
+        errorCount++;
         
         // POLITE CRAWLING: Handle HTTP status codes properly
         const httpError = error as any;
@@ -226,11 +264,10 @@ export async function vancouverProductListScraper(
     // Thiết lập function crawler
     const crawler = new CheerioCrawler({
         requestQueue,
-        // sameDomainDelaySecs: delayMs / 1000,
         requestHandler, // Use the extracted requestHandler function
         errorHandler, // Use the extracted errorHandler function
-        maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
-        maxConcurrency: 1, // Sequential requests within same site (project requirement)
+        maxRequestsPerMinute: calculatedMaxRate, // ✅ Dynamic from robots.txt
+        maxConcurrency: maxConcurrency,          // ✅ Use calculated value
         maxRequestRetries: 3,
         preNavigationHooks: [
             async (crawlingContext, requestAsBrowserOptions) => {
@@ -324,13 +361,27 @@ export async function vancouverProductListScraper(
         allProducts.push(...(item as { products: ProductCardDataFromCrawling[] }).products);
     });
 
+    const endTime = Date.now();
+    const processingTime = endTime - startTime;
+
+    // ✅ Aggregated completion logging
+    apiLogger.info('[Vancouver] ✅ Crawling completed', {
+        '📊 Products': allProducts.length,
+        '📄 Pages Processed': actualPages,
+        '✅ Success': successCount,
+        '❌ Errors': errorCount,
+        '⏱️ Duration': `${(processingTime / 1000).toFixed(2)}s`,
+        '🤖 Robots.txt': hasExplicitCrawlDelay ? 'enforced' : 'default',
+        '🚀 Rate': `${calculatedMaxRate} req/min`
+    });
+
     return {
         // category: listingUrl,
         totalProducts: allProducts.length,
         totalPages: actualPages,
         products: allProducts,
         timestamp: new Date(),
-        duration: Date.now() - startTime,
+        duration: processingTime,
     };
 }
 

@@ -42,8 +42,6 @@ export async function canukSeedScraper(
     const politeCrawler = new SimplePoliteCrawler({
         userAgent:USERAGENT,
         acceptLanguage:ACCEPTLANGUAGE,
-        // minDelay:2000,
-        // maxDelay:5000
     });
 
     const robotsRules = await politeCrawler.parseRobots(baseUrl);

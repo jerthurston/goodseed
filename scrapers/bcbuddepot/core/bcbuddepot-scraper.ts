@@ -39,12 +39,23 @@ export async function BcbuddepotScraper(
     const dataset = await Dataset.open(datasetName);
     const requestQueue = await RequestQueue.open(`bcbuddepot-queue-${runId}`);
 
-    // Initialize polite crawler
+    // Initialize polite crawler and parse robots.txt FIRST
     const politeCrawler = new SimplePoliteCrawler({
         userAgent: USERAGENT,
         acceptLanguage: ACCEPTLANGUAGE,
-        minDelay: 2000,
-        maxDelay: 5000
+    });
+
+    // ✅ STEP 0: Parse robots.txt BEFORE crawling
+    const robotsRules = await politeCrawler.parseRobots(baseUrl);
+    const { crawlDelay, disallowedPaths, allowedPaths, userAgent, hasExplicitCrawlDelay } = robotsRules;
+
+    // Log robots.txt rules for debugging
+    apiLogger.info(`[BC Bud Depot Scraper] Robots.txt rules loaded:`, {
+        crawlDelay: `${crawlDelay}ms`,
+        hasExplicitCrawlDelay,
+        disallowedCount: disallowedPaths.length,
+        allowedCount: allowedPaths.length,
+        userAgent
     });
 
     let actualPages = 0;
@@ -58,21 +69,67 @@ export async function BcbuddepotScraper(
         productUrls = await extractProductUrlsFromSitemap(sourceContext.scrapingSourceUrl);
         apiLogger.info(`[BC Bud Depot Scraper] Extracted ${productUrls.length} product URLs from sitemap`);
         
+        // ✅ Filter URLs against robots.txt BEFORE adding to queue
+        const allowedUrls: string[] = [];
+        const blockedUrls: string[] = [];
+        
+        for (const url of productUrls) {
+            const urlPath = new URL(url).pathname;
+            
+            // Check if URL is allowed by robots.txt
+            let isAllowed = true;
+            
+            // Check disallowed paths first (higher priority)
+            for (const disallowedPath of disallowedPaths) {
+                if (urlPath.startsWith(disallowedPath)) {
+                    isAllowed = false;
+                    break;
+                }
+            }
+            
+            // If not explicitly disallowed, check allowed paths
+            if (isAllowed && allowedPaths.length > 0 && !allowedPaths.includes('*')) {
+                isAllowed = false;
+                for (const allowedPath of allowedPaths) {
+                    if (urlPath.startsWith(allowedPath)) {
+                        isAllowed = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (isAllowed) {
+                allowedUrls.push(url);
+            } else {
+                blockedUrls.push(url);
+            }
+        }
+        
+        apiLogger.info(`[BC Bud Depot Scraper] Robots.txt filtering results:`, {
+            total: productUrls.length,
+            allowed: allowedUrls.length,
+            blocked: blockedUrls.length
+        });
+        
+        if (blockedUrls.length > 0) {
+            apiLogger.debug(`[BC Bud Depot Scraper] Sample blocked URLs:`, { 
+                blockedSample: blockedUrls.slice(0, 5) 
+            });
+        }
 
-         // Calculate number of products to process based on startPage and endPage
-         // Chỉ áp dụng cho mode = test. Chỉ test 5 productUrl (startPage = 1, và endPage =6. số lượng 5 url)
-        endPage = 6
-        urlsToProcess = productUrls;
+        // Calculate number of products to process based on startPage and endPage
+        // Chỉ áp dụng cho mode = test. Chỉ test 5 productUrl (startPage = 1, và endPage =6. số lượng 5 url)
+        urlsToProcess = allowedUrls; // Use filtered URLs instead of all URLs
         if (startPage !== null && startPage !== undefined && endPage !== null && endPage !== undefined) {
             const pageRange = endPage - startPage;
             const limitedCount = Math.max(1, pageRange); // Ensure at least 1 product
-            urlsToProcess = productUrls.slice(0, limitedCount);
+            urlsToProcess = allowedUrls.slice(0, limitedCount);
             
-            apiLogger.info(`[MJ Seed Canada Scraper] Limited processing to ${limitedCount} products (startPage: ${startPage}, endPage: ${endPage}, range: ${pageRange})`);
+            apiLogger.info(`[BC Bud Depot Scraper] Limited processing to ${limitedCount} products (startPage: ${startPage}, endPage: ${endPage}, range: ${pageRange})`);
         }
         //==== Code này dành cho Quick testing scraper.
         /**
-         * / Add product URLs to queue for crawling. Nếu không truyền vào startPage hoặc endPage tức là manual hoặc auto mode sẽ lần lượt for qua tất cả url thay vì 5 url như trên
+         * Add product URLs to queue for crawling. Nếu không truyền vào startPage hoặc endPage tức là manual hoặc auto mode sẽ lần lượt for qua tất cả url thay vì 5 url như trên
          */
         for (const productUrl of urlsToProcess) {
             await requestQueue.addRequest({
@@ -99,12 +156,8 @@ export async function BcbuddepotScraper(
         
         log.info(`[BC Bud Depot Scraper] Processing product: ${request.url}`);
 
-        // POLITE CRAWLING: Check robots.txt compliance
-        const isAllowed = await politeCrawler.isAllowed(request.url);
-        if (!isAllowed) {
-            log.error(`[BC Bud Depot Scraper] BLOCKED by robots.txt: ${request.url}`);
-            throw new Error(`robots.txt blocked access to ${request.url}`);
-        }
+        // ✅ URLs already filtered by robots.txt, no need to check again here
+        // (URLs were filtered BEFORE being added to queue)
 
         // Extract product data from product detail page
         if (request.userData?.type === 'product') {
@@ -126,10 +179,9 @@ export async function BcbuddepotScraper(
             }
         }
 
-        // POLITE CRAWLING: Apply delay
-        const delayMs = await politeCrawler.getCrawlDelay(request.url);
-        log.info(`[BC Bud Depot Scraper] Using polite crawl delay: ${delayMs}ms for ${request.url}`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        // ✅ POLITE CRAWLING: Apply delay from robots.txt (already parsed)
+        log.debug(`[BC Bud Depot Scraper] Applying polite crawl delay: ${crawlDelay}ms (from ${hasExplicitCrawlDelay ? 'robots.txt Crawl-delay' : 'intelligent default'})`);
+        await new Promise(resolve => setTimeout(resolve, crawlDelay));
     }
 
     // Error handler
@@ -160,13 +212,29 @@ export async function BcbuddepotScraper(
         }
     };
 
+    // ✅ Calculate optimal maxRequestsPerMinute based on robots.txt crawlDelay
+    // Priority: robots.txt Crawl-delay > intelligent defaults
+    const calculatedMaxRate = hasExplicitCrawlDelay 
+        ? Math.floor(60000 / crawlDelay)  // ✅ PRIORITY: Respect robots.txt
+        : 15;                              // Intelligent default when no explicit limit
+    
+    const maxConcurrency = 1; // Sequential for sitemap-based scraping
+    
+    apiLogger.info(`[BC Bud Depot Scraper] Crawler settings (respecting robots.txt):`, {
+        crawlDelayMs: crawlDelay,
+        hasExplicitCrawlDelay,
+        maxRequestsPerMinute: calculatedMaxRate,
+        maxConcurrency,
+        strategy: hasExplicitCrawlDelay ? '🤖 robots.txt enforced' : '🧠 intelligent default'
+    });
+
     // Initialize crawler
     const crawler = new CheerioCrawler({
         requestQueue,
         requestHandler,
         errorHandler,
-        maxRequestsPerMinute: 15, // Polite crawling
-        maxConcurrency: 1, // Sequential requests
+        maxRequestsPerMinute: calculatedMaxRate, // ✅ Use calculated rate from robots.txt
+        maxConcurrency: maxConcurrency, // ✅ Use calculated value
         maxRequestRetries: 3,
         preNavigationHooks: [
             async (crawlingContext, requestAsBrowserOptions) => {

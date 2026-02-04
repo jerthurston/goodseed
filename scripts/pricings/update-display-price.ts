@@ -14,13 +14,15 @@ import { Pricing } from '@prisma/client';
  * Calculate displayPrice from pricings array
  * displayPrice = pricePerSeed of the smallest pack size
  */
-function calculateDisplayPrice(pricings: Pricing[]): number | null {
+type PricingLite = { packSize: number; pricePerSeed: number };
+
+function calculateDisplayPrice(pricings: Pricing[] | PricingLite[]): number | null {
     if (!pricings || pricings.length === 0) {
         return null;
     }
 
     // Find the pricing with smallest packSize
-    const smallestPack = pricings.reduce((smallest, current) => 
+    const smallestPack = pricings.reduce((smallest, current) =>
         current.packSize < smallest.packSize ? current : smallest
     );
 
@@ -61,7 +63,7 @@ async function updateDisplayPrices() {
         for (const product of seedProducts) {
             try {
                 // Calculate new displayPrice
-                const newDisplayPrice = calculateDisplayPrice(product.pricings);
+                const newDisplayPrice = calculateDisplayPrice(product.pricings  );
 
                 // Skip if no pricings available
                 if (newDisplayPrice === null) {

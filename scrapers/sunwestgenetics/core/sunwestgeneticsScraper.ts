@@ -10,6 +10,7 @@ import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/t
 import { CheerioCrawler, Dataset, RequestQueue } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
+import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
 
 /**
  * SunWestGeneticsProductListScraper
@@ -59,7 +60,7 @@ import { apiLogger } from '@/lib/helpers/api-logger';
  * - Auto-detects total pages from first page crawl
  * - Returns ProductsDataResultFromCrawling
  */
-export async function sunwestgeneticsProductListScraper(
+export async function sunwestgeneticsScraper(
     siteConfig: SiteConfig, 
     dbMaxPage?: number,
     startPage: number = 1,
@@ -84,6 +85,39 @@ export async function sunwestgeneticsProductListScraper(
 
     let actualPages = 0;
     const emptyPages = new Set<string>();
+
+    // ✅ STEP 0: Initialize SimplePoliteCrawler and parse robots.txt FIRST
+    const politeCrawler = new SimplePoliteCrawler({
+        userAgent: 'GoodSeed-Bot/1.0 (+https://goodseed.ca/contact) Commercial Cannabis Research',
+        acceptLanguage: 'en-US,en;q=0.9'
+    });
+
+    // ✅ Parse robots.txt at initialization
+    const robotsRules = await politeCrawler.parseRobots(baseUrl);
+    const { crawlDelay, disallowedPaths, allowedPaths, hasExplicitCrawlDelay } = robotsRules;
+
+    apiLogger.info('[SunWest Product List] 🤖 Robots.txt compliance', {
+        crawlDelay: `${crawlDelay}ms`,
+        hasExplicitCrawlDelay,
+        disallowedPaths: disallowedPaths.length,
+        allowedPaths: allowedPaths.length,
+        strategy: hasExplicitCrawlDelay ? 'robots.txt enforced' : 'intelligent default'
+    });
+
+    // ✅ STEP 1: Calculate dynamic rate limiting based on robots.txt crawlDelay
+    const calculatedMaxRate = hasExplicitCrawlDelay 
+        ? Math.floor(60000 / crawlDelay)  // Respect robots.txt
+        : 15;                              // Intelligent default
+
+    const maxConcurrency = 1; // Sequential for same site
+
+    apiLogger.info('[SunWest Product List] ⚙️ Crawler configuration', {
+        crawlDelayMs: crawlDelay,
+        maxRequestsPerMinute: calculatedMaxRate,
+        maxConcurrency,
+        hasExplicitCrawlDelay,
+        mode: endPage ? 'TEST' : 'AUTO'
+    });
 
 
     const crawler = new CheerioCrawler({
@@ -117,14 +151,13 @@ export async function sunwestgeneticsProductListScraper(
                 maxPages: maxPages // Include maxPages in dataset
             });
 
-            // PROJECT REQUIREMENT: Wait 2-5 seconds between requests to same site
-            const delayMs = Math.floor(Math.random() * 3000) + 2000; // Random 2000-5000ms
-            log.info(`[SunWest Product List] Waiting ${delayMs}ms before next request (project requirement: 2-5 seconds)`);
-            await new Promise(resolve => setTimeout(resolve, delayMs));
+            // ✅ POLITE CRAWLING: Apply delay from parsed robots.txt
+            log.debug(`[SunWest Product List] ⏱️ Applying crawl delay: ${crawlDelay}ms (${hasExplicitCrawlDelay ? 'robots.txt' : 'default'})`);
+            await new Promise(resolve => setTimeout(resolve, crawlDelay));
         },
 
-        maxRequestsPerMinute: 15, // Reduced to ensure 2-5 second delays are respected
-        maxConcurrency: 1, // Sequential requests within same site (project requirement)
+        maxRequestsPerMinute: calculatedMaxRate, // ✅ Dynamic rate from robots.txt
+        maxConcurrency: maxConcurrency,          // ✅ Sequential requests
         maxRequestRetries: 3,
     });
 
@@ -189,11 +222,22 @@ export async function sunwestgeneticsProductListScraper(
         allProducts.push(...(item as { products: ProductCardDataFromCrawling[] }).products);
     });
 
+    const duration = Date.now() - startTime;
+
+    // ✅ Aggregated logging
+    apiLogger.info('[SunWest Product List] ✅ Crawling completed', {
+        '📊 Products': allProducts.length,
+        '📄 Pages': actualPages,
+        '⏱️ Duration': `${(duration / 1000).toFixed(2)}s`,
+        '🤖 Robots.txt': hasExplicitCrawlDelay ? 'enforced' : 'default',
+        '🚀 Rate': `${calculatedMaxRate} req/min`
+    });
+
     return {
         totalProducts: allProducts.length,
         totalPages: actualPages,
         products: allProducts,
         timestamp: new Date(),
-        duration: Date.now() - startTime,
+        duration,
     };
 }
