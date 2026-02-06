@@ -45,6 +45,8 @@ yarn-error.log*
 .env.production
 .env.development
 .env.docker
+.env.production.real
+.env.production.tem
 
 # AWS & Cloud Configuration
 .aws/
