@@ -151,13 +151,13 @@ services:
         #   - 3+ jobs: Requires Standard plan or higher (1GB+ RAM)
         # Each job runs Chromium which is memory-intensive
       
-      - key: SCRAPER_VERBOSE
-        value: true
-        # Enable detailed logging for scraping operations
-        # true: Logs each product scraped, page visited, etc.
-        # false: Only logs job start/completion
-        # Useful for debugging but creates more log volume
-        # Set to false in production to reduce log storage costs
+      - key: CRAWLEE_AVAILABLE_MEMORY_RATIO
+        value: 512
+        # Memory available for Crawlee (in MB)
+        # Fixes false "memory critically overloaded" warnings
+        # Render Starter plan: 512 MB RAM
+        # Without this, Crawlee defaults to 128MB and shows warnings
+        # even though actual memory usage is fine
 
 # ============================================================================
 # Deployment Process:

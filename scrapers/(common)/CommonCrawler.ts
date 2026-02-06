@@ -137,7 +137,6 @@ export class CommonCrawler {
         requestHandler: (context: CheerioCrawlingContext) => Promise<void>,
         errorHandler: ErrorHandler<CheerioCrawlingContext>
     ) {
-        
         return {
             requestQueue,
             requestHandler,
@@ -147,6 +146,15 @@ export class CommonCrawler {
             maxConcurrency: 1,      // Sequential processing
             requestHandlerTimeoutSecs: 60,
             navigationTimeoutSecs: 30,
+            
+            // ✅ AutoscaledPool configuration to fix memory detection
+            // Memory is configured via CRAWLEE_AVAILABLE_MEMORY_RATIO env var
+            autoscaledPoolOptions: {
+                maxConcurrency: 1,
+                minConcurrency: 1,
+                // Warn only when > 90% of available memory
+                maxUsedMemoryRatio: 0.9,
+            }
         };
     }
 
