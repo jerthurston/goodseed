@@ -85,6 +85,8 @@ The GoodSeed Cannabis App uses a modern, serverless-first architecture designed 
      │    │              │    │    POST /api/admin/scraper/schedule-all
      │    │  Job Types:  │    │
      │    │  • Scraping  │    │
+     │    │  • Price     │    │
+     │    │    Detection │    │
      │    │  • Email     │    │
      │    │  • Reports   │    │
      │    └──────┬───────┘    │
@@ -100,9 +102,11 @@ The GoodSeed Cannabis App uses a modern, serverless-first architecture designed 
      │    │  │  • Pick jobs from Bull Queue             │   │
      │    │  │  • Process with Crawlee/Cheerio          │   │
      │    │  │  • Normalize & validate data             │   │
-     │    │  │  • Save to Neon DB                       │   │
+     │    │  │  • Save to Neon DB (Pricing + History)   │   │
+     │    │  │  • Detect price changes (≥5% drops)      │   │
+     │    │  │  • Find users with wishlist matches      │   │
+     │    │  │  • Send price alert emails               │   │
      │    │  │  • Update job status                     │   │
-     │    │  │  • Send notification emails              │   │
      │    │  │  • Error handling & retry logic          │   │
      │    │  └──────────────────┬───────────────────────┘   │
      │    │                     │                           │
@@ -187,17 +191,23 @@ The GoodSeed Cannabis App uses a modern, serverless-first architecture designed 
 **Database Schema**:
 ```
 Tables:
-├── User (authentication)
+├── User (authentication & preferences)
+│   └── receivePriceAlerts (boolean) - opt-in for price alerts
 ├── Account (OAuth providers)
 ├── Session (user sessions)
 ├── Seller (seed bank vendors)
-├── Product (cannabis seeds)
+├── SeedProduct (cannabis seeds)
+├── Pricing (current product prices) ⭐
+├── PricingHistory (historical price records) ⭐
+├── Wishlist (user favorite products) ⭐
+├── WishlistFolder (user wishlist organization)
 ├── ScrapeJob (scraping job tracking)
 ├── ScrapingSource (data source config)
 ├── Notification (user alerts)
 ├── ContentPage (CMS content)
-├── FAQ (help content)
-└── WishlistFolder (user favorites)
+└── FAQ (help content)
+
+⭐ New tables for Price Alert System
 ```
 
 **Connection Configuration**:
@@ -297,8 +307,9 @@ DIRECT_URL="postgresql://user:pass@ep-xxx.aws.neon.tech/db?sslmode=require"
 2. **Notification Emails**:
    - Scraping job completed
    - Scraping job failed
+   - Price drop alerts ⭐ NEW
    - New products available
-   - Price alerts
+   - User wishlist updates
 
 3. **System Emails**:
    - Admin alerts
@@ -420,15 +431,36 @@ scraperQueue.process(async (job) => {
     const normalizedData = normalizeProducts(scrapedData);
     
     // 4. Save to Neon database
-    await saveProductsToDatabase(normalizedData);
+    // ⭐ CRITICAL: Save OLD prices to PricingHistory BEFORE updating Pricing
+    const saveResult = await saveProductsToDatabase(normalizedData);
     
-    // 5. Update job status to COMPLETED
+    // 5. Populate seedIds for price detection
+    const seedIds = await populateSeedIds(normalizedData, sellerId);
+    
+    // 6. ⭐ NEW: Detect price changes
+    const priceChanges = await detectPriceChanges(seedIds);
+    apiLogger.info(`[Worker] Detected ${priceChanges.length} price drops ≥5%`);
+    
+    // 7. ⭐ NEW: Find users to notify
+    if (priceChanges.length > 0) {
+      const usersToNotify = await findUsersToNotify(priceChanges);
+      apiLogger.info(`[Worker] Found ${usersToNotify.length} users to notify`);
+      
+      // 8. ⭐ NEW: Send price alert emails
+      for (const userNotification of usersToNotify) {
+        await sendPriceAlertEmail(userNotification);
+      }
+    }
+    
+    // 9. Update job status to COMPLETED
     await updateJobStatus(jobId, 'COMPLETED', {
       productsScraped: normalizedData.length,
+      priceChangesDetected: priceChanges.length,
+      emailsSent: usersToNotify?.length || 0,
       completedAt: new Date()
     });
     
-    // 6. Send notification email
+    // 10. Send job completion notification to admin
     await sendJobCompleteEmail(jobId, sellerId);
     
     apiLogger.info(`[Worker] Job ${jobId} completed successfully`);
