@@ -406,8 +406,8 @@ export default function DetailSellerClient() {
         </DashboardButton> */}
             </div>
 
+            {/*--> Seller Configuration section */}
             <div className="space-y-6">
-                {/*--> Seller Configuration section */}
                 <DashboardCard>
                     <div className={styles.cardHeader}>
                         <div className="flex items-center gap-3">
@@ -833,7 +833,7 @@ export default function DetailSellerClient() {
 
             </div>
 
-            {/*--> MODALS SECTION */}
+        {/*--> MODALS SECTION */}
 
             {/* Sources Management Modal */}
             <ManageScrapingSourcesModal
@@ -875,10 +875,6 @@ export default function DetailSellerClient() {
                 onUpdateSuccess={handleUpdateSellerSuccess}
                 sellerId={currentSeller.id}
             />
-
-
-            {/* Update Basic Seller Information Modal */}
-
 
         </div>
     )

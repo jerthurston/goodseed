@@ -32,13 +32,13 @@ export default function SellerAutoScraperCard({
   // Auto scraper is "enabled" if autoScrapeInterval is set (> 0)
   const isAutoEnabled = autoScrapeInterval != null && autoScrapeInterval > 0;
   
-  apiLogger.debug('SellerAutoScraperCard render:', { 
-    sellerId, 
-    sellerName, 
-    autoScrapeInterval, 
-    isAutoEnabled,
-    isScheduled 
-  });
+  // apiLogger.debug('SellerAutoScraperCard render:', { 
+  //   sellerId, 
+  //   sellerName, 
+  //   autoScrapeInterval, 
+  //   isAutoEnabled,
+  //   isScheduled 
+  // });
   return (
     <DashboardCard className={styles.card}>
       <div className="space-y-4">
@@ -82,15 +82,18 @@ export default function SellerAutoScraperCard({
                 Interval:
               </span>
               <select
-                value={autoScrapeInterval || 6}
+                value={autoScrapeInterval || 24}
                 onChange={(e) => {
                   if (onIntervalChange) {
+                    // console.log('Interval changed:', { sellerId, newInterval: Number(e.target.value) });
                     onIntervalChange(sellerId, Number(e.target.value));
                   }
                 }}
                 className={styles.selectInterval}
               >
-                <option value={6}>Every 6 hours</option>
+                <option value={24}>Every 24 hours</option>
+                {/* <option value={48}>Every 2 days</option>
+                <option value={168}>Every Week</option> */}
               </select>
             </div>
           )}

@@ -22,21 +22,18 @@ import { initializeWorkerSync, cleanupWorkerSync } from './worker-initialization
  */
 export async function initializeScraperWorker() {
   try {
+
     apiLogger.info('[Scraper Worker] 🔧 Initializing scraper queue processor...');
-    
     // Initialize scraper-specific services (auto-scheduler, job sync, etc.)
     await initializeWorkerSync();
-    
-    // Start processing scraper jobs with configured concurrency
-    // Concurrency setting controls how many sellers can be scraped simultaneously
+    // Start processing scraper jobs with configured concurrency. Concurrency setting controls how many sellers can be scraped simultaneously
     scraperQueue.process(SCRAPER_CONCURRENCY, processScraperJob);
-    
+    //Log concurrency params
     apiLogger.info('[Scraper Worker] Worker concurrency configured', {
       concurrency: SCRAPER_CONCURRENCY,
     });
     
-    // ⭐ CHAINED PIPELINE: Scraper queue event handlers
-    
+    // ⭐ CHAINED PIPELINE: Scraper queue event handlers   
     // Job completed - Emit price detection job
     scraperQueue.on('completed', async (job, result) => {
       apiLogger.info('[Scraper Worker] Job completed', {

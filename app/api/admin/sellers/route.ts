@@ -7,11 +7,28 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createSellerSchema, validateSellerData } from "@/schemas/seller.schema"
+import { auth } from "@/auth"
 
 export async function GET() {
   try {
 
     // TODO: Need to authenticate for admin role in the future
+    const session = await auth();
+    const user = session?.user;
+
+    if (!user || !user.id) {
+      return NextResponse.json({
+        error: "Unauthorized",
+        status: 401
+      })
+    }
+
+    if (user?.role !== "ADMIN") {
+      return NextResponse.json({
+        message: "Forbidden",
+        status: 403
+      })
+    }
 
     // Get sellers with scrape logs and jobs data
     const sellers = await prisma.seller.findMany({
@@ -54,15 +71,15 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     // TODO: Need to authenticate for admin role in the future
-    
+
     const body = await request.json()
 
     // Validate request body using Zod schema
     const validation = validateSellerData(body)
-    
+
     if (!validation.success) {
       return NextResponse.json(
-        { 
+        {
           error: validation.error.message,
           details: validation.error.details,
           fields: validation.error.fields
@@ -75,7 +92,7 @@ export async function POST(request: NextRequest) {
 
     // Check if seller with same name already exists
     const existingSeller = await prisma.seller.findFirst({
-      where: { 
+      where: {
         name: {
           equals: name,
           mode: 'insensitive'
@@ -116,7 +133,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error creating seller:", error)
     return NextResponse.json(
-      { 
+      {
         error: "Failed to create seller",
         details: error instanceof Error ? error.message : "Unknown error"
       },
