@@ -11,6 +11,7 @@ import { CheerioCrawler, Dataset, RequestQueue } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
+import { ACCEPTLANGUAGE, USERAGENT } from '@/scrapers/(common)/constants';
 
 /**
  * SunWestGeneticsProductListScraper
@@ -88,8 +89,8 @@ export async function sunwestgeneticsScraper(
 
     // ✅ STEP 0: Initialize SimplePoliteCrawler and parse robots.txt FIRST
     const politeCrawler = new SimplePoliteCrawler({
-        userAgent: 'GoodSeed-Bot/1.0 (+https://goodseed.ca/contact) Commercial Cannabis Research',
-        acceptLanguage: 'en-US,en;q=0.9'
+        userAgent: USERAGENT,
+        acceptLanguage: ACCEPTLANGUAGE
     });
 
     // ✅ Parse robots.txt at initialization

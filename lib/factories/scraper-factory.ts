@@ -26,7 +26,7 @@ import { MaryJanesGardenScraper } from '@/scrapers/maryjanesgarden/core/maryjane
 import { MJSEEDSCANADA_PRODUCT_CARD_SELECTORS } from '@/scrapers/mjseedscanada/core/selector';
 import MJSeedCanadaScraper from '@/scrapers/mjseedscanada/core/mJSeedScanadaScraper';
 import { ROCKETSEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/rocketseeds/core/selector';
-import RocketSeedsScraper from '@/scrapers/rocketseeds/core/rockerSeedScraper';
+import RocketSeedsScraper from '@/scrapers/rocketseeds/core/rocketSeedScraper';
 import CropKingSeedsScraper from '@/scrapers/cropkingseeds/core/cropkingSeedScraper';
 import { CROPKINGSEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/cropkingseeds/core/selectors';
 import CANUK_SEEDS_PRODUCT_SELECTORS from '@/scrapers/canukseeds/core/selectors';

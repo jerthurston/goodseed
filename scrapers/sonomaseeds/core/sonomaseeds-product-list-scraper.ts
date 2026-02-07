@@ -92,12 +92,12 @@ export async function sonomaSeedsProductListScraper(
     const dataset = await Dataset.open(datasetName);
     const requestQueue = await RequestQueue.open(`sonoma-queue-${runId}`);
 
-    // ✅ STEP 0: Initialize polite crawler and parse robots.txt FIRST
+    // ✅ STEP 0: Initialize polite crawler 
     const politeCrawler = new SimplePoliteCrawler({
         userAgent: USERAGENT,
         acceptLanguage: ACCEPTLANGUAGE,
     });
-
+    //and parse robots.txt
     const robotsRules = await politeCrawler.parseRobots(baseUrl);
     const { crawlDelay, disallowedPaths, allowedPaths, hasExplicitCrawlDelay } = robotsRules;
 
