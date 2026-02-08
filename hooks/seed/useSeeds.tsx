@@ -26,19 +26,19 @@ export function useFetchSeeds(options: UseSeedsInputOptions): UseSeedsOutputResu
             const startTime = Date.now();
             apiLogger.logRequest('useSeeds.queryFn', { options });
             try {
+                
                 const data = await SeedService.fetchSeeds(options);
                 const duration = Date.now() - startTime;
-                apiLogger.logResponse('useSeeds.queryFn', {}, {
-                    rawSeedsCount: data.seeds.length,
-                    duration: `${duration}ms`,
-                    cacheSource: 'DATABASE_HIT'
-                });
+
                 apiLogger.logResponse('useSeeds.queryFn', {}, {
                     rawSeedsCount: data.seeds.length,
                     pagination: data.pagination,
-                    duration: `${duration}ms`
+                    duration: `${duration}ms`,
+                    cacheSource: 'DATABASE_HIT'
                 });
+
                 return data;
+
             } catch (error) {
                 apiLogger.logError('❌ [TanStack] Fetch failed:', error as Error);
                 apiLogger.logError('useSeeds.queryFn', error as Error);

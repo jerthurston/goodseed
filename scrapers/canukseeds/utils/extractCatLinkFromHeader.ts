@@ -7,8 +7,6 @@ import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { RobotsRules } from '@/lib/utils/polite-crawler';
 import { checkUrlAgainstRobots } from '@/scrapers/(common)/utils/checkUrlAgainstRobots';
 import { CheerioAPI, CheerioCrawler } from 'crawlee';
-import * as fs from 'fs';
-import * as path from 'path';
 
 /**
  * Extract all category links from Canuk Seeds header HTML
@@ -64,72 +62,85 @@ export async function extractCategoryLinksFromHomepage(
     siteConfig: SiteConfig,
     robotsRules: RobotsRules
 ): Promise<string[]> {
-    return new Promise(async (resolve) => {
-        console.log(`🌐 Fetching homepage: ${siteConfig.baseUrl}`);
+    console.log(`🌐 Fetching homepage: ${siteConfig.baseUrl}`);
     
-        
-        // Tạo crawler để fetch homepage với robots.txt compliance
-        const crawler = new CheerioCrawler({
-            requestHandler: async ({ $ }) => {
-                console.log(`✅ Successfully loaded homepage, extracting links...`);
-                
-                // Gọi function chính để extract links từ CheerioAPI instance
-                const links = extractCategoryLinksFromHeader($, siteConfig.baseUrl, robotsRules);
-                
-                // Filter links theo robots.txt rules
-                if (robotsRules) {
-                    const allowedLinks = links.filter(link => {
-                        const linkPath = new URL(link).pathname;
-                        
-                        // Kiểm tra link có bị disallow không
-                        const isDisallowed = robotsRules.disallowedPaths.some(disallowedPath => {
-                            return linkPath === disallowedPath || linkPath.startsWith(disallowedPath);
-                        });
-                        
-                        if (isDisallowed) {
-                            console.log(`🚫 Link bị chặn: ${link}`);
-                            return false;
-                        }
-                        
-                        return true;
+    // ✅ Khai báo links array NGOÀI request handler để có thể access sau khi crawler xong
+    let extractedLinks: string[] = [];
+    
+    // Tạo crawler để fetch homepage với robots.txt compliance
+    const crawler = new CheerioCrawler({
+        requestHandler: async ({ $ }) => {
+            console.log(`✅ Successfully loaded homepage, extracting links...`);
+            
+            // Gọi function chính để extract links từ CheerioAPI instance
+            const links = extractCategoryLinksFromHeader($, siteConfig.baseUrl, robotsRules);
+            
+            // Filter links theo robots.txt rules
+            if (robotsRules) {
+                const allowedLinks = links.filter(link => {
+                    const linkPath = new URL(link).pathname;
+                    
+                    // Kiểm tra link có bị disallow không
+                    const isDisallowed = robotsRules.disallowedPaths.some(disallowedPath => {
+                        return linkPath === disallowedPath || linkPath.startsWith(disallowedPath);
                     });
                     
-                    console.log(`📋 Filtered links: ${allowedLinks.length}/${links.length} allowed by robots.txt`);
-                    resolve(allowedLinks);
-                } else {
-                    resolve(links);
-                }
-            },
-            failedRequestHandler: async ({ request, error }) => {
-                console.error('Failed to extract links from homepage:', error);
-            },
-            // Set proper headers for requests với robots.txt user-agent
-            requestHandlerTimeoutSecs: 30,
-            maxRequestRetries: 3
-        });
-        
-        // Apply robots.txt crawl delay BEFORE adding request
-        if (robotsRules?.crawlDelay) {
-            console.log(`⏱️ Applying robots.txt crawl delay: ${robotsRules.crawlDelay}ms`);
-            await new Promise(resolve => setTimeout(resolve, robotsRules.crawlDelay));
-        }
-        
-        // Add homepage URL as request với robots.txt compliant headers
-        console.log(`📥 Adding homepage request: ${siteConfig.baseUrl}`);
-        await crawler.addRequests([{ 
-            url: siteConfig.baseUrl,
-            headers: {
-                'User-Agent': robotsRules?.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    if (isDisallowed) {
+                        console.log(`🚫 Link bị chặn: ${link}`);
+                        return false;
+                    }
+                    
+                    return true;
+                });
+                
+                console.log(`📋 Filtered links: ${allowedLinks.length}/${links.length} allowed by robots.txt`);
+                // ✅ Store vào biến ngoài thay vì resolve ngay
+                extractedLinks = allowedLinks;
+            } else {
+                extractedLinks = links;
             }
-        }]);
-        console.log(`✅ Homepage request added successfully`);
-        
-        // Run crawler and AWAIT completion
-        console.log(`🚀 Starting crawler...`);
-        await crawler.run().catch(async (error) => {
-            console.error('❌ Crawler failed:', error);
-            resolve([]); // Resolve with empty array on error
-        });
-        console.log(`✅ Crawler completed`);
+        },
+        failedRequestHandler: async ({ request, error }) => {
+            console.error('Failed to extract links from homepage:', error);
+        },
+        // Set proper headers for requests với robots.txt user-agent
+        requestHandlerTimeoutSecs: 30,
+        maxRequestRetries: 3
     });
+    
+    // Apply robots.txt crawl delay BEFORE adding request
+    if (robotsRules?.crawlDelay) {
+        console.log(`⏱️ Applying robots.txt crawl delay: ${robotsRules.crawlDelay}ms`);
+        await new Promise(resolve => setTimeout(resolve, robotsRules.crawlDelay));
+    }
+    
+    // Add homepage URL as request với robots.txt compliant headers
+    console.log(`📥 Adding homepage request: ${siteConfig.baseUrl}`);
+    await crawler.addRequests([{ 
+        url: siteConfig.baseUrl,
+        headers: {
+            'User-Agent': robotsRules?.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+    }]);
+    console.log(`✅ Homepage request added successfully`);
+    
+    // Run crawler and AWAIT completion
+    console.log(`🚀 Starting crawler...`);
+    try {
+        await crawler.run();
+        console.log(`✅ Crawler completed`);
+        
+        // ✅ Cleanup: Drop internal request queue to prevent conflicts on next run
+        const requestQueue = await crawler.getRequestQueue();
+        if (requestQueue) {
+            await requestQueue.drop();
+            console.log(`🧹 Cleaned up request queue`);
+        }
+    } catch (error) {
+        console.error('❌ Crawler failed:', error);
+        return []; // Return empty array on error
+    }
+    
+    // ✅ Return extracted links after crawler completes
+    return extractedLinks;
 }

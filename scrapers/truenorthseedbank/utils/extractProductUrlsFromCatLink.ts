@@ -41,6 +41,7 @@ export async function extractProductUrlsFromCatLink(
             continue;
         }
         
+        // ✅ Declare pageProductUrls BEFORE creating crawler so it can be accessed via closure
         const pageProductUrls: string[] = [];
         
         apiLogger.info(`📄 Processing page ${currentPage}/${maxPages}: ${pageUrl}`);

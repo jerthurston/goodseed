@@ -18,7 +18,7 @@
 
 import { extractProductFromDetailHTML, extractProductUrlsFromSitemap } from '@/scrapers/mjseedscanada/utils/index';
 import { ProductCardDataFromCrawling, ProductsDataResultFromCrawling } from '@/types/crawl.type';
-import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, Dictionary, ErrorHandler, Log, RequestQueue } from 'crawlee';
+import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dictionary, ErrorHandler, Log, RequestQueue } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
@@ -60,11 +60,13 @@ export async function MJSeedCanadaScraper(
         throw new Error('[MJ Seeds Canada] scrapingSourceUrl is required in sourceContext');
     }
 
-    // Initialize dataset and request queue
+    // ✅ Initialize products array to store scraped data
+    const products: ProductCardDataFromCrawling[] = [];
+    
+    // Initialize request queue (keep for deduplication & retry logic)
     const runId = Date.now();
-    const datasetName = `mjseedscanada-${runId}`;
-    const dataset = await Dataset.open(datasetName);
-    const requestQueue = await RequestQueue.open(`mj-seed-canada-queue-${runId}`);
+    const queueName = `mj-seed-canada-queue-${runId}`;
+    const requestQueue = await RequestQueue.open(queueName);
 
     // ✅ STEP 0: Initialize polite crawler and parse robots.txt FIRST
     const politeCrawler = new SimplePoliteCrawler({
@@ -167,12 +169,8 @@ export async function MJSeedCanadaScraper(
         if (request.userData?.type === 'product') {
             const product = extractProductFromDetailHTML($, siteConfig, request.url);
             if (product) {
-                // Save product to dataset
-                await dataset.pushData({
-                    product,
-                    url: request.url,
-                    extractedAt: new Date().toISOString()
-                });
+                // ✅ Push directly to products array instead of dataset
+                products.push(product);
                 
                 // Increment actual pages count
                 actualPages++;
@@ -238,12 +236,24 @@ export async function MJSeedCanadaScraper(
         }
     );
 
-    // ✅ STEP 8: Run main crawler
+    // ✅ STEP 8: Run main crawler with cleanup
     apiLogger.info(`[MJ Seeds Canada] Starting main crawler...`);
-    await crawler.run();
+    
+    try {
+        await crawler.run();
+    } finally {
+        // ✅ Cleanup: Drop request queue to free up memory/storage
+        try {
+            await requestQueue.drop();
+            apiLogger.debug(`[MJ Seeds Canada] Cleaned up request queue: ${queueName}`);
+        } catch (cleanupError) {
+            apiLogger.logError('[MJ Seeds Canada] Failed to cleanup request queue:', cleanupError as Error, {
+                queueName
+            });
+        }
+    }
 
-    // ✅ STEP 9: Collect results and log summary
-    const products = (await dataset.getData()).items.map(item => item.product);
+    // ✅ STEP 9: Log summary and return results
     const endTime = Date.now();
     const duration = endTime - startTime;
 

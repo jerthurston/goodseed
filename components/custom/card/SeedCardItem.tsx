@@ -12,6 +12,7 @@ import { useAuthModal } from '@/hooks/auth/useAuthModal'
 import SignInModal from '../modals/SignInModal'
 import { PotencyBadge } from '../badge'
 import { Heart } from 'lucide-react'
+import { apiLogger } from '@/lib/helpers/api-logger'
 
 // Component for enhanced potency display with better styling
 
@@ -47,6 +48,7 @@ const SeedCardItem = ({
         e.stopPropagation();
         executeWithAuth(() => onToggleFavorite(seed.id));
     }
+
     return (
         <>
             {/*--> SEED CARD */}

@@ -6,7 +6,7 @@
 
 import { extractProductsFromHTML } from '@/scrapers/sonomaseeds/utils/extractProductsFromHTML';
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { CheerioCrawler, Dataset, RequestQueue } from 'crawlee';
+import { CheerioCrawler, RequestQueue } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
@@ -88,9 +88,12 @@ export async function sonomaSeedsProductListScraper(
     });
 
     const runId = Date.now();
-    const datasetName = `sonoma-${runId}`;
-    const dataset = await Dataset.open(datasetName);
-    const requestQueue = await RequestQueue.open(`sonoma-queue-${runId}`);
+    
+    // ✅ Initialize products array to store scraped data
+    const allProducts: ProductCardDataFromCrawling[] = [];
+    
+    const queueName = `sonoma-queue-${runId}`;
+    const requestQueue = await RequestQueue.open(queueName);
 
     // ✅ STEP 0: Initialize polite crawler 
     const politeCrawler = new SimplePoliteCrawler({
@@ -151,12 +154,10 @@ export async function sonomaSeedsProductListScraper(
             // Check if there's a next page
             const hasNextPage = $(selectors.nextPage).length > 0;
 
-            await dataset.pushData({ 
-                products, 
-                url: request.url, 
-                hasNextPage,
-                maxPages: maxPages // Include maxPages in dataset
-            });
+            // ✅ Push directly to allProducts array instead of dataset
+            allProducts.push(...products);
+            
+            log.debug(`[Sonoma Seeds] Progress: ${allProducts.length} total products collected`);
 
             // ✅ POLITE CRAWLING: Apply delay from parsed robots.txt
             log.debug(`[Sonoma Seeds] ⏱️ Applying crawl delay: ${crawlDelay}ms (${hasExplicitCrawlDelay ? 'robots.txt' : 'default'})`);
@@ -197,56 +198,56 @@ export async function sonomaSeedsProductListScraper(
         // First, crawl page 1 to detect maxPages from pagination  
         const firstPageUrl = `${baseUrl}/shop/`; // Sonoma Seeds main shop page
         await requestQueue.addRequest({ url: firstPageUrl });
-        await crawler.run();
         
-        // Check first page result to get maxPages and products
-        const firstResults = await dataset.getData();
+        try {
+            await crawler.run();
+        } finally {
+            // ✅ Cleanup: Drop request queue to free up memory/storage
+            try {
+                await requestQueue.drop();
+                apiLogger.debug(`[Sonoma Seeds] Cleaned up request queue: ${queueName}`);
+            } catch (cleanupError) {
+                apiLogger.logError('[Sonoma Seeds] Failed to cleanup request queue:', cleanupError as Error, {
+                    queueName
+                });
+            }
+        }
+        
+        // Check collected products from allProducts array
         let detectedMaxPages = 1; // default fallback
         
-        if (firstResults.items.length > 0) {
-            const firstResult = firstResults.items[0] as any;
-            if (firstResult.products && firstResult.products.length > 0) {
-                apiLogger.info(`[Sonoma Seeds] Found ${firstResult.products.length} products on page 1`);
-                
-                // Try to detect pagination from extractProductsFromHTML
-                detectedMaxPages = firstResult.maxPages || 1;
-                apiLogger.info(`[Sonoma Seeds] Detected ${detectedMaxPages} total pages from pagination`);
-                
-                // Now crawl remaining pages (2 to maxPages) if more than 1 page
-                if (detectedMaxPages > 1) {
-                    const remainingUrls: string[] = [];
-                    // Limit to dbMaxPage for safety
-                    const pagesToCrawl = Math.min(detectedMaxPages, dbMaxPage);
-                    for (let page = 2; page <= pagesToCrawl; page++) {
-                        // Sonoma Seeds WooCommerce standard format: /shop/page/2/
-                        remainingUrls.push(`${baseUrl}/shop/page/${page}/`);
-                    }
-                    
-                    if (remainingUrls.length > 0) {
-                        apiLogger.info(`[Sonoma Seeds] 🕷️ Crawling remaining ${remainingUrls.length} pages...`);
-                        for (const url of remainingUrls) {
-                            await requestQueue.addRequest({ url });
-                        }
-                        await crawler.run();
-                    }
+        if (allProducts.length > 0) {
+            apiLogger.info(`[Sonoma Seeds] Found ${allProducts.length} products on page 1`);
+            
+            // Try to detect pagination from extractProductsFromHTML
+            // For simplified version, use dbMaxPage
+            detectedMaxPages = dbMaxPage || 50;
+            apiLogger.info(`[Sonoma Seeds] Will crawl up to ${detectedMaxPages} pages`);
+            
+            // Now crawl remaining pages (2 to maxPages) if more than 1 page
+            if (detectedMaxPages > 1) {
+                const remainingUrls: string[] = [];
+                // Limit to dbMaxPage for safety
+                const pagesToCrawl = Math.min(detectedMaxPages, dbMaxPage);
+                for (let page = 2; page <= pagesToCrawl; page++) {
+                    // Sonoma Seeds WooCommerce standard format: /shop/page/2/
+                    remainingUrls.push(`${baseUrl}/shop/page/${page}/`);
                 }
-                // Set actual pages based on what we actually plan to crawl
-                actualPages = Math.min(detectedMaxPages, dbMaxPage);
-            } else {
-                apiLogger.warn('[Sonoma Seeds] ⚠️ No products found on page 1, using fallback');
+                
+                if (remainingUrls.length > 0) {
+                    apiLogger.info(`[Sonoma Seeds] 🕷️ Crawling remaining ${remainingUrls.length} pages...`);
+                    for (const url of remainingUrls) {
+                        await requestQueue.addRequest({ url });
+                    }
+                    await crawler.run();
+                }
             }
+            // Set actual pages based on what we actually plan to crawl
+            actualPages = Math.min(detectedMaxPages, dbMaxPage);
         } else {
-            apiLogger.warn('[Sonoma Seeds] ⚠️ No results from page 1 crawl');
+            apiLogger.warn('[Sonoma Seeds] ⚠️ No products found on page 1, using fallback');
         }
     }
-
-    // Collect results from dataset
-    const results = await dataset.getData();
-    const allProducts: ProductCardDataFromCrawling[] = [];
-
-    results.items.forEach((item) => {
-        allProducts.push(...(item as { products: ProductCardDataFromCrawling[] }).products);
-    });
 
     const duration = Date.now() - startTime;
 

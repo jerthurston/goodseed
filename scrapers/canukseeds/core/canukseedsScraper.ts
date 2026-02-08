@@ -4,7 +4,7 @@ import { apiLogger } from "@/lib/helpers/api-logger"
 import { SimplePoliteCrawler } from "@/lib/utils/polite-crawler";
 import { ACCEPTLANGUAGE, USERAGENT } from "@/scrapers/(common)/constants";
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from "@/types/crawl.type";
-import { Dataset, log, RequestQueue, CheerioCrawler } from "crawlee";
+import { log, RequestQueue, CheerioCrawler } from "crawlee";
 import { extractCategoryLinksFromHomepage } from "../utils/extractCatLinkFromHeader";
 import { extractProductUrlsFromCatLink } from "../utils/extractProductUrlsFromCatLink";
 import { extractProductFromDetailHTML } from "../utils/extractProductFromDetailHTML";
@@ -33,11 +33,14 @@ export async function canukSeedScraper(
     );
 
     const runId = Date.now();
-    // Initialize request queue
-    const requestQueue = await RequestQueue.open(`${sourceContext?.sourceName}-queue-${runId}`);
-    // Initialize dataset
-    const datasetName = `${sourceContext?.sourceName}-dataset-${runId}`;
-    const dataset = await Dataset.open(datasetName);
+    
+    // ✅ Initialize products array to store scraped data
+    const products: ProductCardDataFromCrawling[] = [];
+    
+    // Initialize request queue (keep for deduplication & retry logic)
+    const queueName = `${sourceContext?.sourceName}-queue-${runId}`;
+    const requestQueue = await RequestQueue.open(queueName);
+    
     // Initialize polited policy
     const politeCrawler = new SimplePoliteCrawler({
         userAgent:USERAGENT,
@@ -144,7 +147,6 @@ export async function canukSeedScraper(
     }
 
     // Step 3: Process product pages and extract data
-    const products: ProductCardDataFromCrawling[] = [];
     let successCount = 0;
     let errorCount = 0;
     
@@ -218,7 +220,20 @@ export async function canukSeedScraper(
         
         // Add all product URLs to crawler
         const urlsToRequest = urlsToProcess.map(url => ({ url }));
-        await productCrawler.run(urlsToRequest);
+        
+        try {
+            await productCrawler.run(urlsToRequest);
+        } finally {
+            // ✅ Cleanup: Drop request queue to free up memory/storage
+            try {
+                await requestQueue.drop();
+                apiLogger.debug(`[Canuk Seeds] Cleaned up request queue: ${queueName}`);
+            } catch (cleanupError) {
+                apiLogger.logError('[Canuk Seeds] Failed to cleanup request queue:', cleanupError as Error, {
+                    queueName
+                });
+            }
+        }
         
         apiLogger.info(`🎉 [CanukSeedsScraper] Product extraction completed!`);
         apiLogger.info(`📊 Success: ${successCount}, Errors: ${errorCount}, Total: ${urlsToProcess.length}`);

@@ -13,13 +13,18 @@
  * - Input: https://rocketseeds.com/shop/
  * - Process: Crawl page 1, 2, 3...39
  * - Output: ~624 product URLs (39 pages × ~16 products/page)
+ * 
+ * OPTIMIZATION (v2):
+ * - ✅ Removed Dataset (unnecessary intermediate storage)
+ * - ✅ Uses Set<string> for automatic URL deduplication
+ * - ✅ Keeps RequestQueue for crawl state management
+ * - ✅ Automatic cleanup to free memory
  */
 
 import { apiLogger } from "@/lib/helpers/api-logger";
 import { RobotsRules, SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
 import { USERAGENT } from "@/scrapers/(common)/constants";
-import { CheerioCrawler, Dataset, RequestQueue } from 'crawlee';
-import { userAgent } from "next/server";
+import { CheerioCrawler, RequestQueue } from 'crawlee';
 
 // ========================================
 // CONFIGURATION CONSTANTS (Top of file for easy management and testing)
@@ -130,8 +135,8 @@ export async function extractProductUrls(
         apiLogger.info(`${LOG_PREFIX} Starting pagination crawl from: ${scrapingSourceUrl}`);
 
         const runId = Date.now();
-        const dataset = await Dataset.open(`${sourceName}-${runId}`);
-        const requestQueue = await RequestQueue.open(`${sourceName}-url-queue-${runId}`);
+        const queueName = `${sourceName}-url-queue-${runId}`;
+        const requestQueue = await RequestQueue.open(queueName);
 
         const allProductUrls = new Set<string>();
         let totalPages = 1;
@@ -210,12 +215,8 @@ export async function extractProductUrls(
 
                 pagesProcessed++;
 
-                // Save to dataset
-                await dataset.pushData({
-                    pageUrl: request.url,
-                    productUrls: pageProductUrls,
-                    productsFound: pageProductUrls.length
-                });
+                // ✅ No need to save to dataset - we're collecting in allProductUrls Set
+                log.info(`${LOG_PREFIX} Progress: ${pagesProcessed}/${totalPages} pages processed, ${allProductUrls.size} unique products found`);
             },
             maxConcurrency: 1, // Sequential crawling for politeness
             maxRequestsPerMinute,
@@ -236,7 +237,20 @@ export async function extractProductUrls(
         await requestQueue.addRequest({ url: firstPageUrl });
 
         apiLogger.info(`${LOG_PREFIX} Starting crawler...`);
-        await crawler.run();
+        
+        try {
+            await crawler.run();
+        } finally {
+            // ✅ Cleanup: Drop request queue to free up memory/storage
+            try {
+                await requestQueue.drop();
+                apiLogger.debug(`${LOG_PREFIX} Cleaned up request queue: ${queueName}`);
+            } catch (cleanupError) {
+                apiLogger.logError(`${LOG_PREFIX} Failed to cleanup request queue:`, cleanupError as Error, {
+                    queueName
+                });
+            }
+        }
 
         // Convert Set to Array
         const productUrlsArray = Array.from(allProductUrls);

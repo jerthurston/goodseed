@@ -40,9 +40,10 @@ export async function extractProductUrlsFromCatLink(
             continue;
         }
         
+        // ✅ Khai báo pageProductUrls TRƯỚC khi tạo crawler để có thể access sau khi crawler xong
         const pageProductUrls: string[] = [];
         
-        apiLogger.info(`� Processing page ${currentPage}/${maxPages}: ${pageUrl}`);
+        apiLogger.info(`📃 Processing page ${currentPage}/${maxPages}: ${pageUrl}`);
     
         const crawler = new CheerioCrawler({
             requestHandlerTimeoutSecs: 60,
@@ -167,6 +168,12 @@ export async function extractProductUrlsFromCatLink(
         try {
             // Process the current page
             await crawler.run([pageUrl]);
+            
+            // ✅ Cleanup: Drop internal request queue to prevent conflicts
+            const requestQueue = await crawler.getRequestQueue();
+            if (requestQueue) {
+                await requestQueue.drop();
+            }
             
             // Add unique URLs to the overall collection (excluding special markers)
             for (const url of pageProductUrls) {

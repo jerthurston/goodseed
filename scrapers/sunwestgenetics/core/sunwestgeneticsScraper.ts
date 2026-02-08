@@ -7,7 +7,7 @@
 
 import { extractProductsFromHTML } from '@/scrapers/sunwestgenetics/utils/extractProductsFromHTML';
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { CheerioCrawler, Dataset, RequestQueue } from 'crawlee';
+import { CheerioCrawler, RequestQueue } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
@@ -15,35 +15,6 @@ import { ACCEPTLANGUAGE, USERAGENT } from '@/scrapers/(common)/constants';
 
 /**
  * SunWestGeneticsProductListScraper
- * 
- * Nhiệm vụ chính:
- * 1. Crawl danh sách sản phẩm từ SunWest Genetics (product listing pages)
- * 2. Hỗ trợ 2 chế độ:
- *    - Fixed mode: Crawl số trang cố định (maxPages > 0)
- *    - Auto mode: Crawl tự động đến hết trang (maxPages = 0)
- * 
- * 3. Extract thông tin từ product sections:
- *    - Tên sản phẩm, URL, slug
- *    - Hình ảnh
- *    - Strain type (Indica Dominant Hybrid, Sativa Dominant Hybrid, Balanced Hybrid, etc.)
- *    - Rating và review count từ "Rated X.XX out of 5 based on N customer ratings"
- *    - THC/CBD levels với parsing thông minh từ text patterns
- *    - Flowering time, growing level
- *    - Pricing với pack sizes (5, 10, 25 seeds) từ "Pack 5 10 25 $65.00 – $240.00"
- * 
- * 4. Sử dụng CheerioCrawler:
- *    - Parse HTML sections thay vì structured product cards
- *    - Text-based extraction cho SunWest Genetics format
- * 
- * 5. Trả về CategoryResultFromCrawling:
- *    - Danh sách products[]
- *    - Metadata (totalProducts, totalPages, duration)
- * 
- * Lưu ý:
- * - Không lưu database, chỉ crawl và return data
- * - Để lưu DB, dùng SaveDbService
- * - Để crawl theo batch, dùng scrape-batch.ts script
- * 
  * SunWestGeneticsProductListScraper
     │
     ├─> Fetch page 1, 2, 3... (CheerioCrawler)
@@ -80,9 +51,12 @@ export async function sunwestgeneticsScraper(
     });
 
     const runId = Date.now();
-    const datasetName = `sunwest-${runId}`;
-    const dataset = await Dataset.open(datasetName);
-    const requestQueue = await RequestQueue.open(`sunwest-queue-${runId}`);
+    
+    // ✅ Initialize products array to store scraped data
+    const allProducts: ProductCardDataFromCrawling[] = [];
+    
+    const queueName = `sunwest-queue-${runId}`;
+    const requestQueue = await RequestQueue.open(queueName);
 
     let actualPages = 0;
     const emptyPages = new Set<string>();
@@ -145,12 +119,10 @@ export async function sunwestgeneticsScraper(
             const hasNextPage = $(selectors.nextPage).length > 0;
             log.info(`[SunWest Product List] Has next page: ${hasNextPage}`);
 
-            await dataset.pushData({ 
-                products, 
-                url: request.url, 
-                hasNextPage,
-                maxPages: maxPages // Include maxPages in dataset
-            });
+            // ✅ Push directly to allProducts array instead of dataset
+            allProducts.push(...products);
+            
+            log.info(`[SunWest Product List] Progress: ${allProducts.length} total products collected`);
 
             // ✅ POLITE CRAWLING: Apply delay from parsed robots.txt
             log.debug(`[SunWest Product List] ⏱️ Applying crawl delay: ${crawlDelay}ms (${hasExplicitCrawlDelay ? 'robots.txt' : 'default'})`);
@@ -162,66 +134,46 @@ export async function sunwestgeneticsScraper(
         maxRequestRetries: 3,
     });
 
-    // Auto-crawl mode: Start with startPage to detect maxPages, then crawl remaining pages
-    apiLogger.info(`[SunWest Product List] Starting crawl with page ${startPage} to detect pagination...`);
-        
-    // First, crawl startPage to detect maxPages from pagination  
-    const firstPageUrl = startPage === 1 ? 
-        `${baseUrl}/shop/` : 
-        `${baseUrl}/shop/page/${startPage}/`;
+    // Auto-crawl mode: Detect pagination first, then add all URLs before running crawler
+    apiLogger.info(`[SunWest Product List] Preparing to crawl pages ${startPage} to ${endPage || dbMaxPage || 50}...`);
     
-    await requestQueue.addRequest({ url: firstPageUrl });
-    await crawler.run();
+    // Determine effective end page based on mode
+    const effectiveEndPage = endPage ? Math.min(endPage, dbMaxPage || 200) : (dbMaxPage || 50);
     
-    // Check first page result to get maxPages and products
-    const firstResults = await dataset.getData();
-    let detectedMaxPages = startPage; // default fallback
-    
-    if (firstResults.items.length > 0) {
-        const firstResult = firstResults.items[0] as any;
-        if (firstResult.products && firstResult.products.length > 0) {
-            apiLogger.info(`[SunWest Product List] Found ${firstResult.products.length} products on page ${startPage}`);
-            
-            // Try to detect pagination from extractProductsFromHTML
-            detectedMaxPages = firstResult.maxPages || startPage;
-            apiLogger.info(`[SunWest Product List] Detected ${detectedMaxPages} total pages from pagination`);
-            
-            // Calculate effective end page
-            const effectiveEndPage = endPage ? Math.min(endPage, detectedMaxPages) : detectedMaxPages;
-            
-            // Now crawl remaining pages (startPage+1 to effectiveEndPage) if needed
-            if (effectiveEndPage > startPage) {
-                const remainingUrls: string[] = [];
-                
-                for (let page = startPage + 1; page <= effectiveEndPage; page++) {
-                    // SunWest Genetics WooCommerce standard format: /shop/page/2/
-                    remainingUrls.push(`${baseUrl}/shop/page/${page}/`);
-                }
-                
-                if (remainingUrls.length > 0) {
-                    apiLogger.info(`[SunWest Product List] Crawling remaining ${remainingUrls.length} pages (${startPage + 1} to ${effectiveEndPage})...`);
-                    for (const url of remainingUrls) {
-                        await requestQueue.addRequest({ url });
-                    }
-                    await crawler.run();
-                }
-            }
-            
-            actualPages = effectiveEndPage - startPage + 1;
-        } else {
-            apiLogger.warn(`[SunWest Product List] No products found on page ${startPage}, using fallback`);
-        }
-    } else {
-        apiLogger.warn(`[SunWest Product List] No results from page ${startPage} crawl`);
+    // Add all page URLs to queue BEFORE running crawler
+    const pagesToCrawl: string[] = [];
+    for (let page = startPage; page <= effectiveEndPage; page++) {
+        const pageUrl = page === 1 ? 
+            `${baseUrl}/shop/` : 
+            `${baseUrl}/shop/page/${page}/`;
+        pagesToCrawl.push(pageUrl);
     }
-
-    // Collect results from dataset
-    const results = await dataset.getData();
-    const allProducts: ProductCardDataFromCrawling[] = [];
-
-    results.items.forEach((item) => {
-        allProducts.push(...(item as { products: ProductCardDataFromCrawling[] }).products);
-    });
+    
+    apiLogger.info(`[SunWest Product List] Adding ${pagesToCrawl.length} pages to queue (${startPage} to ${effectiveEndPage})`);
+    
+    for (const url of pagesToCrawl) {
+        await requestQueue.addRequest({ url });
+    }
+    
+    // Run crawler once with all URLs in queue
+    try {
+        await crawler.run();
+        actualPages = pagesToCrawl.length;
+    } finally {
+        // ✅ Cleanup: Drop request queue to free up memory/storage
+        try {
+            await requestQueue.drop();
+            apiLogger.debug(`[SunWest Product List] Cleaned up request queue: ${queueName}`);
+        } catch (cleanupError) {
+            apiLogger.logError('[SunWest Product List] Failed to cleanup request queue:', cleanupError as Error, {
+                queueName
+            });
+        }
+    }
+    
+    if (allProducts.length === 0) {
+        apiLogger.warn(`[SunWest Product List] No products found across ${actualPages} pages`);
+    }
 
     const duration = Date.now() - startTime;
 

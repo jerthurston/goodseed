@@ -11,11 +11,17 @@
  * - Uses specification_individual structure instead of specifications table
  * - Icon-based field targeting for cannabis data
  * - pvtfw_variant_table_block for pricing extraction
+ * 
+ * OPTIMIZATION (v2):
+ * - ✅ Removed Dataset (unnecessary intermediate storage)
+ * - ✅ Uses simple array for product collection
+ * - ✅ Keeps RequestQueue for deduplication, retry, and state management
+ * - ✅ Automatic cleanup with finally block to free memory
  */
 
 import { extractProductFromDetailHTML, extractProductUrls } from '@/scrapers/rocketseeds/utils/index';
 import { ProductCardDataFromCrawling, ProductsDataResultFromCrawling } from '@/types/crawl.type';
-import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, ErrorHandler, Log, RequestQueue, Dataset, Dictionary } from 'crawlee';
+import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, ErrorHandler, Log, RequestQueue } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
@@ -79,11 +85,13 @@ export async function RocketSeedsScraper(
         scrapingSourceUrl: sourceContext?.scrapingSourceUrl
     });
 
-    // Initialize request queue
+    // ✅ Initialize products array to store scraped data
+    const products: ProductCardDataFromCrawling[] = [];
+    
+    // Initialize request queue (keep for deduplication & retry logic)
     const runId = Date.now();
-    const datasetName = `rocketseeds-${runId}`;
-    const dataset = await Dataset.open(datasetName);
-    const requestQueue = await RequestQueue.open(`${sourceName}-${runId}`);
+    const queueName = `${sourceName}-${runId}`;
+    const requestQueue = await RequestQueue.open(queueName);
     
     // STEP1: Initialize polite crawler policy
     const politeCrawler = new SimplePoliteCrawler({
@@ -182,12 +190,8 @@ export async function RocketSeedsScraper(
         const product = extractProductFromDetailHTML($, siteConfig, request.url);
         
         if (product) {
-            // Save product to dataset
-            await dataset.pushData({
-                product,
-                url: request.url,
-                extractedAt: new Date().toISOString()
-            });
+            // ✅ Push directly to products array instead of dataset
+            products.push(product);
             
             actualPages++;
             log.info(`[Rocket Seeds] ✅ Extracted: ${product.name} (${actualPages}/${urlsToProcess.length})`);
@@ -252,12 +256,24 @@ export async function RocketSeedsScraper(
         ]
     });
 
-    // STEP 7: Run main crawler
+    // STEP 7: Run main crawler with cleanup
     apiLogger.info(`[Rocket Seeds] Starting main crawler to process ${urlsToProcess.length} products...`);
-    await crawler.run();
+    
+    try {
+        await crawler.run();
+    } finally {
+        // ✅ Cleanup: Drop request queue to free up memory/storage
+        try {
+            await requestQueue.drop();
+            apiLogger.debug(`[Rocket Seeds] Cleaned up request queue: ${queueName}`);
+        } catch (cleanupError) {
+            apiLogger.logError('[Rocket Seeds] Failed to cleanup request queue:', cleanupError as Error, {
+                queueName
+            });
+        }
+    }
 
-    // STEP 8: Extract products and log summary
-    const products = (await dataset.getData()).items.map(item => item.product);
+    // STEP 8: Log summary and return results
     const endTime = Date.now();
     const duration = endTime - startTime;
 
