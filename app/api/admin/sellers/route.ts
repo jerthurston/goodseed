@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createSellerSchema, validateSellerData } from "@/schemas/seller.schema"
 import { auth } from "@/auth"
+import { apiLogger } from "@/lib/helpers/api-logger";
 
 export async function GET() {
   try {
@@ -36,21 +37,45 @@ export async function GET() {
         id: true,
         name: true,
         url: true,
+        affiliateTag: true,
         isActive: true,
         autoScrapeInterval: true,
+        lastScraped: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
         scrapeLogs: {
           orderBy: { timestamp: "desc" },
           take: 1, // Get latest scrape log
         },
         scrapeJobs: {
           orderBy: { createdAt: "desc" },
-          take: 10, // Get last 10 jobs for stats
+          take: 10, // Get last 10 jobs for display
+        },
+        seedProducts: {
+          select: {
+            id: true,
+          },
         },
         seedCategories: {
           include: {
             seedProducts: true,
           },
         },
+        // Count all finished jobs for accurate totalRuns
+        _count: {
+          select: {
+            scrapeJobs: {
+              where: {
+                OR: [
+                  { status: 'COMPLETED' },
+                  { status: 'FAILED' },
+                  { status: 'CANCELLED' }
+                ]
+              }
+            }
+          }
+        }
       },
       orderBy: { name: "asc" },
     })
@@ -131,7 +156,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error) {
-    console.error("Error creating seller:", error)
+    apiLogger.logError("Error creating seller:", error as Error)
     return NextResponse.json(
       {
         error: "Failed to create seller",

@@ -246,6 +246,7 @@ export function extractProductFromDetailHTML(
 
         // Extract pricing from variant table using versionsRows selector
         const pricings: Array<{ totalPrice: number; packSize: number; pricePerSeed: number }> = [];
+        let invalidRows = 0; // Track invalid rows for summary
         
         // Target pricing rows using versionsRows selector from config
         const $priceRows = $(selectors.versionsRows);
@@ -285,9 +286,15 @@ export function extractProductFromDetailHTML(
                     });
                     apiLogger.debug(`💰 [Pricing] Row ${index + 1}: ${packSize} seeds = $${finalPrice} ($${pricePerSeed.toFixed(2)}/seed)`);
                 } else {
-                    apiLogger.warn(`💰 [Pricing] Row ${index + 1}: Invalid data - packText: "${packText}", finalPrice: ${finalPrice}`);
+                    // Collect invalid rows for summary instead of logging each one
+                    invalidRows++;
                 }
             });
+            
+            // Log summary of invalid rows if any
+            if (invalidRows > 0) {
+                apiLogger.warn(`💰 [Pricing] Skipped ${invalidRows} invalid rows (missing pack size or price)`);
+            }
         } else {
             apiLogger.warn('💰 [Pricing] No variant table rows found');
         }

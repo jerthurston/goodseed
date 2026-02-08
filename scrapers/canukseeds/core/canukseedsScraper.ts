@@ -1,13 +1,51 @@
-import { SiteConfig } from "@/lib/factories/scraper-factory";
-import { apiLogger } from "@/lib/helpers/api-logger"
-;
-import { SimplePoliteCrawler } from "@/lib/utils/polite-crawler";
-import { ACCEPTLANGUAGE, USERAGENT } from "@/scrapers/(common)/constants";
-import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from "@/types/crawl.type";
-import { log, RequestQueue, CheerioCrawler } from "crawlee";
-import { extractCategoryLinksFromHomepage } from "../utils/extractCatLinkFromHeader";
-import { extractProductUrlsFromCatLink } from "../utils/extractProductUrlsFromCatLink";
-import { extractProductFromDetailHTML } from "../utils/extractProductFromDetailHTML";
+/**
+ * Canuk Seeds Product List Scraper (Refactored with CommonCrawler Pattern)
+ * 
+ * ARCHITECTURE OVERVIEW:
+ * - Uses CommonCrawler infrastructure pattern for reusability
+ * - Focuses only on Canuk Seeds-specific extraction logic
+ * - Uses Magento/WooCommerce standard structure
+ * - All common functionality follows best practices
+ * 
+ * DIFFERENCES FROM OTHER SCRAPERS:
+ * - Uses Canuk Seeds specific HTML structure
+ * - Query parameter pagination format (?p=N)
+ * - Magento-based product attributes extraction
+ * 
+ * OPTIMIZATION (v2):
+ * - ✅ Removed Dataset (unnecessary intermediate storage)
+ * - ✅ Uses simple array for product collection
+ * - ✅ Keeps RequestQueue for deduplication, retry, and state management
+ * - ✅ Automatic cleanup with finally block to free memory
+ */
+
+import { extractProductFromDetailHTML, extractProductUrls } from '@/scrapers/canukseeds/utils/index';
+import { ProductCardDataFromCrawling, ProductsDataResultFromCrawling } from '@/types/crawl.type';
+import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, ErrorHandler, Log, RequestQueue } from 'crawlee';
+import { SiteConfig } from '@/lib/factories/scraper-factory';
+import { apiLogger } from '@/lib/helpers/api-logger';
+import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
+import { ACCEPTLANGUAGE, USERAGENT } from '@/scrapers/(common)/constants';
+
+/**
+ * Filter URLs by robots.txt disallowed paths
+ */
+function filterUrlsByRobotsTxt(urls: string[], disallowedPaths: string[]): string[] {
+    return urls.filter(url => {
+        const urlPath = new URL(url).pathname;
+        return !disallowedPaths.some(disallowedPath => urlPath.startsWith(disallowedPath));
+    });
+}
+
+/**
+ * CanukSeedsProductListScraper - Site-specific implementation using CommonCrawler pattern
+ * 
+ * RESPONSIBILITIES:
+ * 1. 🕷️ Extract products from Canuk Seeds (product listing pages)  
+ * 2. 📄 Support pagination-based URL extraction
+ * 3. 📋 Extract cannabis-specific data with Canuk Seeds structure
+ * 4. ⚡ Use CommonCrawler infrastructure pattern
+ */
 
 export async function canukSeedScraper(
     siteConfig: SiteConfig,
@@ -17,241 +55,249 @@ export async function canukSeedScraper(
         scrapingSourceUrl: string;
         sourceName: string;
         dbMaxPage: number;
-    },
+    }
 ): Promise<ProductsDataResultFromCrawling> {
+
     const startTime = Date.now();
-    const {selectors,baseUrl} = siteConfig;
+    const { baseUrl } = siteConfig;
 
-    // DEBUGLOG: 
-    apiLogger.debug(
-        `[CanukSeedsScraper] starting to scrape with siteConfig`,{
-            name:siteConfig.name,
-            baseUrl,
-            isImplemented:siteConfig.isImplemented,
-            scrapingSourceUrl:sourceContext?.scrapingSourceUrl
-        }
-    );
+    if (!sourceContext) {
+        throw new Error('[Canuk Seeds Scraper] sourceContext is required');
+    }
 
-    const runId = Date.now();
+    const {
+        scrapingSourceUrl,
+        sourceName,
+        dbMaxPage
+    } = sourceContext;
+
+    // Determine scraping mode
+    const isTestMode = 
+        startPage !== null && 
+        endPage !== null && 
+        startPage !== undefined && 
+        endPage !== undefined;
     
+    // Debug log
+    apiLogger.debug('[Canuk Seeds Scraper] Starting with siteConfig', {
+        name: siteConfig.name,
+        baseUrl,
+        isImplemented: siteConfig.isImplemented,
+        scrapingSourceUrl: sourceContext?.scrapingSourceUrl
+    });
+
     // ✅ Initialize products array to store scraped data
     const products: ProductCardDataFromCrawling[] = [];
     
     // Initialize request queue (keep for deduplication & retry logic)
-    const queueName = `${sourceContext?.sourceName}-queue-${runId}`;
+    const runId = Date.now();
+    const queueName = `${sourceName}-${runId}`;
     const requestQueue = await RequestQueue.open(queueName);
     
-    // Initialize polited policy
+    // STEP 1: Initialize polite crawler policy
     const politeCrawler = new SimplePoliteCrawler({
-        userAgent:USERAGENT,
-        acceptLanguage:ACCEPTLANGUAGE,
+        userAgent: USERAGENT,
+        acceptLanguage: ACCEPTLANGUAGE
     });
 
-    const robotsRules = await politeCrawler.parseRobots(baseUrl);
-    const { crawlDelay, disallowedPaths, allowedPaths, userAgent, hasExplicitCrawlDelay } = robotsRules;
+    // Get headers from politeCrawler
+    const headers = politeCrawler.getHeaders();
 
-    // Log robots.txt rules for debugging
-    apiLogger.info(`[CanukSeedsScraper] Robots.txt rules loaded:`, {
+    // ✅ Parse robots.txt FIRST for polite crawling compliance
+    const robotsRules = await politeCrawler.parseRobots(baseUrl);
+    const { 
+        crawlDelay, // Crawl delay in milliseconds
+        disallowedPaths, // List of disallowed paths
+        allowedPaths, // List of allowed paths
+        hasExplicitCrawlDelay // Whether there is an explicit crawl delay
+    } = robotsRules;
+
+    apiLogger.info(`[Canuk Seeds] Robots.txt rules loaded:`, {
         crawlDelay: `${crawlDelay}ms`,
         hasExplicitCrawlDelay,
         disallowedCount: disallowedPaths.length,
         allowedCount: allowedPaths.length,
-        userAgent
+        userAgent: USERAGENT
     });
 
-    // Initialize constants
     let actualPages = 0;
     let productUrls: string[] = [];
     let urlsToProcess: string[] = [];
-
-    // Check if this is test quick mode (startPage & endPage provided)
-    const isTestQuickMode = startPage !== null && startPage !== undefined && 
-                           endPage !== null && endPage !== undefined;
-
-    // Step 1: Add product URLs to request queue
+    
+    // STEP 2: Extract product URLs from pagination pages
     try {
-        // 1.1 Lấy được array product url từ việc extract các category link ở header
-        const catLinkArr = await extractCategoryLinksFromHomepage(siteConfig , robotsRules);
-        apiLogger.info(`[CanukSeedsScraper] extracted ${catLinkArr.length} category links`);
+        apiLogger.info(`[Canuk Seeds] Extracting product URLs from: ${scrapingSourceUrl}`);
         
-        // Determine how many categories to crawl
-        // Test mode: Only first category with limited pages
-        // Auto/Manual mode: All categories
-        const categoriesToCrawl = isTestQuickMode ? [catLinkArr[0]] : catLinkArr;
-        const maxPagesPerCategory = isTestQuickMode 
-            ? (endPage! - startPage! + 1)  // Test: Use startPage/endPage range
-            : sourceContext?.dbMaxPage;     // Auto/Manual: Use dbMaxPage from config
+        // 🧪 TEST MODE: Only crawl 2 pagination pages for faster testing
+        const maxPagesToTest = isTestMode ? 2 : undefined;
         
-        apiLogger.info(`[CanukSeedsScraper] Crawling mode: ${isTestQuickMode ? '🧪 TEST' : '🚀 AUTO/MANUAL'}`, {
-            totalCategories: catLinkArr.length,
-            categoriesToCrawl: categoriesToCrawl.length,
-            maxPagesPerCategory,
-            pageRange: isTestQuickMode ? `${startPage}-${endPage}` : 'all'
-        });
+        // IMPORTANT: Call extractProductUrls to crawl all pagination pages and get product URLs
+        productUrls = await extractProductUrls(sourceContext, maxPagesToTest, robotsRules, headers, baseUrl);
         
-        // Process categories
-        for (let i = 0; i < categoriesToCrawl.length; i++) {
-            const catLink = categoriesToCrawl[i];
-            apiLogger.debug(`📂 Processing category ${i + 1}/${categoriesToCrawl.length}: ${catLink}`);
-            
-            try {
-                const productUrls = await extractProductUrlsFromCatLink(
-                    catLink, 
-                    maxPagesPerCategory, 
-                    robotsRules
-                );
+        apiLogger.info(`[Canuk Seeds] Extracted ${productUrls.length} product URLs from pagination pages`);
 
-                // Add unique URLs to processing list
-                const newUrls = productUrls.filter(url => !urlsToProcess.includes(url));
-                urlsToProcess.push(...newUrls);
-                
-                apiLogger.info(`✅ Category ${i + 1} completed. Found ${productUrls.length} products (${newUrls.length} new). Total: ${urlsToProcess.length}`);
-                
-                // Polite delay between categories (skip for last category)
-                if (i < categoriesToCrawl.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                }
-                
-            } catch (categoryError) {
-                apiLogger.warn(`⚠️ Failed to process category ${catLink}:`, { 
-                    error: categoryError instanceof Error ? categoryError.message : String(categoryError) 
-                });
-                // Continue with next category
+        // ✅ Filter URLs against robots.txt
+        urlsToProcess = filterUrlsByRobotsTxt(productUrls, disallowedPaths);
+        
+        apiLogger.info(`[Canuk Seeds] Robots.txt filtering results:`, { 
+            total: productUrls.length, 
+            allowed: urlsToProcess.length, 
+            blocked: productUrls.length - urlsToProcess.length
+        });
+
+        // ✅ TEST MODE: Limit number of products for testing
+        if (isTestMode && startPage !== null && endPage !== null) {
+            const limitCount = endPage - startPage + 1;
+            urlsToProcess = urlsToProcess.slice(0, limitCount);
+            
+            apiLogger.info(`[Canuk Seeds] TEST MODE: Limited to ${limitCount} products (startPage: ${startPage}, endPage: ${endPage})`);
+        }
+
+        // Add filtered product URLs to queue
+        for (const productUrl of urlsToProcess) {
+            await requestQueue.addRequest({
+                url: productUrl,
+                userData: { type: 'product' }
+            });
+        }
+
+        apiLogger.info(`[Canuk Seeds] Added ${urlsToProcess.length} product URLs to crawl queue`);
+
+    } catch (error) {
+        apiLogger.logError('[Canuk Seeds] Failed to extract product URLs:', error as Error, {
+            scrapingSourceUrl
+        });
+        throw new Error(`Failed to extract product URLs: ${error}`);
+    }
+
+    // STEP 3: Request handler - Process each product detail page
+    async function canukSeedsRequestHandler(context: CheerioCrawlingContext): Promise<void> {
+        const { $, request, log } = context;
+
+        log.info(`[Canuk Seeds] Processing product: ${request.url}`);
+        
+        // 🐛 DEBUG: Log HTML length to diagnose extraction failures
+        const htmlLength = $.html().length;
+        log.info(`[Canuk Seeds] HTML length: ${htmlLength} characters`);
+        
+        // 🐛 DEBUG: Check if product name selector works
+        const productNameElement = $(siteConfig.selectors.productName);
+        log.info(`[Canuk Seeds] Product name selector found: ${productNameElement.length} elements`);
+        if (productNameElement.length > 0) {
+            const productNameText = productNameElement.first().text().trim();
+            log.info(`[Canuk Seeds] Product name text: "${productNameText}"`);
+        }
+        
+        const product = extractProductFromDetailHTML($, siteConfig, request.url);
+        
+        if (product) {
+            // ✅ Push directly to products array instead of dataset
+            products.push(product);
+            
+            actualPages++;
+            log.info(`[Canuk Seeds] ✅ Extracted: ${product.name} (${actualPages}/${urlsToProcess.length})`);
+        } else {
+            log.error(`[Canuk Seeds] ⚠️ Failed to extract: ${request.url} - Check debug logs above for details`);
+        }
+
+        // Apply crawl delay
+        await new Promise(resolve => setTimeout(resolve, crawlDelay));
+    }
+
+    // STEP 4: Error handling
+    const canukSeedsErrorHandler: ErrorHandler<CheerioCrawlingContext> = async (context: CheerioCrawlingContext, error: Error): Promise<void> => {
+        const { request, log }: {
+            request: CheerioCrawlingContext['request'];
+            log: Log;
+        } = context;
+
+        // POLITE CRAWLING: Handle HTTP status codes properly
+        const httpsError = error as any;
+        if (httpsError?.response?.status) {
+            const statusCode: number = httpsError.response.status;
+            const shouldRetry: boolean = politeCrawler.shouldRetryOnStatus(statusCode);
+
+            if (shouldRetry) {
+                const backoffDelay: number = await politeCrawler.handleHttpStatus(statusCode, request.url);
+                log.info(`[Canuk Seeds Scraper] HTTP ${statusCode} for ${request.url}, backing off for ${backoffDelay}ms`);
+
+                await new Promise<void>(resolve => setTimeout(resolve, backoffDelay));
+                throw error;
+            } else {
+                log.error(`[Canuk Seeds Scraper] HTTP ${statusCode} for ${request.url}, not retrying`);
+                throw error;
             }
         }
-        
-        apiLogger.info(`🎉 [CanukSeedsScraper] URL extraction completed! Total unique product URLs: ${urlsToProcess.length}`);
-        
-        if (urlsToProcess.length === 0) {
-            throw new Error('No product URLs were extracted from any category');
-        }
+    };
 
-    } catch (error) {
-        console.error(`❌ [CanukSeedsScraper] Failed to extract product URLs:`, error);
-        throw error;
-    }
+    // ✅ STEP 5: Calculate dynamic rate limiting based on robots.txt
+    const calculatedMaxRate = hasExplicitCrawlDelay 
+        ? Math.floor(60000 / crawlDelay)
+        : 15; // Default 15 req/min if no explicit delay
+    
+    apiLogger.info(`[Canuk Seeds] Dynamic rate limiting:`, {
+        crawlDelay: `${crawlDelay}ms`,
+        hasExplicitCrawlDelay,
+        maxRequestsPerMinute: calculatedMaxRate
+    });
 
-    // Step 2: Add product URLs to request queue
-    try {
-        apiLogger.info(`📋 [CanukSeedsScraper] Adding ${urlsToProcess.length} product URLs to request queue`);
-        
-        for (const url of urlsToProcess) {
-            await requestQueue.addRequest({ url });
-        }
-        
-        apiLogger.info(`✅ [CanukSeedsScraper] All product URLs added to request queue`);
-        
-    } catch (error) {
-        console.error(`❌ [CanukSeedsScraper] Failed to add URLs to request queue:`, error);
-        throw error;
-    }
+    // STEP 6: Create and run crawler with optimized configuration
+    const crawler = new CheerioCrawler({
+        requestQueue,
+        requestHandler: canukSeedsRequestHandler,
+        errorHandler: canukSeedsErrorHandler,
+        maxConcurrency: 1, // Sequential requests for polite crawling
+        maxRequestsPerMinute: calculatedMaxRate, // ✅ Dynamic rate based on robots.txt
+        maxRequestRetries: 3,
+        preNavigationHooks: [
+            async (requestAsBrowserOptions) => {
+                const headers = politeCrawler.getHeaders();
+                Object.assign(requestAsBrowserOptions.headers || {}, headers);
+            }
+        ]
+    });
 
-    // Step 3: Process product pages and extract data
-    let successCount = 0;
-    let errorCount = 0;
+    // STEP 7: Run main crawler with cleanup
+    apiLogger.info(`[Canuk Seeds] Starting main crawler to process ${urlsToProcess.length} products...`);
     
     try {
-        apiLogger.info(`🔄 [CanukSeedsScraper] Starting product data extraction from ${urlsToProcess.length} URLs`);
-        
-        // Calculate optimal maxRequestsPerMinute based on robots.txt crawlDelay
-        // Priority: robots.txt Crawl-delay > intelligent defaults
-        // If robots.txt has explicit Crawl-delay, we MUST respect it (polite crawling)
-        // If no explicit delay, we can be more aggressive while staying polite
-        
-        // Calculate rate limit based on crawl delay
-        // Formula: maxRate = 60000ms / crawlDelay (convert to requests per minute)
-        // Example: crawlDelay=1000ms → maxRate=60 req/min
-        const calculatedMaxRate = hasExplicitCrawlDelay 
-            ? Math.floor(60000 / crawlDelay)  // ✅ PRIORITY: Respect robots.txt
-            : 40;                               // Intelligent default when no explicit limit
-        
-        const maxConcurrency = 2; // 2 concurrent requests for better throughput (same for all modes)
-        
-        apiLogger.info(`[CanukSeedsScraper] Crawler settings (respecting robots.txt):`, {
-            crawlDelayMs: crawlDelay,
+        await crawler.run();
+    } finally {
+        // ✅ Cleanup: Drop request queue to free up memory/storage
+        try {
+            await requestQueue.drop();
+            apiLogger.debug(`[Canuk Seeds] Cleaned up request queue: ${queueName}`);
+        } catch (cleanupError) {
+            apiLogger.logError('[Canuk Seeds] Failed to cleanup request queue:', cleanupError as Error, {
+                queueName
+            });
+        }
+    }
+
+    // STEP 8: Log summary and return results
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+
+    apiLogger.info(`[Canuk Seeds] ✅ Scraping completed successfully:`, {
+        scraped: products.length,
+        saved: actualPages,
+        duration: `${(duration / 1000).toFixed(2)}s`,
+        robotsCompliance: {
+            crawlDelay: `${crawlDelay}ms`,
             hasExplicitCrawlDelay,
             maxRequestsPerMinute: calculatedMaxRate,
-            maxConcurrency,
-            mode: isTestQuickMode ? 'test' : 'auto',
-            strategy: hasExplicitCrawlDelay ? '🤖 robots.txt enforced' : '🧠 intelligent default'
-        });
-        
-        // Create crawler for product data extraction with optimized settings
-        const productCrawler = new CheerioCrawler({
-            requestHandlerTimeoutSecs: 90,
-            maxRequestRetries: 2,
-            maxConcurrency: maxConcurrency, // ✅ Use calculated value
-            maxRequestsPerMinute: calculatedMaxRate, // ✅ Use calculated rate from robots.txt
-            
-            requestHandler: async ({ $, request }) => {
-                try {
-                    apiLogger.debug(`🌐 Processing product: ${request.url}`);
-                    
-                    // ✅ ALWAYS use crawlDelay from robots.txt parsing
-                    // If robots.txt has Crawl-delay → crawlDelay = explicit value
-                    // If no Crawl-delay → crawlDelay = random delay (2000-5000ms from getRandomDelay())
-                    const delaySource = hasExplicitCrawlDelay ? 'robots.txt Crawl-delay' : `intelligent default (${crawlDelay}ms random)`;
-                    apiLogger.debug(`⏱️ Applying polite delay: ${crawlDelay}ms (from ${delaySource})`);
-                    await new Promise(resolve => setTimeout(resolve, crawlDelay));
-                    
-                    // Extract product data using our existing function
-                    const productData = extractProductFromDetailHTML($, siteConfig, request.url);
-                    
-                    if (productData) {
-                        products.push(productData);
-                        successCount++;
-                        apiLogger.debug(`✅ Successfully extracted product: ${productData.name}`);
-                    } else {
-                        errorCount++;
-                        apiLogger.warn(`⚠️ Failed to extract product data from: ${request.url}`);
-                    }
-                    
-                } catch (extractionError) {
-                    errorCount++;
-                    apiLogger.logError(`❌ Error extracting product from ${request.url}:`, extractionError as Error);
-                }
-            },
-            
-            failedRequestHandler: async ({ request, error }) => {
-                errorCount++;
-                apiLogger.logError(`❌ Failed to load page: ${request.url}`, error as Error);
-            },
-        });
-        
-        // Add all product URLs to crawler
-        const urlsToRequest = urlsToProcess.map(url => ({ url }));
-        
-        try {
-            await productCrawler.run(urlsToRequest);
-        } finally {
-            // ✅ Cleanup: Drop request queue to free up memory/storage
-            try {
-                await requestQueue.drop();
-                apiLogger.debug(`[Canuk Seeds] Cleaned up request queue: ${queueName}`);
-            } catch (cleanupError) {
-                apiLogger.logError('[Canuk Seeds] Failed to cleanup request queue:', cleanupError as Error, {
-                    queueName
-                });
-            }
+            urlsFiltered: productUrls.length - urlsToProcess.length,
+            urlsProcessed: urlsToProcess.length
         }
-        
-        apiLogger.info(`🎉 [CanukSeedsScraper] Product extraction completed!`);
-        apiLogger.info(`📊 Success: ${successCount}, Errors: ${errorCount}, Total: ${urlsToProcess.length}`);
-        
-    } catch (error) {
-        apiLogger.logError(`❌ [CanukSeedsScraper] Failed to process product pages:`, error as Error);
-        throw error;
-    }
-
-    // Step 4: Return results
-    const endTime = Date.now();
-    const processingTime = endTime - startTime;
+    });
     
     return {
-        products,
         totalProducts: products.length,
-        totalPages: Math.ceil(urlsToProcess.length / 20), // Assuming ~20 products per page
+        totalPages: actualPages,
+        products,
         timestamp: new Date(),
-        duration: processingTime
+        duration
     };
 }
+
+export default canukSeedScraper;

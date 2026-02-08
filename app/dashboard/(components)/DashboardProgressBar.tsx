@@ -29,8 +29,8 @@ export function DashboardProgressBar({
     <div className={`space-y-2 ${className}`}>
       {showLabel && (
         <div className="flex justify-between text-sm font-['Poppins'] font-medium">
-          <span className="text-(--text-primary)">{label}</span>
-          <span className={textColors[variant]}>{percentage}%</span>
+          <span className={`${textColors[variant]} font-semibold`}>{label}</span>
+          <span className={`${textColors[variant]} font-semibold text-xl`}>{percentage}%</span>
         </div>
       )}
       <div className="h-3 border-[3px] border-(--border-color) bg-(--bg-section) overflow-hidden">

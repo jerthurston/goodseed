@@ -296,7 +296,7 @@
   justify-content: space-between;
   padding-bottom: 1rem;
   margin-bottom: 1rem;
-  border-bottom: 3px solid var(--border-color);
+  /* border-bottom: 3px solid var(--border-color); */
 }
 
 .cardBody {
@@ -440,14 +440,18 @@
 /* Badge Variants */
 .active {
   border-color: var(--brand-primary);
-  color: var(--brand-primary);
-  background-color: transparent;
+  color: var(--text-light);
+  background-color: var(--brand-primary);
 }
 
 .inactive {
   border-color: var(--danger-color);
-  color: var(--danger-color);
-  background-color: transparent;
+  color: var(--text-light);
+  background-color: var(--danger-color);
+}
+
+.badgeIcon {
+  margin-right: 0.5rem;
 }
 
 .inProgress {

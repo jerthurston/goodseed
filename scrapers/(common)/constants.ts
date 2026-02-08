@@ -17,5 +17,5 @@ export const ACCEPTLANGUAGE = 'en-US,en;q=0.9';
  * Note: Explicit robots.txt Crawl-delay directives always take precedence
  */
 export const MIN_DELAY_DEFAULT = 1000; // 1 second minimum delay
-export const MAX_DELAY_DEFAULT = 2500; // 2.5 seconds maximum delay
+export const MAX_DELAY_DEFAULT = 2000; // 2 seconds maximum delay
 // Average delay: ~1.75s per request (42% faster than previous 3s average)
