@@ -44,17 +44,18 @@ services:
     #   - singapore (Asia) - Best for Asian users
     # Choose based on: 1) User location, 2) Database location (Neon region)
     
-    plan: starter
+    plan: standard
     # Pricing tier:
     #   - free: $0/month, 512MB RAM, SLEEPS after 15min inactivity ❌
-    #   - starter: $7/month, 512MB RAM, always-on ✅ Recommended for MVP
+    #   - starter: $7/month, 512MB RAM, always-on (TOO LOW for production)
+    #   - standard: $25/month, 2GB RAM, 1 CPU ✅ CURRENT (Handles 4-5 concurrent scrapers)
     #   - standard: $25/month, 1GB RAM, better for production
     #   - pro: $85/month, 4GB RAM, high-volume scraping
     # Note: Free tier NOT suitable for production (worker will miss jobs while sleeping)
     
     branch: main
     # Git branch to deploy from
-    # Change to 'develop' for staging environment
+    # Production deploys from 'main' branch
     # Auto-deploys when this branch receives new commits (if autoDeploy: true)
     
     # ===== Health Check Configuration =====
