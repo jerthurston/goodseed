@@ -16,6 +16,7 @@
 
 import { extractProductsFromHTML } from '@/scrapers/cropkingseeds/utils/extractProductFromHTML';
 import { getScrapingUrl } from '@/scrapers/cropkingseeds/utils/getScrapingUrl';
+import { validateSourceContext, validateScrapingMode, logScraperInitialization } from '@/scrapers/cropkingseeds/utils/validation';
 import { ProductsDataResultFromCrawling } from '@/types/crawl.type';
 import { CheerioAPI, CheerioCrawlingContext, Log } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
@@ -45,15 +46,40 @@ export async function CropKingSeedsScraper(
     }
 ): Promise<ProductsDataResultFromCrawling> {
     
-    if (!sourceContext) {
-        throw new Error('[Crop King Seeds Scraper] sourceContext is required');
+    // ===========================
+    // 🛡️ VALIDATION PHASE
+    // ===========================
+    const validationResult = validateSourceContext(sourceContext, siteConfig);
+    
+    if (!validationResult.isValid) {
+        throw new Error(validationResult.error || '[Crop King Seeds Scraper] sourceContext validation failed');
     }
+
+    // Use validated context
+    const validatedContext = validationResult.validatedContext!;
+
+    // Validate scraping mode
+    const mode = validateScrapingMode(startPage, endPage, fullSiteCrawl);
+
+    // Calculate expected pages for logging
+    const expectedPages = mode.isTestMode 
+        ? (mode.effectiveEndPage || 1) 
+        : validatedContext.dbMaxPage;
+
+    // Log scraper initialization
+    logScraperInitialization(siteConfig, validatedContext, {
+        isTestMode: mode.isTestMode,
+        startPage,
+        endPage,
+        fullSiteCrawl,
+        expectedPages
+    });
 
     // Convert sourceContext to CommonScrapingContext
     const commonContext: CommonScrapingContext = {
-        scrapingSourceUrl: sourceContext.scrapingSourceUrl,
-        sourceName: sourceContext.sourceName,
-        dbMaxPage: sourceContext.dbMaxPage
+        scrapingSourceUrl: validatedContext.scrapingSourceUrl,
+        sourceName: validatedContext.sourceName,
+        dbMaxPage: validatedContext.dbMaxPage
     };
 
     // Define Crop King Seeds-specific request handler

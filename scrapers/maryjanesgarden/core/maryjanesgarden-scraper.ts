@@ -18,6 +18,7 @@
 
 import { extractProductsFromHTML } from '@/scrapers/maryjanesgarden/utils/extractProductsFromHTML';
 import { getScrapingUrl } from '@/scrapers/maryjanesgarden/utils/getScrapingUrl';
+import { validateSourceContext, validateScrapingMode, logScraperInitialization, SourceContext } from '@/scrapers/maryjanesgarden/utils/validation';
 import { ProductCardDataFromCrawling, ProductsDataResultFromCrawling } from '@/types/crawl.type';
 import { CheerioCrawler, CheerioCrawlingContext, ErrorHandler, Log, RequestQueue } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
@@ -42,59 +43,47 @@ export async function MaryJanesGardenScraper(
     startPage?: number | null,
     endPage?: number | null,
     fullSiteCrawl?: boolean | null,
-    sourceContext?: {
-        scrapingSourceUrl: string;
-        sourceName: string;
-        dbMaxPage: number;
-    }
+    sourceContext?: SourceContext
 ): Promise<ProductsDataResultFromCrawling> {
     
     const startTime = Date.now();
     const { baseUrl } = siteConfig;
     
-    if (!sourceContext) {
-        throw new Error('[Mary Jane\'s Garden Scraper] sourceContext is required');
+    // ✅ STEP 1: Validate sourceContext
+    const validation = validateSourceContext(sourceContext, siteConfig);
+    if (!validation.isValid) {
+        throw new Error(validation.error);
     }
-
+    
+    // Use validated context with sanitized values
+    const validatedContext = validation.validatedContext!;
     const {
         scrapingSourceUrl,
         sourceName,
         dbMaxPage
-    } = sourceContext;
+    } = validatedContext;
 
-    // Determine scraping mode
-    const isTestMode = 
-        startPage !== null && 
-        endPage !== null && 
-        startPage !== undefined && 
-        endPage !== undefined;
+    // ✅ STEP 2: Validate scraping mode and page parameters
+    const modeInfo = validateScrapingMode(startPage, endPage, fullSiteCrawl);
+    const { isTestMode, effectiveStartPage, effectiveEndPage } = modeInfo;
     
     // Calculate expected pages for progress tracking
     const expectedPages = isTestMode 
-        ? (endPage! - startPage! + 1) 
+        ? (effectiveEndPage! - effectiveStartPage + 1) 
         : (fullSiteCrawl ? dbMaxPage : dbMaxPage);
     
-    // ✅ Initialize progress logger and memory monitor
-    const progressLogger = new ProgressLogger(expectedPages, 'Mary Jane\'s Garden');
-    const memoryMonitor = MemoryMonitor.fromEnv();
-    
-    // Log scraper initialization
-    apiLogger.crawl('Initializing scraper', {
-        seller: sourceName,
-        mode: isTestMode ? 'test' : fullSiteCrawl ? 'full' : 'normal',
-        baseUrl,
-        scrapingSourceUrl,
+    // ✅ STEP 3: Log scraper initialization
+    logScraperInitialization(siteConfig, validatedContext, {
+        isTestMode,
+        startPage,
+        endPage,
+        fullSiteCrawl,
         expectedPages
     });
     
-    // Debug log
-    apiLogger.debug('[Mary Jane\'s Garden] Starting with siteConfig', {
-        name: siteConfig.name,
-        baseUrl,
-        isImplemented: siteConfig.isImplemented,
-        scrapingSourceUrl,
-        dbMaxPage
-    });
+    // ✅ STEP 4: Initialize progress logger and memory monitor
+    const progressLogger = new ProgressLogger(expectedPages, 'Mary Jane\'s Garden');
+    const memoryMonitor = MemoryMonitor.fromEnv();
 
     // ✅ Initialize products array to store scraped data
     const products: ProductCardDataFromCrawling[] = [];
