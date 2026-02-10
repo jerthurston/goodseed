@@ -61,7 +61,7 @@ export default function JobHistoryTable({
     return (
       job.id.toLowerCase().includes(query) ||
       job.jobId?.toLowerCase().includes(query) ||
-      job.sellerName?.toLowerCase().includes(query)
+      job.seller.name?.toLowerCase().includes(query)
     )
   })
 
@@ -262,7 +262,7 @@ export default function JobHistoryTable({
                   </td>
                   {!sellerId && (
                     <td className="py-3 px-4 text-sm text-(--text-primary)">
-                      {job.sellerName || 'Unknown'}
+                      {job.seller.name || 'Unknown'}
                     </td>
                   )}
                   <td className="py-3 px-4 text-xs font-mono text-(--text-primary-muted)">

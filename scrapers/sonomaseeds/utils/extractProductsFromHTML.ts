@@ -195,14 +195,37 @@ export function extractProductsFromHTML(
                     const minPrice = parseFloat(priceMatch[1]);
                     const maxPrice = parseFloat(priceMatch[2]);
                     
-                    // Create pricing for each pack size
+                    // Sonoma Seeds pricing pattern (manually observed):
+                    // Range $65-$240: Pack 5=$65, Pack 10=$120, Pack 25=$240
+                    // Range $40-$140: Pack 5=$40, Pack 10=$70, Pack 25=$140
+                    
                     packSizes.forEach((packSizeStr, index) => {
                         const packSize = parseInt(packSizeStr);
                         if (!isNaN(packSize)) {
-                            // Distribute prices across pack sizes (simple estimation)
-                            const totalPrice = index === 0 ? minPrice : 
-                                             index === packSizes.length - 1 ? maxPrice :
-                                             minPrice + ((maxPrice - minPrice) * index / (packSizes.length - 1));
+                            let totalPrice: number;
+                            
+                            if (packSize === 5) {
+                                // Pack 5 = min price
+                                totalPrice = minPrice;
+                            } else if (packSize === 10) {
+                                // Pack 10 = manually mapped based on observed price ranges
+                                if (minPrice === 65 && maxPrice === 240) {
+                                    totalPrice = 120;
+                                } else if (minPrice === 40 && maxPrice === 140) {
+                                    totalPrice = 70;
+                                } else {
+                                    // Fallback: use linear interpolation for unknown ranges
+                                    totalPrice = minPrice + ((maxPrice - minPrice) * index / (packSizes.length - 1));
+                                }
+                            } else if (packSize === 25) {
+                                // Pack 25 = max price
+                                totalPrice = maxPrice;
+                            } else {
+                                // Fallback for other pack sizes
+                                totalPrice = index === 0 ? minPrice : 
+                                           index === packSizes.length - 1 ? maxPrice :
+                                           minPrice + ((maxPrice - minPrice) * index / (packSizes.length - 1));
+                            }
                             
                             pricings.push({
                                 packSize,
