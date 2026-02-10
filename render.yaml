@@ -30,7 +30,7 @@ services:
     
     dockerfilePath: ./Dockerfile.worker
     # Path to Dockerfile relative to repository root
-    # This Dockerfile includes Chromium and all dependencies for web scraping
+    # This Dockerfile includes dependencies for Cheerio-based web scraping (lightweight, no browser)
     
     dockerContext: .
     # Build context for Docker (current directory = repository root)
@@ -126,39 +126,23 @@ services:
         # Must match Vercel's CRON_SECRET
         # ⚠️ Set manually in Render Dashboard → Environment tab
       
-      # --- Chromium/Puppeteer Configuration ---
-      # These settings tell Puppeteer to use system-installed Chromium
-      # instead of downloading its own copy (saves ~170MB disk space)
-      - key: PUPPETEER_EXECUTABLE_PATH
-        value: /usr/bin/chromium-browser
-        # Path to system Chromium installed by Dockerfile
-        # Dockerfile installs via: apk add chromium
-        # Puppeteer will use this binary instead of bundled version
-      
-      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
-        value: true
-        # Prevents Puppeteer from downloading Chromium during npm install
-        # Saves: ~170MB download, ~5 minutes build time
-        # Required because we use system Chromium from Alpine package
-      
       # --- Worker-Specific Settings ---
       - key: WORKER_CONCURRENCY
         value: 1
         # Number of jobs to process simultaneously
-        # 1 = Process one scraping job at a time (recommended for Starter plan)
-        # Higher values require more RAM:
-        #   - 1 job: ~300-400MB RAM
-        #   - 2 jobs: ~500-600MB RAM (may crash on Starter plan)
-        #   - 3+ jobs: Requires Standard plan or higher (1GB+ RAM)
-        # Each job runs Chromium which is memory-intensive
+        # Current: 1 (safest option - monitor and increase to 2-3 if stable)
+        # Standard plan (2GB RAM): Can handle 2-3 concurrent Cheerio scrapers
+        # Cheerio is lightweight (no browser), each job uses ~200-300MB RAM
+        # Higher values possible but keep some RAM for system overhead
+        # For browser-based scraping, keep at 1 (Chromium is memory-intensive)
       
       - key: CRAWLEE_AVAILABLE_MEMORY_RATIO
-        value: 512
-        # Memory available for Crawlee (in MB)
-        # Fixes false "memory critically overloaded" warnings
-        # Render Starter plan: 512 MB RAM
-        # Without this, Crawlee defaults to 128MB and shows warnings
-        # even though actual memory usage is fine
+        value: 0.7
+        # Memory ratio available for Crawlee (0.0 - 1.0)
+        # Crawlee calculates: TOTAL_RAM × ratio = available memory
+        # Standard plan: 2GB × 0.7 = 1.4GB for Crawlee
+        # Remaining 0.3 (600MB) reserved for Node.js runtime and system
+        # Without this setting, Crawlee may show false memory warnings
 
 # ============================================================================
 # Deployment Process:
