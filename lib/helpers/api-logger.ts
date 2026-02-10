@@ -163,6 +163,44 @@ export const apiLogger = {
     },
 
     /**
+     * Crawl logging - Specialized for scraping operations
+     * Only logs if ENABLE_CRAWL_LOGS=true (default: false)
+     * Lightweight - no deep object serialization to prevent memory leaks
+     * 
+     * @example
+     * apiLogger.crawl('Starting scrape', { seller: 'True North', pages: 62 });
+     * apiLogger.crawl('Progress: 10%', { products: 148, memory: '120MB' });
+     */
+    crawl: (message: string, metadata?: Record<string, any>) => {
+        const enableCrawlLogs = process.env.ENABLE_CRAWL_LOGS === 'true';
+        
+        if (!enableCrawlLogs) {
+            return; // Skip logging if disabled
+        }
+        
+        const formattedMessage = `[CRAWL] ${message}`;
+        
+        if (metadata) {
+            // Only log primitive values to avoid memory leaks
+            const lightweightMetadata: Record<string, any> = {};
+            for (const [key, value] of Object.entries(metadata)) {
+                // Only include primitives and simple values
+                if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+                    lightweightMetadata[key] = value;
+                } else if (value === null || value === undefined) {
+                    lightweightMetadata[key] = value;
+                } else {
+                    // For complex objects, just note their type
+                    lightweightMetadata[key] = `[${typeof value}]`;
+                }
+            }
+            console.log(formattedMessage, lightweightMetadata);
+        } else {
+            console.log(formattedMessage);
+        }
+    },
+
+    /**
      * Sanitize sensitive data for logging
      */
     sanitizeData: (data: Record<string, unknown> | unknown): Record<string, unknown> | unknown => {

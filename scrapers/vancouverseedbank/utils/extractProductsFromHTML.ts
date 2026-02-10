@@ -212,7 +212,7 @@ export function extractProductsFromHTML(
             // Check if pagination container exists (WooCommerce standard)
             const $paginationContainer = $(selectors.paginationContainer);
             if ($paginationContainer.length > 0) {
-                console.log('[DEBUG] WooCommerce pagination found, analyzing pages...');
+                // Removed debug log - not critical
                 
                 // Find all page links with /page/ in href
                 $(selectors.paginationItems).each((_, element) => {
@@ -227,7 +227,6 @@ export function extractProductsFromHTML(
                             if (pageNumber > maxPageFound) {
                                 maxPageFound = pageNumber;
                             }
-                            console.log(`[DEBUG] Found page link: ${pageNumber} (href: ${href})`);
                         }
                     }
                 });
@@ -244,8 +243,6 @@ export function extractProductsFromHTML(
                         }
                     }
                 });
-                
-                console.log('[DEBUG] Max page detected:', maxPageFound);
                 
                 maxPages = maxPageFound > 0 ? maxPageFound : null;
                 

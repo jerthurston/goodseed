@@ -1,6 +1,8 @@
 "use client"
 
 import { Clock, Play, MoreVertical, Edit, Trash2, PlusCircle, LogInIcon } from "lucide-react"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faAnchorCircleCheck, faCheckCircle, faSignHanging, faTimesCircle } from "@fortawesome/free-solid-svg-icons"
 import { useState, useRef, useEffect } from "react"
 import {
   ActionSellerCardBtn,
@@ -18,6 +20,8 @@ import { toast } from 'sonner';
 import { useRouter } from "next/navigation"
 import ActionConfirmModal from "@/components/custom/modals/ActionConfirmModal"
 import { useSellerOperations } from "@/hooks/seller"
+import { apiLogger } from "@/lib/helpers/api-logger"
+import { faAccessibleIcon, faSquareGooglePlus } from "@fortawesome/free-brands-svg-icons"
 
 interface SellerCardProps {
   seller: SellerUI;
@@ -52,7 +56,7 @@ export function SellerCard({
       setShowConfirmModal(false);
       toast.success(`Seller ${seller.isActive ? 'deactivated' : 'activated'} successfully!`);
     } catch (error) {
-      console.error("Error toggling seller:", error);
+      apiLogger.logError("Error toggling seller:", error as Error);
       toast.error(`Error: ${updateError?.message || 'Failed to toggle seller status'}`);
     }
   };
@@ -64,22 +68,28 @@ export function SellerCard({
     <DashboardCard hover>
       <DashboardCardHeader>
         <div>
-          <h3 className="font-['Poppins'] font-bold text-lg text-(--text-primary) mb-1">
+          <h3 className="font-bold text-lg text-(--text-primary) mb-1">
             {seller.name}
           </h3>
-          <p className="font-['Poppins'] text-sm text-(--text-primary-muted)">
+          <p className="text-sm text-(--text-primary-muted)">
             {seller.url}
           </p>
           {seller.lastScraped && (
-            <p className="font-['Poppins'] text-xs text-(--text-primary-muted) mt-2 flex items-center gap-1">
+            <p className="text-xs text-(--text-primary-muted) mt-2 flex items-center gap-1">
               <Clock className="w-3 h-3" />
               Last scraped: {seller.lastScraped}
             </p>
           )}
         </div>
-        <DashboardBadge variant={seller.isActive ? "active" : "inactive"}>
+        {/* <DashboardBadge variant={seller.isActive ? "active" : "inactive"}>
           {seller.isActive ? "Active" : "Inactive"}
-        </DashboardBadge>
+        </DashboardBadge> */}
+          {/* Action buttons dropdown: delete or update */}
+          <ActionSellerCardBtn
+            sellerId={seller.id}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+          />
       </DashboardCardHeader>
 
       {seller.stats && (
@@ -124,12 +134,22 @@ export function SellerCard({
         <DashboardCardFooter className="flex justify-between items-center">
           <div className="flex flex-row items-center gap-4">
             <DashboardButton
-              variant="outline"
+              // variant="outline"
               onClick={handleToggleClick}
               disabled={isUpdating}
-              className="text-sm px-4 py-2"
+              className={`text-sm px-4 py-2 flex items-center gap-2 ${seller.isActive ? "bg-(--brand-primary)" : "bg-(--danger-color)"}`}
             >
-              {seller.isActive ? "Deactivate" : "Activate"}
+              {seller.isActive ? (
+                <div className="">
+                  <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4" />
+                  {" "}Deactivate
+                </div>
+              ) : (
+                <div>
+                  <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4" />
+                  {" "}Activate
+                </div>
+              )}
             </DashboardButton>
 
             <DashboardButton
@@ -138,18 +158,11 @@ export function SellerCard({
               onClick={() => router.push(`/dashboard/admin/sellers/${seller.id}`)}
             >
               <>
-                <LogInIcon className="h-4 w-4" />
-                Access
+                <FontAwesomeIcon icon={faSignHanging} className="w-4 h-4" />
+                Config
               </>
             </DashboardButton>
           </div>
-
-          {/* Action buttons dropdown: delete or update */}
-          <ActionSellerCardBtn
-            sellerId={seller.id}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-          />
 
           {onManualScrape && (
             <DashboardIconButton

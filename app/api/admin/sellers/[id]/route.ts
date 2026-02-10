@@ -89,17 +89,17 @@ export async function PATCH(
     }
 
     // Validate autoScrapeInterval if provided
-    if ('autoScrapeInterval' in updateData) {
-      const validIntervals = [1, 2, 4, 6, 8, 12, 24]
-      const interval = Number(updateData.autoScrapeInterval)
+    // if ('autoScrapeInterval' in updateData) {
+    //   const validIntervals = [1, 2, 4, 6, 8, 12, 24]
+    //   const interval = Number(updateData.autoScrapeInterval)
       
-      if (updateData.autoScrapeInterval !== null && (!validIntervals.includes(interval))) {
-        return NextResponse.json(
-          { error: "Invalid autoScrapeInterval. Must be one of: 1, 2, 4, 6, 8, 12, 24 (hours), or null to disable" },
-          { status: 400 }
-        )
-      }
-    }
+    //   if (updateData.autoScrapeInterval !== null && (!validIntervals.includes(interval))) {
+    //     return NextResponse.json(
+    //       { error: "Invalid autoScrapeInterval. Must be one of: 1, 2, 4, 6, 8, 12, 24 (hours), or null to disable" },
+    //       { status: 400 }
+    //     )
+    //   }
+    // }
 
     // Check if seller exists
     const existingSeller = await prisma.seller.findUnique({

@@ -85,13 +85,7 @@ export async function BeaverseedScraper(
 
         log.info(`[Beaver Seed] Page ${pageNumber}: Found ${result.products.length} products`);
 
-        // Save page data to dataset
-        await sharedData.dataset.pushData({
-            pageNumber,
-            url: request.url,
-            products: result.products,
-            extractedAt: new Date().toISOString()
-        });
+        // ✅ No need to save to dataset - products are collected in sharedData.allProducts array
 
         // Determine if we should crawl more pages (Beaver Seed pagination logic)
         let shouldContinue = false;

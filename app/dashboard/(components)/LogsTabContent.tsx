@@ -123,8 +123,8 @@ export function LogsTabContent({
 
     return failedJobs.map(job => ({
       id: `job-${job.id}`,
-      sellerId: job.sellerId,
-      sellerName: job.sellerName,
+      sellerId: job.seller.id,
+      sellerName: job.seller.name,
       timestamp: job.endTime || job.updatedAt,
       errorMessage: job.errorMessage || 
         (job.status === 'COMPLETED' && job.productsSaved === 0 && job.productsUpdated === 0
@@ -277,13 +277,13 @@ export function LogsTabContent({
       const deletePromises = selectedJobList.map(async (job) => {
         try {
           await deleteJob(job.id);
-          return { success: true, jobId: job.id, sellerName: job.sellerName };
+          return { success: true, jobId: job.id, sellerName: job.seller.name };
         } catch (error) {
           apiLogger.logError('[LogsTabContent] Bulk delete individual job failed', error as Error, { 
             jobId: job.id,
-            sellerName: job.sellerName 
+            sellerName: job.seller.name 
           });
-          return { success: false, jobId: job.id, sellerName: job.sellerName, error };
+          return { success: false, jobId: job.id, sellerName: job.seller.name, error };
         }
       });
 

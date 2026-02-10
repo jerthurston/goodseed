@@ -16,6 +16,7 @@ interface SellerAutoScraperCardProps {
   onToggle: () => void;
   onIntervalChange?: (sellerId: string, interval: number) => void;
   isLoading: boolean;
+  isDisabled?: boolean; // Disable card if seller is deactivated
 }
 
 export default function SellerAutoScraperCard({
@@ -27,20 +28,25 @@ export default function SellerAutoScraperCard({
   autoScrapeInterval,
   onToggle,
   onIntervalChange,
-  isLoading
+  isLoading,
+  isDisabled = false
 }: SellerAutoScraperCardProps) {
   // Auto scraper is "enabled" if autoScrapeInterval is set (> 0)
   const isAutoEnabled = autoScrapeInterval != null && autoScrapeInterval > 0;
   
-  apiLogger.debug('SellerAutoScraperCard render:', { 
-    sellerId, 
-    sellerName, 
-    autoScrapeInterval, 
-    isAutoEnabled,
-    isScheduled 
-  });
+  // Determine status badge display logic:
+  // - ACTIVE: Job is currently running
+  // - AVAILABLE: Auto enabled + scheduled + not running + not disabled
+  // - CANCELLED: Auto disabled or not scheduled or seller deactivated
+  const getStatus = () => {
+    if (isDisabled) return 'CANCELLED'; // Seller deactivated
+    if (isRunning) return 'ACTIVE';
+    if (isAutoEnabled && isScheduled) return 'AVAILABLE';
+    return 'CANCELLED';
+  };
+  
   return (
-    <DashboardCard className={styles.card}>
+    <DashboardCard className={`${styles.card} ${isDisabled ? 'opacity-60' : ''}`}>
       <div className="space-y-4">
         {/* Status Header - Theo theme design */}
         <div className={styles.cardHeader}>
@@ -48,17 +54,17 @@ export default function SellerAutoScraperCard({
             <FontAwesomeIcon 
               icon={faStore} 
               className="text-lg" 
-              style={{ color: 'var(--brand-primary)' }}
+              style={{ color: isDisabled ? 'var(--text-primary-muted)' : 'var(--brand-primary)' }}
             />
             <span 
-              className="font-semibold font-['Poppins']"
-              style={{ color: 'var(--text-primary)' }}
+              className="font-semibold text-xl"
+              style={{ color: isDisabled ? 'var(--text-primary-muted)' : 'var(--text-primary)' }}
             >
               {sellerName}
             </span>
           </div>
           <AutoScraperStatusBadge 
-            status={isRunning ? 'ACTIVE' : (isScheduled ? 'AVAILABLE' : 'CANCELLED')}
+            status={getStatus()}
             nextRun={nextRun}
           />
         </div>
@@ -71,7 +77,7 @@ export default function SellerAutoScraperCard({
             label="Auto Scrape"
             isActive={isAutoEnabled}
             onChange={() => onToggle()}
-            disabled={isLoading || isRunning}
+            disabled={isLoading || isRunning || isDisabled}
           />
 
 {/* Adjust Interval is disabled temporarily */}
@@ -82,21 +88,33 @@ export default function SellerAutoScraperCard({
                 Interval:
               </span>
               <select
-                value={autoScrapeInterval || 6}
+                value={autoScrapeInterval || 24}
                 onChange={(e) => {
-                  if (onIntervalChange) {
+                  if (onIntervalChange && !isDisabled) {
+                    // console.log('Interval changed:', { sellerId, newInterval: Number(e.target.value) });
                     onIntervalChange(sellerId, Number(e.target.value));
                   }
                 }}
+                disabled={isDisabled}
                 className={styles.selectInterval}
               >
-                <option value={6}>Every 6 hours</option>
+                <option value={24}>Every 24 hours</option>
+                <option value={48}>Every 2 days</option>
               </select>
             </div>
           )}
 
+        {/* Warning for deactivated seller */}
+        {isDisabled && (
+          <div 
+            className="text-xs px-2 py-1 rounded bg-red-50 text-red-700 border border-red-200 mt-2"
+          >
+            ⚠️ Seller is deactivated - auto scraper disabled
+          </div>
+        )}
+
         {/* Warning for no interval configured */}
-        {isAutoEnabled && (!autoScrapeInterval || autoScrapeInterval <= 0) && (
+        {!isDisabled && isAutoEnabled && (!autoScrapeInterval || autoScrapeInterval <= 0) && (
           <div 
             className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 border border-amber-200 mt-2"
           >
@@ -105,7 +123,7 @@ export default function SellerAutoScraperCard({
         )}
 
         {/* Schedule Information */}
-        {isAutoEnabled && nextRun && (
+        {!isDisabled && isAutoEnabled && nextRun && (
           <div 
             className="text-sm font-['Poppins'] mt-3" 
             style={{ color: 'var(--text-primary-muted)' }}

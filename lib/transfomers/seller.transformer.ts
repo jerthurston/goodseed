@@ -20,17 +20,26 @@ export class SellerTransformer {
     });
 
     // Calculate scrape job statistics
-    // Only count finished jobs (completed, failed, cancelled) for success rate
-    const finishedJobs = raw.scrapeJobs.filter(
-      (job) => job.status === ScrapeJobStatus.COMPLETED || 
-               job.status === ScrapeJobStatus.FAILED || 
-               job.status === ScrapeJobStatus.CANCELLED
-    );
+    // Prioritize _count if available (most accurate), otherwise fallback to filtering scrapeJobs array
+    let totalRuns: number;
+    if (raw._count?.scrapeJobs !== undefined) {
+      // Use database count (accurate count of all finished jobs)
+      totalRuns = raw._count.scrapeJobs;
+    } else {
+      // Fallback: Count finished jobs from loaded scrapeJobs array
+      const finishedJobs = raw.scrapeJobs.filter(
+        (job) => job.status === ScrapeJobStatus.COMPLETED || 
+                 job.status === ScrapeJobStatus.FAILED || 
+                 job.status === ScrapeJobStatus.CANCELLED
+      );
+      totalRuns = finishedJobs.length;
+    }
+    
+    // Calculate success rate from completed jobs
     const completedJobs = raw.scrapeJobs.filter(
       (job) => job.status === ScrapeJobStatus.COMPLETED
     );
     
-    const totalRuns = finishedJobs.length; // Only count finished jobs
     const successfulRuns = completedJobs.length;
     const successRate =
       totalRuns > 0 ? Math.round((successfulRuns / totalRuns) * 100) : 0;
@@ -48,7 +57,12 @@ export class SellerTransformer {
     }
 
     // Get latest finished job status (more accurate than seller.status field)
-    const latestFinishedJob = finishedJobs
+    const finishedJobsForStatus = raw.scrapeJobs.filter(
+      (job) => job.status === ScrapeJobStatus.COMPLETED || 
+               job.status === ScrapeJobStatus.FAILED || 
+               job.status === ScrapeJobStatus.CANCELLED
+    );
+    const latestFinishedJob = finishedJobsForStatus
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
     
     const lastScrapeStatus = latestFinishedJob 

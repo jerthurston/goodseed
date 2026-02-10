@@ -26,7 +26,7 @@ import { MaryJanesGardenScraper } from '@/scrapers/maryjanesgarden/core/maryjane
 import { MJSEEDSCANADA_PRODUCT_CARD_SELECTORS } from '@/scrapers/mjseedscanada/core/selector';
 import MJSeedCanadaScraper from '@/scrapers/mjseedscanada/core/mJSeedScanadaScraper';
 import { ROCKETSEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/rocketseeds/core/selector';
-import RocketSeedsScraper from '@/scrapers/rocketseeds/core/rockerSeedScraper';
+import RocketSeedsScraper from '@/scrapers/rocketseeds/core/rocketSeedScraper';
 import CropKingSeedsScraper from '@/scrapers/cropkingseeds/core/cropkingSeedScraper';
 import { CROPKINGSEEDS_PRODUCT_CARD_SELECTORS } from '@/scrapers/cropkingseeds/core/selectors';
 import CANUK_SEEDS_PRODUCT_SELECTORS from '@/scrapers/canukseeds/core/selectors';
@@ -274,18 +274,19 @@ export class ScraperFactory {
     switch (scraperSourceName) {
       // Crawling card product with pagination page
       case 'vancouverseedbank':
-        return vancouverProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext); // Support startPage/endPage and fullSiteCrawl
+        return vancouverProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext); 
+        // Support startPage/endPage and fullSiteCrawl
       case 'sunwestgenetics':
         return sunwestgeneticsScraper(siteConfig, dbMaxPage, startPage || undefined, endPage || undefined);
       case 'sonomaseeds':
-        return sonomaSeedsProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext); // Now supports startPage/endPage
+        return sonomaSeedsProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext); 
+        // Now supports startPage/endPage
       case 'beaverseed':
         return BeaverseedScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
       case 'maryjanesgarden':
         return MaryJanesGardenScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
       case 'cropkingseeds':
         return CropKingSeedsScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
-      // Crawling sitemap first and product urls array
       case 'rocketseeds':
         return RocketSeedsScraper(siteConfig, startPage, endPage, sourceContext);
       case 'mjseedscanada':

@@ -2,14 +2,19 @@
  * Sonoma Seeds CSS Selectors
  * 
  * Based on WooCommerce HTML structure with custom styling
- * Updated: 2025-12-29
+ * Updated: February 9, 2026
  */
 
-export const SONOMASEEDS_PRODUCT_CARD_SELECTORS = {
-    // Product Cards - WooCommerce structure with Sonoma Seeds specific classes
+import { ManualSelectors } from "@/lib/factories/scraper-factory";
+
+export const SONOMASEEDS_PRODUCT_CARD_SELECTORS: ManualSelectors = {
+    // Core product information (required)
+    productName: 'h3.prod_titles a',
+    priceDisplay: '.product_price_dfn',
+
+    // Product structure
     productCard: 'li.product.type-product',
     productLink: 'h3.prod_titles a',
-    productName: 'h3.prod_titles a',
     productImage: 'figure.main_img img',
 
     // Cannabis Type / Strain - located in .itype section
@@ -32,18 +37,13 @@ export const SONOMASEEDS_PRODUCT_CARD_SELECTORS = {
     growingLevel: '.custom-acf-prod li:contains("Growing Level") .elementor-icon-list-text',
 
     // Price information
-    priceDisplay: '.product_price_dfn',
     priceAmount: '.product_price_dfn .woocommerce-Price-amount',
     variationInputs: 'input.product_variation_radio',
 
     // Pack sizes/variations
-    packSizes: '.pack_listed_prod .variation_val',
-    packNumbers: '.pack_listed_prod .variation_val_num',
+    packSizeCell: '.pack_listed_prod .variation_val',
 
-    // Buy button
-    buyButton: '.add_wrapper .button.prod_cart_addbtn',
-
-    // Pagination - WooCommerce standard (to be updated when pagination HTML is available)
+    // Pagination - WooCommerce standard
     nextPage: '.page-numbers[href*="/page/"]', // Links to next pages
     pageLinks: '.page-numbers[href]', // All page links
     currentPage: '.page-numbers.current', // Current page
@@ -51,6 +51,4 @@ export const SONOMASEEDS_PRODUCT_CARD_SELECTORS = {
     // Pagination container and items for max page detection
     paginationContainer: '.wp-pagenavi, .page-numbers', // WooCommerce pagination
     paginationItems: '.page-numbers[href*="/page/"]', // Page links with /page/ in href
-} as const;
-
-export type SonomaSeedsProductCardSelectors = typeof SONOMASEEDS_PRODUCT_CARD_SELECTORS;
+};

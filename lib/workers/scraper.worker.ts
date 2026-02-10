@@ -15,6 +15,7 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 import { scraperQueue, processScraperJob, SCRAPER_CONCURRENCY } from '@/lib/queue/scraper-queue';
 import { createDetectPriceChangesJob } from '@/lib/queue/detect-price-changes';
 import { initializeWorkerSync, cleanupWorkerSync } from './worker-initialization';
+import { cleanupAfterJob, logMemoryUsage } from '../utils/memory-cleanup';
 
 /**
  * Initialize Scraper Queue Processor
@@ -22,21 +23,18 @@ import { initializeWorkerSync, cleanupWorkerSync } from './worker-initialization
  */
 export async function initializeScraperWorker() {
   try {
+
     apiLogger.info('[Scraper Worker] 🔧 Initializing scraper queue processor...');
-    
     // Initialize scraper-specific services (auto-scheduler, job sync, etc.)
     await initializeWorkerSync();
-    
-    // Start processing scraper jobs with configured concurrency
-    // Concurrency setting controls how many sellers can be scraped simultaneously
+    // Start processing scraper jobs with configured concurrency. Concurrency setting controls how many sellers can be scraped simultaneously
     scraperQueue.process(SCRAPER_CONCURRENCY, processScraperJob);
-    
+    //Log concurrency params
     apiLogger.info('[Scraper Worker] Worker concurrency configured', {
       concurrency: SCRAPER_CONCURRENCY,
     });
     
-    // ⭐ CHAINED PIPELINE: Scraper queue event handlers
-    
+    // ⭐ CHAINED PIPELINE: Scraper queue event handlers   
     // Job completed - Emit price detection job
     scraperQueue.on('completed', async (job, result) => {
       apiLogger.info('[Scraper Worker] Job completed', {
@@ -71,6 +69,12 @@ export async function initializeScraperWorker() {
           );
           // Don't throw - scraping was successful, just log the error
         }
+        
+        // ✅ Cleanup AFTER emitting price detection job
+        // Now safe to clear the products array
+        await cleanupAfterJob(`${result.sellerName}-${job.id}`, result.products);
+        logMemoryUsage(`After job ${job.id} cleanup`);
+        
       } else {
         apiLogger.info('[Scraper Worker] ⚠️ Skipping price detection - no products scraped', {
           jobId: job.id,

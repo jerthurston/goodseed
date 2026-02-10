@@ -1,13 +1,53 @@
-import { SiteConfig } from "@/lib/factories/scraper-factory";
-import { apiLogger } from "@/lib/helpers/api-logger"
-;
-import { SimplePoliteCrawler } from "@/lib/utils/polite-crawler";
-import { ACCEPTLANGUAGE, USERAGENT } from "@/scrapers/(common)/constants";
-import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from "@/types/crawl.type";
-import { Dataset, log, RequestQueue, CheerioCrawler } from "crawlee";
-import { extractCategoryLinksFromHomepage } from "../utils/extractCatLinkFromHeader";
-import { extractProductUrlsFromCatLink } from "../utils/extractProductUrlsFromCatLink";
-import { extractProductFromDetailHTML } from "../utils/extractProductFromDetailHTML";
+/**
+ * True North Seed Bank Product List Scraper (Refactored with CommonCrawler Pattern)
+ * 
+ * ARCHITECTURE OVERVIEW:
+ * - Uses CommonCrawler infrastructure pattern for reusability
+ * - Focuses only on True North Seed Bank-specific extraction logic
+ * - Uses Magento 2 standard structure (same as True North)
+ * - All common functionality follows best practices
+ * 
+ * DIFFERENCES FROM OTHER SCRAPERS:
+ * - Uses True North Seed Bank specific HTML structure
+ * - Query parameter pagination format (?p=N)
+ * - Magento-based product attributes extraction
+ * - Larger product catalog (~1400+ products across 60+ pages)
+ * 
+ * OPTIMIZATION (v2):
+ * - ✅ Removed Dataset (unnecessary intermediate storage)
+ * - ✅ Uses simple array for product collection
+ * - ✅ Keeps RequestQueue for deduplication, retry, and state management
+ * - ✅ Automatic cleanup with finally block to free memory
+ */
+
+import { extractProductFromDetailHTML, extractProductUrls } from '@/scrapers/truenorthseedbank/utils/index';
+import { ProductCardDataFromCrawling, ProductsDataResultFromCrawling } from '@/types/crawl.type';
+import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, ErrorHandler, Log, RequestQueue } from 'crawlee';
+import { SiteConfig } from '@/lib/factories/scraper-factory';
+import { apiLogger } from '@/lib/helpers/api-logger';
+import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
+import { ACCEPTLANGUAGE, USERAGENT } from '@/scrapers/(common)/constants';
+import { ProgressLogger, MemoryMonitor } from '@/scrapers/(common)/logging-helpers';
+
+/**
+ * Filter URLs by robots.txt disallowed paths
+ */
+function filterUrlsByRobotsTxt(urls: string[], disallowedPaths: string[]): string[] {
+    return urls.filter(url => {
+        const urlPath = new URL(url).pathname;
+        return !disallowedPaths.some(disallowedPath => urlPath.startsWith(disallowedPath));
+    });
+}
+
+/**
+ * TrueNorthSeedBankScraper - Site-specific implementation using CommonCrawler pattern
+ * 
+ * RESPONSIBILITIES:
+ * 1. 🕷️ Extract products from True North Seed Bank (product listing pages)  
+ * 2. 📄 Support pagination-based URL extraction
+ * 3. 📋 Extract cannabis-specific data with True North structure
+ * 4. ⚡ Use CommonCrawler infrastructure pattern
+ */
 
 export async function truenorthSeedScraper(
     siteConfig: SiteConfig,
@@ -17,233 +57,302 @@ export async function truenorthSeedScraper(
         scrapingSourceUrl: string;
         sourceName: string;
         dbMaxPage: number;
-    },
+    }
 ): Promise<ProductsDataResultFromCrawling> {
+
     const startTime = Date.now();
-    const {selectors,baseUrl} = siteConfig;
+    const { baseUrl } = siteConfig;
 
-    // DEBUGLOG: 
-    apiLogger.debug(
-        `[TrueNorthSeedScraper] starting to scrape with siteConfig`,{
-            name:siteConfig.name,
-            baseUrl,
-            isImplemented:siteConfig.isImplemented,
-            scrapingSourceUrl:sourceContext?.scrapingSourceUrl
-        }
+    if (!sourceContext) {
+        throw new Error('[True North Scraper] sourceContext is required');
+    }
+
+    const {
+        scrapingSourceUrl,
+        sourceName,
+        dbMaxPage
+    } = sourceContext;
+
+    // Determine scraping mode
+    const isTestMode = 
+        startPage !== null && 
+        endPage !== null && 
+        startPage !== undefined && 
+        endPage !== undefined;
+    
+    // ✅ Initialize progress logger and memory monitor
+    const progressLogger = new ProgressLogger(
+        isTestMode ? (endPage! - startPage! + 1) : 0, // Will update after URL extraction
+        'True North'
     );
-
-    const runId = Date.now();
-    // Initialize request queue
-    const requestQueue = await RequestQueue.open(`${sourceContext?.sourceName}-queue-${runId}`);
-    // Initialize dataset
-    const datasetName = `${sourceContext?.sourceName}-dataset-${runId}`;
-    const dataset = await Dataset.open(datasetName);
-    // Initialize polited policy
-    const politeCrawler = new SimplePoliteCrawler({
-        userAgent:USERAGENT,
-        acceptLanguage:ACCEPTLANGUAGE,
-        minDelay:2000,
-        maxDelay:5000
+    // Use environment-based memory configuration (reads from WORKER_MEMORY_LIMIT_MB)
+    const memoryMonitor = MemoryMonitor.fromEnv();
+    
+    // Log scraper initialization
+    apiLogger.crawl('Initializing scraper', {
+        seller: sourceName,
+        mode: isTestMode ? 'test' : 'full',
+        baseUrl,
+        scrapingSourceUrl
+    });
+    
+    // Debug log
+    apiLogger.debug('[True North Scraper] Starting with siteConfig', {
+        name: siteConfig.name,
+        baseUrl,
+        isImplemented: siteConfig.isImplemented,
+        scrapingSourceUrl: sourceContext?.scrapingSourceUrl
     });
 
+    // ✅ Initialize products array to store scraped data
+    const products: ProductCardDataFromCrawling[] = [];
+    
+    // Initialize request queue (keep for deduplication & retry logic)
+    const runId = Date.now();
+    const queueName = `${sourceName}-${runId}`;
+    const requestQueue = await RequestQueue.open(queueName);
+    
+    // STEP 1: Initialize polite crawler policy
+    const politeCrawler = new SimplePoliteCrawler({
+        userAgent: USERAGENT,
+        acceptLanguage: ACCEPTLANGUAGE
+    });
+
+    // Get headers from politeCrawler
+    const headers = politeCrawler.getHeaders();
+
+    // ✅ Parse robots.txt FIRST for polite crawling compliance
     const robotsRules = await politeCrawler.parseRobots(baseUrl);
-    const { crawlDelay, disallowedPaths, allowedPaths, hasExplicitCrawlDelay, userAgent } = robotsRules;
+    const { 
+        crawlDelay, // Crawl delay in milliseconds
+        disallowedPaths, // List of disallowed paths
+        allowedPaths, // List of allowed paths
+        hasExplicitCrawlDelay // Whether there is an explicit crawl delay
+    } = robotsRules;
 
-    // Check if this is test quick mode (startPage & endPage provided)
-    const isTestQuickMode = startPage !== null && startPage !== undefined && 
-                           endPage !== null && endPage !== undefined;
-
-    // ✅ Log robots.txt compliance
-    apiLogger.info('[True North] 🤖 Robots.txt compliance', {
+    apiLogger.info(`[True North] Robots.txt rules loaded:`, {
         crawlDelay: `${crawlDelay}ms`,
         hasExplicitCrawlDelay,
-        disallowedPaths: disallowedPaths.length,
-        allowedPaths: allowedPaths.length,
-        strategy: hasExplicitCrawlDelay ? 'robots.txt enforced' : 'intelligent default'
+        disallowedCount: disallowedPaths.length,
+        allowedCount: allowedPaths.length,
+        userAgent: USERAGENT
     });
 
-    // ✅ Calculate dynamic rate limiting based on robots.txt
-    const calculatedMaxRate = hasExplicitCrawlDelay 
-        ? Math.floor(60000 / crawlDelay)  // Respect robots.txt
-        : 15;                              // Intelligent default
-
-    const maxConcurrency = 1; // Sequential for same site
-
-    apiLogger.info('[True North] ⚙️ Crawler configuration', {
-        crawlDelayMs: crawlDelay,
-        maxRequestsPerMinute: calculatedMaxRate,
-        maxConcurrency,
-        hasExplicitCrawlDelay,
-        mode: isTestQuickMode ? 'TEST' : 'AUTO'
-    });
-
-    // Initialize constants
     let actualPages = 0;
     let productUrls: string[] = [];
     let urlsToProcess: string[] = [];
-
-    // Step 1: Add product URLs to request queue
+    
+    // STEP 2: Extract product URLs from pagination pages
     try {
-        // 1.1 Lấy được array product url từ việc extract các category link ở header
-        const catLinkArr = await extractCategoryLinksFromHomepage(siteConfig , robotsRules);
-        log.info(`[TrueNorthSeedScraper] extracted category links: ${JSON.stringify(catLinkArr)}`);
+        apiLogger.info(`[True North] Extracting product URLs from: ${scrapingSourceUrl}`);
         
-        if (isTestQuickMode) {
-            // Test Quick Mode: Only crawl specific pages of ONE category
-            const pagesToCrawl = endPage! - startPage! + 1;
-            const testCategory = catLinkArr[0]; // Use first category for testing
-            
-            apiLogger.info(`🧪 [TEST QUICK MODE] Crawling ${pagesToCrawl} pages (${startPage}-${endPage}) of category: ${testCategory}`);
-            
-            // Use the pagination-aware function with page limits
-            const productUrls = await extractProductUrlsFromCatLink(
-                testCategory, 
-                pagesToCrawl, // maxPages = number of pages to crawl
-                robotsRules
-            );
-            
-            urlsToProcess.push(...productUrls);
-            apiLogger.info(`✅ [TEST QUICK MODE] Found ${productUrls.length} products from ${pagesToCrawl} pages`);
-            
-        } else {
-            // Auto, Manual Mode: Crawl all categories with default page limits
-            apiLogger.info(`🚀 [NORMAL MODE] Starting to extract product URLs from ${catLinkArr.length} categories`);
-            
-            for (let i = 0; i < catLinkArr.length; i++) {
-                const catLink = catLinkArr[i];
-                apiLogger.debug(`📂 Processing category ${i + 1}/${catLinkArr.length}: ${catLink}`);
-                
-                try {
-                    const productUrls = await extractProductUrlsFromCatLink(catLink, sourceContext?.dbMaxPage, robotsRules);
+        // 🧪 TEST MODE: Only crawl 2 pagination pages for faster testing
+        const maxPagesToTest = isTestMode ? 2 : undefined;
+        
+        // IMPORTANT: Call extractProductUrls to crawl all pagination pages and get product URLs
+        productUrls = await extractProductUrls(sourceContext, maxPagesToTest, robotsRules, headers, baseUrl);
+        
+        apiLogger.info(`[True North] Extracted ${productUrls.length} product URLs from pagination pages`);
 
-                    // Add unique URLs to processing list
-                    const newUrls = productUrls.filter(url => !urlsToProcess.includes(url));
-                    urlsToProcess.push(...newUrls);
-                    
-                    apiLogger.info(`✅ Category ${i + 1} completed. Found ${productUrls.length} products (${newUrls.length} new). Total: ${urlsToProcess.length}`);
-                    
-                    // Polite delay between categories
-                    if (i < catLinkArr.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                    }
-                    
-                } catch (categoryError) {
-                    console.warn(`⚠️ Failed to process category ${catLink}:`, categoryError);
-                    // Continue with next category
+        // ✅ Filter URLs against robots.txt
+        urlsToProcess = filterUrlsByRobotsTxt(productUrls, disallowedPaths);
+        
+        apiLogger.info(`[True North] Robots.txt filtering results:`, { 
+            total: productUrls.length, 
+            allowed: urlsToProcess.length, 
+            blocked: productUrls.length - urlsToProcess.length
+        });
+
+        // ✅ TEST MODE: Limit number of products for testing
+        if (isTestMode && startPage !== null && endPage !== null) {
+            const limitCount = endPage - startPage + 1;
+            urlsToProcess = urlsToProcess.slice(0, limitCount);
+            
+            apiLogger.info(`[True North] TEST MODE: Limited to ${limitCount} products (startPage: ${startPage}, endPage: ${endPage})`);
+        }
+        
+        // ✅ Update progress logger with actual total after URL extraction
+        if (!isTestMode) {
+            // Update with actual total in full mode
+            (progressLogger as any).totalItems = urlsToProcess.length;
+        }
+        
+        // Log robots.txt compliance info
+        apiLogger.crawl('Robots.txt parsed', {
+            crawlDelay: `${crawlDelay}ms`,
+            urlsTotal: productUrls.length,
+            urlsFiltered: productUrls.length - urlsToProcess.length,
+            urlsToProcess: urlsToProcess.length
+        });
+
+        // Add filtered product URLs to queue
+        for (const productUrl of urlsToProcess) {
+            await requestQueue.addRequest({
+                url: productUrl,
+                userData: { type: 'product' }
+            });
+        }
+
+        apiLogger.info(`[True North] Added ${urlsToProcess.length} product URLs to crawl queue`);
+
+    } catch (error) {
+        apiLogger.logError('[True North] Failed to extract product URLs:', error as Error, {
+            scrapingSourceUrl
+        });
+        throw new Error(`Failed to extract product URLs: ${error}`);
+    }
+
+    // STEP 3: Request handler - Process each product detail page
+    async function trueNorthRequestHandler(context: CheerioCrawlingContext): Promise<void> {
+        const { $, request, log } = context;
+        
+        const product = extractProductFromDetailHTML($, siteConfig, request.url);
+        
+        if (product) {
+            // ✅ Push directly to products array instead of dataset
+            products.push(product);
+            actualPages++;
+            
+            // ✅ Progress-based logging (every 10%) instead of per-product
+            if (progressLogger.shouldLog(products.length)) {
+                const metadata = progressLogger.getMetadata(products.length, startTime);
+                const memStatus = memoryMonitor.check();
+                
+                apiLogger.crawl('Scraping progress', {
+                    ...metadata,
+                    memoryStatus: memStatus.status
+                });
+                
+                // Warn if memory approaching limit
+                if (memStatus.status === 'warning') {
+                    apiLogger.warn(`[True North] Memory usage high: ${memStatus.usedMB.toFixed(2)}MB (${memStatus.percentUsed.toFixed(1)}%)`);
+                } else if (memStatus.status === 'critical') {
+                    apiLogger.logError('[True North] CRITICAL memory usage:', new Error('Memory limit approaching'), {
+                        usedMB: memStatus.usedMB,
+                        percentUsed: memStatus.percentUsed
+                    });
                 }
             }
-        }
-        
-        apiLogger.info(`🎉 [TrueNorthSeedScraper] URL extraction completed! Total unique product URLs: ${urlsToProcess.length}`);
-        
-        if (urlsToProcess.length === 0) {
-            throw new Error('No product URLs were extracted from any category');
+        } else {
+            log.error(`[True North] ⚠️ Failed to extract: ${request.url} - Check debug logs above for details`);
         }
 
-    } catch (error) {
-        console.error(`❌ [TrueNorthSeedScraper] Failed to extract product URLs:`, error);
-        throw error;
+        // Apply crawl delay
+        await new Promise(resolve => setTimeout(resolve, crawlDelay));
     }
 
-    // Step 2: Add product URLs to request queue
-    try {
-        apiLogger.info(`📋 [TrueNorthSeedScraper] Adding ${urlsToProcess.length} product URLs to request queue`);
-        
-        for (const url of urlsToProcess) {
-            await requestQueue.addRequest({ url });
-        }
-        
-        apiLogger.info(`✅ [TrueNorthSeedScraper] All product URLs added to request queue`);
-        
-    } catch (error) {
-        console.error(`❌ [TrueNorthSeedScraper] Failed to add URLs to request queue:`, error);
-        throw error;
-    }
+    // STEP 4: Error handling
+    const trueNorthErrorHandler: ErrorHandler<CheerioCrawlingContext> = async (context: CheerioCrawlingContext, error: Error): Promise<void> => {
+        const { request, log }: {
+            request: CheerioCrawlingContext['request'];
+            log: Log;
+        } = context;
 
-    // Step 3: Process product pages and extract data
-    const products: ProductCardDataFromCrawling[] = [];
-    let successCount = 0;
-    let errorCount = 0;
+        // POLITE CRAWLING: Handle HTTP status codes properly
+        const httpsError = error as any;
+        if (httpsError?.response?.status) {
+            const statusCode: number = httpsError.response.status;
+            const shouldRetry: boolean = politeCrawler.shouldRetryOnStatus(statusCode);
+
+            if (shouldRetry) {
+                const backoffDelay: number = await politeCrawler.handleHttpStatus(statusCode, request.url);
+                log.info(`[True North Scraper] HTTP ${statusCode} for ${request.url}, backing off for ${backoffDelay}ms`);
+
+                await new Promise<void>(resolve => setTimeout(resolve, backoffDelay));
+                throw error;
+            } else {
+                log.error(`[True North Scraper] HTTP ${statusCode} for ${request.url}, not retrying`);
+                throw error;
+            }
+        }
+    };
+
+    // ✅ STEP 5: Calculate dynamic rate limiting based on robots.txt
+    const calculatedMaxRate = hasExplicitCrawlDelay 
+        ? Math.floor(60000 / crawlDelay)
+        : 15; // Default 15 req/min if no explicit delay
+    
+    apiLogger.info(`[True North] Dynamic rate limiting:`, {
+        crawlDelay: `${crawlDelay}ms`,
+        hasExplicitCrawlDelay,
+        maxRequestsPerMinute: calculatedMaxRate
+    });
+
+    // STEP 6: Create and run crawler with optimized configuration
+    const crawler = new CheerioCrawler({
+        requestQueue,
+        requestHandler: trueNorthRequestHandler,
+        errorHandler: trueNorthErrorHandler,
+        maxConcurrency: 1, // Sequential requests for polite crawling
+        maxRequestsPerMinute: calculatedMaxRate, // ✅ Dynamic rate based on robots.txt
+        maxRequestRetries: 3,
+        preNavigationHooks: [
+            async (requestAsBrowserOptions) => {
+                const headers = politeCrawler.getHeaders();
+                Object.assign(requestAsBrowserOptions.headers || {}, headers);
+            }
+        ]
+    });
+
+    // STEP 7: Run main crawler with cleanup
+    apiLogger.info(`[True North] Starting main crawler to process ${urlsToProcess.length} products...`);
     
     try {
-        apiLogger.info(`🔄 [TrueNorthSeedScraper] Starting product data extraction from ${urlsToProcess.length} URLs`);
+        await crawler.run();
+    } finally {
+        // ✅ Cleanup: Drop request queue to free up memory/storage
+        try {
+            await requestQueue.drop();
+            apiLogger.debug(`[True North] Cleaned up request queue: ${queueName}`);
+        } catch (cleanupError) {
+            apiLogger.logError('[True North] Failed to cleanup request queue:', cleanupError as Error, {
+                queueName
+            });
+        }
         
-        // Create crawler for product data extraction with optimized settings
-        const productCrawler = new CheerioCrawler({
-            requestHandlerTimeoutSecs: 90, // Reduced from 120s based on logs showing ~4.2s average
-            maxRequestRetries: 2, // Reduced retries since success rate is 100%
-            maxConcurrency: maxConcurrency, // ✅ Use calculated value
-            maxRequestsPerMinute: calculatedMaxRate, // ✅ Dynamic from robots.txt
-            
-            requestHandler: async ({ $, request }) => {
-                try {
-                    apiLogger.debug(`🌐 Processing product: ${request.url}`);
-                    
-                    // Reduced wait time since most content loads within 2s
-                    if (!isTestQuickMode) {
-                        apiLogger.debug(`⏱️ Waiting 2s for dynamic content to load...`);
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                    } else {
-                        // Minimal wait for test mode
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
-                    
-                    // Extract product data using our existing function
-                    const productData = extractProductFromDetailHTML($, siteConfig, request.url);
-                    
-                    if (productData) {
-                        products.push(productData);
-                        successCount++;
-                        apiLogger.debug(`✅ Successfully extracted product: ${productData.name}`);
-                    } else {
-                        errorCount++;
-                        apiLogger.warn(`⚠️ Failed to extract product data from: ${request.url}`);
-                    }
-                    
-                } catch (extractionError) {
-                    errorCount++;
-                    console.error(`❌ Error extracting product from ${request.url}:`, extractionError);
-                }
-            },
-            
-            failedRequestHandler: async ({ request, error }) => {
-                errorCount++;
-                console.error(`❌ Failed to load page: ${request.url}`, error);
-            },
-        });
-        
-        // Add all product URLs to crawler
-        const urlsToRequest = urlsToProcess.map(url => ({ url }));
-        await productCrawler.run(urlsToRequest);
-        
-        apiLogger.info(`🎉 [TrueNorthSeedScraper] Product extraction completed!`);
-        apiLogger.info(`📊 Success: ${successCount}, Errors: ${errorCount}, Total: ${urlsToProcess.length}`);
-        
-    } catch (error) {
-        console.error(`❌ [TrueNorthSeedScraper] Failed to process product pages:`, error);
-        throw error;
+        // ✅ Cleanup: Teardown crawler to release connections and internal state
+        try {
+            await crawler.teardown();
+            apiLogger.debug(`[True North] Crawler teardown completed`);
+        } catch (teardownError) {
+            apiLogger.logError('[True North] Failed to teardown crawler:', teardownError as Error);
+        }
     }
 
-    // Step 4: Return results
+    // STEP 8: Log summary and return results
     const endTime = Date.now();
-    const processingTime = endTime - startTime;
+    const duration = endTime - startTime;
     
-    // ✅ Aggregated completion logging
-    apiLogger.info('[True North] ✅ Crawling completed', {
-        '📊 Products': products.length,
-        '📄 URLs Processed': urlsToProcess.length,
-        '✅ Success': successCount,
-        '❌ Errors': errorCount,
-        '⏱️ Duration': `${(processingTime / 1000).toFixed(2)}s`,
-        '🤖 Robots.txt': hasExplicitCrawlDelay ? 'enforced' : 'default',
-        '🚀 Rate': `${calculatedMaxRate} req/min`
+    // ✅ Final progress log with completion summary
+    apiLogger.crawl('Scraping completed', {
+        totalProducts: products.length,
+        totalPages: actualPages,
+        duration: `${(duration / 1000).toFixed(2)}s`,
+        successRate: `${((products.length / urlsToProcess.length) * 100).toFixed(2)}%`,
+        avgTimePerProduct: `${((duration / products.length) / 1000).toFixed(2)}s`,
+        finalMemory: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB`
+    });
+
+    apiLogger.info(`[True North] ✅ Scraping completed successfully:`, {
+        scraped: products.length,
+        saved: actualPages,
+        duration: `${(duration / 1000).toFixed(2)}s`,
+        robotsCompliance: {
+            crawlDelay: `${crawlDelay}ms`,
+            hasExplicitCrawlDelay,
+            maxRequestsPerMinute: calculatedMaxRate,
+            urlsFiltered: productUrls.length - urlsToProcess.length,
+            urlsProcessed: urlsToProcess.length
+        }
     });
     
     return {
-        products,
         totalProducts: products.length,
-        totalPages: Math.ceil(urlsToProcess.length / 20), // Assuming ~20 products per page
+        totalPages: actualPages,
+        products,
         timestamp: new Date(),
-        duration: processingTime
+        duration
     };
 }
+
+export default truenorthSeedScraper;

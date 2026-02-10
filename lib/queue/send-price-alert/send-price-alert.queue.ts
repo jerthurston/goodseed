@@ -8,7 +8,7 @@
  * @module lib/queue/send-price-alert
  */
 
-import Queue from 'bull';
+import Bull, { Queue, QueueOptions } from 'bull';
 import { redisConfig } from '@/lib/redis';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
@@ -18,39 +18,44 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 export const SEND_PRICE_ALERT_QUEUE_NAME = 'send-price-alert';
 
 /**
+ * Queue options configuration
+ */
+const queueOptions: QueueOptions = {
+  redis: {
+    host: redisConfig.host,
+    port: redisConfig.port,
+    password: redisConfig.password,
+    ...(redisConfig.tls && {
+      tls: {
+        rejectUnauthorized: false,
+      },
+    }),
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+  },
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 2000, // 2s, 4s, 8s (faster retry for emails)
+    },
+    removeOnComplete: {
+      age: 86400, // Keep for 24 hours
+      count: 1000,
+    },
+    removeOnFail: {
+      age: 604800, // Keep failed for 7 days
+      count: 500,
+    },
+  },
+};
+
+/**
  * Send Price Alert Email Queue Instance
  */
-export const sendPriceAlertQueue = new Queue(
+export const sendPriceAlertQueue: Queue = new Bull(
   SEND_PRICE_ALERT_QUEUE_NAME,
-  {
-    redis: {
-      host: redisConfig.host,
-      port: redisConfig.port,
-      password: redisConfig.password,
-      ...(redisConfig.tls && {
-        tls: {
-          rejectUnauthorized: false,
-        },
-      }),
-      maxRetriesPerRequest: null,
-      enableReadyCheck: false,
-    },
-    defaultJobOptions: {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 2000, // 2s, 4s, 8s (faster retry for emails)
-      },
-      removeOnComplete: {
-        age: 86400, // Keep for 24 hours
-        count: 1000,
-      },
-      removeOnFail: {
-        age: 604800, // Keep failed for 7 days
-        count: 500,
-      },
-    },
-  }
+  queueOptions
 );
 
 /**
