@@ -135,7 +135,7 @@ export async function createScheduleAutoScrapeJob({
             customStartTime: customStartTime?.toISOString()
         });
 
-        // Thêm job vào hàng đợi queue bull với repeat options
+        // IMPORTANTCODE: Thêm job vào hàng đợi queue bull với repeat options
         const job = await addScraperJob(
             // clean data
             {

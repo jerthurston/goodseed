@@ -7,11 +7,29 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createSellerSchema, validateSellerData } from "@/schemas/seller.schema"
+import { auth } from "@/auth"
+import { apiLogger } from "@/lib/helpers/api-logger";
 
 export async function GET() {
   try {
 
     // TODO: Need to authenticate for admin role in the future
+    const session = await auth();
+    const user = session?.user;
+
+    if (!user || !user.id) {
+      return NextResponse.json({
+        error: "Unauthorized",
+        status: 401
+      })
+    }
+
+    if (user?.role !== "ADMIN") {
+      return NextResponse.json({
+        message: "Forbidden",
+        status: 403
+      })
+    }
 
     // Get sellers with scrape logs and jobs data
     const sellers = await prisma.seller.findMany({
@@ -19,21 +37,45 @@ export async function GET() {
         id: true,
         name: true,
         url: true,
+        affiliateTag: true,
         isActive: true,
         autoScrapeInterval: true,
+        lastScraped: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
         scrapeLogs: {
           orderBy: { timestamp: "desc" },
           take: 1, // Get latest scrape log
         },
         scrapeJobs: {
           orderBy: { createdAt: "desc" },
-          take: 10, // Get last 10 jobs for stats
+          take: 10, // Get last 10 jobs for display
+        },
+        seedProducts: {
+          select: {
+            id: true,
+          },
         },
         seedCategories: {
           include: {
             seedProducts: true,
           },
         },
+        // Count all finished jobs for accurate totalRuns
+        _count: {
+          select: {
+            scrapeJobs: {
+              where: {
+                OR: [
+                  { status: 'COMPLETED' },
+                  { status: 'FAILED' },
+                  { status: 'CANCELLED' }
+                ]
+              }
+            }
+          }
+        }
       },
       orderBy: { name: "asc" },
     })
@@ -54,15 +96,15 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     // TODO: Need to authenticate for admin role in the future
-    
+
     const body = await request.json()
 
     // Validate request body using Zod schema
     const validation = validateSellerData(body)
-    
+
     if (!validation.success) {
       return NextResponse.json(
-        { 
+        {
           error: validation.error.message,
           details: validation.error.details,
           fields: validation.error.fields
@@ -75,7 +117,7 @@ export async function POST(request: NextRequest) {
 
     // Check if seller with same name already exists
     const existingSeller = await prisma.seller.findFirst({
-      where: { 
+      where: {
         name: {
           equals: name,
           mode: 'insensitive'
@@ -114,9 +156,9 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error) {
-    console.error("Error creating seller:", error)
+    apiLogger.logError("Error creating seller:", error as Error)
     return NextResponse.json(
-      { 
+      {
         error: "Failed to create seller",
         details: error instanceof Error ? error.message : "Unknown error"
       },

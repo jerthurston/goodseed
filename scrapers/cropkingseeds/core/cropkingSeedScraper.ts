@@ -95,13 +95,7 @@ export async function CropKingSeedsScraper(
             url: request.url
         });
 
-        // Save page data to dataset
-        await sharedData.dataset.pushData({
-            pageNumber,
-            url: request.url,
-            products: result.products,
-            extractedAt: new Date().toISOString()
-        });
+        // ✅ No need to save to dataset - products are collected in sharedData.allProducts array
 
         // Determine if we should crawl more pages (Crop King Seeds pagination logic)
         let shouldContinue = false;

@@ -163,6 +163,44 @@ export const apiLogger = {
     },
 
     /**
+     * Crawl logging - Specialized for scraping operations
+     * Only logs if ENABLE_CRAWL_LOGS=true (default: false)
+     * Lightweight - no deep object serialization to prevent memory leaks
+     * 
+     * @example
+     * apiLogger.crawl('Starting scrape', { seller: 'True North', pages: 62 });
+     * apiLogger.crawl('Progress: 10%', { products: 148, memory: '120MB' });
+     */
+    crawl: (message: string, metadata?: Record<string, any>) => {
+        const enableCrawlLogs = process.env.ENABLE_CRAWL_LOGS === 'true';
+        
+        if (!enableCrawlLogs) {
+            return; // Skip logging if disabled
+        }
+        
+        const formattedMessage = `[CRAWL] ${message}`;
+        
+        if (metadata) {
+            // Only log primitive values to avoid memory leaks
+            const lightweightMetadata: Record<string, any> = {};
+            for (const [key, value] of Object.entries(metadata)) {
+                // Only include primitives and simple values
+                if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+                    lightweightMetadata[key] = value;
+                } else if (value === null || value === undefined) {
+                    lightweightMetadata[key] = value;
+                } else {
+                    // For complex objects, just note their type
+                    lightweightMetadata[key] = `[${typeof value}]`;
+                }
+            }
+            console.log(formattedMessage, lightweightMetadata);
+        } else {
+            console.log(formattedMessage);
+        }
+    },
+
+    /**
      * Sanitize sensitive data for logging
      */
     sanitizeData: (data: Record<string, unknown> | unknown): Record<string, unknown> | unknown => {
@@ -365,13 +403,12 @@ export const apiLogger = {
     },
 
     /**
-     * Kiểm tra trạng thái logging hiện tại
+     * Get current logging configuration status
      */
     getLoggingStatus: () => {
         return {
             environment: process.env.NODE_ENV,
             enableDevLogging: getEnableDevLogging(),
-            scraperVerbose: process.env.SCRAPER_VERBOSE === 'true',
             shouldLogDev: shouldLog('dev'),
             shouldLogProd: shouldLog('prod')
         };
@@ -382,16 +419,21 @@ export const apiLogger = {
      * SCRAPER-SPECIFIC AGGREGATE LOGGING METHODS
      * ============================================================================
      * These methods reduce log spam in scrapers by aggregating repetitive logs
-     * Controlled by SCRAPER_VERBOSE environment variable
+     * 
+     * In Development:
+     * - Summary logs + detailed verbose logs (samples, URLs, etc.)
+     * 
+     * In Production:
+     * - Summary logs only (clean, essential information)
+     * - No verbose details (reduces log volume and costs)
      */
 
     /**
      * Check if verbose mode is enabled (for detailed logs)
-     * Uses same ENABLE_DEV_LOGGING flag for consistency
      * 
      * Verbose logs include:
-     * - Product samples
-     * - URL lists
+     * - Product samples (first 3)
+     * - URL lists (first 5)
      * - Crawl delays
      * - Debug details
      * 
@@ -399,11 +441,12 @@ export const apiLogger = {
      * - Page progress counts
      * - Batch operation results
      * - Error logs
+     * 
+     * Verbose mode is ONLY enabled in development with ENABLE_DEV_LOGGING
+     * Production logs show summaries only (cleaner, less noise)
      */
     isVerbose: (): boolean => {
-        // Verbose mode enabled when:
-        // 1. ENABLE_DEV_LOGGING=true (explicit) OR
-        // 2. NODE_ENV=development AND ENABLE_DEV_LOGGING not set to false
+        // Only enable verbose mode in development
         return getEnableDevLogging() && process.env.NODE_ENV === 'development';
     },
 

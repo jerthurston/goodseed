@@ -11,7 +11,6 @@ import { ProductCardDataFromCrawling } from '../../../types/crawl.type';
 import { apiLogger } from '../../../lib/helpers/api-logger'
 ;
 import { SiteConfig } from '@/lib/factories/scraper-factory';
-import { ROCKETSEEDS_PRODUCT_CARD_SELECTORS } from '../core/selector';
 
 export function extractProductFromDetailHTML(
     $: CheerioAPI, 

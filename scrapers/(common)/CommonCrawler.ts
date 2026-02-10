@@ -16,7 +16,7 @@
  */
 
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, ErrorHandler, Log, RequestQueue } from 'crawlee';
+import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, ErrorHandler, Log, RequestQueue } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { SimplePoliteCrawler, RobotsRules } from '@/lib/utils/polite-crawler';
@@ -46,7 +46,6 @@ export type SiteSpecificRequestHandler = (
         maxPages: { value: number | null };
         totalProducts: { value: number };
         actualPages: { value: number };
-        dataset: Dataset;
         politeCrawler: SimplePoliteCrawler;
         requestQueue: RequestQueue;
         getScrapingUrl: (baseUrl: string, pageNumber: number) => string;
@@ -137,7 +136,6 @@ export class CommonCrawler {
         requestHandler: (context: CheerioCrawlingContext) => Promise<void>,
         errorHandler: ErrorHandler<CheerioCrawlingContext>
     ) {
-        
         return {
             requestQueue,
             requestHandler,
@@ -170,11 +168,10 @@ export class CommonCrawler {
             throw new Error(`[${siteName}] scrapingSourceUrl is required in sourceContext`);
         }
 
-        // Initialize dataset and request queue
+        // ✅ Initialize products array and request queue (keep RequestQueue for deduplication/retry)
         const runId = Date.now();
-        const datasetName = `${siteName.toLowerCase().replace(/\s+/g, '')}-${runId}`;
-        const dataset = await Dataset.open(datasetName);
-        const requestQueue = await RequestQueue.open(`${siteName.toLowerCase().replace(/\s+/g, '')}-queue-${runId}`);
+        const queueName = `${siteName.toLowerCase().replace(/\s+/g, '')}-queue-${runId}`;
+        const requestQueue = await RequestQueue.open(queueName);
 
         // ✅ STEP 0: Initialize polite crawler and parse robots.txt FIRST
         const politeCrawler = this.createPoliteCrawler();
@@ -207,7 +204,6 @@ export class CommonCrawler {
             maxPages: { value: maxPages },
             totalProducts: { value: totalProducts },
             actualPages: { value: actualPages },
-            dataset,
             politeCrawler,
             requestQueue,
             getScrapingUrl: this.getScrapingUrl,
@@ -272,9 +268,22 @@ export class CommonCrawler {
         
         const crawler = new CheerioCrawler(crawlerConfig);
 
-        // Run crawler
+        // Run crawler with cleanup
         apiLogger.info(`[${siteName}] 🕷️ Starting crawler...`);
-        await crawler.run();
+        
+        try {
+            await crawler.run();
+        } finally {
+            // ✅ Cleanup: Drop request queue to free up memory/storage
+            try {
+                await requestQueue.drop();
+                apiLogger.debug(`[${siteName}] Cleaned up request queue: ${queueName}`);
+            } catch (cleanupError) {
+                apiLogger.logError(`[${siteName}] Failed to cleanup request queue:`, cleanupError as Error, {
+                    queueName
+                });
+            }
+        }
 
         // Get final results from shared data
         totalProducts = sharedData.totalProducts.value;

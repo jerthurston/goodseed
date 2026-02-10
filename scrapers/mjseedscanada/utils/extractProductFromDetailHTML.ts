@@ -179,11 +179,8 @@ export function extractProductFromDetailHTML(
         
         // Extract THC levels from specifications table ONLY
         let thcFromSelector = $(selectors.thcLevel).first().text().trim();
-        console.log(`🧪 [THC DEBUG] Raw table thcFromSelector: "${thcFromSelector}"`);
         
         if (thcFromSelector && thcFromSelector.length > 0) {
-            console.log(`🧪 [THC DEBUG] Using table data: "${thcFromSelector}"`);
-            
             // Extract THC value from various patterns
             let thcMatch = thcFromSelector.match(/up\s+to\s+(\d+(?:\.\d+)?%?)/gi) ||
                           thcFromSelector.match(/(\d+(?:\.\d+)?%)/gi);
@@ -194,26 +191,15 @@ export function extractProductFromDetailHTML(
                 if (!isNaN(thcNumber)) {
                     thcMin = thcMax = thcNumber;
                 }
-                console.log(`🧪 [THC DEBUG] Extracted THC: "${thcLevel}", Number: ${thcNumber}`);
-            } else {
-                console.log(`🧪 [THC DEBUG] No THC pattern found in table data`);
             }
-        } else {
-            console.log(`🧪 [THC DEBUG] No table data found for THC`);
         }
         
         // Extract CBD levels from specifications table ONLY
         let cbdFromSelector = $(selectors.cbdLevel).first().text().trim().replace(/&nbsp;/g, ' ').trim();
-        console.log(`🧪 [CBD DEBUG] Raw table cbdFromSelector: "${cbdFromSelector}"`);
         
         if (cbdFromSelector && cbdFromSelector.length > 0) {
-            console.log(`🧪 [CBD DEBUG] Using table data: "${cbdFromSelector}"`);
-            
             // Extract CBD value directly from table (should be clean)
             cbdLevel = cbdFromSelector;
-            console.log(`🧪 [CBD DEBUG] Extracted CBD: "${cbdLevel}"`);
-        } else {
-            console.log(`🧪 [CBD DEBUG] No table data found for CBD`);
         }
         
         // Convert CBD qualitative levels to numeric ranges
@@ -239,14 +225,10 @@ export function extractProductFromDetailHTML(
         // Extract growing difficulty level from specifications table ONLY
         let growingLevel: string | undefined = undefined;
         const growingFromSelector = $(selectors.growingLevel).first().text().trim();
-        console.log(`🌱 [GROWING DEBUG] Raw table growingFromSelector: "${growingFromSelector}"`);
         
         if (growingFromSelector && growingFromSelector.length > 0) {
             // Use table value directly (should be clean: Easy, Moderate, Hard, etc.)
             growingLevel = growingFromSelector;
-            console.log(`🌱 [GROWING DEBUG] Extracted from table: "${growingLevel}"`);
-        } else {
-            console.log(`🌱 [GROWING DEBUG] No table data found for growing difficulty`);
         }
 
         // Fallback: Extract seedType from product name if not found in tags

@@ -36,6 +36,7 @@
 
 import http from 'http';
 import { apiLogger } from '@/lib/helpers/api-logger';
+import { logWorkerMemoryConfig } from '@/lib/config/worker-memory.config';
 
 // Import worker modules
 import { 
@@ -89,6 +90,9 @@ healthServer.listen(3001, () => {
 async function startWorker() {
   try {
     apiLogger.info('[Main Worker] 📋 Initializing workers...');
+    
+    // Log memory configuration
+    logWorkerMemoryConfig();
     
     // ========================================
     // WORKER 1: Scraper

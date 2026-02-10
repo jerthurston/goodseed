@@ -52,6 +52,9 @@ export interface SellerRaw {
   seedProducts: Array<{
     id: string;
   }>;
+  _count?: {
+    scrapeJobs: number;
+  };
 }
 
 // UI-friendly seller data type

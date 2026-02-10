@@ -177,8 +177,9 @@ export function extractProductsFromHTML(
 
             // Extract pack sizes/variations and create pricing data
             const packSizes: string[] = [];
-            const packSelector = '.pack_listed_prod .variation_val_num'; // Direct selector for pack numbers
-            $card.find(packSelector).each((_, packEl) => {
+            // const packSelector = '.pack_listed_prod .variation_val_num'; 
+            // Direct selector for pack numbers
+            $card.find(selectors.packSizeCell).each((_, packEl) => {
                 const packSize = $(packEl).text().trim();
                 if (packSize) {
                     packSizes.push(packSize);
@@ -194,14 +195,37 @@ export function extractProductsFromHTML(
                     const minPrice = parseFloat(priceMatch[1]);
                     const maxPrice = parseFloat(priceMatch[2]);
                     
-                    // Create pricing for each pack size
+                    // Sonoma Seeds pricing pattern (manually observed):
+                    // Range $65-$240: Pack 5=$65, Pack 10=$120, Pack 25=$240
+                    // Range $40-$140: Pack 5=$40, Pack 10=$70, Pack 25=$140
+                    
                     packSizes.forEach((packSizeStr, index) => {
                         const packSize = parseInt(packSizeStr);
                         if (!isNaN(packSize)) {
-                            // Distribute prices across pack sizes (simple estimation)
-                            const totalPrice = index === 0 ? minPrice : 
-                                             index === packSizes.length - 1 ? maxPrice :
-                                             minPrice + ((maxPrice - minPrice) * index / (packSizes.length - 1));
+                            let totalPrice: number;
+                            
+                            if (packSize === 5) {
+                                // Pack 5 = min price
+                                totalPrice = minPrice;
+                            } else if (packSize === 10) {
+                                // Pack 10 = manually mapped based on observed price ranges
+                                if (minPrice === 65 && maxPrice === 240) {
+                                    totalPrice = 120;
+                                } else if (minPrice === 40 && maxPrice === 140) {
+                                    totalPrice = 70;
+                                } else {
+                                    // Fallback: use linear interpolation for unknown ranges
+                                    totalPrice = minPrice + ((maxPrice - minPrice) * index / (packSizes.length - 1));
+                                }
+                            } else if (packSize === 25) {
+                                // Pack 25 = max price
+                                totalPrice = maxPrice;
+                            } else {
+                                // Fallback for other pack sizes
+                                totalPrice = index === 0 ? minPrice : 
+                                           index === packSizes.length - 1 ? maxPrice :
+                                           minPrice + ((maxPrice - minPrice) * index / (packSizes.length - 1));
+                            }
                             
                             pricings.push({
                                 packSize,
@@ -294,15 +318,16 @@ export function extractProductsFromHTML(
             });
             
             maxPages = detectedMaxPage;
-            apiLogger.info(`[Sonoma Seeds] Detected ${maxPages} total pages from pagination`);
+            // Removed redundant log - already logged in main scraper
         } else {
-            apiLogger.warn('[Sonoma Seeds] No pagination elements found');
+            // No pagination found - return null
+            maxPages = null;
         }
 
         // Apply dbMaxPage limit if provided
         if (dbMaxPage && dbMaxPage > 0 && maxPages) {
             maxPages = Math.min(maxPages, dbMaxPage);
-            apiLogger.info(`[Sonoma Seeds] Limited to ${maxPages} pages (dbMaxPage: ${dbMaxPage})`);
+            // Removed redundant log - already logged in main scraper
         }
         
     } catch (error) {
@@ -312,7 +337,7 @@ export function extractProductsFromHTML(
         maxPages = null;
     }
 
-    apiLogger.info(`[Sonoma Seeds] Extracted ${products.length} products, maxPages: ${maxPages}`);
+    // Removed redundant log - already logged in main scraper with progress tracking
     
     return {
         products,

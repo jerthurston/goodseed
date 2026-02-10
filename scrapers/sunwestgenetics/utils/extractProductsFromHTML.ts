@@ -184,7 +184,7 @@ export function extractProductsFromHTML(
         // Check if pagination container exists (Jet Smart Filters)
         const $paginationContainer = $(selectors.paginationContainer);
         if ($paginationContainer.length > 0) {
-            console.log('[DEBUG] Jet Smart Filters pagination found, analyzing pages...');
+            // Removed debug log - not critical
             
             // Find all page items with data-value attribute (excluding prev/next)
             $(selectors.paginationItems).each((_, element) => {
@@ -201,17 +201,13 @@ export function extractProductsFromHTML(
                     if (pageNumber > maxPageFound) {
                         maxPageFound = pageNumber;
                     }
-                    console.log(`[DEBUG] Found page item: ${pageNumber} (data-value: ${dataValue})`);
                 }
             });
             
             // Fallback: If pagination is empty (JS-rendered), estimate from products per page
             if (maxPageFound === 0) {
-                console.log('[DEBUG] Pagination container found but empty (likely JS-rendered)');
-                
                 // Try to calculate from WooCommerce result count
                 const resultCountText = $(selectors.resultCount).text().trim();
-                console.log('[DEBUG] WooCommerce result count:', resultCountText);
                 
                 if (resultCountText) {
                     // Parse "Showing 1–16 of 2075 results" format
@@ -221,27 +217,21 @@ export function extractProductsFromHTML(
                         const productsPerPage = products.length;
                         if (totalProducts && productsPerPage > 0) {
                             maxPages = Math.ceil(totalProducts / productsPerPage);
-                            console.log(`[DEBUG] Calculated from result count: ${totalProducts} total / ${productsPerPage} per page = ${maxPages} pages`);
                         } else {
                             // Fallback to conservative estimate
                             maxPages = products.length === 16 ? 5 : 1;
                         }
                     } else {
-                        console.log('[DEBUG] Could not parse result count format');
                         // Fallback to conservative estimate
                         maxPages = products.length === 16 ? 5 : 1;
                     }
                 } else {
-                    console.log('[DEBUG] No result count found, cannot determine total pages');
                     // Cannot determine pagination without result count or HTML pagination
-                    // Return null to indicate unknown page count - let scraper handle this
                     maxPages = null;
                 }
             } else {
                 maxPages = maxPageFound;
             }
-            
-            console.log('[DEBUG] Max page detected:', maxPageFound);
             
             if (maxPages) {
                 apiLogger.debug(`[Extract Pagination] Detected ${maxPages} total pages from Jet Smart Filters pagination`);
@@ -250,7 +240,6 @@ export function extractProductsFromHTML(
             }
         } else {
             // Fallback: look for other pagination patterns
-            console.log('[DEBUG] No Jet Smart Filters pagination found, trying fallback...');
             $('.page-numbers').each((_, element) => {
                 const $item = $(element);
                 const text = $item.text().trim();

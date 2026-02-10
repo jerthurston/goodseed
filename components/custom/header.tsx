@@ -8,13 +8,23 @@ import SignInModal from "@/components/custom/modals/SignInModal";
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
+import { useRouter } from "next/navigation";
+import { useAuthModal } from "@/hooks/auth/useAuthModal";
+import { is } from "zod/v4/locales";
 
 const Header = () => {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login state
 
   const { data: session, status } = useSession();
   const currentUser = session?.user;
+
+  const {
+    isAuthModalOpen,
+    closeAuthModal,
+    executeWithAuth
+  } = useAuthModal()
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -27,6 +37,14 @@ const Header = () => {
     // Add additional logout logic here (clear tokens, redirect, etc.)
   };
 
+  const handleRedirectToFavoritesPage = (e:React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    executeWithAuth(
+      () => router.push("/dashboard/user/favorites"),
+      "You need to sign in to view your favorites."
+    );
+  }
 
   return (
     <>
@@ -43,13 +61,13 @@ const Header = () => {
             href="/seeds">
             Browse
           </Link>
-          <Link
-            href="/dashboard/user/favorites"
+          <button
+            onClick={handleRedirectToFavoritesPage}
             className="favorites-link"
             title="View Favorites"
           >
             <FontAwesomeIcon icon={faHeart}/>
-          </Link>
+          </button>
           {isLoggedIn ? (
             // --> Render after user login
             <AccountDropdown
@@ -70,8 +88,8 @@ const Header = () => {
       </nav>
       {/* Modal open for Login / Register */}
       <SignInModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isModalOpen || isAuthModalOpen}
+        onClose={isAuthModalOpen ? closeAuthModal : () => setIsModalOpen(false)}
         onLoginSuccess={() => {
           setIsLoggedIn(true);
           setIsModalOpen(false);

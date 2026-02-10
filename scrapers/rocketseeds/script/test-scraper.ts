@@ -5,35 +5,38 @@
  * Validation: THC/CBD levels, cannabis type, pricing variants, genetics
  */
 
-import RocketSeedsScraper from '../core/rockerSeedScraper';
+import RocketSeedsScraper from '../core/rocketSeedScraper';
 import { SiteConfig } from '../../../lib/factories/scraper-factory';
+import { ROCKETSEEDS_PRODUCT_CARD_SELECTORS } from '../core/selector';
 
 async function testRocketSeedsScraper() {
     console.log('🧪 Rocket Seeds Complete Scraper Test');
     console.log('============================================================\n');
 
     try {
-        // Mock site config
+        // Mock site config with proper selectors
         const siteConfig: SiteConfig = {
             name: 'Rocket Seeds',
             baseUrl: 'https://rocketseeds.com',
             isImplemented: true,
-            selectors: {} as any // Not used in new implementation
+            selectors: ROCKETSEEDS_PRODUCT_CARD_SELECTORS // ✅ Use actual selectors
         };
 
-        // Mock source context với sitemap URL
+        // Mock source context với pagination URL (NEW STRATEGY)
         const sourceContext = {
-            scrapingSourceUrl: 'https://rocketseeds.com/product-sitemap.xml', // Example sitemap URL
-            sourceName: 'Rocket Seeds Sitemap',
-            dbMaxPage: 0 // Not used in sitemap-based crawling
+            scrapingSourceUrl: 'https://rocketseeds.com/shop?swoof=1&product_brand=rocketseeds', // Pagination URL with filters
+            sourceName: 'Rocket Seeds Pagination',
+            dbMaxPage: 0
         };
 
         console.log('📋 Test Configuration:');
         console.log(`  Site: ${siteConfig.name}`);
         console.log(`  Base URL: ${siteConfig.baseUrl}`);
-        console.log(`  Sitemap URL: ${sourceContext.scrapingSourceUrl}`);
-        console.log(`  Strategy: Icon-based extraction với specification_individual structure`);
+        console.log(`  Source URL: ${sourceContext.scrapingSourceUrl}`);
+        console.log(`  Strategy: Pagination-based crawling (NEW)`);
+        console.log(`  Total Pages: ${sourceContext.dbMaxPage}`);
         console.log(`  Test Mode: Limited to 5 products (startPage=1, endPage=6)`);
+        console.log(`  Extraction: Icon-based với specification_individual structure`);
 
         console.log('\n🚀 Starting Rocket Seeds Scraper...');
         console.log('--------------------------------------------------');

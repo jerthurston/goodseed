@@ -62,8 +62,8 @@ export function ActivityList({
   const convertJobToActivity = (job: ScrapeJob): ActivityData => ({
     type: 'success' as ActivityType,
     id: job.id,
-    sellerId: job.sellerId,
-    sellerName: job.sellerName,
+    sellerId: job.seller.id,
+    sellerName: job.seller.name,
     timestamp: new Date(job.endTime || job.updatedAt), // Ensure Date object
     mode: job.mode,
     productsScraped: job.productsScraped,

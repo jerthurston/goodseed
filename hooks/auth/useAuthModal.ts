@@ -28,11 +28,15 @@ export function useAuthModal() {
     },[]);
 
     // Execute action with authentication
-    const executeWithAuth = useCallback((action: () => void) => {
+    const executeWithAuth = useCallback((
+        action: () => void,
+        actionMessage?: string
+    ) => {
         if (isAuthenticated) {
             action();
         } else if (!isLoading) {
-            toast.warning("You need to sign in to add items to your wishlist.");
+            const message = actionMessage || "You need to sign in to continue.";
+            toast.warning(message);
             // Only show modal if not still loading
             openAuthModal();
         }
