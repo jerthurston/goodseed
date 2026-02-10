@@ -17,6 +17,7 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 import { ProductCardDataFromCrawling } from '@/types/crawl.type';
 import { ErrorProcessorService } from '@/lib/services/error-monitoring/error-processor.service';
 import { logScrapeActivity } from '@/lib/helpers/server/logScrapeActivity';
+import { cleanupAfterJob, logMemoryUsage } from '@/lib/utils/memory-cleanup';
 
 /**
  * Process a single scraping job
@@ -246,6 +247,10 @@ export async function processScraperJob(job: Job<ScraperJobData>) {
 
     apiLogger.info('[INFO WORKER] Job completed successfully', { jobId });
 
+    // ❌ DON'T cleanup here - we need products for price detection!
+    // Memory cleanup will happen in worker after price detection job is emitted
+    logMemoryUsage(`After job ${jobId} completed`);
+
     // Return result with seller info for price change detection
     return {
       success: true,
@@ -255,7 +260,7 @@ export async function processScraperJob(job: Job<ScraperJobData>) {
       totalProducts: aggregatedResult.totalProducts,
       saved: saveResult.saved,
       updated: saveResult.updated,
-      products: aggregatedResult.products, // Include scraped products
+      products: aggregatedResult.products, // ✅ Keep products for price detection
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

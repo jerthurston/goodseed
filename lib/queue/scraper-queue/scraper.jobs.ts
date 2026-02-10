@@ -92,7 +92,7 @@ export async function addScraperJob(
     });
   }
 
-  // Sanitize & normalize input
+  // 1. Sanitize & normalize input
   const cleanData: ScraperJobData = {
     sellerId: String(data.sellerId),
     jobId: String(data.jobId),
@@ -109,13 +109,13 @@ export async function addScraperJob(
     }
   };
 
-  // Prepare job options
+  // 2. Prepare job options
   let jobOptions = {
     jobId: data.jobId,
     priority: data.config.mode === 'manual' ? 10 : 5,
   };
 
-  // Add repeat options if provided (for auto scraper)
+  // 3. Add repeat options if provided (for auto scraper)
   if (repeatOptions) {
     jobOptions = { ...jobOptions, ...repeatOptions };
     apiLogger.info(`[Scraper Queue] Created repeat job ${data.jobId}`, {
@@ -125,10 +125,11 @@ export async function addScraperJob(
     });
   }
 
-  // Create job
+  // 4. ADD JOB TO REDIS QUEUE - Để Redis có thông tin về job
   const job = await scraperQueue.add(cleanData, jobOptions);
   
   const logMessage = repeatOptions ? 'Created repeat job' : 'Added job';
+
   apiLogger.info(`[Scraper Queue] ${logMessage} ${job.id}`, {
     sellerId: cleanData.sellerId,
     mode: cleanData.config.mode,

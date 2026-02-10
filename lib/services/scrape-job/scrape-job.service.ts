@@ -4,8 +4,13 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 export interface ScrapeJob {
   id: string;
   jobId: string; // External job ID (cuid)
-  sellerId: string;
-  sellerName: string;
+  // sellerId: string;
+  // sellerName: string;
+  seller:{
+    name:string;
+    id:string;
+    url:string
+  }
   status: 'CREATED' | 'WAITING' | 'DELAYED' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
   mode: 'manual' | 'batch' | 'auto' | 'test';
   
@@ -92,6 +97,16 @@ export class ScrapeJobService {
       apiLogger.debug('[Scrape-job-service] response get scrape jobs', { response });
       
       let jobs = response.data.jobs || [];
+      
+      // Transform API response to match ScrapeJob interface
+      // API returns nested seller object, but interface expects flat sellerName
+      jobs = jobs.map((job) => ({
+        ...job,
+        sellerName: job.seller.name || 'Unknown Seller',
+        // Map timing fields for backward compatibility
+        startTime: job.startedAt ? new Date(job.startedAt) : undefined,
+        endTime: job.completedAt ? new Date(job.completedAt) : undefined
+      }));
       
       // Filter by timeframe if specified (client-side filtering)
       if (params.timeframe) {

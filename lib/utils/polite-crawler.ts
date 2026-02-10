@@ -65,7 +65,7 @@ export class SimplePoliteCrawler {
      * Constructor - Khởi tạo SimplePoliteCrawler với các tùy chọn
      */
     constructor(options: PoliteCrawlerOptions) {
-        this.userAgent = options.userAgent;
+        this.userAgent = options.userAgent || 'DefaultUserAgent';
         this.acceptLanguage = options.acceptLanguage || 'en-US,en;q=0.9';
         this.minDelay = options.minDelay || MIN_DELAY_DEFAULT;
         this.maxDelay = options.maxDelay || MAX_DELAY_DEFAULT;

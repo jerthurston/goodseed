@@ -4,17 +4,32 @@
  * KIẾN TRÚC TỔNG QUAN:
  * - Uses Cheerio for fast HTML parsing với WooCommerce standard pagination
  * - Design Pattern: Function-based scraper với delegation pattern
- * - Performance: Cheerio nhanh hơn 10-20x so với Playwright browser automation
+ * - Performance: Cheerio nhanh hơn 10-20x so với P    // Step 1: Crawl first page to detect total pages
+    await requestQueue.addRequest({ url: firstPageUrl });
+    await crawler.run();
+
+    // Check first page result from allProducts array
+    let detectedMaxPages = 1; // default fallback
+
+    if (allProducts.length > 0) {
+        apiLogger.info(`[Product List] Found ${allProducts.length} products on page 1`);
+
+        // Try to detect pagination from extractProductsFromHTML
+        // Note: detectedMaxPages should be returned from extractProductsFromHTML if needed
+        // For now, we'll use a simple heuristic
+        detectedMaxPages = maxPages || 100; // Use provided maxPages or default safety limit
+        apiLogger.info(`[Product List] Will crawl up to ${detectedMaxPages} total pages`);r automation
  * - Rate Limiting: Tuân thủ 2-5 giây delay giữa requests theo project requirement
  */
 
 import { extractProductsFromHTML } from '@/scrapers/vancouverseedbank/utils/extractProductsFromHTML';
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, ErrorHandler, Log, RequestQueue, RobotsTxtFile } from 'crawlee';
+import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, ErrorHandler, Log, RequestQueue, RobotsTxtFile } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
+import { MemoryMonitor } from '@/scrapers/(common)/logging-helpers';
 
 /**
  * ProductListScraper - LUỒNG XỬ LÝ CHÍNH
@@ -121,11 +136,13 @@ export async function vancouverProductListScraper(
     });
 
     const runId = Date.now();
-    const datasetName = `vsb-${runId}`;
-    const dataset = await Dataset.open(datasetName);
-
-    //Initialize request queue
-    const requestQueue = await RequestQueue.open(`vsb-queue-${runId}`);
+    
+    // ✅ Initialize products array to store scraped data
+    const allProducts: ProductCardDataFromCrawling[] = [];
+    
+    //Initialize request queue (keep for deduplication & retry logic)
+    const queueName = `vsb-queue-${runId}`;
+    const requestQueue = await RequestQueue.open(queueName);
 
     // Initialize polite crawler
     const politeCrawler = new SimplePoliteCrawler({
@@ -142,6 +159,9 @@ export async function vancouverProductListScraper(
     // Check if this is test mode
     const isTestMode = startPage !== null && startPage !== undefined && 
                        endPage !== null && endPage !== undefined;
+
+    // Use environment-based memory configuration (reads from WORKER_MEMORY_LIMIT_MB)
+        const memoryMonitor = MemoryMonitor.fromEnv();
 
     // ✅ Log robots.txt compliance
     apiLogger.info('[Vancouver] 🤖 Robots.txt compliance', {
@@ -219,13 +239,10 @@ export async function vancouverProductListScraper(
         const hasNextPage = $(selectors.nextPage).length > 0;
         apiLogger.debug(`[Product List] Has next page: ${hasNextPage}`);
 
-        // lưu dữ liệu vào dataset
-        await dataset.pushData({
-            products,
-            url: request.url,
-            hasNextPage,
-            maxPages: maxPages // Include maxPages in dataset
-        });
+        // ✅ Push directly to allProducts array instead of dataset
+        allProducts.push(...products);
+        
+        apiLogger.debug(`[Vancouver] Progress: ${allProducts.length} total products collected`);
 
         // POLITE CRAWLING: Delay is handled by crawler configuration (maxRequestsPerMinute)
         // No need for manual delay here since we use calculatedMaxRate
@@ -306,60 +323,88 @@ export async function vancouverProductListScraper(
 
     const firstPageUrl = `${baseUrl}${sourcePath}/`;
 
-    // First, crawl page 1 to detect maxPages from pagination
-    // const firstPageUrl = `${baseUrl}${sourcePath}/`; 
+    // Step 1: Crawl page 1 to detect total pages and collect first batch
     await requestQueue.addRequest({ url: firstPageUrl });
-    await crawler.run();
-
-    // Check first page result to get maxPages and products
-    const firstResults = await dataset.getData();
-    let detectedMaxPages = 1; // default fallback
-
-    if (firstResults.items.length > 0) {
-        const firstResult = firstResults.items[0] as any;
-        if (firstResult.products && firstResult.products.length > 0) {
-            apiLogger.info(`[Product List] Found ${firstResult.products.length} products on page 1`);
-
-            // Try to detect pagination from extractProductsFromHTML
-            detectedMaxPages = firstResult.maxPages || 1;
-            apiLogger.info(`[Product List] Detected ${detectedMaxPages} total pages from pagination`);
-
-            // Now crawl remaining pages (2 to maxPages) if more than 1 page
-            if (detectedMaxPages > 1) {
-                const remainingUrls: string[] = [];
-
-                // Use maxPages from test mode if available, otherwise use detected pages with safety limit
-                const finalMaxPages = firstResult.maxPages || Math.min(detectedMaxPages, 50);
-
-                for (let page = 2; page <= finalMaxPages; page++) {
-                    const pageUrl = `${baseUrl}${sourcePath}/page/${page}/`;
-                    remainingUrls.push(pageUrl);
-                }
-
-                if (remainingUrls.length > 0) {
-                    apiLogger.info(`[Product List] Crawling remaining ${remainingUrls.length} pages (finalMaxPages=${finalMaxPages})...`);
-                    for (const url of remainingUrls) {
-                        await requestQueue.addRequest({ url });
-                    }
-                    await crawler.run();
-                }
-            }
-            // Use maxPages from test mode if available, otherwise use detected pages with safety limit
-            actualPages = firstResult.maxPages || Math.min(detectedMaxPages, 50);
-        } else {
-            apiLogger.warn('[Product List] No products found on page 1, using fallback');
-        }
-    } else {
-        apiLogger.warn('[Product List] No results from page 1 crawl');
+    
+    try {
+        await crawler.run();
+    } finally {
+        // ✅ Cleanup will happen after all pages are crawled
     }
 
-    // Collect results from dataset
-    const results = await dataset.getData();
-    const allProducts: ProductCardDataFromCrawling[] = [];
+    // Step 2: Check first page result from allProducts array
+    let detectedMaxPages = 1; // default fallback
 
-    results.items.forEach((item) => {
-        allProducts.push(...(item as { products: ProductCardDataFromCrawling[] }).products);
-    });
+    if (allProducts.length > 0) {
+        apiLogger.info(`[Product List] Found ${allProducts.length} products on page 1`);
+
+        // Try to detect pagination from extractProductsFromHTML
+        // The maxPages should come from the extractResult in requestHandler
+        // For now, we'll use sourceContext?.dbMaxPage or a safe default
+        detectedMaxPages = sourceContext?.dbMaxPage || 50;
+        
+        // In test mode, use endPage as limit
+        if (isTestMode && endPage) {
+            detectedMaxPages = Math.min(endPage, detectedMaxPages);
+        }
+        
+        apiLogger.info(`[Product List] Will crawl up to ${detectedMaxPages} total pages`);
+
+        // Step 3: Crawl remaining pages (2 to maxPages) if more than 1 page
+        if (detectedMaxPages > 1) {
+            const remainingUrls: string[] = [];
+
+            for (let page = 2; page <= detectedMaxPages; page++) {
+                const pageUrl = `${baseUrl}${sourcePath}/page/${page}/`;
+                remainingUrls.push(pageUrl);
+            }
+
+            if (remainingUrls.length > 0) {
+                apiLogger.info(`[Product List] Crawling remaining ${remainingUrls.length} pages (2 to ${detectedMaxPages})...`);
+                for (const url of remainingUrls) {
+                    await requestQueue.addRequest({ url });
+                }
+                
+                try {
+                    await crawler.run();
+                } finally {
+                    // ✅ Cleanup: Drop request queue to free up memory/storage
+                    try {
+                        await requestQueue.drop();
+                        apiLogger.debug(`[Vancouver] Cleaned up request queue: ${queueName}`);
+                    } catch (cleanupError) {
+                        apiLogger.logError('[Vancouver] Failed to cleanup request queue:', cleanupError as Error, {
+                            queueName
+                        });
+                    }
+                }
+            }
+        } else {
+            // ✅ Only 1 page, cleanup now
+            try {
+                await requestQueue.drop();
+                apiLogger.debug(`[Vancouver] Cleaned up request queue: ${queueName}`);
+            } catch (cleanupError) {
+                apiLogger.logError('[Vancouver] Failed to cleanup request queue:', cleanupError as Error, {
+                    queueName
+                });
+            }
+        }
+        
+        actualPages = detectedMaxPages;
+    } else {
+        apiLogger.warn('[Product List] No products found on page 1, using fallback');
+        
+        // ✅ Cleanup even on failure
+        try {
+            await requestQueue.drop();
+            apiLogger.debug(`[Vancouver] Cleaned up request queue: ${queueName}`);
+        } catch (cleanupError) {
+            apiLogger.logError('[Vancouver] Failed to cleanup request queue:', cleanupError as Error, {
+                queueName
+            });
+        }
+    }
 
     const endTime = Date.now();
     const processingTime = endTime - startTime;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock, faPlay, faRobot, faStop } from '@fortawesome/free-solid-svg-icons';
+import { faClock, faPlay, faRing, faRobot, faStop } from '@fortawesome/free-solid-svg-icons';
 import { DashboardButton } from '@/app/dashboard/(components)/DashboardButton';
 import { DashboardCard } from '@/app/dashboard/(components)/DashboardCard';
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
@@ -39,6 +39,20 @@ export default function AutoScraperControlPanel({
   return (
     <DashboardCard className={styles.card}>
       <div className="space-y-6">
+        <div className='flex flex-col justify-start'>
+           <h3 
+            className="text-xl font-bold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+          Bulk Scraper Control
+          </h3>
+          <p 
+            className="text-sm font-['Poppins']"
+            style={{ color: 'var(--text-primary-muted)' }}
+          >
+            Configure auto scraping for each seller individually. Enable auto scraping here to use the "Start All" feature above.
+          </p>
+         </div>
         {/* Status Info */}
         {hasScheduledJobs && (
           <div
@@ -49,11 +63,11 @@ export default function AutoScraperControlPanel({
               color: 'var(--text-primary)'
             }}
           >
-            <div className="font-['Poppins'] font-semibold">
+            <div className="font-semibold">
               ✅ Auto-Scrapers Active ({activeAutoScrapers} running)
             </div>
             <div
-              className="text-sm mt-1 font-['Poppins']"
+              className="text-sm mt-1"
               style={{ color: 'var(--text-primary-muted)' }}
             >
               Auto-scrapers are scheduled and running. Use "Stop All" to clear and reschedule.
@@ -77,19 +91,14 @@ export default function AutoScraperControlPanel({
               activeSellers.length > 0 && (
                 <div className='absolute -right-2 -top-3 bg-red-400 text-white p-1 rounded-full w-6 h-6 flex items-center justify-center z-10'>
                   <span className='text-xs'>
-                    {activeSellers.length}
+                    {activeAutoScrapers}
                   </span>
                 </div>
               )
             }
 
-            <FontAwesomeIcon icon={faPlay} className="mr-2" />
-            RUN
-            {hasScheduledJobs && (
-              <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded">
-                {activeAutoScrapers} Running
-              </span>
-            )}
+{!canStartAll ? <FontAwesomeIcon icon={faRobot} className="mr-2 animate-pulse" /> : <FontAwesomeIcon icon={faPlay} className="mr-2 " />}
+            CRAWL
           </DashboardButton>
 
           <DashboardButton
@@ -102,13 +111,8 @@ export default function AutoScraperControlPanel({
               : 'No auto-scrapers currently running'
             }
           >
-            <FontAwesomeIcon icon={faStop} className="mr-2" />
+            <FontAwesomeIcon icon={faStop} className="mr-2 " />
             PAUSE
-            {hasScheduledJobs && (
-              <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded">
-                {activeAutoScrapers}
-              </span>
-            )}
           </DashboardButton>
         </div>
         {lastRun && (
@@ -122,7 +126,7 @@ export default function AutoScraperControlPanel({
        <div className='text-center text-sm text-neutral-500 font-bold'>
         <FontAwesomeIcon icon={faRobot} size='lg' className="mr-1 text-green-600" />
         <span>
-          Auto scraper activity will happen at <span className='text-yellow-600'> 2.AM - 8.AM - 2.PM - 8.PM </span> everyday when RUN button is activated.
+          Auto scraper activity will happen repeatedly at the<span className='text-yellow-600'>{" "}scheduled times.{" "}</span>
         </span>
        </div>
       </div>

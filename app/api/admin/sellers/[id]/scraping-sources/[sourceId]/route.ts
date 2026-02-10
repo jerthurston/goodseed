@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { scrapingSourceSchema } from '@/schemas/seller.schema'
 import { prisma } from '@/lib/prisma'
 import { extractScrapingSourceName } from '@/lib/utils/scraping-source.utils'
+import { apiLogger } from '@/lib/helpers/api-logger';
 
 // DELETE /api/admin/sellers/[id]/scraping-sources/[sourceId] - Delete scraping source
 export async function DELETE(
@@ -71,9 +72,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string; sourceId: string }> }
 ) {
   try {
-    console.log('[API] PUT scraping-source: Starting update request')
     const { id: sellerId, sourceId } = await params
-    console.log('[API] PUT scraping-source: Seller ID:', sellerId, 'Source ID:', sourceId)
     
     // Validate IDs
     if (!sellerId || typeof sellerId !== 'string' || !sourceId || typeof sourceId !== 'string') {
@@ -83,14 +82,9 @@ export async function PUT(
         { status: 400 }
       )
     }
-
     // Parse request body
-    console.log('[API] PUT scraping-source: Parsing request body')
     const body = await request.json()
-    console.log('[API] PUT scraping-source: Request body:', body)
-
     // Validate request data using Zod schema
-    console.log('[API] PUT scraping-source: Starting validation')
     const validationResult = scrapingSourceSchema
       .omit({ id: true, sellerId: true }) // Exclude auto-generated fields
       .partial() // Make all fields optional for partial updates
@@ -114,11 +108,9 @@ export async function PUT(
       )
     }
 
-    console.log('[API] PUT scraping-source: Validation successful')
     const updateData = validationResult.data
 
     // Check if scraping source exists and belongs to seller
-    console.log('[API] PUT scraping-source: Checking if scraping source exists')
     const existingSource = await prisma.scrapingSource.findFirst({
       where: {
         id: sourceId,
@@ -127,26 +119,21 @@ export async function PUT(
     })
 
     if (!existingSource) {
-      console.log('[API] PUT scraping-source: Scraping source not found')
+     apiLogger.info('[API] PUT scraping-source: Scraping source not found')
       return NextResponse.json(
         { error: 'Scraping source not found or does not belong to this seller' },
         { status: 404 }
       )
     }
 
-    console.log('[API] PUT scraping-source: Existing source found:', existingSource.scrapingSourceName)
-
     // Prepare update data with computed name if URL is being updated
     const finalUpdateData: any = { ...updateData }
     
     if (updateData.scrapingSourceUrl) {
-      console.log('[API] PUT scraping-source: Computing new scraping source name')
       const newScrapingSourceName = extractScrapingSourceName(updateData.scrapingSourceUrl)
       finalUpdateData.scrapingSourceName = newScrapingSourceName
-      console.log('[API] PUT scraping-source: New computed name:', newScrapingSourceName)
 
       // Check for duplicate URL within the same seller (exclude current source)
-      console.log('[API] PUT scraping-source: Checking for duplicate URL')
       const duplicateUrl = await prisma.scrapingSource.findFirst({
         where: {
           sellerId: sellerId,
@@ -156,7 +143,7 @@ export async function PUT(
       })
 
       if (duplicateUrl) {
-        console.log('[API] PUT scraping-source: Duplicate URL found')
+        apiLogger.info('[API] PUT scraping-source: Duplicate URL found')
         return NextResponse.json(
           {
             error: 'Validation failed',
@@ -170,31 +157,16 @@ export async function PUT(
     }
 
     // Update scraping source
-    console.log('[API] PUT scraping-source: Updating scraping source')
     const updatedSource = await prisma.scrapingSource.update({
       where: { id: sourceId },
       data: finalUpdateData
     })
 
-    console.log('[API] PUT scraping-source: Scraping source updated successfully:', updatedSource.id)
+    apiLogger.logResponse('[API] PUT scraping-source: Scraping source updated successfully:', { id: updatedSource.id })
     return NextResponse.json(updatedSource, { status: 200 })
 
   } catch (error) {
-    console.error('[API] PUT scraping-source: Error occurred:', error)
-    console.error('[API] PUT scraping-source: Error type:', typeof error)
-    console.error('[API] PUT scraping-source: Error message:', error instanceof Error ? error.message : String(error))
-    
-    if (error instanceof Error) {
-      if (error.message.includes('Unique constraint')) {
-        console.log('[API] PUT scraping-source: Unique constraint violation')
-        return NextResponse.json(
-          { error: 'A scraping source with this data already exists' },
-          { status: 409 }
-        )
-      }
-    }
-
-    console.log('[API] PUT scraping-source: Returning generic 500 error')
+    apiLogger.logError('[API] PUT scraping-source: Error type:', error as Error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

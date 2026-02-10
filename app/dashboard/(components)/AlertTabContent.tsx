@@ -61,7 +61,7 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
     error: jobsError,
     refreshJobs
   } = useFetchScrapeJobs({
-    timeframe: 60, // Thông số timeFrame là gì 
+    timeframe: 1440, // 24 hours (was 60 minutes - too short to show all auto jobs)
     limit: 100
   });
   // Log all jobs
@@ -77,8 +77,8 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
       // Search filter
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
-        if (!job.sellerName?.toLowerCase().includes(searchTerm) &&
-            !job.sellerId?.toLowerCase().includes(searchTerm)) {
+        if (!job.seller.name?.toLowerCase().includes(searchTerm) &&
+            !job.seller.id?.toLowerCase().includes(searchTerm)) {
           return false;
         }
       }
@@ -89,7 +89,7 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
       }
 
       // Seller filter
-      if (filters.sellerId !== 'ALL' && job.sellerId !== filters.sellerId) {
+      if (filters.sellerId !== 'ALL' && job.seller.id !== filters.sellerId) {
         return false;
       }
 
@@ -384,7 +384,7 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
                   
                   <div className={styles.jobSeller}>
                     <FontAwesomeIcon icon={faUser} className="text-gray-500" />
-                    <span>{job.sellerName}</span>
+                    <span>{job.seller.name}</span>
                   </div>
 
                   <div className={styles.jobMode}>
@@ -406,7 +406,7 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
 
                 <div className={styles.jobDetails}>
                   {/* Always show basic progress info */}
-                  <div className={`flex flex-row gap-2 text-sm`}>
+                  <div className={`grid lg:flex lg:flex-row gap-2 text-sm`}>
                     <span>Scraped: {job.productsScraped || 0}</span>
                     <span>Saved: {job.productsSaved || 0}</span>
                     <span>Updated: {job.productsUpdated || 0}</span>
@@ -417,12 +417,12 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
                   {(job.startTime || job.endTime) && (
                     <div className={styles.jobTiming}>
                       {job.startTime && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-sm text-gray-500">
                           Started: {new Date(job.startTime).toLocaleString()}
                         </span>
                       )}
                       {job.endTime && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-sm text-gray-500">
                           Ended: {new Date(job.endTime).toLocaleString()}
                         </span>
                       )}

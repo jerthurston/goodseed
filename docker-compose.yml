@@ -33,35 +33,87 @@ services:
   # Background worker for processing all job types:
   # - Scraping jobs (web scraping, data normalization)
   # - Price alert jobs (price change detection, email notifications)
+  #
+  # Resource Limits: Match Render Starter Plan
+  # - Memory: 512 MB (same as production)
+  # - CPU: 0.5 vCPU (same as production)
   worker:
     build:
       context: .
       dockerfile: Dockerfile.worker
     container_name: goodseed-worker
+    
+    # ===== Resource Limits (Render Standard Plan Simulation) =====
+    # TESTING: Upgraded to 2GB to validate if memory is the bottleneck
+    # Original: 512MB (Starter) → Now: 2GB (Standard)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'        # 1.0 vCPU (Render Standard)
+          memory: 2G         # 2 GB RAM (Render Standard)
+        reservations:
+          cpus: '0.5'        # Minimum CPU
+          memory: 1G         # Minimum RAM
+    
+    # Memory settings
+    mem_swappiness: 0          # Disable swap for realistic testing
+    oom_kill_disable: false    # Allow OOM killer (same as Render)
+    
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    
     environment:
+      # ===== Testing Mode (can switch to production) =====
+      # Change NODE_ENV=production to test production behavior
       - NODE_ENV=development
+      
+      # ===== Database =====
       - DATABASE_URL=postgresql://postgres:Spyder_lem1@host.docker.internal:5432/goodseed_db
+      
+      # ===== Redis =====
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      
+      # ===== Email =====
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
+      
+      # ===== Worker Configuration =====
+      - WORKER_CONCURRENCY=1
+      
+      # ===== Crawlee Configuration =====
+      # Fix memory detection (2048 MB available for Standard plan)
+      - CRAWLEE_AVAILABLE_MEMORY_RATIO=2048
+    
+    ports:
+      - "3001:3001"  # Health check endpoint
+    
     volumes:
       - .:/app
       - /app/node_modules
+    
     depends_on:
       redis:
         condition: service_healthy
+    
     restart: unless-stopped
+    
     networks:
       - goodseed-network
+    
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    
+    # Enhanced logging for testing
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   redis_data:
