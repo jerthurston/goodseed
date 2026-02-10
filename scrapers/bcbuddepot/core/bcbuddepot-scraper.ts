@@ -1,6 +1,6 @@
 import { apiLogger } from "@/lib/helpers/api-logger";
 import { SimplePoliteCrawler } from "@/lib/utils/polite-crawler";
-import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, Dataset, ErrorHandler, Log, RequestQueue } from "crawlee";
+import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, ErrorHandler, Log, RequestQueue } from "crawlee";
 import { SiteConfig } from "@/lib/factories/scraper-factory";
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from "@/types/crawl.type";
 import { extractProductFromDetailHTML,extractProductUrlsFromSitemap } from "../utils/index";
@@ -33,11 +33,13 @@ export async function BcbuddepotScraper(
         throw new Error('[BC Bud Depot Scraper] scrapingSourceUrl is required in sourceContext');
     }
 
-    // Initialize dataset and request queue
+    // ✅ Initialize products array to store scraped data
+    const products: ProductCardDataFromCrawling[] = [];
+    
+    // Initialize request queue (keep for deduplication & retry logic)
     const runId = Date.now();
-    const datasetName = `bcbuddepot-${runId}`;
-    const dataset = await Dataset.open(datasetName);
-    const requestQueue = await RequestQueue.open(`bcbuddepot-queue-${runId}`);
+    const queueName = `bcbuddepot-queue-${runId}`;
+    const requestQueue = await RequestQueue.open(queueName);
 
     // Initialize polite crawler and parse robots.txt FIRST
     const politeCrawler = new SimplePoliteCrawler({
@@ -166,12 +168,8 @@ export async function BcbuddepotScraper(
             if (product) {
                 log.info(`[BC Bud Depot Scraper] Successfully extracted product: ${product.name}`);
                 
-                // Save product to dataset
-                await dataset.pushData({
-                    product,
-                    url: request.url,
-                    extractedAt: new Date().toISOString()
-                });
+                // ✅ Push directly to products array instead of dataset
+                products.push(product);
                 
                 actualPages++;
             } else {
@@ -245,28 +243,28 @@ export async function BcbuddepotScraper(
         ],
     });
 
-    // Step 3: Run crawler
+    // Step 3: Run crawler with cleanup
     apiLogger.info('[BC Bud Depot Scraper] Starting crawler...');
-    await crawler.run();
-
-    // Step 4: Get data from dataset
-    apiLogger.info('[BC Bud Depot Scraper] Collecting results from dataset...');
-    const allData = await dataset.getData();
     
-    // Extract products from dataset items
-    const allProducts: ProductCardDataFromCrawling[] = [];
-    
-    allData.items.forEach((item: any) => {
-        if (item.product) {
-            allProducts.push(item.product);
+    try {
+        await crawler.run();
+    } finally {
+        // ✅ Cleanup: Drop request queue to free up memory/storage
+        try {
+            await requestQueue.drop();
+            apiLogger.debug(`[BC Bud Depot Scraper] Cleaned up request queue: ${queueName}`);
+        } catch (cleanupError) {
+            apiLogger.logError('[BC Bud Depot Scraper] Failed to cleanup request queue:', cleanupError as Error, {
+                queueName
+            });
         }
-    });
+    }
 
-    // Step 5: Return results
+    // Step 4: Return results (products already collected in array)
     const duration = Date.now() - startTime;
     
     apiLogger.info('[BC Bud Depot Scraper] Crawling completed', {
-        totalProducts: allProducts.length,
+        totalProducts: products.length,
         totalPages: actualPages,
         duration: `${duration}ms`,
         sitemapUrl: sourceContext.scrapingSourceUrl,
@@ -274,9 +272,9 @@ export async function BcbuddepotScraper(
     });
 
     return {
-        totalProducts: allProducts.length,
+        totalProducts: products.length,
         totalPages: actualPages,
-        products: allProducts,
+        products,
         timestamp: new Date(),
         duration,
     };

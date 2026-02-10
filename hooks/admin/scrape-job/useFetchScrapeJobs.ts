@@ -30,7 +30,7 @@ export function useFetchScrapeJobs({
   mode = 'ALL', 
   sellerId,
   limit = 50,
-  timeframe = 60
+  timeframe = 1440 // 24 hours (was 60 minutes - too short for auto scraper jobs)
 }: UseScrapJobsParams = {}): UseScrapJobsResult {
   const queryClient = useQueryClient();
 

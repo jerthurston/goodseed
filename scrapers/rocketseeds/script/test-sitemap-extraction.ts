@@ -6,7 +6,7 @@
  * Tests sitemap URL extraction for Rocket Seeds only
  */
 
-import { extractProductUrlsFromSitemap as extractRocketSeedsUrls } from '../utils/extractProductUrlsFromSitemap';
+import { extractProductUrlsFromSitemap as extractRocketSeedsUrls } from '../utils/extractProductUrls';
 
 // Test URLs
 const ROCKET_SEEDS_SITEMAPS = [

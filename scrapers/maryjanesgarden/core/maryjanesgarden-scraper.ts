@@ -85,13 +85,7 @@ export async function MaryJanesGardenScraper(
 
         log.info(`[Mary Jane's Garden] Page ${pageNumber}: Found ${result.products.length} products`);
 
-        // Save page data to dataset
-        await sharedData.dataset.pushData({
-            pageNumber,
-            url: request.url,
-            products: result.products,
-            extractedAt: new Date().toISOString()
-        });
+        // ✅ No need to save to dataset - products are collected in sharedData.allProducts array
 
         // Determine if we should crawl more pages (Mary Jane's Garden pagination logic)
         let shouldContinue = false;

@@ -115,7 +115,7 @@ export default function AdminDashboard() {
         <div className="lg:hidden fixed inset-0 z-50 flex">
           {/* Background overlay */}
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50" 
+            className="fixed inset-0 bg-black/85 bg-opacity-50" 
             onClick={() => setIsMobileSidebarOpen(false)}
           />
           {/* Sidebar content */}
@@ -147,7 +147,7 @@ export default function AdminDashboard() {
                     Overview
                   </DashboardSidebarItem>
 
-                  {/* Sellers with dropdown */}
+                  {/* Sellers Management */}
                   <div className="space-y-1">
                     <DashboardSidebarItem
                       icon={<FontAwesomeIcon icon={faUser} className="text-lg"/>}
@@ -242,6 +242,7 @@ export default function AdminDashboard() {
                 {/* Mobile Bottom Actions */}
                 <AdminPanelBottomActions />
               </div>
+
             </div>
           </div>
         </div>
@@ -348,23 +349,28 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-
             {/* Bottom Action Buttons Component */}
             <AdminPanelBottomActions />
           </DashboardSidebar>
         }
     >
+      
+      
+      {/*-------------------------------RENDER TAB CONTENT--------------------------------------------  */}
+
       {isLoading ? (
+        // ---------------------------UI for loading status---------------------------------------------
         <div className="flex items-center justify-center h-screen inset-0">
           <BeatLoaderSpinner />
         </div>
       ) : (
+      // -------------------------------- Main Content after Loading -----------------------------------------
         <>
           {/* Breadcrumb Navigation */}
           <AdminBreadcrumb items={getAdminBreadcrumbs(activeTab)} />
           
           <div className="space-y-6">
-            {/* Overview */}
+            {/* Auto Scraper Overview */}
             {activeTab === "overview" && (
               <DashboardOverview sellers={sellers} />
           )}
@@ -375,7 +381,7 @@ export default function AdminDashboard() {
             refetchSellers={refetchSellers}
           />
         )}
-        {/* Auto Scraper Management */}
+        {/* Scraper Config Tab Content Component*/}
         {activeTab === "auto-scraper" && (
           <AutoScraperTabContent
             sellers={sellers}

@@ -13,8 +13,9 @@ import { apiLogger } from './helpers/api-logger';
 
 // Parse Redis configuration from environment variables
 function getRedisConfig() {
-  // Always prefer REDIS_URL if available (Upstash/Vercel provides this)
+  // Always prefer REDIS_URL if available (Upstash/Vercel provides this, in production)
   if (process.env.REDIS_URL) {
+    // ✅ PRODUCTION: Parse rediss://gentle-snipe-5226.upstash.io:6379
     try {
       const redisUrl = new URL(process.env.REDIS_URL);
       const config = {
@@ -56,8 +57,15 @@ function getRedisConfig() {
 export const redisConfig = getRedisConfig();
 
 /**
- * IORedis client for Bull queue
- * This is the traditional Redis client used by Bull
+ * IORedis client for direct Redis operations
+ * 
+ * Note: Bull queues DO NOT use this instance!
+ * Bull creates its own internal IORedis connections using redisConfig.
+ * 
+ * This instance is used for:
+ * - Health check endpoints (/api/health/ready, /api/admin/health)
+ * - Testing endpoints (/api/test-redis)
+ * - Direct Redis operations outside of Bull queue system
  */
 export const ioredis = new IORedis({
   host: redisConfig.host,

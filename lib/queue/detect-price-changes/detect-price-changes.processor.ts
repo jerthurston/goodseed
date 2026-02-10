@@ -23,6 +23,7 @@ import {
 } from '@/lib/services/price-alert/detectPriceChanges';
 import { batchCreatePriceAlertEmailJobs } from '@/lib/queue/send-price-alert';
 import type { DetectPriceChangesJobData } from './detect-price-changes.jobs';
+import { cleanupAfterJob, logMemoryUsage } from '@/lib/utils/memory-cleanup';
 
 /**
  * Detect Price Changes Processor
@@ -156,6 +157,20 @@ export async function processDetectPriceChangesJob(
       usersToNotify: usersWithChanges.length,
       emailJobsCreated: emailJobIds.length,
     });
+
+    // Step 7: Memory cleanup after job completion
+    try {
+      await logMemoryUsage('Before cleanup');
+      await cleanupAfterJob(`detect-price-changes-${job.id}`, priceChanges, usersToNotify, usersWithChanges);
+      await logMemoryUsage('After cleanup');
+    } catch (cleanupError) {
+      apiLogger.logError(
+        '[Detect Price Changes Processor] Memory cleanup failed',
+        cleanupError instanceof Error ? cleanupError : new Error('Unknown cleanup error'),
+        { jobId: job.id }
+      );
+      // Don't throw - cleanup failure shouldn't fail the job
+    }
 
     return {
       priceChangesDetected: priceChanges.length,

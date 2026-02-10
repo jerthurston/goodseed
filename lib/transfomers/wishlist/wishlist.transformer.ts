@@ -52,7 +52,7 @@ export function transformWishlistItemRawToUI(raw: WishlistItemRaw): WishlistItem
       ? raw.seedProduct.createdAt.split('T')[0] 
       : raw.seedProduct.createdAt.toISOString().split('T')[0],
     vendorName: raw.seedProduct.seller.name,
-    vendorUrl: raw.seedProduct.seller.url,
+    vendorUrl: raw.seedProduct.url, // ✅ Use product URL, not seller base URL
     smallestPackSize: bestValuePack.packSize,
     smallestPackPrice: bestValuePack.totalPrice,
     strainDescription: raw.seedProduct.description || '',

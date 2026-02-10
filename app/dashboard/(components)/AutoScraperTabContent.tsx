@@ -236,7 +236,7 @@ export default function AutoScraperTabContent({
         <DashboardCardHeader className={styles.cardHeader}>
          <div className='flex flex-col justify-start'>
            <h3 
-            className="text-lg font-semibold font-['Poppins']"
+            className="text-xl font-bold"
             style={{ color: 'var(--text-primary)' }}
           >
             Individual Seller Configuration
@@ -254,19 +254,24 @@ export default function AutoScraperTabContent({
           <div className="grid grid-cols-1 gap-4">
             {sellers.map((seller) => {
               const sellerStatus = sellerStatuses[seller.id];
+              // Seller is considered "scheduled" if:
+              // 1. Seller is active
+              // 2. Has autoScrapeInterval configured
+              const isScheduled = seller.isActive && seller.autoScrapeInterval != null && seller.autoScrapeInterval > 0;
               
               return (
                 <SellerAutoScraperCard
                   key={seller.id}
                   sellerId={seller.id}
                   sellerName={seller.name}
-                  isScheduled={seller.autoScrapeInterval != null && seller.autoScrapeInterval > 0}
+                  isScheduled={isScheduled}
                   isRunning={sellerStatus?.isRunning || false}
                   nextRun={sellerStatus?.nextScheduledRun}
                   autoScrapeInterval={seller.autoScrapeInterval}
                   onToggle={() => handleSellerToggle(seller.id)}
                   onIntervalChange={handleIntervalChange}
                   isLoading={isLoading || isStatusLoading}
+                  isDisabled={!seller.isActive} // Disable if seller is deactivated
                 />
               );
             })}

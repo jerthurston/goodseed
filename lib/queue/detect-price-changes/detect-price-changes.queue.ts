@@ -8,7 +8,7 @@
  * @module lib/queue/detect-price-changes
  */
 
-import Queue from 'bull';
+import Bull, { Queue, QueueOptions } from 'bull';
 import { redisConfig } from '@/lib/redis';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
@@ -18,39 +18,44 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 export const DETECT_PRICE_CHANGES_QUEUE_NAME = 'detect-price-changes';
 
 /**
+ * Queue options configuration
+ */
+const queueOptions: QueueOptions = {
+  redis: {
+    host: redisConfig.host,
+    port: redisConfig.port,
+    password: redisConfig.password,
+    ...(redisConfig.tls && {
+      tls: {
+        rejectUnauthorized: false,
+      },
+    }),
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+  },
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000, // 5s, 25s, 125s
+    },
+    removeOnComplete: {
+      age: 86400, // Keep for 24 hours
+      count: 1000,
+    },
+    removeOnFail: {
+      age: 604800, // Keep failed for 7 days
+      count: 500,
+    },
+  },
+};
+
+/**
  * Detect Price Changes Queue Instance
  */
-export const detectPriceChangesQueue = new Queue(
+export const detectPriceChangesQueue: Queue = new Bull(
   DETECT_PRICE_CHANGES_QUEUE_NAME,
-  {
-    redis: {
-      host: redisConfig.host,
-      port: redisConfig.port,
-      password: redisConfig.password,
-      ...(redisConfig.tls && {
-        tls: {
-          rejectUnauthorized: false,
-        },
-      }),
-      maxRetriesPerRequest: null,
-      enableReadyCheck: false,
-    },
-    defaultJobOptions: {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000, // 5s, 25s, 125s
-      },
-      removeOnComplete: {
-        age: 86400, // Keep for 24 hours
-        count: 1000,
-      },
-      removeOnFail: {
-        age: 604800, // Keep failed for 7 days
-        count: 500,
-      },
-    },
-  }
+  queueOptions
 );
 
 /**
