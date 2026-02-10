@@ -132,7 +132,10 @@ export async function extractProductUrls(
 
         const { scrapingSourceUrl, sourceName, dbMaxPage } = sourceContext;
         
-        apiLogger.info(`${LOG_PREFIX} Starting pagination crawl from: ${scrapingSourceUrl}`);
+        apiLogger.crawl('URL extraction starting', {
+            seller: sourceName,
+            url: scrapingSourceUrl
+        });
 
         const runId = Date.now();
         const queueName = `${sourceName}-url-queue-${runId}`;
@@ -149,18 +152,19 @@ export async function extractProductUrls(
             ? Math.floor(60000 / crawlDelay)
             : DEFAULT_MAX_REQUESTS_PER_MINUTE;
 
-        apiLogger.info(`${LOG_PREFIX} Rate limiting:`, {
+        apiLogger.crawl('Rate limiting configured', {
             crawlDelay: `${crawlDelay}ms`,
             maxRequestsPerMinute,
-            source: hasExplicitCrawlDelay ? 'robots.txt' : 'default'
+            source: hasExplicitCrawlDelay ? 'robots.txt' : 'default',
+            seller: sourceName
         });
 
         // Create CheerioCrawler to crawl pagination pages
         const crawler = new CheerioCrawler({
             requestQueue,
-            async requestHandler({ $, request, log }) {
-                log.info(`${LOG_PREFIX} Processing pagination page: ${request.url}`);
-
+            async requestHandler({ $, request }) {
+                // Removed verbose log.info statements to reduce memory usage
+                
                 // Extract product links from current page using selectors
                 const pageProductUrls: string[] = [];
 
@@ -190,33 +194,31 @@ export async function extractProductUrls(
                     }
                 });
 
-                log.info(`${LOG_PREFIX} Found ${pageProductUrls.length} products on page`);
-
                 // Detect total pages from pagination (only on first page)
                 if (pagesProcessed === 0) {
                     totalPages = detectTotalPages($);
-                    log.info(`${LOG_PREFIX} Detected ${totalPages} total pages`);
+                    apiLogger.crawl('Pagination detected', {
+                        totalPages,
+                        seller: sourceName
+                    });
 
                     // 🧪 TEST MODE: Limit pages if maxPagesToTest is specified
                     if (maxPagesToTest && maxPagesToTest > 0) {
                         totalPages = Math.min(totalPages, maxPagesToTest);
-                        log.info(`${LOG_PREFIX} 🧪 TEST MODE: Limited to ${totalPages} pages`);
+                        apiLogger.crawl('Test mode enabled', {
+                            limitedPages: totalPages,
+                            seller: sourceName
+                        });
                     }
 
                     // Add remaining pages to queue with query parameter format
-                    // URL format: https://rocketseeds.com/shop?swoof=1&product_brand=rocketseeds&paged=X
                     for (let page = 2; page <= totalPages; page++) {
                         const pageUrl = buildPaginationUrl(scrapingSourceUrl, page);
                         await requestQueue.addRequest({ url: pageUrl });
                     }
-                    
-                    log.info(`${LOG_PREFIX} Added ${totalPages - 1} pagination pages to queue (page 2 to ${totalPages})`);
                 }
 
                 pagesProcessed++;
-
-                // ✅ No need to save to dataset - we're collecting in allProductUrls Set
-                log.info(`${LOG_PREFIX} Progress: ${pagesProcessed}/${totalPages} pages processed, ${allProductUrls.size} unique products found`);
             },
             maxConcurrency: 1, // Sequential crawling for politeness
             maxRequestsPerMinute,
@@ -235,8 +237,6 @@ export async function extractProductUrls(
             : `${scrapingSourceUrl}/`;
 
         await requestQueue.addRequest({ url: firstPageUrl });
-
-        apiLogger.info(`${LOG_PREFIX} Starting crawler...`);
         
         try {
             await crawler.run();
@@ -244,7 +244,7 @@ export async function extractProductUrls(
             // ✅ Cleanup: Drop request queue to free up memory/storage
             try {
                 await requestQueue.drop();
-                apiLogger.debug(`${LOG_PREFIX} Cleaned up request queue: ${queueName}`);
+                // Removed debug log for cleanup (not critical)
             } catch (cleanupError) {
                 apiLogger.logError(`${LOG_PREFIX} Failed to cleanup request queue:`, cleanupError as Error, {
                     queueName
@@ -255,20 +255,11 @@ export async function extractProductUrls(
         // Convert Set to Array
         const productUrlsArray = Array.from(allProductUrls);
 
-        apiLogger.info(`${LOG_PREFIX} ✅ Crawl completed:`, {
+        apiLogger.crawl('URL extraction completed', {
+            seller: sourceName,
             totalPages: pagesProcessed,
-            totalProducts: productUrlsArray.length,
-            uniqueProducts: allProductUrls.size
+            totalProducts: productUrlsArray.length
         });
-
-        // Log sample URLs
-        if (productUrlsArray.length > 0) {
-            apiLogger.info(`${LOG_PREFIX} Sample URLs:`, {
-                first: productUrlsArray[0],
-                last: productUrlsArray[productUrlsArray.length - 1],
-                total: productUrlsArray.length
-            });
-        }
 
         return productUrlsArray;
 
@@ -338,7 +329,6 @@ function detectTotalPages($: any): number {
         }
     });
 
-    apiLogger.debug(`${LOG_PREFIX} Detected ${maxPage} total pages from pagination links`);
-    
+    // Removed debug log - not critical for production
     return maxPage;
 }

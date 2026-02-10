@@ -29,6 +29,7 @@ import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
+import { MemoryMonitor } from '@/scrapers/(common)/logging-helpers';
 
 /**
  * ProductListScraper - LUỒNG XỬ LÝ CHÍNH
@@ -158,6 +159,9 @@ export async function vancouverProductListScraper(
     // Check if this is test mode
     const isTestMode = startPage !== null && startPage !== undefined && 
                        endPage !== null && endPage !== undefined;
+
+    // Use environment-based memory configuration (reads from WORKER_MEMORY_LIMIT_MB)
+        const memoryMonitor = MemoryMonitor.fromEnv();
 
     // ✅ Log robots.txt compliance
     apiLogger.info('[Vancouver] 🤖 Robots.txt compliance', {

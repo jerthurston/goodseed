@@ -177,8 +177,9 @@ export function extractProductsFromHTML(
 
             // Extract pack sizes/variations and create pricing data
             const packSizes: string[] = [];
-            const packSelector = '.pack_listed_prod .variation_val_num'; // Direct selector for pack numbers
-            $card.find(packSelector).each((_, packEl) => {
+            // const packSelector = '.pack_listed_prod .variation_val_num'; 
+            // Direct selector for pack numbers
+            $card.find(selectors.packSizeCell).each((_, packEl) => {
                 const packSize = $(packEl).text().trim();
                 if (packSize) {
                     packSizes.push(packSize);
@@ -294,15 +295,16 @@ export function extractProductsFromHTML(
             });
             
             maxPages = detectedMaxPage;
-            apiLogger.info(`[Sonoma Seeds] Detected ${maxPages} total pages from pagination`);
+            // Removed redundant log - already logged in main scraper
         } else {
-            apiLogger.warn('[Sonoma Seeds] No pagination elements found');
+            // No pagination found - return null
+            maxPages = null;
         }
 
         // Apply dbMaxPage limit if provided
         if (dbMaxPage && dbMaxPage > 0 && maxPages) {
             maxPages = Math.min(maxPages, dbMaxPage);
-            apiLogger.info(`[Sonoma Seeds] Limited to ${maxPages} pages (dbMaxPage: ${dbMaxPage})`);
+            // Removed redundant log - already logged in main scraper
         }
         
     } catch (error) {
@@ -312,7 +314,7 @@ export function extractProductsFromHTML(
         maxPages = null;
     }
 
-    apiLogger.info(`[Sonoma Seeds] Extracted ${products.length} products, maxPages: ${maxPages}`);
+    // Removed redundant log - already logged in main scraper with progress tracking
     
     return {
         products,

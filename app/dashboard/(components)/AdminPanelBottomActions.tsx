@@ -7,6 +7,9 @@ import { LogOut, Home } from "lucide-react"
 import { DashboardSidebarItem } from "./DashboardSidebar"
 import SignOutModal from "@/components/custom/modals/SignOutModal"
 import { createPortal } from "react-dom"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faGuilded } from "@fortawesome/free-brands-svg-icons"
+import { faBookBible } from "@fortawesome/free-solid-svg-icons"
 
 export function AdminPanelBottomActions() {
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false)
@@ -36,11 +39,11 @@ export function AdminPanelBottomActions() {
       {/* Bottom Action Buttons */}
       <div className="mt-auto pt-4 border-t-2 border-(--border-color) border-dashed space-y-2 flex flex-col gap-2">
         <DashboardSidebarItem
-          icon={<Home className="text-lg" />}
+          icon={<FontAwesomeIcon icon={faBookBible} className="text-lg" />}
           onClick={handleReturnHomepage}
           className="admin-bottom-action-home"
         >
-          Return Homepage
+          Document
         </DashboardSidebarItem>
         <DashboardSidebarItem
           icon={<LogOut className="text-lg" />}

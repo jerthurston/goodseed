@@ -40,17 +40,12 @@ export function extractProductFromDetailHTML(
             apiLogger.warn('[True North Seed Bank Detail] No product name found');
             return null;
         }
-        
-        apiLogger.debug(`📝 [Product Name] Extracted: "${name}"`);
 
         // Extract main product image - Using selectors from config
         let imageUrl: string | undefined = undefined;
         
-        console.log(`🔍 [Debug] Starting image extraction for: ${name}`);
-        
         // Primary strategy: Use the configured productImage selector
         if (selectors.productImage) {
-            console.log(`🔍 [Debug] Using config selector: "${selectors.productImage}"`);
             const $mainImage = $(selectors.productImage).first();
             
             if ($mainImage.length > 0) {
@@ -61,9 +56,6 @@ export function extractProductFromDetailHTML(
                 const parentHrefAttr = $mainImage.parent().attr('href'); // Parent href
                 
                 imageUrl = srcAttr || dataSrcAttr || hrefAttr || parentHrefAttr;
-                if (imageUrl) {
-                    console.log(`🔍 [Debug] ✅ Config selector found: "${imageUrl}"`);
-                }
             }
         }
         
@@ -85,7 +77,6 @@ export function extractProductFromDetailHTML(
                 if ($altImg.length > 0) {
                     imageUrl = $altImg.attr('src') || $altImg.attr('data-src');
                     if (imageUrl) {
-                        console.log(`🔍 [Debug] ✅ Alternative "${altSelector}": "${imageUrl}"`);
                         break;
                     }
                 }
@@ -97,19 +88,12 @@ export function extractProductFromDetailHTML(
             const ogImage = $('meta[property="og:image"]').attr('content');
             if (ogImage) {
                 imageUrl = ogImage;
-                console.log(`🔍 [Debug] ✅ Using OG image fallback: "${ogImage}"`);
             }
         }
         
         // Ensure absolute URL
         if (imageUrl && !imageUrl.startsWith('http')) {
             imageUrl = `${baseUrl}${imageUrl}`;
-        }
-        
-        if (imageUrl) {
-            apiLogger.debug(`🖼️ [Image] Successfully extracted: "${imageUrl}"`);
-        } else {
-            console.log(`🔍 [Debug] ❌ No image found with any strategy`);
         }
 
         // Initialize cannabis data variables
@@ -128,7 +112,6 @@ export function extractProductFromDetailHTML(
         
         // Extract Cannabis Type (Strain Type) using data-th attribute
         const strainTypeText = $(selectors.strainType).first().text().trim();
-        apiLogger.debug(`🌿 [Strain Type] Raw: "${strainTypeText}"`);
         
         if (strainTypeText) {
             const strainLower = strainTypeText.toLowerCase();
@@ -143,12 +126,10 @@ export function extractProductFromDetailHTML(
             } else if (strainLower.includes('hybrid')) {
                 cannabisType = 'hybrid';
             }
-            apiLogger.debug(`🌿 [Cannabis Type] Extracted: "${cannabisType}"`);
         }
 
         // Extract THC Level using data-th attribute
         const thcText = $(selectors.thcLevel).first().text().trim();
-        apiLogger.debug(`🧪 [THC] Raw: "${thcText}"`);
         
         if (thcText) {
             // Handle ranges like "24% - 30%", "22%", "15-21%"
@@ -165,13 +146,11 @@ export function extractProductFromDetailHTML(
                     thcMin = thcMax = thcValue;
                     thcLevel = `${thcValue}%`;
                 }
-                apiLogger.debug(`🧪 [THC] Extracted: "${thcLevel}" (${thcMin}-${thcMax})`);
             }
         }
 
         // Extract CBD Level using data-th attribute
         const cbdText = $(selectors.cbdLevel).first().text().trim();
-        apiLogger.debug(`🌱 [CBD] Raw: "${cbdText}"`);
         
         if (cbdText) {
             // Handle ranges like "0.1% - 0.2%" or single values
@@ -192,20 +171,16 @@ export function extractProductFromDetailHTML(
                 // Fallback: just add % if missing
                 cbdLevel = cbdText.includes('%') ? cbdText : `${cbdText}%`;
             }
-            apiLogger.debug(`🌱 [CBD] Extracted: "${cbdLevel}" (${cbdMin}-${cbdMax})`);
         }
 
         // Extract Genetics using data-th attribute
         genetics = $(selectors.genetics).first().text().trim();
-        apiLogger.debug(`🧬 [Genetics] Extracted: "${genetics}"`);
 
         // Extract Flowering Time using data-th attribute
         floweringTime = $(selectors.floweringTime).first().text().trim();
-        apiLogger.debug(`⏰ [Flowering Time] Extracted: "${floweringTime}"`);
 
         // Extract Yield Information using data-th attribute
         yieldInfo = $(selectors.yieldInfo).first().text().trim();
-        apiLogger.debug(`📊 [Yield Info] Extracted: "${yieldInfo}"`);
 
         // Extract seedType from data-th attribute or product name fallback
         const sexText = $(selectors.seedType).first().text().trim();
@@ -235,11 +210,9 @@ export function extractProductFromDetailHTML(
                 seedType = 'regular';
             }
         }
-        apiLogger.debug(`🌾 [Seed Type] Extracted: "${seedType}"`);
 
         // Extract stock availability
         const availability = $(selectors.availability).first().text().trim();
-        apiLogger.debug(`📦 [Availability] Extracted: "${availability}"`);
 
         // Extract growing level (placeholder - may need custom logic based on site structure)
         let growingLevel: string | undefined = undefined;
@@ -250,7 +223,6 @@ export function extractProductFromDetailHTML(
         
         // Target pricing rows using versionsRows selector from config
         const $priceRows = $(selectors.versionsRows);
-        apiLogger.debug(`💰 [Pricing] Found ${$priceRows.length} pricing rows`);
         
         if ($priceRows.length > 0) {
             $priceRows.each((index, row) => {
@@ -284,18 +256,16 @@ export function extractProductFromDetailHTML(
                         packSize,
                         pricePerSeed,
                     });
-                    apiLogger.debug(`💰 [Pricing] Row ${index + 1}: ${packSize} seeds = $${finalPrice} ($${pricePerSeed.toFixed(2)}/seed)`);
                 } else {
                     // Collect invalid rows for summary instead of logging each one
                     invalidRows++;
                 }
             });
             
-            // Log summary of invalid rows if any
-            if (invalidRows > 0) {
-                apiLogger.warn(`💰 [Pricing] Skipped ${invalidRows} invalid rows (missing pack size or price)`);
-            }
+            // Note: Removed per-product pricing warnings to reduce log noise
+            // Invalid rows are safely skipped, valid pricings are captured
         } else {
+            // Only log if NO variant table found at all (more serious issue)
             apiLogger.warn('💰 [Pricing] No variant table rows found');
         }
         
@@ -313,7 +283,6 @@ export function extractProductFromDetailHTML(
                         packSize: 1,
                         pricePerSeed: totalPrice,
                     });
-                    apiLogger.debug(`💰 [Pricing] Single price: $${totalPrice}`);
                 }
             }
         }
@@ -345,7 +314,6 @@ export function extractProductFromDetailHTML(
             pricings,
         };
 
-        apiLogger.debug(`✅ $1 Successfully extracted product: "${name}"`);
         return product;
 
     } catch (error) {

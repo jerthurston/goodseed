@@ -43,15 +43,17 @@ services:
       dockerfile: Dockerfile.worker
     container_name: goodseed-worker
     
-    # ===== Resource Limits (Render Starter Plan Simulation) =====
+    # ===== Resource Limits (Render Standard Plan Simulation) =====
+    # TESTING: Upgraded to 2GB to validate if memory is the bottleneck
+    # Original: 512MB (Starter) → Now: 2GB (Standard)
     deploy:
       resources:
         limits:
-          cpus: '0.5'        # 0.5 vCPU (Render Starter)
-          memory: 512M       # 512 MB RAM (Render Starter)
+          cpus: '1.0'        # 1.0 vCPU (Render Standard)
+          memory: 2G         # 2 GB RAM (Render Standard)
         reservations:
-          cpus: '0.25'       # Minimum CPU
-          memory: 256M       # Minimum RAM
+          cpus: '0.5'        # Minimum CPU
+          memory: 1G         # Minimum RAM
     
     # Memory settings
     mem_swappiness: 0          # Disable swap for realistic testing
@@ -80,8 +82,8 @@ services:
       - WORKER_CONCURRENCY=1
       
       # ===== Crawlee Configuration =====
-      # Fix memory detection (512 MB available)
-      - CRAWLEE_AVAILABLE_MEMORY_RATIO=512
+      # Fix memory detection (2048 MB available for Standard plan)
+      - CRAWLEE_AVAILABLE_MEMORY_RATIO=2048
     
     ports:
       - "3001:3001"  # Health check endpoint

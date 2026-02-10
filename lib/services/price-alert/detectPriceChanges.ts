@@ -100,10 +100,14 @@ export async function detectPriceChanges(
 
     // Step 3: Compare current vs historical prices
     const changes: PriceChange[] = [];
+    let productsWithoutHistory = 0;
+    let totalPricingsChecked = 0;
 
     for (const product of seedProducts) {
         // For each pricing variant (pack size)
         for (const currentPricing of product.pricings) {
+            totalPricingsChecked++;
+            
             // Find the LATEST historical price for this pack size
             const latestHistory = product.priceHistory
                 .filter(h => h.packSize === currentPricing.packSize)
@@ -111,10 +115,9 @@ export async function detectPriceChanges(
 
             // Skip if no history (new product/variant)
             if (!latestHistory) {
-                apiLogger.debug('No price history found', {
-                    productId: product.id,
-                    packSize: currentPricing.packSize
-                });
+                // Removed excessive debug logging to prevent memory issues
+                // Only log at summary level
+                productsWithoutHistory++;
                 continue;
             }
 
@@ -165,6 +168,8 @@ export async function detectPriceChanges(
 
     apiLogger.info('Price change detection complete', {
         totalProducts: seedProducts.length,
+        totalPricingsChecked,
+        pricingsWithoutHistory: productsWithoutHistory,
         changesDetected: changes.length
     });
 

@@ -11,8 +11,7 @@ import type { SeedUI } from '@/types/seed.type'
 import { useAuthModal } from '@/hooks/auth/useAuthModal'
 import SignInModal from '../modals/SignInModal'
 import { PotencyBadge } from '../badge'
-import { Heart } from 'lucide-react'
-import { apiLogger } from '@/lib/helpers/api-logger'
+
 
 // Component for enhanced potency display with better styling
 
@@ -46,7 +45,10 @@ const SeedCardItem = ({
     const handleAddWishListClick = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        executeWithAuth(() => onToggleFavorite(seed.id));
+        executeWithAuth(
+            () => onToggleFavorite(seed.id),
+            "You need to sign in to add items to your wishlist."
+        );
     }
 
     return (
@@ -225,13 +227,16 @@ const SeedCardItem = ({
                                     </thead>
                                     <tbody>
                                         {seed.packs.length > 0 ? (
-                                            seed.packs.map((pack, idx) => (
-                                                <tr key={idx}>
-                                                    <td>{pack.size} Seeds</td>
-                                                    <td>${pack.totalPrice.toFixed(2)}</td>
-                                                    <td>${pack.pricePerSeed.toFixed(2)}</td>
-                                                </tr>
-                                            ))
+                                            seed.packs
+                                                .slice()
+                                                .sort((a, b) => a.size - b.size) // Sort packs by size
+                                                .map((pack, idx) => (
+                                                    <tr key={idx}>
+                                                        <td>{pack.size} Seeds</td>
+                                                        <td>${pack.totalPrice.toFixed(2)}</td>
+                                                        <td>${pack.pricePerSeed.toFixed(2)}</td>
+                                                    </tr>
+                                                ))
                                         ) : (
                                             <tr>
                                                 <td colSpan={3} style={{ textAlign: 'center', padding: '1rem' }}>

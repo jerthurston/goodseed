@@ -15,6 +15,7 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 import { scraperQueue, processScraperJob, SCRAPER_CONCURRENCY } from '@/lib/queue/scraper-queue';
 import { createDetectPriceChangesJob } from '@/lib/queue/detect-price-changes';
 import { initializeWorkerSync, cleanupWorkerSync } from './worker-initialization';
+import { cleanupAfterJob, logMemoryUsage } from '../utils/memory-cleanup';
 
 /**
  * Initialize Scraper Queue Processor
@@ -68,6 +69,12 @@ export async function initializeScraperWorker() {
           );
           // Don't throw - scraping was successful, just log the error
         }
+        
+        // ✅ Cleanup AFTER emitting price detection job
+        // Now safe to clear the products array
+        await cleanupAfterJob(`${result.sellerName}-${job.id}`, result.products);
+        logMemoryUsage(`After job ${job.id} cleanup`);
+        
       } else {
         apiLogger.info('[Scraper Worker] ⚠️ Skipping price detection - no products scraped', {
           jobId: job.id,

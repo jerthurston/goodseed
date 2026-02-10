@@ -134,20 +134,20 @@ export function SellerCard({
         <DashboardCardFooter className="flex justify-between items-center">
           <div className="flex flex-row items-center gap-4">
             <DashboardButton
-              variant="outline"
+              // variant="outline"
               onClick={handleToggleClick}
               disabled={isUpdating}
-              className="text-sm px-4 py-2 flex items-center gap-2"
+              className={`text-sm px-4 py-2 flex items-center gap-2 ${seller.isActive ? "bg-(--brand-primary)" : "bg-(--danger-color)"}`}
             >
               {seller.isActive ? (
-                <div>
+                <div className="">
                   <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4" />
-                  Deactivate
+                  {" "}Deactivate
                 </div>
               ) : (
                 <div>
                   <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4" />
-                  Activate
+                  {" "}Activate
                 </div>
               )}
             </DashboardButton>

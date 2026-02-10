@@ -201,7 +201,7 @@ export function extractProductsFromHTML(
             // Check if WordPress pagination container exists
             const $paginationContainer = $(MAXPAGE_PAGINATION.paginationContainer);
             if ($paginationContainer.length > 0) {
-                console.log('[DEBUG] WordPress pagination found, analyzing pages...');
+                // Removed debug log - not critical
 
                 // Find all page number links
                 $(MAXPAGE_PAGINATION.paginationItems).each((_, element) => {
@@ -214,11 +214,8 @@ export function extractProductsFromHTML(
                         if (pageNumber > maxPageFound) {
                             maxPageFound = pageNumber;
                         }
-                        console.log(`[DEBUG] Found page item: ${pageNumber} (text: ${pageText})`);
                     }
                 });
-
-                console.log('[DEBUG] Max page detected from WordPress pagination:', maxPageFound);
 
                 maxPages = maxPageFound > 0 ? maxPageFound : null;
 

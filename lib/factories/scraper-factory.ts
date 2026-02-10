@@ -274,18 +274,19 @@ export class ScraperFactory {
     switch (scraperSourceName) {
       // Crawling card product with pagination page
       case 'vancouverseedbank':
-        return vancouverProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext); // Support startPage/endPage and fullSiteCrawl
+        return vancouverProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext); 
+        // Support startPage/endPage and fullSiteCrawl
       case 'sunwestgenetics':
         return sunwestgeneticsScraper(siteConfig, dbMaxPage, startPage || undefined, endPage || undefined);
       case 'sonomaseeds':
-        return sonomaSeedsProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext); // Now supports startPage/endPage
+        return sonomaSeedsProductListScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext); 
+        // Now supports startPage/endPage
       case 'beaverseed':
         return BeaverseedScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
       case 'maryjanesgarden':
         return MaryJanesGardenScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
       case 'cropkingseeds':
         return CropKingSeedsScraper(siteConfig, startPage, endPage, fullSiteCrawl, sourceContext);
-      // Crawling sitemap first and product urls array
       case 'rocketseeds':
         return RocketSeedsScraper(siteConfig, startPage, endPage, sourceContext);
       case 'mjseedscanada':

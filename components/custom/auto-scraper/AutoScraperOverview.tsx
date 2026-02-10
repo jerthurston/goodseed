@@ -230,7 +230,7 @@ export default function AutoScraperOverview({ stats, isLoading = false, error }:
     <DashboardCard className={styles.card}>
       <div className={styles.cardHeader}>
         <h3 
-          className="text-lg font-semibold font-['Poppins']" 
+          className="text-xl font-bold " 
           style={{ color: 'var(--text-primary)' }}
         >
           Auto Scraper Overview
@@ -253,7 +253,7 @@ export default function AutoScraperOverview({ stats, isLoading = false, error }:
         </div>
         
         {/* Timing Information */}
-        <div className="mt-4 space-y-2">
+        {/* <div className="mt-4 space-y-2">
           {safeStats.lastRun && (
             <div 
               className="text-sm text-center font-['Poppins']"
@@ -271,7 +271,7 @@ export default function AutoScraperOverview({ stats, isLoading = false, error }:
               Next scheduled: {safeStats.nextScheduledRun.toLocaleDateString()} at {safeStats.nextScheduledRun.toLocaleTimeString()}
             </div>
           )}
-        </div>
+        </div> */}
       </div>
     </DashboardCard>
   )

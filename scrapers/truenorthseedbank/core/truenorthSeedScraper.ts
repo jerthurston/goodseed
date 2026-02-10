@@ -27,6 +27,7 @@ import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
 import { ACCEPTLANGUAGE, USERAGENT } from '@/scrapers/(common)/constants';
+import { ProgressLogger, MemoryMonitor } from '@/scrapers/(common)/logging-helpers';
 
 /**
  * Filter URLs by robots.txt disallowed paths
@@ -78,6 +79,22 @@ export async function truenorthSeedScraper(
         endPage !== null && 
         startPage !== undefined && 
         endPage !== undefined;
+    
+    // ✅ Initialize progress logger and memory monitor
+    const progressLogger = new ProgressLogger(
+        isTestMode ? (endPage! - startPage! + 1) : 0, // Will update after URL extraction
+        'True North'
+    );
+    // Use environment-based memory configuration (reads from WORKER_MEMORY_LIMIT_MB)
+    const memoryMonitor = MemoryMonitor.fromEnv();
+    
+    // Log scraper initialization
+    apiLogger.crawl('Initializing scraper', {
+        seller: sourceName,
+        mode: isTestMode ? 'test' : 'full',
+        baseUrl,
+        scrapingSourceUrl
+    });
     
     // Debug log
     apiLogger.debug('[True North Scraper] Starting with siteConfig', {
@@ -153,6 +170,20 @@ export async function truenorthSeedScraper(
             
             apiLogger.info(`[True North] TEST MODE: Limited to ${limitCount} products (startPage: ${startPage}, endPage: ${endPage})`);
         }
+        
+        // ✅ Update progress logger with actual total after URL extraction
+        if (!isTestMode) {
+            // Update with actual total in full mode
+            (progressLogger as any).totalItems = urlsToProcess.length;
+        }
+        
+        // Log robots.txt compliance info
+        apiLogger.crawl('Robots.txt parsed', {
+            crawlDelay: `${crawlDelay}ms`,
+            urlsTotal: productUrls.length,
+            urlsFiltered: productUrls.length - urlsToProcess.length,
+            urlsToProcess: urlsToProcess.length
+        });
 
         // Add filtered product URLs to queue
         for (const productUrl of urlsToProcess) {
@@ -174,29 +205,34 @@ export async function truenorthSeedScraper(
     // STEP 3: Request handler - Process each product detail page
     async function trueNorthRequestHandler(context: CheerioCrawlingContext): Promise<void> {
         const { $, request, log } = context;
-
-        log.info(`[True North] Processing product: ${request.url}`);
-        
-        // 🐛 DEBUG: Log HTML length to diagnose extraction failures
-        const htmlLength = $.html().length;
-        log.info(`[True North] HTML length: ${htmlLength} characters`);
-        
-        // 🐛 DEBUG: Check if product name selector works
-        const productNameElement = $(siteConfig.selectors.productName);
-        log.info(`[True North] Product name selector found: ${productNameElement.length} elements`);
-        if (productNameElement.length > 0) {
-            const productNameText = productNameElement.first().text().trim();
-            log.info(`[True North] Product name text: "${productNameText}"`);
-        }
         
         const product = extractProductFromDetailHTML($, siteConfig, request.url);
         
         if (product) {
             // ✅ Push directly to products array instead of dataset
             products.push(product);
-            
             actualPages++;
-            log.info(`[True North] ✅ Extracted: ${product.name} (${actualPages}/${urlsToProcess.length})`);
+            
+            // ✅ Progress-based logging (every 10%) instead of per-product
+            if (progressLogger.shouldLog(products.length)) {
+                const metadata = progressLogger.getMetadata(products.length, startTime);
+                const memStatus = memoryMonitor.check();
+                
+                apiLogger.crawl('Scraping progress', {
+                    ...metadata,
+                    memoryStatus: memStatus.status
+                });
+                
+                // Warn if memory approaching limit
+                if (memStatus.status === 'warning') {
+                    apiLogger.warn(`[True North] Memory usage high: ${memStatus.usedMB.toFixed(2)}MB (${memStatus.percentUsed.toFixed(1)}%)`);
+                } else if (memStatus.status === 'critical') {
+                    apiLogger.logError('[True North] CRITICAL memory usage:', new Error('Memory limit approaching'), {
+                        usedMB: memStatus.usedMB,
+                        percentUsed: memStatus.percentUsed
+                    });
+                }
+            }
         } else {
             log.error(`[True North] ⚠️ Failed to extract: ${request.url} - Check debug logs above for details`);
         }
@@ -273,11 +309,29 @@ export async function truenorthSeedScraper(
                 queueName
             });
         }
+        
+        // ✅ Cleanup: Teardown crawler to release connections and internal state
+        try {
+            await crawler.teardown();
+            apiLogger.debug(`[True North] Crawler teardown completed`);
+        } catch (teardownError) {
+            apiLogger.logError('[True North] Failed to teardown crawler:', teardownError as Error);
+        }
     }
 
     // STEP 8: Log summary and return results
     const endTime = Date.now();
     const duration = endTime - startTime;
+    
+    // ✅ Final progress log with completion summary
+    apiLogger.crawl('Scraping completed', {
+        totalProducts: products.length,
+        totalPages: actualPages,
+        duration: `${(duration / 1000).toFixed(2)}s`,
+        successRate: `${((products.length / urlsToProcess.length) * 100).toFixed(2)}%`,
+        avgTimePerProduct: `${((duration / products.length) / 1000).toFixed(2)}s`,
+        finalMemory: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB`
+    });
 
     apiLogger.info(`[True North] ✅ Scraping completed successfully:`, {
         scraped: products.length,

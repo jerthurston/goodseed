@@ -291,11 +291,10 @@ export function extractProductFromDetailHTML(
                 }
             });
             
-            // Log summary of invalid rows if any
-            if (invalidRows > 0) {
-                apiLogger.warn(`💰 [Pricing] Skipped ${invalidRows} invalid rows (missing pack size or price)`);
-            }
+            // Note: Removed per-product pricing warnings to reduce log noise
+            // Invalid rows are safely skipped, valid pricings are captured
         } else {
+            // Only log if NO variant table found at all (more serious issue)
             apiLogger.warn('💰 [Pricing] No variant table rows found');
         }
         

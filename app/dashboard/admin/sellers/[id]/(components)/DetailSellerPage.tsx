@@ -11,7 +11,9 @@ import {
     faToolbox,
     faLink,
     faBug,
-    faAdjust
+    faAdjust,
+    faTree,
+    faSeedling
 } from '@fortawesome/free-solid-svg-icons'
 
 import { DashboardCard, DashboardButton, DashboardToggle, AdminBreadcrumb } from "@/app/dashboard/(components)"
@@ -489,12 +491,14 @@ export default function DetailSellerClient() {
                                         Interval:
                                     </span>
                                     <select
-                                        value={currentSeller.autoScrapeInterval || 6}
+                                        value={currentSeller.autoScrapeInterval || 24}
                                         onChange={(e) => handleIntervalChange(currentSeller.id, Number(e.target.value))}
                                         disabled={isAnyOperationInProgress}
                                         className={style.selectInterval}
                                     >
-                                        <option value={6}>Every 6 hours</option>
+                                        <option value={24}>Every 24 hours</option>
+                                        <option value={48}>Every 2 days</option>
+
                                     </select>
                                 </div>
                             )}
@@ -653,7 +657,7 @@ export default function DetailSellerClient() {
                                 <label className="text-sm font-medium text-(--text-primary-muted)">
                                     Seller ID
                                 </label>
-                                <p className="font-mono text-(--text-primary) text-xs">
+                                <p className="text-(--text-primary) text-sm">
                                     {currentSeller.id}
                                 </p>
                             </div>
