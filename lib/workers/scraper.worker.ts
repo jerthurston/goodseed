@@ -91,6 +91,17 @@ export async function initializeScraperWorker() {
       });
     });
 
+    // 🔧 FIX: Handle stalled jobs (when worker crashes or job doesn't update lock)
+    scraperQueue.on('stalled', (job) => {
+      apiLogger.warn('[Scraper Worker] ⚠️ Job stalled - lock expired without progress', {
+        jobId: job?.id,
+        sellerId: job?.data?.sellerId,
+        attempts: job?.attemptsMade,
+        maxAttempts: job?.opts?.attempts,
+        stalledReason: 'Worker may have crashed or job is taking too long without updating lock',
+      });
+    });
+
     scraperQueue.on('error', (error) => {
       apiLogger.logError('[Scraper Worker] Queue error', new Error(error.message));
     });

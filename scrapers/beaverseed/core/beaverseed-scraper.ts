@@ -14,6 +14,7 @@
 
 import { extractProductsFromHTML } from '@/scrapers/beaverseed/utils/extractProductsFromHTML';
 import { getScrapingUrl } from '@/scrapers/beaverseed/utils/getScrapingUrl';
+import { validateSourceContext, validateScrapingMode, logScraperInitialization } from '@/scrapers/beaverseed/utils/validation';
 import { ProductsDataResultFromCrawling } from '@/types/crawl.type';
 import { CheerioAPI, CheerioCrawlingContext } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
@@ -41,15 +42,40 @@ export async function BeaverseedScraper(
     }
 ): Promise<ProductsDataResultFromCrawling> {
     
-    if (!sourceContext) {
-        throw new Error('[Beaver Seed Scraper] sourceContext is required');
+    // ===========================
+    // 🛡️ VALIDATION PHASE
+    // ===========================
+    const validationResult = validateSourceContext(sourceContext, siteConfig);
+    
+    if (!validationResult.isValid) {
+        throw new Error(validationResult.error || '[Beaver Seed Scraper] sourceContext validation failed');
     }
+
+    // Use validated context
+    const validatedContext = validationResult.validatedContext!;
+
+    // Validate scraping mode
+    const mode = validateScrapingMode(startPage, endPage, fullSiteCrawl);
+
+    // Calculate expected pages for logging
+    const expectedPages = mode.isTestMode 
+        ? (mode.effectiveEndPage || 1) 
+        : validatedContext.dbMaxPage;
+
+    // Log scraper initialization
+    logScraperInitialization(siteConfig, validatedContext, {
+        isTestMode: mode.isTestMode,
+        startPage,
+        endPage,
+        fullSiteCrawl,
+        expectedPages
+    });
 
     // Convert sourceContext to CommonScrapingContext
     const commonContext: CommonScrapingContext = {
-        scrapingSourceUrl: sourceContext.scrapingSourceUrl,
-        sourceName: sourceContext.sourceName,
-        dbMaxPage: sourceContext.dbMaxPage
+        scrapingSourceUrl: validatedContext.scrapingSourceUrl,
+        sourceName: validatedContext.sourceName,
+        dbMaxPage: validatedContext.dbMaxPage
     };
 
     // Define Beaver Seed-specific request handler
