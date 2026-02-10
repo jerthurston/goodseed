@@ -124,7 +124,7 @@ export async function sonomaSeedsProductListScraper(
     const memoryMonitor = MemoryMonitor.fromEnv();
     const memoryConfig = memoryMonitor.getConfig();
     
-    apiLogger.info('[Sonoma Seeds] 💾 Memory configuration', {
+    apiLogger.crawl('[Sonoma Seeds] 💾 Memory configuration', {
         limitMB: memoryConfig.limitMB,
         warningMB: Math.round(memoryConfig.warningMB),
         criticalMB: Math.round(memoryConfig.criticalMB)
@@ -137,7 +137,7 @@ export async function sonomaSeedsProductListScraper(
 
     const maxConcurrency = 1; // Sequential for same site
 
-    apiLogger.info('[Sonoma Seeds] ⚙️ Crawler configuration', {
+    apiLogger.crawl('[Sonoma Seeds] ⚙️ Crawler configuration', {
         crawlDelayMs: crawlDelay,
         maxRequestsPerMinute: calculatedMaxRate,
         maxConcurrency,
@@ -197,7 +197,7 @@ export async function sonomaSeedsProductListScraper(
 
     // Auto-crawl mode: Start với page 1 để detect maxPages, sau đó crawl remaining pages
     if (isTestMode) {
-        apiLogger.info(`[Sonoma Seeds] 🧪 TEST MODE: Crawling pages ${startPage} to ${endPage}`);
+        apiLogger.crawl(`[Sonoma Seeds] 🧪 TEST MODE: Crawling pages ${startPage} to ${endPage}`);
         
         // Test mode: Crawl specific page range
         const testUrls: string[] = [];

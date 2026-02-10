@@ -160,8 +160,8 @@ export default function AutoScraperRecentActivity() {
       // Debug: Log raw job data
       console.log('AutoScraperRecentActivity - Raw jobs data (first 3):', jobs.slice(0, 3).map(job => ({
         id: job.id,
-        sellerName: job.sellerName,
-        sellerId: job.sellerId,
+        sellerName: job.seller.name,
+        sellerId: job.seller.id,
         seller: (job as any).seller,
         createdAt: job.createdAt,
         updatedAt: job.updatedAt,

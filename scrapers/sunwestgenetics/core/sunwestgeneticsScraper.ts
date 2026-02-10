@@ -1,8 +1,18 @@
 /**
- * SunWest Genetics Product List Scraper (Cheerio - Standard Pagination)
+ * SunWest Genetics Product List Scraper (Refactored with Best Practices)
  * 
- * Uses Cheerio for fast HTML parsing with standard pagination
- * Adapted from Vancouver Seed Bank scraper
+ * ARCHITECTURE OVERVIEW:
+ * - Uses Cheerio for fast HTML parsing with standard pagination
+ * - WordPress-based pagination structure (/page/N/)
+ * - Parse robots.txt for polite crawling compliance
+ * - Dynamic rate limiting based on robots.txt
+ * 
+ * OPTIMIZATION:
+ * - ✅ ProgressLogger for milestone-based logging (every 10%)
+ * - ✅ MemoryMonitor for tracking memory usage
+ * - ✅ Robots.txt parsing and dynamic rate limiting
+ * - ✅ Proper cleanup (requestQueue.drop() + crawler.teardown())
+ * - ✅ Structured logging with apiLogger.crawl()
  */
 
 import { extractProductsFromHTML } from '@/scrapers/sunwestgenetics/utils/extractProductsFromHTML';
@@ -12,25 +22,17 @@ import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { SimplePoliteCrawler } from '@/lib/utils/polite-crawler';
 import { ACCEPTLANGUAGE, USERAGENT } from '@/scrapers/(common)/constants';
-
-/**
- * SunWestGeneticsProductListScraper
- * SunWestGeneticsProductListScraper
-    │
-    ├─> Fetch page 1, 2, 3... (CheerioCrawler)
-    │
-    └─> Mỗi page gọi extractProductsFromHTML($)
-            │
-            └─> Parse HTML sections → extract text patterns → return products[]
- */
+import { ProgressLogger, MemoryMonitor } from '@/scrapers/(common)/logging-helpers';
 
 /**
  * SunWest Genetics Product List Scraper function
  * 
- * Follows the same pattern as Vancouver Seed Bank scraper:
- * - Takes SiteConfig as parameter
- * - Auto-detects total pages from first page crawl
- * - Returns ProductsDataResultFromCrawling
+ * RESPONSIBILITIES:
+ * 1. 🕷️ Extract products from SunWest Genetics (pagination pages)
+ * 2. 📄 Support WordPress standard pagination (/page/N/)
+ * 3. 📋 Extract cannabis-specific data from product cards
+ * 4. ⚡ Follow polite crawling practices and robots.txt compliance
+ * 5. 🧹 Proper memory cleanup after crawling
  */
 export async function sunwestgeneticsScraper(
     siteConfig: SiteConfig, 
@@ -41,14 +43,9 @@ export async function sunwestgeneticsScraper(
     const startTime = Date.now();
     
     const { selectors, baseUrl } = siteConfig;
-    // Debug log để kiểm tra siteConfig
-    apiLogger.info('[SunWest Product List] Starting with siteConfig', {
-        name: siteConfig.name,
-        baseUrl: siteConfig.baseUrl,
-        isImplemented: siteConfig.isImplemented,
-        startPage,
-        endPage
-    });
+    
+    // Determine scraping mode
+    const isTestMode = endPage !== undefined && endPage !== null;
 
     const runId = Date.now();
     
@@ -59,7 +56,6 @@ export async function sunwestgeneticsScraper(
     const requestQueue = await RequestQueue.open(queueName);
 
     let actualPages = 0;
-    const emptyPages = new Set<string>();
 
     // ✅ STEP 0: Initialize SimplePoliteCrawler and parse robots.txt FIRST
     const politeCrawler = new SimplePoliteCrawler({
@@ -71,7 +67,14 @@ export async function sunwestgeneticsScraper(
     const robotsRules = await politeCrawler.parseRobots(baseUrl);
     const { crawlDelay, disallowedPaths, allowedPaths, hasExplicitCrawlDelay } = robotsRules;
 
-    apiLogger.info('[SunWest Product List] 🤖 Robots.txt compliance', {
+    // Log robots.txt compliance info
+    apiLogger.crawl('Robots.txt parsed', {
+        crawlDelay: `${crawlDelay}ms`,
+        hasExplicitCrawlDelay,
+        disallowedCount: disallowedPaths.length
+    });
+
+    apiLogger.info('[SunWest Genetics] Robots.txt rules loaded', {
         crawlDelay: `${crawlDelay}ms`,
         hasExplicitCrawlDelay,
         disallowedPaths: disallowedPaths.length,
@@ -86,61 +89,88 @@ export async function sunwestgeneticsScraper(
 
     const maxConcurrency = 1; // Sequential for same site
 
-    apiLogger.info('[SunWest Product List] ⚙️ Crawler configuration', {
+    apiLogger.info('[SunWest Genetics] Dynamic rate limiting:', {
         crawlDelayMs: crawlDelay,
         maxRequestsPerMinute: calculatedMaxRate,
         maxConcurrency,
         hasExplicitCrawlDelay,
-        mode: endPage ? 'TEST' : 'AUTO'
+        mode: isTestMode ? 'TEST' : 'AUTO'
     });
 
+    // Determine effective end page based on mode
+    const effectiveEndPage = endPage ? Math.min(endPage, dbMaxPage || 200) : (dbMaxPage || 50);
+    
+    // ✅ Initialize progress logger and memory monitor
+    const expectedPages = effectiveEndPage - startPage + 1;
+    const progressLogger = new ProgressLogger(expectedPages, 'SunWest Genetics');
+    const memoryMonitor = MemoryMonitor.fromEnv();
+    
+    // Log scraper initialization
+    apiLogger.crawl('Initializing scraper', {
+        seller: 'sunwestgenetics',
+        mode: isTestMode ? 'test' : 'normal',
+        baseUrl,
+        startPage,
+        endPage: effectiveEndPage,
+        expectedPages
+    });
 
     const crawler = new CheerioCrawler({
         requestQueue,
         async requestHandler({ $, request, log }) {
-            log.info(`[SunWest Product List] Scraping: ${request.url}`);
-
             // Extract products and pagination from current page
             const extractResult = extractProductsFromHTML($, selectors, baseUrl, dbMaxPage);
             const products = extractResult.products;
             const maxPages = extractResult.maxPages;
             
-            log.info(`[SunWest Product List] Extracted ${products.length} products`);
-            if (maxPages) {
-                log.info(`[SunWest Product List] Detected ${maxPages} total pages from pagination`);
+            if (maxPages && actualPages === 0) {
+                log.info(`[SunWest Genetics] Detected ${maxPages} total pages from pagination`);
             }
-
-            // Track empty pages
-            if (products.length === 0) {
-                emptyPages.add(request.url);
-            }
-
-            // Check if there's a next page
-            const hasNextPage = $(selectors.nextPage).length > 0;
-            log.info(`[SunWest Product List] Has next page: ${hasNextPage}`);
 
             // ✅ Push directly to allProducts array instead of dataset
             allProducts.push(...products);
-            
-            log.info(`[SunWest Product List] Progress: ${allProducts.length} total products collected`);
+            actualPages++;
+
+            // ✅ Progress-based logging (every 10%) instead of per-page
+            if (progressLogger.shouldLog(actualPages)) {
+                const metadata = progressLogger.getMetadata(actualPages, startTime);
+                const memStatus = memoryMonitor.check();
+                
+                apiLogger.crawl('Scraping progress', {
+                    ...metadata,
+                    productsCollected: allProducts.length,
+                    memoryStatus: memStatus.status
+                });
+                
+                // Warn if memory approaching limit
+                if (memStatus.status === 'warning') {
+                    apiLogger.warn(`[SunWest Genetics] Memory usage high: ${memStatus.usedMB.toFixed(2)}MB (${memStatus.percentUsed.toFixed(1)}%)`);
+                } else if (memStatus.status === 'critical') {
+                    apiLogger.logError('[SunWest Genetics] CRITICAL memory usage:', new Error('Memory limit approaching'), {
+                        usedMB: memStatus.usedMB,
+                        percentUsed: memStatus.percentUsed
+                    });
+                }
+            }
 
             // ✅ POLITE CRAWLING: Apply delay from parsed robots.txt
-            log.debug(`[SunWest Product List] ⏱️ Applying crawl delay: ${crawlDelay}ms (${hasExplicitCrawlDelay ? 'robots.txt' : 'default'})`);
             await new Promise(resolve => setTimeout(resolve, crawlDelay));
         },
 
         maxRequestsPerMinute: calculatedMaxRate, // ✅ Dynamic rate from robots.txt
         maxConcurrency: maxConcurrency,          // ✅ Sequential requests
         maxRequestRetries: 3,
+        preNavigationHooks: [
+            async (requestAsBrowserOptions) => {
+                const headers = politeCrawler.getHeaders();
+                Object.assign(requestAsBrowserOptions.headers || {}, headers);
+            }
+        ]
     });
 
-    // Auto-crawl mode: Detect pagination first, then add all URLs before running crawler
-    apiLogger.info(`[SunWest Product List] Preparing to crawl pages ${startPage} to ${endPage || dbMaxPage || 50}...`);
-    
-    // Determine effective end page based on mode
-    const effectiveEndPage = endPage ? Math.min(endPage, dbMaxPage || 200) : (dbMaxPage || 50);
-    
     // Add all page URLs to queue BEFORE running crawler
+    apiLogger.info(`[SunWest Genetics] Preparing to crawl pages ${startPage} to ${effectiveEndPage}...`);
+    
     const pagesToCrawl: string[] = [];
     for (let page = startPage; page <= effectiveEndPage; page++) {
         const pageUrl = page === 1 ? 
@@ -149,7 +179,7 @@ export async function sunwestgeneticsScraper(
         pagesToCrawl.push(pageUrl);
     }
     
-    apiLogger.info(`[SunWest Product List] Adding ${pagesToCrawl.length} pages to queue (${startPage} to ${effectiveEndPage})`);
+    apiLogger.info(`[SunWest Genetics] Adding ${pagesToCrawl.length} pages to queue (${startPage} to ${effectiveEndPage})`);
     
     for (const url of pagesToCrawl) {
         await requestQueue.addRequest({ url });
@@ -163,27 +193,43 @@ export async function sunwestgeneticsScraper(
         // ✅ Cleanup: Drop request queue to free up memory/storage
         try {
             await requestQueue.drop();
-            apiLogger.debug(`[SunWest Product List] Cleaned up request queue: ${queueName}`);
+            apiLogger.debug(`[SunWest Genetics] Cleaned up request queue: ${queueName}`);
         } catch (cleanupError) {
-            apiLogger.logError('[SunWest Product List] Failed to cleanup request queue:', cleanupError as Error, {
+            apiLogger.logError('[SunWest Genetics] Failed to cleanup request queue:', cleanupError as Error, {
                 queueName
             });
+        }
+        
+        // ✅ Cleanup: Teardown crawler to release connections and internal state
+        try {
+            await crawler.teardown();
+            apiLogger.debug(`[SunWest Genetics] Crawler teardown completed`);
+        } catch (teardownError) {
+            apiLogger.logError('[SunWest Genetics] Failed to teardown crawler:', teardownError as Error);
         }
     }
     
     if (allProducts.length === 0) {
-        apiLogger.warn(`[SunWest Product List] No products found across ${actualPages} pages`);
+        apiLogger.warn(`[SunWest Genetics] No products found across ${actualPages} pages`);
     }
 
     const duration = Date.now() - startTime;
 
-    // ✅ Aggregated logging
-    apiLogger.info('[SunWest Product List] ✅ Crawling completed', {
-        '📊 Products': allProducts.length,
-        '📄 Pages': actualPages,
-        '⏱️ Duration': `${(duration / 1000).toFixed(2)}s`,
-        '🤖 Robots.txt': hasExplicitCrawlDelay ? 'enforced' : 'default',
-        '🚀 Rate': `${calculatedMaxRate} req/min`
+    // ✅ Final progress log with completion summary
+    apiLogger.crawl('Scraping completed', {
+        totalProducts: allProducts.length,
+        totalPages: actualPages,
+        duration: `${(duration / 1000).toFixed(2)}s`,
+        avgTimePerPage: actualPages > 0 ? `${((duration / actualPages) / 1000).toFixed(2)}s` : '0s',
+        finalMemory: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB`
+    });
+
+    apiLogger.info('[SunWest Genetics] ✅ Crawling completed', {
+        products: allProducts.length,
+        pages: actualPages,
+        duration: `${(duration / 1000).toFixed(2)}s`,
+        robotsCompliance: hasExplicitCrawlDelay ? 'enforced' : 'default',
+        maxRate: `${calculatedMaxRate} req/min`
     });
 
     return {

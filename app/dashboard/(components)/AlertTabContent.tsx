@@ -142,7 +142,7 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
   const handleDeleteJob = async (job: ScrapeJob) => {
     try {
       await deleteJob(job.id);
-      toast.success(`Deleted job for ${job.sellerName}`);
+      toast.success(`Deleted job for ${job.seller.name}`);
       setSelectedJobs(prev => {
         const newSet = new Set(prev);
         newSet.delete(job.id);
