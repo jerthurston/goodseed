@@ -14,6 +14,8 @@
  * - WORKER_MEMORY_CRITICAL_THRESHOLD: Critical at X% of limit (default: 0.90)
  */
 
+import { apiLogger } from '@/lib/helpers/api-logger';
+
 export interface WorkerMemoryConfig {
     /** Heap memory limit in MB */
     limitMB: number;
@@ -72,12 +74,19 @@ export function getWorkerMemoryConfig(): WorkerMemoryConfig {
 export function logWorkerMemoryConfig(): void {
     const config = getWorkerMemoryConfig();
     
-    console.log('🧠 Worker Memory Configuration:', {
+    apiLogger.crawl('🧠 Worker Memory Configuration', {
         environment: process.env.NODE_ENV,
+        nodeVersion: process.version,
         limitMB: config.limitMB,
         warningMB: Math.floor(config.limitMB * config.warningThreshold),
         criticalMB: Math.floor(config.limitMB * config.criticalThreshold),
         warningThreshold: `${(config.warningThreshold * 100).toFixed(0)}%`,
         criticalThreshold: `${(config.criticalThreshold * 100).toFixed(0)}%`,
+        crawleeAvailableMemoryRatio: process.env.CRAWLEE_AVAILABLE_MEMORY_RATIO || 'NOT SET',
+        workerConcurrency: process.env.WORKER_CONCURRENCY || 'NOT SET',
+        systemMemory: {
+            totalMB: Math.floor(require('os').totalmem() / 1024 / 1024),
+            freeMB: Math.floor(require('os').freemem() / 1024 / 1024),
+        }
     });
 }
