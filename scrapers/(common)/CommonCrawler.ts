@@ -8,7 +8,8 @@
  * - Giảm duplicate code và tăng maintainability
  * 
  * COMMON COMPONENTS:
- * - Request Queue và Dataset setup
+ * - Request Queue setup (for deduplication/retry)
+ * - In-memory products array (no Dataset - faster, simpler)
  * - Error Handler với HTTP status code handling
  * - Polite Crawler với robots.txt compliance
  * - Crawlee CheerioCrawler configuration
