@@ -143,6 +143,13 @@ services:
         # Standard plan: 2GB × 0.7 = 1.4GB for Crawlee
         # Remaining 0.3 (600MB) reserved for Node.js runtime and system
         # Without this setting, Crawlee may show false memory warnings
+      
+      - key: CRAWLEE_AVAILABLE_MEMORY
+        value: 1433
+        # Absolute memory limit for Crawlee in MB (overrides RATIO)
+        # Standard plan: 2048MB × 0.7 = 1433MB for Crawlee
+        # This explicitly tells Crawlee: "You have 1433MB, not 512MB"
+        # Prevents false "Memory critically overloaded" warnings
 
 # ============================================================================
 # Deployment Process:
