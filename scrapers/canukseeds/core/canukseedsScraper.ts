@@ -77,14 +77,6 @@ export async function canukSeedScraper(
         endPage !== null && 
         startPage !== undefined && 
         endPage !== undefined;
-    
-    // Debug log
-    apiLogger.debug('[Canuk Seeds Scraper] Starting with siteConfig', {
-        name: siteConfig.name,
-        baseUrl,
-        isImplemented: siteConfig.isImplemented,
-        scrapingSourceUrl: sourceContext?.scrapingSourceUrl
-    });
 
     // ✅ Initialize products array to store scraped data
     const products: ProductCardDataFromCrawling[] = [];
@@ -123,6 +115,8 @@ export async function canukSeedScraper(
     let actualPages = 0;
     let productUrls: string[] = [];
     let urlsToProcess: string[] = [];
+    let totalProductsToScrape = 0; // Track total for progress calculation
+    let lastLoggedProgress = 0; // Track last logged progress percentage
     
     // STEP 2: Extract product URLs from pagination pages
     try {
@@ -162,6 +156,13 @@ export async function canukSeedScraper(
         }
 
         apiLogger.info(`[Canuk Seeds] Added ${urlsToProcess.length} product URLs to crawl queue`);
+        
+        // Store total for progress tracking
+        totalProductsToScrape = urlsToProcess.length;
+        
+        // ✅ Clear arrays immediately to free memory (we don't need them anymore)
+        productUrls = [];
+        urlsToProcess = [];
 
     } catch (error) {
         apiLogger.logError('[Canuk Seeds] Failed to extract product URLs:', error as Error, {
@@ -173,20 +174,6 @@ export async function canukSeedScraper(
     // STEP 3: Request handler - Process each product detail page
     async function canukSeedsRequestHandler(context: CheerioCrawlingContext): Promise<void> {
         const { $, request, log } = context;
-
-        log.info(`[Canuk Seeds] Processing product: ${request.url}`);
-        
-        // 🐛 DEBUG: Log HTML length to diagnose extraction failures
-        const htmlLength = $.html().length;
-        log.info(`[Canuk Seeds] HTML length: ${htmlLength} characters`);
-        
-        // 🐛 DEBUG: Check if product name selector works
-        const productNameElement = $(siteConfig.selectors.productName);
-        log.info(`[Canuk Seeds] Product name selector found: ${productNameElement.length} elements`);
-        if (productNameElement.length > 0) {
-            const productNameText = productNameElement.first().text().trim();
-            log.info(`[Canuk Seeds] Product name text: "${productNameText}"`);
-        }
         
         const product = extractProductFromDetailHTML($, siteConfig, request.url);
         
@@ -195,9 +182,17 @@ export async function canukSeedScraper(
             products.push(product);
             
             actualPages++;
-            log.info(`[Canuk Seeds] ✅ Extracted: ${product.name} (${actualPages}/${urlsToProcess.length})`);
+            
+            // 📊 Progress tracking - Log every 10% completion
+            const progressPercent = Math.floor((actualPages / totalProductsToScrape) * 100);
+            const progressMilestone = Math.floor(progressPercent / 10) * 10; // Round to nearest 10%
+            
+            if (progressMilestone > lastLoggedProgress && progressMilestone % 10 === 0) {
+                lastLoggedProgress = progressMilestone;
+                apiLogger.info(`[Canuk Seeds] 📊 Progress: ${progressMilestone}% (${actualPages}/${totalProductsToScrape} products)`);
+            }
         } else {
-            log.error(`[Canuk Seeds] ⚠️ Failed to extract: ${request.url} - Check debug logs above for details`);
+            log.error(`[Canuk Seeds] ⚠️ Failed to extract: ${request.url}`);
         }
 
         // Apply crawl delay
@@ -258,7 +253,7 @@ export async function canukSeedScraper(
     });
 
     // STEP 7: Run main crawler with cleanup
-    apiLogger.info(`[Canuk Seeds] Starting main crawler to process ${urlsToProcess.length} products...`);
+    apiLogger.info(`[Canuk Seeds] 🚀 Starting crawler for ${totalProductsToScrape} products...`);
     
     try {
         await crawler.run();
@@ -272,23 +267,25 @@ export async function canukSeedScraper(
                 queueName
             });
         }
+        
+        // ✅ Cleanup: Teardown crawler to release connections and internal state
+        try {
+            await crawler.teardown();
+            apiLogger.debug(`[Canuk Seeds] Crawler teardown completed`);
+        } catch (teardownError) {
+            apiLogger.logError('[Canuk Seeds] Failed to teardown crawler:', teardownError as Error);
+        }
     }
 
     // STEP 8: Log summary and return results
     const endTime = Date.now();
     const duration = endTime - startTime;
 
-    apiLogger.info(`[Canuk Seeds] ✅ Scraping completed successfully:`, {
-        scraped: products.length,
-        saved: actualPages,
+    apiLogger.info(`[Canuk Seeds] ✅ Scraping completed:`, {
+        totalProducts: products.length,
+        successful: actualPages,
         duration: `${(duration / 1000).toFixed(2)}s`,
-        robotsCompliance: {
-            crawlDelay: `${crawlDelay}ms`,
-            hasExplicitCrawlDelay,
-            maxRequestsPerMinute: calculatedMaxRate,
-            urlsFiltered: productUrls.length - urlsToProcess.length,
-            urlsProcessed: urlsToProcess.length
-        }
+        avgTimePerProduct: `${(duration / actualPages / 1000).toFixed(2)}s`
     });
     
     return {

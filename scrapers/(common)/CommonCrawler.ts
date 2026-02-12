@@ -17,7 +17,7 @@
  */
 
 import { ProductsDataResultFromCrawling, ProductCardDataFromCrawling } from '@/types/crawl.type';
-import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, ErrorHandler, Log, RequestQueue } from 'crawlee';
+import { CheerioAPI, CheerioCrawler, CheerioCrawlingContext, ErrorHandler, Log, RequestQueue, SessionPool } from 'crawlee';
 import { SiteConfig } from '@/lib/factories/scraper-factory';
 import { apiLogger } from '@/lib/helpers/api-logger';
 import { SimplePoliteCrawler, RobotsRules } from '@/lib/utils/polite-crawler';
@@ -106,6 +106,21 @@ export class CommonCrawler {
                 log: Log;
             } = context;
             
+            // Handle ECONNRESET errors (connection reset by server)
+            const errorMessage = error.message || '';
+            if (errorMessage.includes('ECONNRESET') || errorMessage.includes('ETIMEDOUT')) {
+                const retryCount = request.retryCount || 0;
+                if (retryCount < 3) {
+                    const backoffDelay = Math.min(5000 * Math.pow(2, retryCount), 30000); // Max 30s
+                    log.warning(`[${siteName}] Connection reset (attempt ${retryCount + 1}/3), retrying in ${backoffDelay}ms: ${request.url}`);
+                    await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                    throw error; // Let Crawlee retry
+                } else {
+                    log.error(`[${siteName}] Connection failed after 3 retries, skipping: ${request.url}`);
+                    return; // Skip request, nhưng job vẫn continue
+                }
+            }
+            
             // POLITE CRAWLING: Handle HTTP status codes properly
             const httpError = error as any;
             if (httpError?.response?.status) {
@@ -144,8 +159,17 @@ export class CommonCrawler {
             maxRequestRetries: 3,
             maxRequestsPerCrawl: 0, // No limit
             maxConcurrency: 1,      // Sequential processing
-            requestHandlerTimeoutSecs: 60,
-            navigationTimeoutSecs: 30,
+            requestHandlerTimeoutSecs: 90,  // Increased from 60s
+            navigationTimeoutSecs: 45,      // Increased from 30s
+            // ✅ Enable session management to handle blocks and rotate IPs
+            useSessionPool: true,
+            sessionPoolOptions: {
+                maxPoolSize: 20,
+                sessionOptions: {
+                    maxUsageCount: 50, // Rotate session after 50 requests
+                    maxErrorScore: 3,   // Retire session after 3 errors
+                },
+            },
         };
     }
 
