@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getScraperQueueStats, getScheduledAutoJobs, scraperQueue } from '@/lib/queue/scraper-queue';
 import { apiLogger } from '@/lib/helpers/api-logger';
+import { auth } from '@/auth';
 
 /**
  * GET /api/debug/queue - Comprehensive queue status và monitoring
@@ -14,7 +15,24 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 export async function GET() {
   try {
     apiLogger.info('[Debug Queue] Status check requested');
+    // 0.1 authentication
+      // TODO: Need to authenticate for admin role in the future
+    const session = await auth();
+    const user = session?.user;
 
+    if (!user || !user.id) {
+      return NextResponse.json({
+        error: "Unauthorized",
+        status: 401
+      })
+    }
+
+    if (user?.role !== "ADMIN") {
+      return NextResponse.json({
+        message: "Forbidden",
+        status: 403
+      })
+    }
     // 1. Get comprehensive queue stats
     const queueStats = await getScraperQueueStats();
 

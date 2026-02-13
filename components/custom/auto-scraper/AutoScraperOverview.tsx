@@ -95,13 +95,13 @@ export default function AutoScraperOverview({ stats, isLoading = false, error }:
 
   // Job status configuration - representing job lifecycle progression
   const jobStatusesFlow = [
-    {
-      key: 'CREATED' as keyof JobStatusCounts,
-      label: 'Created Jobs',
-      backgroundColor: '#e5e7eb', // gray-200 - initial state
-      textColor: 'var(--text-primary)',
-      description: 'Jobs created in database'
-    },
+    // {
+    //   key: 'CREATED' as keyof JobStatusCounts,
+    //   label: 'Created Jobs',
+    //   backgroundColor: '#e5e7eb', // gray-200 - initial state
+    //   textColor: 'var(--text-primary)',
+    //   description: 'Jobs created in database'
+    // },
     {
       key: 'WAITING' as keyof JobStatusCounts,
       label: 'Waiting Jobs',
@@ -116,13 +116,13 @@ export default function AutoScraperOverview({ stats, isLoading = false, error }:
       textColor: 'var(--bg-main)',
       description: 'Active auto-scraper repeat jobs'
     },
-    {
-      key: 'DELAYED' as keyof JobStatusCounts,
-      label: 'Delayed Jobs',
-      backgroundColor: 'var(--accent-cta)', // scheduled state
-      textColor: 'var(--text-primary)',
-      description: 'Jobs scheduled for future execution'
-    },
+    // {
+    //   key: 'DELAYED' as keyof JobStatusCounts,
+    //   label: 'Delayed Jobs',
+    //   backgroundColor: 'var(--accent-cta)', // scheduled state
+    //   textColor: 'var(--text-primary)',
+    //   description: 'Jobs scheduled for future execution'
+    // },
     {
       key: 'ACTIVE' as keyof JobStatusCounts,
       label: 'Running Jobs',
@@ -203,7 +203,7 @@ export default function AutoScraperOverview({ stats, isLoading = false, error }:
         </div>
         <div className={styles.cardBody}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div 
                 key={i}
                 className="text-center p-4 animate-pulse"
@@ -239,7 +239,7 @@ export default function AutoScraperOverview({ stats, isLoading = false, error }:
       
       <div className={styles.cardBody}>
         {/* Job Status Flow - Complete lifecycle progression */}
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-4 mb-6">
           {jobStatusesFlow.map((status, index) => (
             <JobStatusCard
               key={status.key}

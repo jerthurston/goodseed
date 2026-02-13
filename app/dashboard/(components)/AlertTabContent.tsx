@@ -9,11 +9,11 @@ import { apiLogger } from '@/lib/helpers/api-logger';
 import { formatRelativeTime } from '@/lib/helpers/formtRelativeTime';
 import styles from './dashboardAdmin.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faSearch, 
-  faFilter, 
-  faRefresh, 
-  faTrash, 
+import {
+  faSearch,
+  faFilter,
+  faRefresh,
+  faTrash,
   faPlay,
   faDatabase,
   faClock,
@@ -23,6 +23,7 @@ import {
   faSpinner,
   faTrashCan
 } from '@fortawesome/free-solid-svg-icons';
+import JobCardItem from '@/components/custom/card/JobCardItem';
 
 /**
  * Simple job filters
@@ -51,7 +52,7 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
     status: 'ALL',
     sellerId: 'ALL'
   });
-  
+
   const [selectedJobs, setSelectedJobs] = useState<Set<string>>(new Set());
 
   // Hooks
@@ -65,7 +66,7 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
     limit: 100
   });
   // Log all jobs
-  apiLogger.info('[LOG UI app\dashboard\(components)\AlertTabContent.tsx ]:', {allJobs});
+  apiLogger.info('[LOG UI app\dashboard\(components)\AlertTabContent.tsx ]:', { allJobs });
 
   const { deleteJob, isDeletingJob } = useDeleteScrapeJob();
 
@@ -78,7 +79,7 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
         if (!job.seller.name?.toLowerCase().includes(searchTerm) &&
-            !job.seller.id?.toLowerCase().includes(searchTerm)) {
+          !job.seller.id?.toLowerCase().includes(searchTerm)) {
           return false;
         }
       }
@@ -139,30 +140,30 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
     }
   ], [jobStats]);
 
-  const handleDeleteJob = async (job: ScrapeJob) => {
-    try {
-      await deleteJob(job.id);
-      toast.success(`Deleted job for ${job.seller.name}`);
-      setSelectedJobs(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(job.id);
-        return newSet;
-      });
-    } catch (error) {
-      toast.error('Failed to delete job');
-      apiLogger.logError('[AlertTabContent] Delete failed', error as Error, { jobId: job.id });
-    }
-  };
+  // const handleDeleteJob = async (job: ScrapeJob) => {
+  //   try {
+  //     await deleteJob(job.id);
+  //     toast.success(`Deleted job for ${job.seller.name}`);
+  //     setSelectedJobs(prev => {
+  //       const newSet = new Set(prev);
+  //       newSet.delete(job.id);
+  //       return newSet;
+  //     });
+  //   } catch (error) {
+  //     toast.error('Failed to delete job');
+  //     apiLogger.logError('[AlertTabContent] Delete failed', error as Error, { jobId: job.id });
+  //   }
+  // };
 
   const handleBulkDelete = async () => {
     if (selectedJobs.size === 0) return;
 
     const selectedJobList = filteredJobs.filter(job => selectedJobs.has(job.id));
-    
+
     try {
       const deletePromises = selectedJobList.map(job => deleteJob(job.id));
       const results = await Promise.allSettled(deletePromises);
-      
+
       const successful = results.filter(result => result.status === 'fulfilled');
       const failed = results.filter(result => result.status === 'rejected');
 
@@ -170,7 +171,7 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
         toast.success(`Successfully deleted ${successful.length} job(s)`);
         setSelectedJobs(new Set());
       }
-      
+
       if (failed.length > 0) {
         toast.error(`Failed to delete ${failed.length} job(s)`);
       }
@@ -180,6 +181,27 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
     }
   };
 
+  // const toggleJobSelection = (jobId: string) => {
+  //   setSelectedJobs(prev => {
+  //     const newSet = new Set(prev);
+  //     if (newSet.has(jobId)) {
+  //       newSet.delete(jobId);
+  //     } else {
+  //       newSet.add(jobId);
+  //     }
+  //     return newSet;
+  //   });
+  // };
+
+  const selectAllJobs = () => {
+    setSelectedJobs(new Set(filteredJobs.map(job => job.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedJobs(new Set());
+  };
+
+  // Toggle individual job selection
   const toggleJobSelection = (jobId: string) => {
     setSelectedJobs(prev => {
       const newSet = new Set(prev);
@@ -192,32 +214,12 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
     });
   };
 
-  const selectAllJobs = () => {
-    setSelectedJobs(new Set(filteredJobs.map(job => job.id)));
-  };
-
-  const clearSelection = () => {
-    setSelectedJobs(new Set());
-  };
-
-  // Get job status display
-  const getJobStatusDisplay = (job: ScrapeJob) => {
-    const isSuccess = job.status === 'COMPLETED' && (job.productsSaved > 0 || job.productsUpdated > 0);
-    const isError = job.status === 'FAILED' || (job.status === 'COMPLETED' && job.productsSaved === 0 && job.productsUpdated === 0);
-    
-    return {
-      isSuccess,
-      isError,
-      icon: isSuccess ? faCheckCircle : isError ? faExclamationTriangle : faSpinner,
-      color: isSuccess ? 'text-green-600' : isError ? 'text-red-600' : 'text-blue-600'
-    };
-  };
-
   return (
     <div className={styles.tabContent}>
-    {/*--> Header with stats */}
-        <h2 className={styles.alertTitle}>Scrape Jobs Management</h2>
-      {/* Toolbar */}
+      {/*--> 1. Header with stats */}
+      <h2 className={styles.alertTitle}>Scrape Jobs Management</h2>
+
+      {/*--> 2. Filter Toolbar */}
       <div className={styles.alertToolbar}>
         {/* Quick filters */}
         <div className={`${styles.filterGroup}`}>
@@ -249,24 +251,9 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
             ))}
           </select>
         </div>
-
-        {/* Actions */}
-        {/* <div className={styles.actionGroup}>
-          {selectedJobs.size > 0 && (
-            <button
-              onClick={handleBulkDelete}
-              disabled={isDeletingJob}
-              className={styles.bulkDeleteButton}
-            >
-              <FontAwesomeIcon icon={faTrashCan} />
-              <span>
-                Delete ({selectedJobs.size})
-              </span>
-            </button>
-          )}
-        </div> */}
       </div>
-      {/* overview scraper jobs */}
+
+      {/*--> 3. Scraper jobs stats */}
       <div className={styles.alertHeader}>
         {/* Overview scrape job status section*/}
         <div className={styles.alertStats}>
@@ -282,7 +269,7 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
         </div>
       </div>
 
-      {/* Bulk selection toolbar */}
+      {/*--> 4. Bulk selection toolbar */}
       {filteredJobs.length > 0 && (
         <div className={styles.bulkToolbar}>
           <div className={styles.bulkActions}>
@@ -294,7 +281,7 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
             >
               Select All ({filteredJobs.length})
             </Button>
-            
+
             {selectedJobs.size > 0 && (
               <Button
                 variant="ghost"
@@ -307,162 +294,67 @@ export function AlertTabContent({ sellers, onRefreshData }: AlertTabContentProps
             )}
           </div>
 
-           {/* Actions */}
-        <div className={styles.actionGroup}>
-          {selectedJobs.size > 0 && (
-            <button
-              onClick={handleBulkDelete}
-              disabled={isDeletingJob}
-              className={styles.bulkDeleteButton}
-            >
-              <FontAwesomeIcon icon={faTrashCan} />
-              <span>
-                Delete ({selectedJobs.size})
-              </span>
-            </button>
-          )}
-        </div>
+          {/* Actions */}
+          <div className={styles.actionGroup}>
+            {selectedJobs.size > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                disabled={isDeletingJob}
+                className={styles.bulkDeleteButton}
+              >
+                <FontAwesomeIcon icon={faTrashCan} />
+                <span>
+                  Delete ({selectedJobs.size})
+                </span>
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Jobs list */}
+      {/*--> 5. Jobs list */}
       <div className={styles.jobsList}>
+        {/*----> 5.1 Jobs fetch loading */}
         {isLoading && (
           <div className={styles.loadingState}>
             <FontAwesomeIcon icon={faSpinner} className="animate-spin text-2xl text-gray-400" />
             <p>Loading jobs...</p>
           </div>
         )}
-
+        {/*----> 5.2 Jobs fetch error */}
         {jobsError && (
           <div className={styles.errorState}>
             <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-500 text-2xl" />
             <p>Failed to load jobs</p>
-            <Button onClick={refreshJobs} variant="outline" size="sm">
+            <Button 
+            onClick={refreshJobs} 
+            variant="outline" 
+            size="sm"
+            >
               <FontAwesomeIcon icon={faRefresh} />
               Try Again
             </Button>
           </div>
         )}
-
+        {/*----> 5.3 Jobs empty state */}
         {!isLoading && !jobsError && filteredJobs.length === 0 && (
           <div className={styles.emptyState}>
             <FontAwesomeIcon icon={faDatabase} className="text-gray-400 text-2xl" />
             <p>No jobs found</p>
           </div>
         )}
-
-        {filteredJobs.map(job => {
-          const statusDisplay = getJobStatusDisplay(job);
-          const isSelected = selectedJobs.has(job.id);
-
-          return (
-            <div
-              key={job.id}
-              className={`${styles.jobItem} ${isSelected ? styles.jobItemSelected : ''}`}
-            >
-              {/* Selection checkbox */}
-              <div className={styles.jobCheckbox}>
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleJobSelection(job.id)}
-                  className={styles.checkbox}
-                />
-              </div>
-
-              {/* Job info */}
-              <div className={styles.jobInfo}>
-                <div className={styles.jobHeader}>
-                  <div className={styles.jobStatus}>
-                    <FontAwesomeIcon 
-                      icon={statusDisplay.icon} 
-                      className={`${statusDisplay.color} ${job.status === 'ACTIVE' ? 'animate-spin' : ''}`} 
-                    />
-                    <span className={styles.jobStatusText}>{job.status}</span>
-                  </div>
-                  
-                  <div className={styles.jobSeller}>
-                    <FontAwesomeIcon icon={faUser} className="text-gray-500" />
-                    <span>{job.seller.name}</span>
-                  </div>
-
-                  <div className={styles.jobMode}>
-                    <span className={`px-2 py-1 text-xs rounded ${
-                      job.mode === 'manual' ? 'bg-blue-100 text-blue-800' :
-                      job.mode === 'auto' ? 'bg-green-100 text-green-800' :
-                      job.mode === 'test' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {job.mode.toUpperCase()}
-                    </span>
-                  </div>
-                  
-                  <div className={styles.jobTime}>
-                    <FontAwesomeIcon icon={faClock} className="text-gray-500" />
-                    <span>{formatRelativeTime(new Date(job.createdAt))}</span>
-                  </div>
-                </div>
-
-                <div className={styles.jobDetails}>
-                  {/* Always show basic progress info */}
-                  <div className={`grid lg:flex lg:flex-row gap-2 text-sm`}>
-                    <span>Scraped: {job.productsScraped || 0}</span>
-                    <span>Saved: {job.productsSaved || 0}</span>
-                    <span>Updated: {job.productsUpdated || 0}</span>
-                    {job.duration && <span>Duration: {Math.round(job.duration / 1000)}s</span>}
-                  </div>
-
-                  {/* Show timing information if available */}
-                  {(job.startTime || job.endTime) && (
-                    <div className={styles.jobTiming}>
-                      {job.startTime && (
-                        <span className="text-sm text-gray-500">
-                          Started: {new Date(job.startTime).toLocaleString()}
-                        </span>
-                      )}
-                      {job.endTime && (
-                        <span className="text-sm text-gray-500">
-                          Ended: {new Date(job.endTime).toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Show job ID for debugging */}
-                  <div className={styles.jobId}>
-                    <span className="text-sm text-neutral-500 font-mono">
-                      ID Job: {job.id}
-                    </span>
-                  </div>
-
-                  {/* Error message */}
-                  {job.errorMessage && (
-                    <div className={styles.jobError}>
-                      {job.errorMessage || "Error has not identified. Let screen system administrator"}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className={styles.jobActions}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDeleteJob(job)}
-                  disabled={isDeletingJob}
-                  className={styles.activityDeleteButton}
-                >
-                  <FontAwesomeIcon icon={faTrash} />
-                  {/* Delete */}
-                </Button>
-              </div>
-            </div>
-          );
-        })}
+        {/*----> 5.4 Job listings */}
+        {filteredJobs.map(job => (
+          <JobCardItem 
+            key={job.id} 
+            job={job}
+            selectedJobs={selectedJobs}
+            onToggleSelection={toggleJobSelection}
+            showCheckbox={selectedJobs.size > 0}
+          />
+        )
+        )}
       </div>
-
     </div>
   );
 }

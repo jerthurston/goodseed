@@ -128,6 +128,20 @@ export async function addScraperJob(
   // 4. ADD JOB TO REDIS QUEUE - Để Redis có thông tin về job
   const job = await scraperQueue.add(cleanData, jobOptions);
   
+  // 5. Update job status to WAITING immediately after adding to queue
+  // This ensures status is correct before job-status-sync runs
+  await prisma.scrapeJob.update({
+    where: { jobId: data.jobId },
+    data: { 
+      status: ScrapeJobStatus.WAITING,
+      updatedAt: new Date()
+    }
+  }).catch(error => {
+    apiLogger.logError('[Scraper Queue] Failed to update job status to WAITING', error, {
+      jobId: data.jobId
+    });
+  });
+  
   const logMessage = repeatOptions ? 'Created repeat job' : 'Added job';
 
   apiLogger.info(`[Scraper Queue] ${logMessage} ${job.id}`, {
@@ -135,7 +149,8 @@ export async function addScraperJob(
     mode: cleanData.config.mode,
     urlsCount: cleanData.scrapingSources.length,
     config: cleanData.config,
-    isRepeat: !!repeatOptions
+    isRepeat: !!repeatOptions,
+    statusUpdated: 'WAITING'
   });
 
   return job;

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faPlay, faRing, faRobot, faStop } from '@fortawesome/free-solid-svg-icons';
@@ -5,6 +7,7 @@ import { DashboardButton } from '@/app/dashboard/(components)/DashboardButton';
 import { DashboardCard } from '@/app/dashboard/(components)/DashboardCard';
 import styles from '@/app/dashboard/(components)/dashboardAdmin.module.css';
 import ScheduleAutoScraperModal from '@/components/custom/modals/ScheduleAutoScraperModal';
+import ScheduledTimesModal from '@/components/custom/modals/ScheduledTimesModal';
 
 interface AutoScraperControlPanelProps {
   totalSellers: number;
@@ -25,6 +28,7 @@ export default function AutoScraperControlPanel({
 }: AutoScraperControlPanelProps) {
   // Modal state
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isScheduledTimesModalOpen, setIsScheduledTimesModalOpen] = useState(false);
 
   // Logic for button states
   const hasScheduledJobs = activeAutoScrapers > 0;
@@ -115,18 +119,25 @@ export default function AutoScraperControlPanel({
             PAUSE
           </DashboardButton>
         </div>
-        {lastRun && (
+        {/* {lastRun && (
           <div className='text-center text-sm text-neutral-500 font-bold'>
           <FontAwesomeIcon icon={faClock} size='lg' className="mr-1 text-green-600" />
           <span>
             Last run: {lastRun?.toLocaleDateString()} at {lastRun?.toLocaleTimeString()}
             </span>
-        </div>)}
+        </div>)} */}
 
        <div className='text-center text-sm text-neutral-500 font-bold'>
         <FontAwesomeIcon icon={faRobot} size='lg' className="mr-1 text-green-600" />
         <span>
-          Auto scraper activity will happen repeatedly at the<span className='text-yellow-600'>{" "}scheduled times.{" "}</span>
+          Auto scraper activity will happen repeatedly at the
+          <button
+            onClick={() => setIsScheduledTimesModalOpen(true)}
+            className='text-yellow-600 hover:text-yellow-500 underline cursor-pointer transition-colors mx-1'
+            title="View scheduled run times for all sellers"
+          >
+            scheduled times.
+          </button>
         </span>
        </div>
       </div>
@@ -138,6 +149,12 @@ export default function AutoScraperControlPanel({
         onConfirm={handleScheduleConfirm}
         isLoading={isLoading}
         totalSellers={activeSellers.length}
+      />
+
+      {/* Scheduled Times Modal */}
+      <ScheduledTimesModal
+        isOpen={isScheduledTimesModalOpen}
+        onClose={() => setIsScheduledTimesModalOpen(false)}
       />
     </DashboardCard>
   )

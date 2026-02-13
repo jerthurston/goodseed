@@ -11,8 +11,14 @@ import { ScrapeJobStatus } from '@prisma/client';
  * - Sync job status theo real-time
  * - Update progress và timing info
  * - Ensure data consistency giữa queue và database
+ * 
+ * Performance optimization:
+ * - Cache last sync time to prevent excessive syncing
+ * - Minimum 2 minutes between full syncs (jobs run 3-6 hours, no need for frequent sync)
  */
 export class JobStatusSyncService {
+  private static lastSyncTime: number = 0;
+  private static readonly MIN_SYNC_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes
 
   /**
    * Sync single job status từ Redis về database
@@ -75,10 +81,28 @@ export class JobStatusSyncService {
 
   /**
    * Sync tất cả active jobs và handle missing/cancelled jobs
+   * 
+   * Performance: Minimum 2 minutes between syncs to avoid excessive Redis calls
+   * Context: Jobs run 3-6 hours, so syncing every 2 minutes is more than sufficient
    */
-  static async syncAllJobStatuses(): Promise<void> {
+  static async syncAllJobStatuses(forceSync: boolean = false): Promise<void> {
     try {
-      apiLogger.info('[Job Sync] Starting bulk job status sync');
+      // Check if we need to sync (unless forced)
+      const now = Date.now();
+      const timeSinceLastSync = now - this.lastSyncTime;
+      
+      if (!forceSync && timeSinceLastSync < this.MIN_SYNC_INTERVAL_MS) {
+        apiLogger.debug('[Job Sync] Skipping sync - too soon since last sync', {
+          timeSinceLastSyncSeconds: Math.round(timeSinceLastSync / 1000),
+          minIntervalSeconds: Math.round(this.MIN_SYNC_INTERVAL_MS / 1000)
+        });
+        return;
+      }
+
+      apiLogger.info('[Job Sync] Starting bulk job status sync', {
+        forced: forceSync,
+        timeSinceLastSyncMinutes: Math.round(timeSinceLastSync / 60000)
+      });
 
       // 1. Get all jobs từ Redis queue
       const [waiting, active, completed, failed] = await Promise.all([
@@ -104,40 +128,66 @@ export class JobStatusSyncService {
       // 3. Handle missing/cancelled jobs
       await this.handleMissingJobs(queueJobIds);
 
+      // 4. Update last sync time
+      this.lastSyncTime = Date.now();
+
       apiLogger.info('[Job Sync] Bulk sync completed', {
         totalJobs: allJobs.length,
         waiting: waiting.length,
         active: active.length, 
         completed: completed.length,
-        failed: failed.length
+        failed: failed.length,
+        nextSyncAvailableIn: `${Math.round(this.MIN_SYNC_INTERVAL_MS / 60000)} minutes`
       });
 
     } catch (error) {
       apiLogger.logError('[Job Sync] Bulk sync failed', error as Error);
+      // Reset last sync time on error to allow retry sooner
+      this.lastSyncTime = 0;
     }
   }
 
   /**
    * Handle jobs missing từ queue (đã bị cancelled/removed)
+   * 
+   * CRITICAL CONTEXT:
+   * - 1 seller scraping = 3-6 hours
+   * - Sequential processing (concurrency = 1)
+   * - Jobs can wait 24+ hours in WAITING state before becoming ACTIVE
+   * 
+   * LOGIC:
+   * 1. NEVER check WAITING/DELAYED jobs - they can wait 24+ hours legitimately
+   * 2. ONLY check ACTIVE jobs - if actively processing but missing from queue = problem
+   * 3. Use long grace period (8 hours) for ACTIVE jobs to account for long-running scrapes
    */
   static async handleMissingJobs(queueJobIds: string[]): Promise<void> {
     try {
-      // 1. Get tất cả CREATED/WAITING/DELAYED/ACTIVE jobs từ database
+      // Grace period for ACTIVE jobs: 8 hours (longer than max scrape time of 6 hours)
+      // If a job has been ACTIVE for 8+ hours but not in queue, something is wrong
+      const ACTIVE_GRACE_PERIOD_MS = 8 * 60 * 60 * 1000; // 8 hours
+      const activeGraceCutoff = new Date(Date.now() - ACTIVE_GRACE_PERIOD_MS);
+
+      // ONLY check ACTIVE jobs that have been active for too long
+      // NEVER check WAITING/DELAYED - they can legitimately wait 24+ hours in queue
       const dbJobs = await prisma.scrapeJob.findMany({
         where: {
-          status: {
-            in: [ScrapeJobStatus.CREATED, ScrapeJobStatus.WAITING, ScrapeJobStatus.DELAYED, ScrapeJobStatus.ACTIVE]
+          status: ScrapeJobStatus.ACTIVE, // ONLY active jobs
+          // Job has been active for longer than grace period
+          startedAt: {
+            lt: activeGraceCutoff
           }
         },
         select: {
           id: true,
           jobId: true,
           status: true,
-          sellerId: true
+          sellerId: true,
+          createdAt: true,
+          startedAt: true
         }
       });
 
-      // 2. Find jobs missing từ Redis queue  
+      // Find ACTIVE jobs missing from Redis queue
       const missingJobs = dbJobs.filter(dbJob => 
         dbJob.jobId && !queueJobIds.includes(dbJob.jobId)
       );
@@ -146,22 +196,30 @@ export class JobStatusSyncService {
         return;
       }
 
-      // 3. Update missing jobs thành CANCELLED
-      const updatePromises = missingJobs.map(job => 
-        prisma.scrapeJob.update({
+      // Update stalled ACTIVE jobs to FAILED (not CANCELLED, since they started but crashed)
+      const updatePromises = missingJobs.map(job => {
+        const activeHours = job.startedAt 
+          ? Math.round((Date.now() - new Date(job.startedAt).getTime()) / (1000 * 60 * 60))
+          : 0;
+
+        return prisma.scrapeJob.update({
           where: { id: job.id },
           data: {
-            status: ScrapeJobStatus.CANCELLED,
-            updatedAt: new Date()
+            status: ScrapeJobStatus.FAILED,
+            completedAt: new Date(),
+            updatedAt: new Date(),
+            errorMessage: `Job stalled - was ACTIVE for ${activeHours}h but not found in Redis queue. Likely worker crashed or queue was cleared.`
           }
-        })
-      );
+        });
+      });
 
       await Promise.allSettled(updatePromises);
 
-      apiLogger.info('[Job Sync] Handled missing jobs', {
-        missingCount: missingJobs.length,
-        jobIds: missingJobs.map(j => j.jobId)
+      apiLogger.warn('[Job Sync] Found stalled ACTIVE jobs', {
+        stalledCount: missingJobs.length,
+        jobIds: missingJobs.map(j => j.jobId),
+        activeGracePeriodHours: ACTIVE_GRACE_PERIOD_MS / (1000 * 60 * 60),
+        note: 'These jobs were ACTIVE but missing from queue - likely worker crash'
       });
 
     } catch (error) {
