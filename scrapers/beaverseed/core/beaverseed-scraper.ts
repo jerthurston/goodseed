@@ -75,7 +75,8 @@ export async function BeaverseedScraper(
     const commonContext: CommonScrapingContext = {
         scrapingSourceUrl: validatedContext.scrapingSourceUrl,
         sourceName: validatedContext.sourceName,
-        dbMaxPage: validatedContext.dbMaxPage
+        dbMaxPage: validatedContext.dbMaxPage,
+        disableSessionPool: true // 🔧 Disable session pool for Beaverseed - it triggers anti-bot detection
     };
 
     // Define Beaver Seed-specific request handler

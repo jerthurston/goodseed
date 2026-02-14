@@ -244,6 +244,8 @@ export async function canukSeedScraper(
         maxConcurrency: 1, // Sequential requests for polite crawling
         maxRequestsPerMinute: calculatedMaxRate, // ✅ Dynamic rate based on robots.txt
         maxRequestRetries: 3,
+        navigationTimeoutSecs: 60,      // 🔧 Increased from 30s default - site needs more time
+        requestHandlerTimeoutSecs: 90,  // 🔧 Increased from 60s default
         preNavigationHooks: [
             async (requestAsBrowserOptions) => {
                 const headers = politeCrawler.getHeaders();

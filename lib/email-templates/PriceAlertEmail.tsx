@@ -158,7 +158,7 @@ export function PriceAlertEmail({
               </Text>
               <Section style={buttonContainer}>
                 <Button
-                  href={`${process.env.NEXT_PUBLIC_APP_URL || 'https://goodseed.vercel.app'}/dashboard/wishlist`}
+                  href={`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.goodseed.app'}/dashboard/user/favorites`}
                   style={primaryButton}
                 >
                   🌟 View My Wishlist

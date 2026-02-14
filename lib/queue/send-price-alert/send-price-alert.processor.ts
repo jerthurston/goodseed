@@ -47,7 +47,7 @@ export async function processSendPriceAlertEmailJob(
 
   try {
     // Generate unsubscribe URL
-    const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://goodseed.vercel.app'}/dashboard/settings?tab=notifications&userId=${userId}`;
+    const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.goodseed.app'}/dashboard/user/settings`;
 
     // Send email via Resend
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@lembooking.com';

@@ -30,6 +30,7 @@ export interface CommonScrapingContext {
     scrapingSourceUrl: string;
     sourceName: string;
     dbMaxPage: number;
+    disableSessionPool?: boolean; // Optional flag to disable session pool for problematic sites
 }
 
 /**
@@ -150,9 +151,10 @@ export class CommonCrawler {
     private createCrawlerConfig(
         requestQueue: RequestQueue,
         requestHandler: (context: CheerioCrawlingContext) => Promise<void>,
-        errorHandler: ErrorHandler<CheerioCrawlingContext>
+        errorHandler: ErrorHandler<CheerioCrawlingContext>,
+        disableSessionPool: boolean = false
     ) {
-        return {
+        const config: any = {
             requestQueue,
             requestHandler,
             errorHandler,
@@ -161,16 +163,21 @@ export class CommonCrawler {
             maxConcurrency: 1,      // Sequential processing
             requestHandlerTimeoutSecs: 90,  // Increased from 60s
             navigationTimeoutSecs: 45,      // Increased from 30s
-            // ✅ Enable session management to handle blocks and rotate IPs
-            useSessionPool: true,
-            sessionPoolOptions: {
+        };
+
+        // Only enable session pool if not explicitly disabled
+        if (!disableSessionPool) {
+            config.useSessionPool = true;
+            config.sessionPoolOptions = {
                 maxPoolSize: 20,
                 sessionOptions: {
                     maxUsageCount: 50, // Rotate session after 50 requests
                     maxErrorScore: 3,   // Retire session after 3 errors
                 },
-            },
-        };
+            };
+        }
+
+        return config;
     }
 
     /**
@@ -276,17 +283,21 @@ export class CommonCrawler {
 
         const maxConcurrency = 1; // Sequential for pagination-based scraping
         
+        // Check if session pool should be disabled for this site
+        const disableSessionPool = this.sourceContext.disableSessionPool || false;
+        
         apiLogger.info(`[${siteName}] ⚙️ Crawler configuration`, {
             crawlDelayMs: crawlDelay,
             maxRequestsPerMinute: calculatedMaxRate,
             maxConcurrency,
             hasExplicitCrawlDelay,
+            sessionPoolEnabled: !disableSessionPool,
             mode: this.startPage !== null && this.endPage !== null ? 'TEST' : 'AUTO'
         });
 
         // Configure crawler with dynamic rate limiting
         const crawlerConfig = {
-            ...this.createCrawlerConfig(requestQueue, wrappedRequestHandler, errorHandler),
+            ...this.createCrawlerConfig(requestQueue, wrappedRequestHandler, errorHandler, disableSessionPool),
             maxRequestsPerMinute: calculatedMaxRate, // ✅ Use calculated rate from robots.txt
             maxConcurrency: maxConcurrency,
         };
